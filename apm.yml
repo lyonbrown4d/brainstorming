@@ -1,0 +1,7 @@
+name: trelyx
+version: 0.1.0
+description: Trelyx 桌面思维导图开发约定
+targets:
+  - codex
+dependencies:
+  apm: []

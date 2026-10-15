@@ -1,0 +1,48 @@
+$schema: https://moonrepo.dev/schemas/project.json
+layer: application
+language: typescript
+fileGroups:
+  source:
+    - src/**/*
+    - electron/**/*
+    - shared/**/*
+    - tests/**/*
+    - stories/**/*
+    - .storybook/**/*
+    - .moon/*.yml
+    - .github/workflows/*.yml
+    - docs/**/*.md
+    - '*.ts'
+    - '*.json'
+    - '*.yml'
+    - '*.md'
+    - pnpm-lock.yaml
+tasks:
+  format:
+    command: pnpm format:check
+    inputs: ['@group(source)']
+  lint:
+    command: pnpm lint
+    inputs: ['@group(source)']
+  typecheck:
+    command: pnpm typecheck
+    inputs: ['@group(source)']
+  test:
+    command: pnpm test
+    inputs: ['@group(source)']
+  build:
+    command: pnpm build
+    inputs: ['@group(source)']
+    deps: [typecheck]
+    outputs: [out]
+  package:
+    inputs: ['@group(source)']
+    command: pnpm package
+    deps: [build]
+    options:
+      cache: false
+  check:
+    inputs: ['@group(source)']
+    deps: [format, lint, typecheck, test, build]
+    options:
+      cache: false

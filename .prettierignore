@@ -1,8 +1,11 @@
-dist
+node_modules
+out
+release
 coverage
 storybook-static
 test-results
 playwright-report
-node_modules
 pnpm-lock.yaml
-.codex-run
+.moon/cache
+apm_modules
+test-results-desktop

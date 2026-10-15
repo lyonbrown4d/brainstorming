@@ -1,5 +1,0 @@
-export * from '@vetra/lexical/composition'
-export * from '@vetra/lexical/commandBridge/structuralIntents'
-export * from '@vetra/lexical/LexicalBlockEditor'
-export * from '@vetra/lexical/serializers/plainText'
-export * from '@vetra/lexical/serializers/richText'
