@@ -21,6 +21,12 @@
 
 开发入口先初始化 React Scan，再加载 React 和应用，避免错过 DevTools 注入时机。`pnpm dev` / `pnpm dev:web` 默认显示扫描工具栏；可设置 `VITE_REACT_SCAN=false` 关闭。生产构建移除该分支，浏览器性能测试显式关闭扫描，避免工具开销污染样本。React Scan 用于定位问题，Playwright 固定采样用于可重复比较。
 
+## 窗口标题栏
+
+`electron/windowChrome.ts` 管理原生窗口外观，macOS 使用 `hiddenInset`，Windows/Linux 使用 `titleBarOverlay`。窗口按钮、缩放、关闭与未保存确认沿用系统和既有 Electron 行为。`styles/window.css` 声明拖动区域，并为原生按钮预留空间；交互控件必须排除拖动区域。
+
+preload 仅暴露平台、窗口焦点及全屏状态；读取状态仍校验当前窗口和主框架。状态通知只用于界面布局。Storybook 提供 macOS、Windows/Linux、失焦和全屏预览，原生按钮仅在 Electron 中出现。`pnpm test:desktop` 验证真实窗口布局、全屏状态和工具栏操作；跨平台原生行为需在对应系统复核。
+
 ## 性能报告
 
 `src/core/fixtures.ts` 生成固定文档，内容不使用随机数。Playwright 固定视口 1440×960，记录三次文件选择、解析到可见界面的耗时和挂载节点数，输出中位数。当前测试针对开发构建，含自动化开销，仅作比较基线，没有设置硬阈值。

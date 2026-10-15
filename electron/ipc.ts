@@ -8,6 +8,7 @@ import {
 import type { DocumentFiles } from './files'
 import { validateContents, validatePath } from './files'
 import type { SaveRequest } from '../shared/contracts'
+import { readWindowState } from './windowChrome'
 
 const filters = [{ name: 'Trelyx 思维导图', extensions: ['trelyx', 'json'] }]
 
@@ -26,6 +27,7 @@ export function registerIPC(
     }
     return window
   }
+  ipcMain.handle('window:state', (event) => readWindowState(trusted(event)))
   ipcMain.handle('document:open', async (event) => {
     const window = trusted(event)
     const result = await dialog.showOpenDialog(window, { filters, properties: ['openFile'] })

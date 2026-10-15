@@ -1,8 +1,19 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { DesktopAPI, MenuAction } from '../shared/contracts'
+import { isWindowState } from '../shared/window'
 
 const actions = new Set<MenuAction>(['new', 'open', 'save', 'saveAs', 'undo', 'redo'])
 const api: DesktopAPI = {
+  platform:
+    process.platform === 'darwin' ? 'macos' : process.platform === 'win32' ? 'windows' : 'linux',
+  getWindowState: () => ipcRenderer.invoke('window:state'),
+  onWindowStateChanged: (callback) => {
+    const listener = (_event: Electron.IpcRendererEvent, state: unknown) => {
+      if (isWindowState(state)) callback(state)
+    }
+    ipcRenderer.on('window:state-changed', listener)
+    return () => ipcRenderer.removeListener('window:state-changed', listener)
+  },
   openDocument: () => ipcRenderer.invoke('document:open'),
   saveDocument: (request) => ipcRenderer.invoke('document:save', request),
   readRecovery: () => ipcRenderer.invoke('recovery:read'),
