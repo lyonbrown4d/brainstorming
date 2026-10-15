@@ -4,6 +4,7 @@ import { desktopConfig } from './config'
 import { DocumentFiles } from './files'
 import { registerIPC } from './ipc'
 import { installMenu } from './menu'
+import { installWindowChrome, windowChromeOptions } from './windowChrome'
 
 app.setName('Trelyx')
 let window: BrowserWindow | null = null
@@ -25,6 +26,7 @@ function createWindow(): void {
     minHeight: 600,
     title: 'Trelyx',
     backgroundColor: '#f5f5f4',
+    ...windowChromeOptions(process.platform),
     webPreferences: {
       preload: join(import.meta.dirname, '../preload/index.cjs'),
       sandbox: true,
@@ -34,6 +36,7 @@ function createWindow(): void {
     },
   })
   const current = window
+  installWindowChrome(current)
   current.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
   current.webContents.on('will-navigate', (event) => {
     event.preventDefault()

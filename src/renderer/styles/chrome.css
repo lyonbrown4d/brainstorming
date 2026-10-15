@@ -1,6 +1,7 @@
 .toolbar {
-  min-height: 91px;
-  height: 91px;
+  min-height: 64px;
+  height: 64px;
+  flex-shrink: 0;
   padding: 0 29px;
   display: flex;
   align-items: center;
@@ -16,7 +17,7 @@
 .document-breadcrumb {
   font-size: 10px;
   color: #a6a8b2;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   letter-spacing: 0.4px;
 }
 .document-breadcrumb span {
@@ -29,6 +30,7 @@
   gap: 10px;
 }
 .document-title h1 {
+  min-width: 0;
   font-size: 16px;
   font-weight: 600;
   margin: 0;

@@ -1,0 +1,39 @@
+/* Electron owns the caption buttons; reserve their native hit area. */
+.app-shell[data-platform='macos']:not([data-fullscreen='true']) > .toolbar {
+  padding-left: 112px;
+}
+.app-shell:is([data-platform='windows'], [data-platform='linux']) > .toolbar {
+  padding-left: max(24px, calc(env(titlebar-area-x, 0px) + 24px));
+  padding-right: max(
+    20px,
+    calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, calc(100vw - 148px)) + 20px)
+  );
+}
+.app-shell:is([data-platform='windows'], [data-platform='linux'])[data-fullscreen='true']
+  > .toolbar {
+  padding-inline: 24px;
+}
+.app-shell:not([data-platform='browser']) > .toolbar {
+  -webkit-app-region: drag;
+  user-select: none;
+}
+.toolbar :is(button, input, select, textarea, a, [role='button'], [data-no-drag]),
+.toolbar-actions {
+  -webkit-app-region: no-drag;
+}
+.app-shell[data-focused='false'] > .toolbar {
+  background: #fafafb;
+}
+.app-shell[data-focused='false'] > .toolbar .document-title,
+.app-shell[data-focused='false'] > .toolbar .toolbar-actions {
+  opacity: 0.65;
+}
+@media (max-width: 1000px) {
+  .app-shell:not([data-platform='browser']) .document-breadcrumb {
+    display: none;
+  }
+  .app-shell:not([data-platform='browser']) .document-title h1 {
+    max-width: 160px;
+    font-size: 14px;
+  }
+}

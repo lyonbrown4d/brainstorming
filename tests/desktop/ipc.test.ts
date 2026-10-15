@@ -31,7 +31,11 @@ import { createDocument, serializeDocument } from '../../src/core'
 function setup() {
   const frame = {}
   const webContents = { mainFrame: frame }
-  const window = { webContents } as unknown as BrowserWindow
+  const window = {
+    webContents,
+    isFocused: () => false,
+    isFullScreen: () => true,
+  } as unknown as BrowserWindow
   const event = { sender: webContents, senderFrame: frame } as unknown as IpcMainInvokeEvent
   const files = new DocumentFiles('/unused-test-storage')
   const setDirty = vi.fn()
@@ -46,6 +50,18 @@ function invoke(channel: string, event: IpcMainInvokeEvent, input?: unknown) {
 }
 
 describe('桌面 IPC 信任与取消', () => {
+  it('只允许当前主框架读取原生窗口状态', async () => {
+    const { event } = setup()
+    expect(await invoke('window:state', event)).toEqual({ focused: false, fullScreen: true })
+    for (const invalid of [
+      { ...event, sender: {} },
+      { ...event, senderFrame: {} },
+    ]) {
+      await expect(invoke('window:state', invalid as IpcMainInvokeEvent)).rejects.toThrow(
+        '不受信任',
+      )
+    }
+  })
   it('取消打开或另存为返回 null，不触碰文档存储', async () => {
     const { event, files } = setup()
     const open = vi.spyOn(files, 'openSelected')

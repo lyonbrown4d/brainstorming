@@ -1,3 +1,5 @@
+import type { DesktopPlatform, WindowState } from './window'
+
 export type MenuAction = 'new' | 'open' | 'save' | 'saveAs' | 'undo' | 'redo'
 export interface OpenedDocument {
   path: string
@@ -13,6 +15,9 @@ export interface SaveRequest {
   suggestedName: string
 }
 export interface DesktopAPI {
+  readonly platform: DesktopPlatform
+  getWindowState(): Promise<WindowState>
+  onWindowStateChanged(callback: (state: WindowState) => void): () => void
   openDocument(): Promise<OpenedDocument | null>
   saveDocument(request: SaveRequest): Promise<string | null>
   readRecovery(): Promise<string | null>

@@ -8,6 +8,9 @@ import { getNavigationTarget } from '../../src/renderer/state/keyboard'
 
 function desktop(overrides: Partial<DesktopAPI> = {}): DesktopAPI {
   return {
+    platform: 'macos',
+    getWindowState: vi.fn(() => Promise.resolve({ focused: true, fullScreen: false })),
+    onWindowStateChanged: vi.fn(() => () => undefined),
     openDocument: vi.fn(() => Promise.resolve(null)),
     saveDocument: vi.fn(() => Promise.resolve('/map.trelyx')),
     readRecovery: vi.fn(() => Promise.resolve(null)),
