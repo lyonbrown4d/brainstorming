@@ -1,0 +1,152 @@
+:root {
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    'PingFang SC',
+    'Microsoft YaHei',
+    sans-serif;
+  color: #27334a;
+  background: #f8f9fb;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --surface: #fff;
+  --muted: #9297a5;
+  --border: #e9ebef;
+  --accent: #7364c9;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: inherit;
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  transition:
+    background 140ms,
+    color 140ms;
+}
+button:hover {
+  background: #f0eef8;
+  color: #6959bd;
+}
+button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+button:disabled:hover {
+  background: transparent;
+  color: inherit;
+}
+button:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #8e80d9;
+  outline-offset: 3px;
+}
+button svg {
+  flex-shrink: 0;
+}
+kbd {
+  font-family: inherit;
+  font-size: 10px;
+  color: #a4a6af;
+  white-space: nowrap;
+}
+.muted {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.8;
+}
+.app-shell {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 720px;
+}
+.workspace-main {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.workspace-content {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+}
+.workspace-rail {
+  width: 66px;
+  flex: 0 0 66px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  background: #fafafb;
+  gap: 11px;
+  padding: 23px 0 18px;
+  z-index: 5;
+}
+.brand-mark {
+  width: 38px;
+  height: 38px;
+  background: #7666c4;
+  color: #fff;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 3px 10px #7364c91f;
+}
+.rail-divider {
+  width: 25px;
+  border-top: 1px solid #e7e8ec;
+  margin: 14px 0 9px;
+}
+.rail-button {
+  width: 39px;
+  height: 39px;
+  color: #9a9eab;
+  border-radius: 10px;
+}
+.rail-button.active {
+  background: #efecf9;
+  color: #7c6bcc;
+}
+.rail-spacer {
+  flex: 1;
+}
+.profile-badge {
+  margin-top: 12px;
+  width: 29px;
+  height: 29px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  background: #e9e8ed;
+  color: #787289;
+}

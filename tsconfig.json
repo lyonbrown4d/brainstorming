@@ -1,17 +1,34 @@
 {
-  "files": [],
-  "references": [
-    { "path": "./packages/core" },
-    { "path": "./packages/import-html" },
-    { "path": "./packages/import-markdown" },
-    { "path": "./packages/export-html" },
-    { "path": "./packages/export-markdown" },
-    { "path": "./packages/import-plain-text" },
-    { "path": "./packages/export-plain-text" },
-    { "path": "./packages/persistence-json" },
-    { "path": "./packages/react" },
-    { "path": "./packages/lexical" },
-    { "path": "./packages/blocks-basic" },
-    { "path": "./packages/demo" }
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "verbatimModuleSyntax": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "baseUrl": ".",
+    "paths": { "@/*": ["src/*"], "@shared/*": ["shared/*"] },
+    "types": ["node", "vite/client"]
+  },
+  "include": [
+    "src",
+    "electron",
+    "shared",
+    "scripts",
+    "tests",
+    "stories",
+    ".storybook/**/*.ts",
+    "*.ts"
   ]
 }

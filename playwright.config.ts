@@ -1,39 +1,22 @@
-import { defineConfig, devices } from '@playwright/test'
-
-const webServer =
-  process.env.VETRA_SKIP_WEBSERVER === 'true'
-    ? undefined
-    : {
-        command:
-          'node ../../node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5173 --strictPort',
-        cwd: './packages/demo',
-        env: {
-          ...process.env,
-          VETRA_PLAYWRIGHT: 'true',
-          VETRA_REACT_SCAN: 'false',
-        },
-        gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 500 },
-        port: 5173,
-        reuseExistingServer: true,
-        timeout: 120_000,
-      }
-
+import { defineConfig } from '@playwright/test'
 export default defineConfig({
-  expect: {
-    timeout: 5_000,
-  },
-  fullyParallel: true,
-  reporter: process.env.CI === 'true' ? [['html', { open: 'never' }], ['list']] : [['list']],
   testDir: './tests',
+  testMatch: ['e2e/**/*.spec.ts', 'performance/**/*.spec.ts'],
+  fullyParallel: false,
+  workers: 1,
+  retries: 0,
+  timeout: 60_000,
+  reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: 'http://127.0.0.1:5173',
-    trace: 'on-first-retry',
+    baseURL: 'http://127.0.0.1:4173',
+    viewport: { width: 1440, height: 960 },
+    trace: 'retain-on-failure',
   },
-  ...(webServer === undefined ? {} : { webServer }),
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-  ],
+  webServer: {
+    command: 'pnpm exec vite --host 127.0.0.1 --port 4173 --strictPort',
+    url: 'http://127.0.0.1:4173',
+    reuseExistingServer: false,
+    env: { VITE_REACT_SCAN: 'false' },
+    timeout: 60_000,
+  },
 })
