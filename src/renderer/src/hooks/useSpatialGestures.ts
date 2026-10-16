@@ -1,6 +1,6 @@
 import { useEffect, type RefObject } from 'react'
 import { useThree } from '@react-three/fiber'
-import type { CameraControlsImpl } from '@react-three/drei'
+import { CameraControlsImpl } from '@react-three/drei'
 import { Vector3 } from 'three'
 import { spatialWheelGesture } from '../lib/spatialGestures'
 
@@ -25,6 +25,12 @@ export function useSpatialGestures({
     const container =
       canvas.closest<HTMLElement>('[data-spatial-surface]') ?? canvas.parentElement ?? canvas
     const target = new Vector3()
+    const pointer = (event: PointerEvent): void => {
+      if (!controls.current || event.button !== 0) return
+      controls.current.mouseButtons.left = event.altKey
+        ? CameraControlsImpl.ACTION.ROTATE
+        : CameraControlsImpl.ACTION.TRUCK
+    }
     const wheel = (event: WheelEvent): void => {
       const controller = controls.current
       if (!controller || event.defaultPrevented) return
@@ -60,8 +66,10 @@ export function useSpatialGestures({
       invalidate()
     }
     container.addEventListener('wheel', wheel, { capture: true, passive: false })
+    container.addEventListener('pointerdown', pointer, true)
     return () => {
       container.removeEventListener('wheel', wheel, { capture: true })
+      container.removeEventListener('pointerdown', pointer, true)
     }
   }, [animation, canvas, controls, enabled, get])
 }

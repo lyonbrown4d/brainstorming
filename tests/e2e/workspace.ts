@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test'
 
-/** Enter the public example action only after startup has settled on an empty home. */
+/** Allow cold Vite compilation; enter the example only after the public home is ready. */
 export async function enterExampleIfHome(page: Page): Promise<void> {
   const example = page.getByRole('button', { name: '探索示例', exact: true })
   await expect
@@ -8,6 +8,7 @@ export async function enterExampleIfHome(page: Page): Promise<void> {
       async () =>
         (await page.getByTestId('topic-root').isVisible()) ||
         ((await example.isVisible()) && (await example.isEnabled())),
+      { timeout: 15_000 },
     )
     .toBe(true)
   if (await example.isVisible()) await example.click()

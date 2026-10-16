@@ -13,6 +13,9 @@ import type { SpatialLayout } from '../../../../layout/spatial'
 import { spatialFramingNodes } from '../../../../layout/spatial-geometry'
 import { useSpatialCamera } from '../../hooks/useSpatialCamera'
 import { useSpatialGestures } from '../../hooks/useSpatialGestures'
+import { useSpatialSelectionDrag } from '../../hooks/useSpatialSelectionDrag'
+import { usePresentation } from '../../state/presentation'
+import type { SpatialScreenRect } from '../../lib/spatialDrag'
 import { documentAppearance, topicAppearance } from '@shared/appearance'
 import { documentStructureKey } from '@shared/layout-geometry'
 import { useEditor } from '../../state/editor'
@@ -25,7 +28,7 @@ import type { SpatialCameraActions, SpatialCameraState, SpatialCanvasProps } fro
 
 const CUBE_FACES = ['右', '左', '上', '下', '前', '后']
 const MOUSE_ACTIONS = {
-  left: CameraControlsImpl.ACTION.ROTATE,
+  left: CameraControlsImpl.ACTION.TRUCK,
   middle: CameraControlsImpl.ACTION.DOLLY,
   right: CameraControlsImpl.ACTION.TRUCK,
   wheel: CameraControlsImpl.ACTION.NONE,
@@ -39,13 +42,14 @@ interface SpatialSceneProps extends Omit<SpatialCanvasProps, 'cameraState'> {
   readonly actions: RefObject<SpatialCameraActions | null>
   readonly onZoomChange: (zoom: number) => void
   readonly onContextLost: () => void
+  readonly onSelectionBox: (box: SpatialScreenRect | null) => void
 }
 
 export function SpatialScene({
   document,
   selectedId,
   focusId,
-  layout,
+  layout: baseLayout,
   labelPortal,
   focusIds,
   initialCamera,
@@ -56,13 +60,27 @@ export function SpatialScene({
   onCameraChange,
   onZoomChange,
   onContextLost,
+  onSelectionBox,
 }: SpatialSceneProps) {
   const selectedIds = useSelectedIds()
   const controls = useRef<CameraControlsImpl | null>(null)
   const gl = useThree((state) => state.gl)
   const editing = useEditor((state) => state.editingSurface === 'spatial')
-  const framedNodes = useMemo(() => spatialFramingNodes(layout, focusIds), [focusIds, layout])
-  const structureKey = `${document.id}:${documentStructureKey(document)}:${layout.nodes.map((node) => `${node.id}/${document.topics[node.id]?.side ?? ''}`).join(',')}:${layout.edges.map((edge) => `${edge.source}>${edge.target}`).join(',')}`
+  const playing = usePresentation((state) => state.playing)
+  const interaction = useSpatialSelectionDrag({
+    document,
+    layout: baseLayout,
+    focusIds,
+    controls,
+    enabled: !editing && !playing,
+    onSelectionBox,
+  })
+  const layout = interaction.layout
+  const framedNodes = useMemo(
+    () => spatialFramingNodes(baseLayout, focusIds),
+    [focusIds, baseLayout],
+  )
+  const structureKey = `${document.id}:${documentStructureKey(document)}:${baseLayout.nodes.map((node) => `${node.id}/${document.topics[node.id]?.side ?? ''}`).join(',')}:${baseLayout.edges.map((edge) => `${edge.source}>${edge.target}`).join(',')}`
   const { report, orient, smoothTime } = useSpatialCamera({
     controls,
     actions,
@@ -76,7 +94,7 @@ export function SpatialScene({
   useSpatialGestures({
     canvas: gl.domElement,
     controls,
-    enabled: !editing,
+    enabled: !editing && !interaction.active,
     animation: smoothTime > 0,
   })
   const nodesById = useMemo(
@@ -173,7 +191,14 @@ export function SpatialScene({
             labelPortal={labelPortal}
             root={root}
             detailed={detailed}
-            selected={selectedIds.length ? selectedIds.includes(node.id) : node.id === selectedId}
+            selected={
+              interaction.boxIds
+                ? interaction.boxIds.includes(node.id)
+                : selectedIds.length
+                  ? selectedIds.includes(node.id)
+                  : node.id === selectedId
+            }
+            dropTarget={interaction.dropTargetId === node.id}
             muted={focusIds !== null && !focusIds.has(node.id)}
             fill={topicAppearance(document, node.id).fill}
             branchColor={topicAppearance(document, node.id).stroke}
@@ -190,7 +215,7 @@ export function SpatialScene({
         ref={controls}
         makeDefault
         regress
-        enabled={!editing}
+        enabled={!editing && !interaction.active}
         mouseButtons={MOUSE_ACTIONS}
         minDistance={1.5}
         maxDistance={Math.max(100, extent * 10)}

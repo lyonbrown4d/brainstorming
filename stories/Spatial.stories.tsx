@@ -58,3 +58,30 @@ export const InlineEditing: Story = {
     await expect(canvas.getByTestId('topic-experience')).toHaveTextContent('空间编辑')
   },
 }
+
+export const GroupSelection: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const user = userEvent.setup()
+    const first = await canvas.findByRole(
+      'button',
+      { name: '选择主题 让思考自由生长' },
+      { timeout: 10000 },
+    )
+    const second = canvas.getByRole('button', { name: '选择主题 本地优先' })
+    await user.click(first)
+    const modifier = /Macintosh|Mac OS/.test(navigator.userAgent) ? 'Meta' : 'Control'
+    await user.keyboard(`{${modifier}>}`)
+    await user.click(second)
+    await user.keyboard(`{/${modifier}}`)
+    await expect(first).toHaveAttribute('aria-pressed', 'true')
+    await expect(second).toHaveAttribute('aria-pressed', 'true')
+    await user.click(canvas.getByRole('button', { name: '二维视图' }))
+    await expect(canvas.getByTestId('topic-vision-0').closest('.react-flow__node')).toHaveClass(
+      'selected',
+    )
+    await expect(canvas.getByTestId('topic-vision-1').closest('.react-flow__node')).toHaveClass(
+      'selected',
+    )
+  },
+}

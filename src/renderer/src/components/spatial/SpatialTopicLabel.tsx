@@ -80,6 +80,7 @@ export function SpatialTopicLabel({
         event.stopPropagation()
       }}
       onClick={(event) => {
+        if (usePresentation.getState().playing) return
         event.stopPropagation()
         if (interactAnnotationTopic(topic.id)) return
         if (event.metaKey || event.ctrlKey || event.shiftKey) selectTopic(topic.id, true)

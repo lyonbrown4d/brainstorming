@@ -20,7 +20,8 @@ export function SpatialControls({
         aria-label="3D 画布视图"
       >
         <p className="pointer-events-none absolute top-full right-0 mt-2 hidden text-xs whitespace-nowrap text-muted-foreground xl:block">
-          双指平移 · 捏合缩放 · Alt+双指旋转 · 双击编辑
+          拖动空白平移 · Shift+拖动框选 · 拖动主题移动
+          <span className="mt-1 block text-right">双指平移 · 捏合缩放 · Alt+拖动旋转</span>
         </p>
         <div className="flex h-10 items-center rounded-xl border border-border/80 bg-background/95 p-1 shadow-sm">
           <Button

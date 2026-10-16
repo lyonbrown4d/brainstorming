@@ -6,6 +6,7 @@ import { presentationDocument, usePresentation } from '../../state/presentation'
 import { SpatialControls } from './SpatialControls'
 import { SpatialScene } from './SpatialScene'
 import type { SpatialCameraActions, SpatialCanvasProps } from './types'
+import type { SpatialScreenRect } from '../../lib/spatialDrag'
 
 export type { SpatialCameraState, SpatialCanvasProps } from './types'
 
@@ -39,6 +40,7 @@ export default function SpatialCanvas({
   const labelPortal = useMemo(() => (labelLayer ? { current: labelLayer } : null), [labelLayer])
   const [initialCamera] = useState(cameraState)
   const [zoom, setZoom] = useState(100)
+  const [selectionBox, setSelectionBox] = useState<SpatialScreenRect | null>(null)
   const [contextLost, setContextLost] = useState(false)
   const handleContextLost = useCallback(() => {
     setContextLost(true)
@@ -84,8 +86,21 @@ export default function SpatialCanvas({
             onCameraChange={onCameraChange}
             onZoomChange={setZoom}
             onContextLost={handleContextLost}
+            onSelectionBox={setSelectionBox}
           />
         </Canvas>
+      )}
+      {selectionBox && (
+        <div
+          data-spatial-selection
+          className="pointer-events-none absolute z-20 border border-primary bg-primary/10"
+          style={{
+            left: selectionBox.left,
+            top: selectionBox.top,
+            width: selectionBox.width,
+            height: selectionBox.height,
+          }}
+        />
       )}
       {!presentation.playing && (
         <SpatialControls actions={actions} focused={focusId !== null} zoom={zoom} />

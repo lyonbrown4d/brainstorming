@@ -10,6 +10,7 @@ import { interactAnnotationTopic } from '../../state/annotationInteraction'
 import { selectTopic } from '../../state/selection'
 import { TopicMetadataBadges } from '../metadata/TopicMetadataBadges'
 import { SpatialTopicLabel } from './SpatialTopicLabel'
+import { usePresentation } from '../../state/presentation'
 
 interface SpatialTopicProps {
   readonly node: SpatialNode
@@ -18,6 +19,7 @@ interface SpatialTopicProps {
   readonly root: boolean
   readonly detailed: boolean
   readonly selected: boolean
+  readonly dropTarget: boolean
   readonly muted: boolean
   readonly fill: string
   readonly branchColor: string
@@ -36,6 +38,7 @@ export const SpatialTopic = memo(function SpatialTopic({
   root,
   detailed,
   selected,
+  dropTarget,
   muted,
   fill,
   branchColor,
@@ -60,7 +63,7 @@ export const SpatialTopic = memo(function SpatialTopic({
   return (
     <Billboard position={[...node.position]} follow>
       <group rotation={[0.025, -0.09, 0]}>
-        {selected && (
+        {(selected || dropTarget) && (
           <RoundedBox
             args={[width + 0.065, height + 0.065, 0.17]}
             position={[0, 0, -0.03]}
@@ -68,7 +71,11 @@ export const SpatialTopic = memo(function SpatialTopic({
             smoothness={2}
             bevelSegments={2}
           >
-            <meshBasicMaterial color="#8b78ee" transparent opacity={muted ? 0.25 : 0.9} />
+            <meshBasicMaterial
+              color={dropTarget ? '#a78bfa' : '#8b78ee'}
+              transparent
+              opacity={muted ? 0.25 : 0.9}
+            />
           </RoundedBox>
         )}
         <RoundedBox
@@ -78,7 +85,9 @@ export const SpatialTopic = memo(function SpatialTopic({
           bevelSegments={detailed ? 2 : 1}
           castShadow={detailed}
           receiveShadow={detailed}
+          userData={{ spatialTopicId: topic.id }}
           onClick={(event) => {
+            if (usePresentation.getState().playing) return
             event.stopPropagation()
             if (interactAnnotationTopic(topic.id)) return
             if (event.metaKey || event.ctrlKey || event.shiftKey) selectTopic(topic.id, true)
@@ -86,7 +95,14 @@ export const SpatialTopic = memo(function SpatialTopic({
           }}
           onDoubleClick={(event) => {
             event.stopPropagation()
-            useEditor.getState().startEdit(topic.id, undefined, 'spatial')
+            useEditor
+              .getState()
+              .startEdit(
+                topic.id,
+                undefined,
+                'spatial',
+                topic.title === '新主题' || topic.title === '游离主题' ? 'all' : 'end',
+              )
           }}
         >
           {detailed ? (
@@ -120,13 +136,37 @@ export const SpatialTopic = memo(function SpatialTopic({
           style={{ pointerEvents: 'none' }}
         >
           <div
-            className="relative flex flex-col items-center justify-center gap-1 px-4 py-2"
+            role="presentation"
+            data-spatial-card-id={topic.id}
+            data-drop-target={dropTarget || undefined}
+            className={`pointer-events-auto relative flex flex-col items-center justify-center gap-1 rounded-md px-4 py-2 ${dropTarget ? 'ring-2 ring-primary ring-offset-2' : ''}`}
             style={{
               width: width * 100,
               height: height * 100,
               opacity: muted ? 0.34 : 1,
               color: labelColor,
               fontFamily,
+            }}
+            onClick={(event) => {
+              if (usePresentation.getState().playing) return
+              event.stopPropagation()
+              if (interactAnnotationTopic(topic.id)) return
+              if (event.metaKey || event.ctrlKey || event.shiftKey) selectTopic(topic.id, true)
+              else onSelect(topic.id)
+              event.currentTarget
+                .querySelector<HTMLButtonElement>('[data-spatial-topic-id]')
+                ?.focus({ preventScroll: true })
+            }}
+            onDoubleClick={(event) => {
+              event.stopPropagation()
+              useEditor
+                .getState()
+                .startEdit(
+                  topic.id,
+                  undefined,
+                  'spatial',
+                  topic.title === '新主题' || topic.title === '游离主题' ? 'all' : 'end',
+                )
             }}
           >
             {hasImage && imageAsset && (
