@@ -28,6 +28,8 @@ pnpm dev
 
 主题面板提供多行备注、一张主题图片和多个附件。图片支持 PNG/JPEG/GIF/WebP，嵌入画布并可预览；附件嵌入文件，可另存和移除。内容操作参与撤销，复制 Sheet 保留内容并可独立修改。
 
+顶部 2D/3D 开关切换当前 Sheet 的视图。三维视图复用 Three.js、React Three Fiber 与 Drei，提供空间卡片、分支聚焦、路径返回和相机控制。单击选择主题，双击或选中后按 F2 在卡片内使用 Lexical 编辑；独立聚焦按钮打开分支和主题面板。触控板双指平移、捏合缩放，Alt/Option + 双指旋转；鼠标拖动旋转、右键拖动平移。相机与聚焦仅保留于本次会话，各 Sheet 独立，不影响保存状态或文件协议；图形能力不可用时可返回二维继续编辑。
+
 使用 ⌘/Ctrl+S 保存，⌘/Ctrl+O 打开，⌘/Ctrl+N 新建。支持打开 `.trelyx` 原生文件和 `.xmind`；XMind 转为未保存文档，首次保存创建 `.trelyx`，源文件保持原样。导入报告列出样式调整和未导入内容。恢复提示需要主动选择；无效文件不会替换当前文档。
 
 桌面标题栏与文档工具栏合并，顶部空白可拖动窗口。macOS 保留原生红黄绿按钮；Windows/Linux 使用原生窗口按钮覆盖层。全屏与窗口失焦会同步调整标题栏。
@@ -54,7 +56,7 @@ pnpm moon run trelyx:package
 
 - `src/core`：主题树、命令、历史和版本化 JSON，独立于 UI 框架。
 - `src/formats`：原生 ZIP 容器、现代与旧版 XMind 导入及转换报告。
-- `src/layout`：基于 d3-hierarchy 的左右树布局。
+- `src/layout`：基于 d3-hierarchy 的左右树布局与派生空间布局。
 - `src/renderer/index.html`、`src/renderer/src`：React Flow 画布、Zustand 状态和 shadcn/ui 通用组件。
 - `src/main`：窗口、菜单、受信任 IPC、本地文件和恢复。
 - `src/preload`：白名单 bridge 与隔离上下文。

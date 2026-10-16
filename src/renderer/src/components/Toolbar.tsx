@@ -17,6 +17,8 @@ import type { RecentFile } from '@shared/contracts'
 import { useEditor, editorIsDirty } from '../state/editor'
 import { newDocument, openDocument, saveDocument } from '../state/files'
 import { Button } from './ui/button'
+import { ViewModeSwitch } from './ViewModeSwitch'
+import { useSpatialView } from '../state/spatial'
 
 type RecentFilesState =
   { status: 'loading' } | { status: 'ready'; files: readonly RecentFile[] } | { status: 'error' }
@@ -100,8 +102,10 @@ export function Toolbar() {
   const outline = useEditor((state) => state.outlineOpen)
   const inspector = useEditor((state) => state.inspectorOpen)
   const dirty = useEditor(editorIsDirty)
+  const sheetId = useEditor((state) => state.activeSheetId)
+  const spatial = useSpatialView((state) => state.sheets[sheetId]?.mode === '3d')
   return (
-    <header className="toolbar">
+    <header className="toolbar relative">
       <div className="toolbar-identity">
         <div className="toolbar-brand">
           <Network size={25} strokeWidth={1.7} />
@@ -165,6 +169,7 @@ export function Toolbar() {
           {busy ? '正在处理…' : dirty ? '未保存' : path ? '已保存' : '本地草稿'}
         </span>
       </div>
+      <ViewModeSwitch />
       <div className="toolbar-actions">
         <Button
           variant="ghost"
@@ -182,14 +187,14 @@ export function Toolbar() {
         <Button
           variant="ghost"
           className="panel-toggle"
-          aria-label="样式面板"
+          aria-label={spatial ? '主题面板' : '样式面板'}
           aria-pressed={inspector}
           onClick={() => {
             useEditor.setState({ inspectorOpen: !inspector })
           }}
         >
           <SlidersHorizontal size={20} />
-          <span>样式</span>
+          <span>{spatial ? '主题' : '样式'}</span>
         </Button>
       </div>
     </header>

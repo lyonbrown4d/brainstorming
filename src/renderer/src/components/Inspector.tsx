@@ -1,6 +1,8 @@
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ChevronRight, Trash2 } from 'lucide-react'
 import { getParentId } from '@core'
+import { useEffect } from 'react'
 import { useEditor } from '../state/editor'
+import { useSpatialView } from '../state/spatial'
 import { TopicEditor } from './TopicEditor'
 import { Button } from './ui/button'
 import { TopicFormatting } from './TopicFormatting'
@@ -10,6 +12,14 @@ import { FieldSelect } from './FieldSelect'
 export function Inspector() {
   const document = useEditor((state) => state.history.document)
   const selectedId = useEditor((state) => state.selectedId)
+  const sheetId = useEditor((state) => state.activeSheetId)
+  const spatial = useSpatialView((state) => state.sheets[sheetId]?.mode === '3d')
+  const editingId = useEditor((state) => state.editingId)
+  const editingSurface = useEditor((state) => state.editingSurface)
+  useEffect(() => {
+    if (spatial && editingId && editingSurface === 'inspector')
+      window.document.getElementById(`topic-inspector-${editingId}`)?.focus({ preventScroll: true })
+  }, [spatial, editingId, editingSurface])
   const topic = document.topics[selectedId]
   if (!topic) return null
   const parentId = getParentId(document, selectedId)
@@ -44,11 +54,11 @@ export function Inspector() {
       aria-label="主题面板"
     >
       <div className="style-panel-heading flex items-center justify-between px-[18px] pt-5 pb-4 [&_h2]:m-0 [&_h2]:text-lg [&_h2]:font-semibold">
-        <h2>样式</h2>
+        <h2>{spatial ? '主题内容' : '样式'}</h2>
         <Button
           variant="ghost"
           size="icon"
-          aria-label="关闭样式面板"
+          aria-label={spatial ? '关闭主题面板' : '关闭样式面板'}
           onClick={() => {
             useEditor.setState({ inspectorOpen: false })
           }}

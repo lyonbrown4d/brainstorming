@@ -1,6 +1,6 @@
 import type { Command, HistoryState, MindMapDocument, MindMapWorkbook } from '@core'
 
-export type EditingSurface = 'canvas' | 'inspector' | 'notes'
+export type EditingSurface = 'canvas' | 'spatial' | 'inspector' | 'notes'
 
 export interface SheetSession {
   history: HistoryState

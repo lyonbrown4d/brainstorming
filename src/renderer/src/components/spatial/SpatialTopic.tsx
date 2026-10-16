@@ -1,0 +1,198 @@
+/* eslint react/no-unknown-property: "off" -- React Three Fiber uses Three.js JSX properties. */
+import { Billboard, Html, RoundedBox } from '@react-three/drei'
+import { ChevronLeft, ChevronRight, FileText, Focus, Paperclip } from 'lucide-react'
+import { memo, type RefObject } from 'react'
+import type { DocumentAsset, Topic } from '@core'
+import type { SpatialNode } from '../../../../layout/spatial'
+import { Button } from '../ui/button'
+import { useEditor } from '../../state/editor'
+import { SpatialTopicLabel } from './SpatialTopicLabel'
+
+interface SpatialTopicProps {
+  readonly node: SpatialNode
+  readonly topic: Topic
+  readonly labelPortal: RefObject<HTMLDivElement>
+  readonly root: boolean
+  readonly detailed: boolean
+  readonly selected: boolean
+  readonly muted: boolean
+  readonly fill: string
+  readonly branchColor: string
+  readonly imageAsset: DocumentAsset | undefined
+  readonly onSelect: (id: string) => void
+  readonly onFocus: (id: string) => void
+  readonly onCollapse: (id: string) => void
+}
+
+export const SpatialTopic = memo(function SpatialTopic({
+  node,
+  topic,
+  labelPortal,
+  root,
+  detailed,
+  selected,
+  muted,
+  fill,
+  branchColor,
+  imageAsset,
+  onSelect,
+  onFocus,
+  onCollapse,
+}: SpatialTopicProps) {
+  const width = node.width
+  const height = node.height
+  const hasImage = Boolean(
+    topic.image &&
+    imageAsset &&
+    ['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(imageAsset.mimeType),
+  )
+  const content = Boolean(topic.notes) || Boolean(topic.attachments?.length)
+  const radius = topic.style?.shape === 'rectangle' ? 0.012 : Math.min(height * 0.2, 0.065)
+  const labelColor = topic.style?.color ?? (root ? '#ffffff' : '#26273c')
+  return (
+    <Billboard position={[...node.position]} follow>
+      <group rotation={[0.025, -0.09, 0]}>
+        {selected && (
+          <RoundedBox
+            args={[width + 0.065, height + 0.065, 0.17]}
+            position={[0, 0, -0.03]}
+            radius={Math.min(0.08, radius + 0.015)}
+            smoothness={2}
+            bevelSegments={2}
+          >
+            <meshBasicMaterial color="#8b78ee" transparent opacity={muted ? 0.25 : 0.9} />
+          </RoundedBox>
+        )}
+        <RoundedBox
+          args={[width, height, 0.16]}
+          radius={radius}
+          smoothness={detailed ? 2 : 1}
+          bevelSegments={detailed ? 2 : 1}
+          castShadow={detailed}
+          receiveShadow={detailed}
+          onClick={(event) => {
+            event.stopPropagation()
+            onSelect(topic.id)
+          }}
+          onDoubleClick={(event) => {
+            event.stopPropagation()
+            useEditor.getState().startEdit(topic.id, undefined, 'spatial')
+          }}
+        >
+          {detailed ? (
+            <meshStandardMaterial
+              color={fill}
+              roughness={0.36}
+              metalness={0.04}
+              transparent={muted}
+              opacity={muted ? 0.28 : 1}
+            />
+          ) : (
+            <meshLambertMaterial color={fill} transparent={muted} opacity={muted ? 0.28 : 1} />
+          )}
+        </RoundedBox>
+        {!root && detailed && (
+          <RoundedBox
+            args={[0.035, Math.max(0.12, height - 0.17), 0.03]}
+            position={[-width / 2 + 0.045, 0, 0.087]}
+            radius={0.012}
+            smoothness={1}
+          >
+            <meshBasicMaterial color={branchColor} transparent opacity={muted ? 0.2 : 0.65} />
+          </RoundedBox>
+        )}
+        <Html
+          portal={labelPortal}
+          transform
+          distanceFactor={4}
+          position={[0, 0, 0.099]}
+          zIndexRange={[15, 1]}
+          style={{ pointerEvents: 'none' }}
+        >
+          <div
+            className="relative flex flex-col items-center justify-center gap-1 px-4 py-2"
+            style={{
+              width: width * 100,
+              height: height * 100,
+              opacity: muted ? 0.34 : 1,
+              color: labelColor,
+            }}
+          >
+            {hasImage && imageAsset && (
+              <img
+                src={`data:${imageAsset.mimeType};base64,${imageAsset.data}`}
+                alt={imageAsset.name}
+                className="max-h-[110px] max-w-full rounded-md object-contain"
+                style={{ maxHeight: Math.max(28, height * 100 - 60) }}
+                draggable={false}
+              />
+            )}
+            <SpatialTopicLabel
+              topic={topic}
+              root={root}
+              depth={node.depth}
+              selected={selected}
+              maxHeight={hasImage ? 44 : Math.max(28, height * 100 - (content ? 36 : 20))}
+              color={labelColor}
+              onSelect={onSelect}
+            />
+            {selected && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-xs"
+                className="pointer-events-auto absolute -top-3 right-1 size-6 rounded-full border-border/70 bg-background text-muted-foreground shadow-sm"
+                aria-label={`聚焦主题 ${topic.title}`}
+                title="聚焦此主题分支"
+                onPointerDown={(event) => {
+                  event.stopPropagation()
+                }}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onFocus(topic.id)
+                }}
+              >
+                <Focus className="size-3" />
+              </Button>
+            )}
+            {content && (
+              <span className="flex h-4 items-center justify-center gap-2 opacity-65">
+                {topic.notes && <FileText className="size-3" aria-label="含备注" />}
+                {Boolean(topic.attachments?.length) && (
+                  <span className="flex items-center gap-0.5 text-[10px]">
+                    <Paperclip className="size-3" />
+                    {topic.attachments?.length}
+                  </span>
+                )}
+              </span>
+            )}
+            {topic.children.length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-xs"
+                className={`pointer-events-auto absolute top-1/2 size-5 -translate-y-1/2 rounded-full border-border/70 bg-background text-muted-foreground shadow-sm ${topic.side === 'left' && !root ? '-left-2.5' : '-right-2.5'}`}
+                aria-label={`${topic.collapsed ? '展开' : '折叠'} ${topic.title}`}
+                onPointerDown={(event) => {
+                  event.stopPropagation()
+                }}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onCollapse(topic.id)
+                }}
+              >
+                {topic.collapsed ? (
+                  topic.children.length
+                ) : topic.side === 'left' && !root ? (
+                  <ChevronLeft />
+                ) : (
+                  <ChevronRight />
+                )}
+              </Button>
+            )}
+          </div>
+        </Html>
+      </group>
+    </Billboard>
+  )
+})

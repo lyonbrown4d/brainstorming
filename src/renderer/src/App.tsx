@@ -12,7 +12,9 @@ import { Canvas, ZoomControls } from './components/Canvas'
 import { SheetTabs } from './components/SheetTabs'
 import { Inspector } from './components/Inspector'
 import { Outline } from './components/Outline'
+import { SpatialWorkspace } from './components/SpatialWorkspace'
 import { useEditor } from './state/editor'
+import { useSpatialView } from './state/spatial'
 import { restoreRecovery } from './state/files'
 import { useFileLifecycle } from './hooks/useFileLifecycle'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
@@ -34,6 +36,7 @@ export function App() {
   const outline = useEditor((state) => state.outlineOpen)
   const inspector = useEditor((state) => state.inspectorOpen)
   const activeSheetId = useEditor((state) => state.activeSheetId)
+  const spatial = useSpatialView((state) => state.sheets[activeSheetId]?.mode === '3d')
   const error = useEditor((state) => state.error)
   const recovery = useEditor((state) => state.recovery)
   const topics = useEditor((state) => state.history.document.topics)
@@ -92,7 +95,11 @@ export function App() {
                       </AnimatedPanel>
                     )}
                   </AnimatePresence>
-                  <Canvas key={activeSheetId} />
+                  {spatial ? (
+                    <SpatialWorkspace key={activeSheetId} />
+                  ) : (
+                    <Canvas key={activeSheetId} />
+                  )}
                   <AnimatePresence initial={false}>
                     {inspector && (
                       <AnimatedPanel key="inspector" side="right">
@@ -104,7 +111,7 @@ export function App() {
                 <footer className="status-bar">
                   <SheetTabs />
                   <span className="topic-count">{count} 个主题</span>
-                  <ZoomControls />
+                  {!spatial && <ZoomControls />}
                   <KeyboardHelp />
                 </footer>
               </ReactFlowProvider>

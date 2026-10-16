@@ -112,7 +112,7 @@ export function TopicEditorPlugin({
             state.add(event.key === 'Tab' ? 'child' : 'sibling')
             return true
           }
-          if (surface === 'canvas' && !ownsDraft()) {
+          if ((surface === 'canvas' || surface === 'spatial') && !ownsDraft()) {
             if (event.key === 'Delete' || event.key === 'Backspace') {
               event.preventDefault()
               state.remove()

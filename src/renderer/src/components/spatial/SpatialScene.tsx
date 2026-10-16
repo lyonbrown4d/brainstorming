@@ -1,0 +1,226 @@
+/* eslint react/no-unknown-property: "off" -- React Three Fiber uses Three.js JSX properties. */
+import { useEffect, useMemo, useRef, type RefObject } from 'react'
+import { useThree } from '@react-three/fiber'
+import {
+  CameraControls,
+  AdaptiveDpr,
+  GizmoHelper,
+  GizmoViewcube,
+  Grid,
+  CameraControlsImpl,
+} from '@react-three/drei'
+import type { SpatialLayout } from '../../../../layout/spatial'
+import { useSpatialCamera } from '../../hooks/useSpatialCamera'
+import { useSpatialGestures } from '../../hooks/useSpatialGestures'
+import { branchColors, branchFills } from '../../lib/topicAppearance'
+import { useEditor } from '../../state/editor'
+import { SpatialConnections } from './SpatialConnections'
+import { SpatialTopic } from './SpatialTopic'
+import type { SpatialCameraActions, SpatialCameraState, SpatialCanvasProps } from './types'
+
+const CUBE_FACES = ['右', '左', '上', '下', '前', '后']
+const MOUSE_ACTIONS = {
+  left: CameraControlsImpl.ACTION.ROTATE,
+  middle: CameraControlsImpl.ACTION.DOLLY,
+  right: CameraControlsImpl.ACTION.TRUCK,
+  wheel: CameraControlsImpl.ACTION.NONE,
+}
+
+interface SpatialSceneProps extends Omit<SpatialCanvasProps, 'cameraState'> {
+  readonly layout: SpatialLayout
+  readonly labelPortal: RefObject<HTMLDivElement>
+  readonly focusIds: ReadonlySet<string> | null
+  readonly initialCamera: SpatialCameraState | undefined
+  readonly actions: RefObject<SpatialCameraActions | null>
+  readonly onZoomChange: (zoom: number) => void
+  readonly onContextLost: () => void
+}
+
+export function SpatialScene({
+  document,
+  selectedId,
+  focusId,
+  layout,
+  labelPortal,
+  focusIds,
+  initialCamera,
+  actions,
+  onSelect,
+  onFocus,
+  onCollapse,
+  onCameraChange,
+  onZoomChange,
+  onContextLost,
+}: SpatialSceneProps) {
+  const controls = useRef<CameraControlsImpl | null>(null)
+  const gl = useThree((state) => state.gl)
+  const editing = useEditor((state) => state.editingSurface === 'spatial')
+  const framedNodes = useMemo(
+    () => (focusIds ? layout.nodes.filter((node) => focusIds.has(node.id)) : layout.nodes),
+    [focusIds, layout.nodes],
+  )
+  const structureKey = `${document.id}:${layout.nodes.map((node) => `${node.id}/${document.topics[node.id]?.side ?? ''}`).join(',')}:${layout.edges.map((edge) => `${edge.source}>${edge.target}`).join(',')}`
+  const { report, orient, smoothTime } = useSpatialCamera({
+    controls,
+    actions,
+    nodes: framedNodes,
+    structureKey,
+    focusId,
+    initialCamera,
+    onCameraChange,
+    onZoomChange,
+  })
+  useSpatialGestures({
+    canvas: gl.domElement,
+    controls,
+    enabled: !editing,
+    animation: smoothTime > 0,
+  })
+  const nodesById = useMemo(
+    () => new Map(layout.nodes.map((node) => [node.id, node])),
+    [layout.nodes],
+  )
+  const palette = useMemo(() => {
+    const colors = new Map<string, string>()
+    const fills = new Map<string, string>()
+    for (const [index, id] of (document.topics[document.rootId]?.children ?? []).entries()) {
+      colors.set(id, branchColors[index % branchColors.length] ?? '#9788d3')
+      fills.set(id, branchFills[index % branchFills.length] ?? '#d9d3fa')
+    }
+    return { colors, fills }
+  }, [document.rootId, document.topics])
+  const floor = layout.bounds.min[1] - 1.05
+  const shadowExtent = Math.max(8, Math.min(40, layout.bounds.max[0] - layout.bounds.min[0]))
+  const extent = Math.hypot(
+    ...layout.bounds.max.map((value, index) => value - (layout.bounds.min[index] ?? 0)),
+  )
+  const detailed = layout.nodes.length <= 250
+
+  useEffect(() => {
+    const canvas = gl.domElement
+    const lost = (event: Event): void => {
+      event.preventDefault()
+      onContextLost()
+    }
+    canvas.addEventListener('webglcontextlost', lost)
+    return () => {
+      canvas.removeEventListener('webglcontextlost', lost)
+    }
+  }, [gl, onContextLost])
+
+  return (
+    <>
+      <color attach="background" args={['#fafafe']} />
+      <ambientLight intensity={1.9} />
+      <hemisphereLight args={['#ffffff', '#c4bed7', 1.2]} />
+      <directionalLight
+        position={[-5, 12, 10]}
+        intensity={2.6}
+        castShadow={detailed}
+        shadow-mapSize={[1024, 1024]}
+        shadow-camera-left={-shadowExtent}
+        shadow-camera-right={shadowExtent}
+        shadow-camera-top={shadowExtent}
+        shadow-camera-bottom={-shadowExtent}
+        shadow-camera-near={0.1}
+        shadow-camera-far={80}
+        shadow-bias={-0.001}
+        shadow-normalBias={0.035}
+        shadow-radius={5}
+      />
+      <directionalLight position={[8, 3, -5]} intensity={0.65} color="#e4ddff" />
+      <mesh position={[0, floor, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[240, 240]} />
+        <shadowMaterial transparent opacity={0.08} />
+      </mesh>
+      <Grid
+        position={[0, floor - 0.015, 0]}
+        args={[100, 100]}
+        cellSize={1}
+        sectionSize={5}
+        cellThickness={0.45}
+        sectionThickness={0.55}
+        cellColor="#d9dbea"
+        sectionColor="#d9dbea"
+        fadeDistance={35}
+        fadeStrength={2.4}
+        infiniteGrid
+      />
+      <SpatialConnections
+        document={document}
+        layout={layout}
+        nodesById={nodesById}
+        colors={palette.colors}
+        focusIds={focusIds}
+      />
+      {layout.nodes.map((node) => {
+        const topic = document.topics[node.id]
+        if (!topic) return null
+        const root = node.id === document.rootId
+        return (
+          <SpatialTopic
+            key={node.id}
+            node={node}
+            topic={topic}
+            labelPortal={labelPortal}
+            root={root}
+            detailed={detailed}
+            selected={node.id === selectedId}
+            muted={focusIds !== null && !focusIds.has(node.id)}
+            fill={
+              topic.style?.fill ??
+              (root
+                ? '#7666c4'
+                : node.depth === 1
+                  ? (palette.fills.get(node.branchId) ?? '#d9d3fa')
+                  : '#ffffff')
+            }
+            branchColor={palette.colors.get(node.branchId) ?? '#9788d3'}
+            imageAsset={topic.image ? document.assets?.[topic.image.assetId] : undefined}
+            onSelect={onSelect}
+            onFocus={onFocus}
+            onCollapse={onCollapse}
+          />
+        )
+      })}
+      <CameraControls
+        ref={controls}
+        makeDefault
+        regress
+        enabled={!editing}
+        mouseButtons={MOUSE_ACTIONS}
+        minDistance={1.5}
+        maxDistance={Math.max(100, extent * 10)}
+        minPolarAngle={0.55}
+        maxPolarAngle={1.82}
+        minAzimuthAngle={-1.12}
+        maxAzimuthAngle={1.12}
+        smoothTime={smoothTime}
+        draggingSmoothTime={smoothTime * 0.7}
+        dollySpeed={0.7}
+        truckSpeed={1.4}
+        onRest={report}
+        onSleep={report}
+      />
+      <AdaptiveDpr />
+      <GizmoHelper alignment="bottom-right" margin={[62, 124]}>
+        <GizmoViewcube
+          faces={CUBE_FACES}
+          font="500 34px system-ui, sans-serif"
+          color="#f3f1fa"
+          hoverColor="#e5dfff"
+          textColor="#85809a"
+          strokeColor="#dedbea"
+          opacity={0.9}
+          onClick={(event) => {
+            event.stopPropagation()
+            const direction =
+              event.object.position.lengthSq() > 0 ? event.object.position : event.face?.normal
+            if (direction) orient(direction)
+            return null
+          }}
+        />
+      </GizmoHelper>
+    </>
+  )
+}

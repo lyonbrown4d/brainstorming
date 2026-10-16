@@ -17,6 +17,7 @@ import {
   withHistory,
 } from './workbookState'
 import { exampleWorkbook } from './example'
+import { useSpatialView } from './spatial'
 
 const initial = loadWorkbook(exampleWorkbook())
 function editSheets(command: WorkbookCommand, nextId?: string): void {
@@ -80,6 +81,8 @@ export const useEditor = create<EditorState>((set, get) => ({
     set({ selectedId: id })
   },
   startEdit: (id, value, surface = 'canvas') => {
+    const spatial = useSpatialView.getState().sheets[get().activeSheetId]?.mode === '3d'
+    if (spatial && surface === 'canvas') surface = 'spatial'
     if (get().editingId === id && get().editingSurface === surface) return
     get().commitDraft()
     if (get().editingId) return
@@ -89,6 +92,9 @@ export const useEditor = create<EditorState>((set, get) => ({
         selectedId: id,
         editingId: id,
         editingSurface: surface,
+        ...(spatial && (surface === 'inspector' || surface === 'notes')
+          ? { inspectorOpen: true }
+          : {}),
         draft: value ?? (surface === 'notes' ? (topic.notes ?? '') : topic.title),
       })
   },
@@ -189,6 +195,7 @@ export const useEditor = create<EditorState>((set, get) => ({
   },
   replace: (document, path = null, recovered = false) => {
     const loaded = loadWorkbook(document)
+    useSpatialView.getState().reset()
     set({
       ...loaded,
       editingId: null,

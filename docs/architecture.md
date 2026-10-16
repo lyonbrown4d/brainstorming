@@ -2,6 +2,8 @@
 
 Trelyx 是单 package 桌面应用。React Flow 负责画布交互，d3-hierarchy 负责树布局，shadcn/ui 和 Radix 负责通用控件，dnd-kit 负责画布标签排序，Zustand 保存编辑状态，Electron 负责系统集成。
 
+三维视图按需加载 Three.js、React Three Fiber 和 Drei。`layout/spatial.ts` 从同一主题树派生空间坐标，Drei 负责相机、圆角几何、连线和中文标签投影；不将 Three 类型或 XYZ 坐标写入 core。独立 Zustand 视图状态保存各 Sheet 的维度、聚焦和相机，打开文档时重置。标题原位编辑仍由现有 Lexical 扩展提交类型化改名命令；触控板适配仅将浏览器 wheel 意图转换为 CameraControls 的平移、缩放和旋转调用。
+
 ## 目录与依赖
 
 采用 electron-vite 推荐目录，自动识别主进程、预加载和渲染端入口：

@@ -15,6 +15,7 @@ Trelyx 是基于 React Flow + Electron 的本地优先桌面思维导图工具�
 - `src/shared`：主进程、preload 与 renderer 共用的白名单契约。
 - Core 不依赖 React、DOM、Electron、React Flow 或其 Node/Edge 类型。
 - React Flow 节点/边是文档模型的视图投影，不是持久化协议。
+- 三维视图使用 Three.js、React Three Fiber 与 Drei；空间坐标由纯布局派生，相机、聚焦和视图模式按 Sheet 保存在会话状态，不写入文档或历史。二维与三维共用主题命令和 Lexical 编辑链路。
 - 主题树维护稳定 ID、唯一父节点、有序子节点、禁止循环和不可达节点。
 - 所有文档变更必须通过类型化命令；一次用户操作对应一次撤销。
 - 拖动中间位置、选区、测量缓存不写入文档历史；拖动结束提交移动命令。

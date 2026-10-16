@@ -1,0 +1,85 @@
+import { useCallback, useMemo, useRef, useState } from 'react'
+import { Canvas } from '@react-three/fiber'
+import { PCFShadowMap } from 'three'
+import { layoutSpatialDocument, spatialSubtreeIds } from '../../../../layout/spatial'
+import { SpatialControls } from './SpatialControls'
+import { SpatialScene } from './SpatialScene'
+import type { SpatialCameraActions, SpatialCanvasProps } from './types'
+
+export type { SpatialCameraState, SpatialCanvasProps } from './types'
+
+export default function SpatialCanvas({
+  document,
+  selectedId,
+  focusId,
+  cameraState,
+  onSelect,
+  onFocus,
+  onCollapse,
+  onCameraChange,
+}: SpatialCanvasProps) {
+  const layout = useMemo(() => layoutSpatialDocument(document), [document])
+  const extent = Math.hypot(
+    ...layout.bounds.max.map((value, index) => value - (layout.bounds.min[index] ?? 0)),
+  )
+  const focusIds = useMemo(
+    () => (focusId ? spatialSubtreeIds(document, focusId) : null),
+    [document, focusId],
+  )
+  const actions = useRef<SpatialCameraActions | null>(null)
+  const [labelLayer, setLabelLayer] = useState<HTMLDivElement | null>(null)
+  const labelPortal = useMemo(() => (labelLayer ? { current: labelLayer } : null), [labelLayer])
+  const [initialCamera] = useState(cameraState)
+  const [zoom, setZoom] = useState(100)
+  const [contextLost, setContextLost] = useState(false)
+  const handleContextLost = useCallback(() => {
+    setContextLost(true)
+  }, [])
+
+  if (contextLost) throw new Error('3D 图形上下文已丢失，请重新进入 3D 视图。')
+
+  return (
+    <section
+      className="relative h-full w-full overflow-hidden bg-[#fafafe]"
+      aria-label="3D 思维导图"
+      data-spatial-surface
+    >
+      <div
+        ref={setLabelLayer}
+        className="pointer-events-none absolute inset-0 z-10 overflow-hidden"
+      />
+      {labelPortal && (
+        <Canvas
+          frameloop="demand"
+          dpr={[1, 1.65]}
+          camera={{ position: [3, 4.6, 20], fov: 42, near: 0.1, far: Math.max(500, extent * 20) }}
+          shadows={layout.nodes.length <= 250 ? { type: PCFShadowMap } : false}
+          gl={{ antialias: true, alpha: false, powerPreference: 'default' }}
+          fallback={
+            <p className="flex h-full items-center justify-center text-sm text-muted-foreground">
+              当前设备无法创建 3D 画布，请返回二维视图。
+            </p>
+          }
+        >
+          <SpatialScene
+            document={document}
+            selectedId={selectedId}
+            focusId={focusId}
+            layout={layout}
+            labelPortal={labelPortal}
+            focusIds={focusIds}
+            initialCamera={initialCamera}
+            actions={actions}
+            onSelect={onSelect}
+            onFocus={onFocus}
+            onCollapse={onCollapse}
+            onCameraChange={onCameraChange}
+            onZoomChange={setZoom}
+            onContextLost={handleContextLost}
+          />
+        </Canvas>
+      )}
+      <SpatialControls actions={actions} focused={focusId !== null} zoom={zoom} />
+    </section>
+  )
+}
