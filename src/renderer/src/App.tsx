@@ -33,9 +33,7 @@ import './styles/ui.css'
 import './styles/base.css'
 import './styles/chrome.css'
 import './styles/window.css'
-import './styles/workspace.css'
 import './styles/topics.css'
-import './styles/controls.css'
 import './styles/motion.css'
 
 export function App() {
@@ -58,14 +56,14 @@ export function App() {
       <MotionConfig reducedMotion="user">
         <TooltipProvider>
           <div
-            className="app-shell"
+            className="app-shell flex h-full w-full min-w-0 flex-col"
             data-platform={chrome.platform}
             data-focused={chrome.focused}
             data-fullscreen={chrome.fullScreen}
           >
             {!playing && (screen === 'editor' ? <Toolbar /> : <WorkspaceHeader />)}
-            <div className="app-body">
-              <main className="workspace-main min-h-0">
+            <div className="app-body relative flex min-h-0 flex-1">
+              <main className="workspace-main relative flex min-h-0 min-w-0 flex-1 flex-col">
                 {recovery && (
                   <div className="recovery-banner" role="status">
                     <span>发现上次的自动恢复记录，是否继续之前的思路？</span>
@@ -105,7 +103,7 @@ export function App() {
                   <CreationWorkspace />
                 ) : (
                   <ReactFlowProvider>
-                    <div className="workspace-content">
+                    <div className="workspace-content relative flex min-h-0 min-w-0 flex-1">
                       <AnimatePresence initial={false}>
                         {outline && !playing && (
                           <AnimatedPanel key="outline">
@@ -128,9 +126,11 @@ export function App() {
                     </div>
                     <PresentationPlayback />
                     {!playing && (
-                      <footer className="status-bar">
+                      <footer className="status-bar z-[8] flex h-12 min-h-12 shrink-0 items-center gap-2 border-t border-border bg-background pr-2 text-muted-foreground lg:gap-3 lg:pr-4">
                         <SheetTabs />
-                        <span className="topic-count">{count} 个主题</span>
+                        <span className="topic-count hidden shrink-0 text-xs whitespace-nowrap lg:inline">
+                          {count} 个主题
+                        </span>
                         {!spatial && <ZoomControls />}
                         <KeyboardHelp />
                       </footer>

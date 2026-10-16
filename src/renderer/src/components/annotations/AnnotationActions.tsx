@@ -8,7 +8,7 @@ import {
   useAnnotationInteraction,
 } from '../../state/annotationInteraction'
 import { isCompositionKey } from '../../state/keyboard'
-import { Button } from '../ui/button'
+import { DockAction } from '../DockAction'
 
 export function AnnotationActions() {
   const fromId = useAnnotationInteraction((state) => state.fromId)
@@ -46,9 +46,8 @@ export function AnnotationActions() {
   }, [])
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon"
+      <DockAction
+        caption="关联"
         aria-label="关联线"
         title="关联线：选中起点后点击目标主题"
         aria-pressed={Boolean(fromId)}
@@ -56,10 +55,9 @@ export function AnnotationActions() {
         onClick={toggleRelationMode}
       >
         <Link2 className="size-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
+      </DockAction>
+      <DockAction
+        caption="边界"
         aria-label="添加边界"
         title="为所选主题添加边界"
         onClick={() => {
@@ -67,10 +65,9 @@ export function AnnotationActions() {
         }}
       >
         <Group className="size-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
+      </DockAction>
+      <DockAction
+        caption="概要"
         aria-label="添加概要"
         title="为所选主题添加概要"
         onClick={() => {
@@ -78,16 +75,15 @@ export function AnnotationActions() {
         }}
       >
         <CornerDownRight className="size-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
+      </DockAction>
+      <DockAction
+        caption="标注"
         aria-label="添加标注"
         title="为所选主题添加标注"
         onClick={addSelectionCallout}
       >
         <MessageSquareText className="size-4" />
-      </Button>
+      </DockAction>
     </>
   )
 }

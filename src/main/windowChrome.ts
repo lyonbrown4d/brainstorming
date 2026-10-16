@@ -4,10 +4,10 @@ import type { WindowState } from '../shared/window'
 /** Let the OS own caption buttons, resizing, snapping, and native close behavior. */
 export function windowChromeOptions(platform: NodeJS.Platform): BrowserWindowConstructorOptions {
   return platform === 'darwin'
-    ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 16, y: 25 } }
+    ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 16, y: 21 } }
     : {
         titleBarStyle: 'hidden',
-        titleBarOverlay: { color: '#ffffff', symbolColor: '#6f778c', height: 64 },
+        titleBarOverlay: { color: '#ffffff', symbolColor: '#6f778c', height: 56 },
         autoHideMenuBar: true,
       }
 }

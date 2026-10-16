@@ -8,8 +8,10 @@ import { projectCanvas } from '../components/documents/projectCanvas'
 import { useEditor } from '../state/editor'
 import { selectedTopicIds, setSelectedTopics, useSelectedIds } from '../state/selection'
 import { usePresentation } from '../state/presentation'
+import { beginCanvasDrag, clearCanvasDrag, updateCanvasDrag } from '../state/canvasInteraction'
 
 interface DragSession {
+  readonly token: symbol
   readonly sheetId: string
   readonly document: MindMapDocument
   readonly roots: string[]
@@ -37,6 +39,56 @@ export function useCanvasDrag(projectedNodes: TopicFlowNode[]) {
   const primaryId = useEditor((state) => state.selectedId)
   const [nodes, setNodes, onNodesChange] = useNodesState<TopicFlowNode>(projectedNodes)
   const session = useRef<DragSession | null>(null)
+  const cancelled = useRef(false)
+  useEffect(() => {
+    const cancel = () => {
+      const active = session.current
+      if (!active) return
+      session.current = null
+      cancelled.current = true
+      clearCanvasDrag(active.token)
+      useEditor.setState({ dropTargetId: null })
+      const editor = useEditor.getState()
+      const selected = new Set(selectedTopicIds(editor))
+      setNodes((previous) => {
+        const measured = new Map(previous.map((node) => [node.id, node]))
+        return projectCanvas(editor.history.document).nodes.map((node) => ({
+          ...preserveMeasurement(node, measured.get(node.id)),
+          selected: selected.has(node.id),
+        }))
+      })
+    }
+    const validate = () => {
+      const active = session.current
+      const editor = useEditor.getState()
+      if (
+        active &&
+        (editor.activeSheetId !== active.sheetId ||
+          editor.history.document !== active.document ||
+          usePresentation.getState().playing)
+      )
+        cancel()
+    }
+    const key = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.isComposing || !session.current) return
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      cancel()
+    }
+    const unsubscribe = useEditor.subscribe(validate)
+    const unsubscribePresentation = usePresentation.subscribe(validate)
+    window.addEventListener('keydown', key, true)
+    window.addEventListener('pointercancel', cancel, true)
+    window.addEventListener('blur', cancel)
+    return () => {
+      cancel()
+      unsubscribe()
+      unsubscribePresentation()
+      window.removeEventListener('keydown', key, true)
+      window.removeEventListener('pointercancel', cancel, true)
+      window.removeEventListener('blur', cancel)
+    }
+  }, [setNodes])
   useEffect(() => {
     const ids = new Set(selectedIds.length ? selectedIds : [primaryId])
     setNodes((previous) => {
@@ -53,6 +105,7 @@ export function useCanvasDrag(projectedNodes: TopicFlowNode[]) {
   }, [projectedNodes, selectedIds, primaryId, playing, setNodes])
 
   const onDragStart: OnNodeDrag<TopicFlowNode> = (_event, dragged, draggedNodes) => {
+    cancelled.current = false
     if (usePresentation.getState().playing) return
     const editor = useEditor.getState()
     editor.commitDraft()
@@ -72,6 +125,7 @@ export function useCanvasDrag(projectedNodes: TopicFlowNode[]) {
     if (!roots.length) return
     const excluded = new Set(roots.flatMap((id) => getSubtreeIds(document, id)))
     session.current = {
+      token: beginCanvasDrag(document, current.activeSheetId, roots),
       sheetId: current.activeSheetId,
       document,
       roots,
@@ -96,15 +150,22 @@ export function useCanvasDrag(projectedNodes: TopicFlowNode[]) {
           : node
       }),
     )
-    const dropTargetId =
-      findCanvasDrop(active.document, projectedNodes, active.excluded, nodeCenter(dragged))
-        ?.targetId ?? null
+    const drop = findCanvasDrop(
+      active.document,
+      projectedNodes,
+      active.excluded,
+      nodeCenter(dragged),
+    )
+    updateCanvasDrag(active.token, drop)
+    const dropTargetId = drop?.targetId ?? null
     if (dropTargetId !== useEditor.getState().dropTargetId) useEditor.setState({ dropTargetId })
   }
   const onDragStop: OnNodeDrag<TopicFlowNode> = (_event, dragged, draggedNodes) => {
+    cancelled.current = false
     const active = session.current
     session.current = null
     if (!active) return
+    clearCanvasDrag(active.token)
     const editor = useEditor.getState()
     const anchor = draggedNodes.find((node) => node.id === active.anchorId) ?? dragged
     const origin = active.origins.get(anchor.id)
@@ -160,7 +221,11 @@ export function useCanvasDrag(projectedNodes: TopicFlowNode[]) {
   }
   return {
     nodes,
-    onNodesChange,
+    onNodesChange: (changes: Parameters<typeof onNodesChange>[0]) => {
+      onNodesChange(
+        cancelled.current ? changes.filter((change) => change.type !== 'position') : changes,
+      )
+    },
     onNodeDragStart: onDragStart,
     onNodeDrag: onDrag,
     onNodeDragStop: onDragStop,

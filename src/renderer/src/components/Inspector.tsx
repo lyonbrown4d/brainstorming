@@ -2,6 +2,8 @@ import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ChevronRight, Trash2 } from 
 import { getParentId } from '@core'
 import { useEffect } from 'react'
 import { useEditor } from '../state/editor'
+import { useSelectedIds } from '../state/selection'
+import { SelectionMarkers } from './workbench/SelectionMarkers'
 import { useSpatialView } from '../state/spatial'
 import { TopicRichTitle } from './metadata/TopicRichTitle'
 import { Button } from './ui/button'
@@ -21,6 +23,11 @@ export function Inspector() {
     if (spatial && editingId && editingSurface === 'inspector')
       window.document.getElementById(`topic-inspector-${editingId}`)?.focus({ preventScroll: true })
   }, [spatial, editingId, editingSurface])
+  const selection = useSelectedIds()
+  const selectedIds = [...new Set(selection.length ? selection : [selectedId])].filter(
+    (id) => document.topics[id],
+  )
+  const multiple = selectedIds.length > 1
   const topic = document.topics[selectedId]
   if (!topic) return null
   const parentId = getParentId(document, selectedId)
@@ -51,14 +58,15 @@ export function Inspector() {
   }
   return (
     <aside
-      className="inspector style-inspector flex min-h-0 w-[264px] shrink-0 basis-[264px] flex-col border-l border-border bg-secondary/30 p-0"
+      className="flex min-h-0 w-[256px] shrink-0 basis-[256px] flex-col border-l border-border bg-background p-0 text-sm"
       aria-label="主题面板"
     >
-      <div className="style-panel-heading flex items-center justify-between px-[18px] pt-5 pb-4 [&_h2]:m-0 [&_h2]:text-lg [&_h2]:font-semibold">
-        <h2>{spatial ? '主题内容' : '样式'}</h2>
+      <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4 [&_h2]:text-sm [&_h2]:font-semibold">
+        <h2>{multiple ? `已选 ${selectedIds.length} 个主题` : spatial ? '主题属性' : '样式'}</h2>
         <Button
           variant="ghost"
           size="icon"
+          className="size-7 text-muted-foreground"
           aria-label={spatial ? '关闭主题面板' : '关闭样式面板'}
           onClick={() => {
             useEditor.setState({ inspectorOpen: false })
@@ -67,16 +75,29 @@ export function Inspector() {
           <ChevronRight size={19} />
         </Button>
       </div>
-      <div className="style-panel-content overflow-auto px-[18px] pb-5">
-        <div className="inspector-selection mb-5 flex justify-between text-[11px] text-muted-foreground">
-          <span>{root ? '中心主题' : firstLevel ? '一级分支' : '子主题'}</span>
-          <span>{topic.children.length} 个子主题</span>
-        </div>
-        <TopicRichTitle key={`title:${selectedId}`} topicId={selectedId} />
-        <TopicContentPanel key={selectedId} topicId={selectedId} />
+      <div className="min-h-0 flex-1 overflow-auto px-4 pb-5">
+        {multiple ? (
+          <p className="pt-4 text-xs leading-relaxed text-muted-foreground">
+            样式和标记将应用到全部所选主题。
+          </p>
+        ) : (
+          <div className="flex justify-between pt-4 text-xs text-muted-foreground">
+            <span>{root ? '中心主题' : firstLevel ? '一级分支' : '子主题'}</span>
+            <span>{topic.children.length} 个子主题</span>
+          </div>
+        )}
         <TopicFormatting />
-        <TopicMetadataPanel key={`metadata:${selectedId}`} topicId={selectedId} />
-        {!root && (
+        <SelectionMarkers ids={selectedIds} />
+        {!multiple && (
+          <>
+            <section className="border-t border-border py-4">
+              <TopicRichTitle key={`title:${selectedId}`} topicId={selectedId} />
+            </section>
+            <TopicContentPanel key={selectedId} topicId={selectedId} />
+            <TopicMetadataPanel key={`metadata:${selectedId}`} topicId={selectedId} />
+          </>
+        )}
+        {!multiple && !root && (
           <section className="format-group border-t border-border py-[18px] [&_h3]:mb-2.5 [&_h3]:text-[13px] [&_h3]:font-medium [&_h3]:text-secondary-foreground position-group pb-0">
             <h3>分支位置</h3>
             {firstLevel && (

@@ -5,31 +5,34 @@ import {
   pasteSelectedTopics,
 } from '../state/clipboard'
 import { useSearch } from '../state/search'
-import { Button } from './ui/button'
+import { DockAction } from './DockAction'
 
 export function EditActions() {
   return (
     <div className="flex items-center gap-0.5" role="group" aria-label="主题编辑操作">
       {[
-        { title: '复制主题', Icon: Copy, action: () => copySelectedTopics() },
-        { title: '剪切主题', Icon: Scissors, action: () => copySelectedTopics(true) },
-        { title: '粘贴主题', Icon: ClipboardPaste, action: pasteSelectedTopics },
-        { title: '创建主题副本', Icon: CopyPlus, action: duplicateSelectedTopics },
-      ].map(({ title, Icon, action }) => (
-        <Button
+        { title: '复制主题', caption: '复制', Icon: Copy, action: () => copySelectedTopics() },
+        {
+          title: '剪切主题',
+          caption: '剪切',
+          Icon: Scissors,
+          action: () => copySelectedTopics(true),
+        },
+        { title: '粘贴主题', caption: '粘贴', Icon: ClipboardPaste, action: pasteSelectedTopics },
+        { title: '创建主题副本', caption: '副本', Icon: CopyPlus, action: duplicateSelectedTopics },
+      ].map(({ title, caption, Icon, action }) => (
+        <DockAction
           key={title}
-          size="icon"
-          variant="ghost"
+          caption={caption}
           aria-label={title}
           title={title}
           onClick={() => void action()}
         >
           <Icon className="size-4" />
-        </Button>
+        </DockAction>
       ))}
-      <Button
-        size="icon"
-        variant="ghost"
+      <DockAction
+        caption="查找"
         aria-label="查找与替换"
         title="查找与替换"
         onClick={() => {
@@ -37,7 +40,7 @@ export function EditActions() {
         }}
       >
         <Search className="size-4" />
-      </Button>
+      </DockAction>
     </div>
   )
 }

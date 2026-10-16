@@ -1,3 +1,5 @@
+import { CanvasOverlay } from './workbench/CanvasOverlay'
+import { motion, useReducedMotion } from 'motion/react'
 import { Component, lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react'
 import { ArrowLeft, Focus } from 'lucide-react'
 import { getParentId, type MindMapDocument } from '@core'
@@ -63,6 +65,7 @@ function focusPath(document: MindMapDocument, focusId: string): readonly string[
 }
 
 export function SpatialWorkspace() {
+  const reduced = useReducedMotion()
   const presentation = usePresentation()
   const playing = presentation.playing
   const document = useEditor((state) => state.history.document)
@@ -129,7 +132,10 @@ export function SpatialWorkspace() {
     }
   }, [sheetId])
   return (
-    <section
+    <motion.section
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: reduced ? 0 : 0.12 }}
       id="sheet-panel"
       role="tabpanel"
       aria-label="当前三维画布"
@@ -164,7 +170,7 @@ export function SpatialWorkspace() {
         <SpatialUnavailable />
       )}
       {supported && !playing && (
-        <>
+        <CanvasOverlay>
           <FloatingToolbar />
           <div className="pointer-events-none absolute top-5 left-4 z-10 flex max-w-[calc(100%-2rem)] items-center gap-3">
             {focusId && (
@@ -215,8 +221,8 @@ export function SpatialWorkspace() {
               </Button>
             )}
           </div>
-        </>
+        </CanvasOverlay>
       )}
-    </section>
+    </motion.section>
   )
 }

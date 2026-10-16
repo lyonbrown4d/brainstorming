@@ -1,5 +1,6 @@
 import { CopyPlus, PlusSquare, Redo2, Undo2 } from 'lucide-react'
 import { DockToolbar } from './DockToolbar'
+import { DockAction } from './DockAction'
 import { TopicFormatting } from './TopicFormatting'
 import { SelectionToolbar } from './SelectionToolbar'
 import { AIAssistant } from './ai/AIAssistant'
@@ -20,25 +21,38 @@ import { OutlineEditor } from './documents/OutlineEditor'
 import { PresentationControls } from './documents/PresentationControls'
 import { FloatingActions } from './documents/FloatingActions'
 import { isDirty, useEditor } from '../state/editor'
-import { Button } from './ui/button'
+import { Separator } from './ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
 import type { ComponentProps, ReactNode } from 'react'
 
 function Action({
   label,
   hint,
+  caption,
   children,
   ...props
-}: ComponentProps<typeof Button> & { label: string; hint: string; children: ReactNode }) {
+}: ComponentProps<typeof DockAction> & { label: string; hint: string; children: ReactNode }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button variant="ghost" aria-label={label} {...props}>
+        <DockAction aria-label={label} caption={caption} {...props}>
           {children}
-        </Button>
+        </DockAction>
       </TooltipTrigger>
       <TooltipContent>{hint}</TooltipContent>
     </Tooltip>
+  )
+}
+
+function DockGroup({ children, label }: { children: ReactNode; label: string }) {
+  return (
+    <div
+      role="group"
+      aria-label={label}
+      className="flex shrink-0 items-center gap-0.5 [&>button:not([data-dock-action])]:h-12 [&>button:not([data-dock-action])]:min-w-11 [&>button:not([data-dock-action])]:flex-col [&>button:not([data-dock-action])]:gap-1 [&>button:not([data-dock-action])]:rounded-xl [&>button:not([data-dock-action])]:border-transparent [&>button:not([data-dock-action])]:bg-transparent [&>button:not([data-dock-action])]:px-2 [&>button:not([data-dock-action])]:text-[11px] [&>button:not([data-dock-action])]:leading-none [&>button:not([data-dock-action])]:font-normal [&>button:not([data-dock-action])]:text-muted-foreground [&>button:not([data-dock-action])]:shadow-none [&>button:not([data-dock-action]):hover]:bg-accent [&>button:not([data-dock-action]):hover]:text-accent-foreground"
+    >
+      {children}
+    </div>
   )
 }
 
@@ -55,93 +69,101 @@ export function FloatingToolbar() {
   return (
     <DockToolbar hint={<AnnotationModeHint />}>
       <div
-        className="flex h-10 w-max flex-nowrap items-center gap-0.5 whitespace-nowrap [&>button]:h-9 [&>button]:gap-1.5 [&>button]:rounded-xl [&>button]:border-transparent [&>button]:bg-transparent [&>button]:px-2 [&>button]:text-xs [&>button]:shadow-none [&>button:hover]:bg-accent [&>button>span]:hidden lg:[&>button>span]:inline [&>div]:shrink-0 [&>span]:shrink-0"
+        className="flex h-12 w-max flex-nowrap items-center gap-1 whitespace-nowrap"
         role="toolbar"
         aria-label="导图操作"
       >
-        <Action
-          label="添加同级主题"
-          hint="添加同级主题 Enter"
-          onClick={() => {
-            useEditor.getState().add('sibling')
-          }}
-        >
-          <PlusSquare size={19} />
-          <span>主题</span>
-        </Action>
-        <Action
-          label="添加子主题"
-          hint="添加子主题 Tab"
-          onClick={() => {
-            useEditor.getState().add('child')
-          }}
-        >
-          <CopyPlus className="add-child-icon" size={19} />
-          <span>子主题</span>
-        </Action>
-        <span className="toolbar-separator" />
+        <DockGroup label="创建与关联">
+          <Action
+            label="添加同级主题"
+            hint="添加同级主题 Enter"
+            caption="主题"
+            onClick={() => {
+              useEditor.getState().add('sibling')
+            }}
+          >
+            <PlusSquare size={19} />
+          </Action>
+          <Action
+            label="添加子主题"
+            hint="添加子主题 Tab"
+            caption="子主题"
+            onClick={() => {
+              useEditor.getState().add('child')
+            }}
+          >
+            <CopyPlus size={19} />
+          </Action>
+          <AnnotationActions />
+          <LinkAction />
+          <MarkerAction />
+        </DockGroup>
+        <Separator orientation="vertical" className="mx-1 h-7 opacity-70" />
         <TopicFormatting compact />
-        <AnnotationActions />
-        <LinkAction />
-        <MarkerAction />
         <AnnotationStyleControls />
-        <span className="toolbar-separator" />
-        <Action
-          label="撤销"
-          hint="撤销 ⌘Z"
-          disabled={!canUndo}
-          onClick={() => {
-            useEditor.getState().undo()
-          }}
-        >
-          <Undo2 size={19} />
-          <span>撤销</span>
-        </Action>
-        <Action
-          label="重做"
-          hint="重做 ⇧⌘Z"
-          disabled={!canRedo}
-          onClick={() => {
-            useEditor.getState().redo()
-          }}
-        >
-          <Redo2 size={19} />
-          <span>重做</span>
-        </Action>
-        <EditActions />
-        <SelectionToolbar />
-        <span className="toolbar-separator" />
-        <StructurePicker />
-        <DocumentSettingsPanel />
-        <TopicFilter />
-        <TemplateDialog />
-        <FloatingActions />
-        <OutlineEditor />
-        <PresentationControls />
-        <span className="toolbar-separator" />
-        <ImportTextDialog
-          onImport={(document) => {
-            const state = useEditor.getState()
-            state.commitDraft()
-            if (useEditor.getState().editingId || state.busy) return false
-            if (isDirty() && !window.confirm('放弃当前更改并导入大纲？')) return false
-            state.replace(document, null, true)
-            return true
-          }}
-        />
-        <ExportDialog
-          workbook={workbook}
-          currentSheetId={sheetId}
-          {...(window.trelyx
-            ? {
-                onExport: (request) =>
-                  window.trelyx ? window.trelyx.exportFile(request) : Promise.resolve(null),
-              }
-            : {})}
-        />
-        <FileSecurity />
-        <HistoryDialog />
-        <AIAssistant onAddSheet={(document) => useEditor.getState().addDocumentSheet(document)} />
+        <Separator orientation="vertical" className="mx-1 h-7 opacity-70" />
+        <DockGroup label="历史与编辑">
+          <Action
+            label="撤销"
+            hint="撤销 ⌘Z"
+            caption="撤销"
+            disabled={!canUndo}
+            onClick={() => {
+              useEditor.getState().undo()
+            }}
+          >
+            <Undo2 size={19} />
+          </Action>
+          <Action
+            label="重做"
+            hint="重做 ⇧⌘Z"
+            caption="重做"
+            disabled={!canRedo}
+            onClick={() => {
+              useEditor.getState().redo()
+            }}
+          >
+            <Redo2 size={19} />
+          </Action>
+          <EditActions />
+          <SelectionToolbar />
+        </DockGroup>
+        <Separator orientation="vertical" className="mx-1 h-7 opacity-70" />
+        <DockGroup label="画布与结构">
+          <StructurePicker />
+          <DocumentSettingsPanel />
+          <TopicFilter />
+          <TemplateDialog />
+          <FloatingActions />
+          <OutlineEditor />
+          <PresentationControls />
+        </DockGroup>
+        <Separator orientation="vertical" className="mx-1 h-7 opacity-70" />
+        <DockGroup label="文件与助手">
+          <ImportTextDialog
+            onImport={(document) => {
+              const state = useEditor.getState()
+              state.commitDraft()
+              if (useEditor.getState().editingId || state.busy) return false
+              if (isDirty() && !window.confirm('放弃当前更改并导入大纲？')) return false
+              state.replace(document, null, true)
+              return true
+            }}
+          />
+          <ExportDialog
+            workbook={workbook}
+            currentSheetId={sheetId}
+            {...(window.trelyx
+              ? {
+                  onExport: (request) =>
+                    window.trelyx ? window.trelyx.exportFile(request) : Promise.resolve(null),
+                }
+              : {})}
+          />
+          <FileSecurity />
+          <HistoryDialog />
+          <AIAssistant onAddSheet={(document) => useEditor.getState().addDocumentSheet(document)} />
+        </DockGroup>
       </div>
     </DockToolbar>
   )

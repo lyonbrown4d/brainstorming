@@ -1,3 +1,4 @@
+import { canvasFitPadding } from '../hooks/useWorkbenchInsets'
 import { useReducedMotion } from 'motion/react'
 import { useReactFlow, useViewport } from '@xyflow/react'
 import { Focus, Minus, Plus, Maximize2 } from 'lucide-react'
@@ -10,7 +11,10 @@ export function ZoomControls() {
   const flow = useReactFlow<TopicFlowNode>()
   const { zoom } = useViewport()
   return (
-    <div className="canvas-controls" aria-label="画布视图">
+    <div
+      className="canvas-controls flex shrink-0 items-center rounded-lg border border-border bg-background p-0.5 text-muted-foreground [&_button]:size-7"
+      aria-label="画布视图"
+    >
       <Button
         variant="ghost"
         size="icon"
@@ -20,7 +24,9 @@ export function ZoomControls() {
       >
         <Minus size={16} />
       </Button>
-      <span className="zoom-value">{Math.round(zoom * 100)}%</span>
+      <span className="zoom-value w-11 text-center text-xs tabular-nums">
+        {Math.round(zoom * 100)}%
+      </span>
       <Button
         variant="ghost"
         size="icon"
@@ -30,14 +36,18 @@ export function ZoomControls() {
       >
         <Plus size={16} />
       </Button>
-      <i />
+      <span className="mx-1 h-4 w-px bg-border" aria-hidden />
       <Button
         variant="ghost"
         size="icon"
         title="适应画布"
         aria-label="适应画布"
         onClick={() =>
-          void flow.fitView({ padding: 0.12, maxZoom: 1.2, duration: reduceMotion ? 0 : 250 })
+          void flow.fitView({
+            padding: canvasFitPadding(),
+            maxZoom: 1.2,
+            duration: reduceMotion ? 0 : 250,
+          })
         }
       >
         <Maximize2 size={16} />

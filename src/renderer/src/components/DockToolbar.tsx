@@ -6,14 +6,13 @@ import { Button } from './ui/button'
 import { ScrollArea, ScrollBar } from './ui/scroll-area'
 
 export function DockToolbar({ children, hint }: { children: ReactNode; hint?: ReactNode }) {
-  const { root, open, enter, leave, focus, blur, toggle, expand } = useDockToolbar()
+  const { root, handle, open, enter, leave, focus, blur, toggle, expand } = useDockToolbar()
   const reduced = useReducedMotion()
-  const spring = { type: 'spring', stiffness: 420, damping: 38, mass: 0.75 } as const
   return (
     <div
       ref={root}
       data-slot="canvas-dock"
-      className="absolute bottom-4 left-1/2 z-40 w-[min(calc(100%-2rem),70rem)] -translate-x-1/2 pt-3"
+      className="pointer-events-none absolute bottom-3 left-1/2 z-40 flex w-[min(calc(100%-2rem),34rem)] -translate-x-1/2 justify-center"
       onPointerEnter={(event) => {
         if (event.pointerType !== 'touch') enter()
       }}
@@ -27,54 +26,41 @@ export function DockToolbar({ children, hint }: { children: ReactNode; hint?: Re
       onBlurCapture={blur}
     >
       {hint && (
-        <div className="pointer-events-none absolute bottom-full left-1/2 mb-2 w-max max-w-full -translate-x-1/2">
+        <div className="pointer-events-none absolute bottom-full left-1/2 mb-20 w-max max-w-full -translate-x-1/2">
           {hint}
         </div>
       )}
+      {/* The entry never moves: revealing tools cannot replace the pointer's click target. */}
+      <Button
+        ref={handle}
+        variant="ghost"
+        size="sm"
+        className="pointer-events-auto h-8 shrink-0 gap-1.5 rounded-full border border-border/80 bg-background/95 px-3 text-[11px] text-muted-foreground shadow-sm backdrop-blur-xl hover:bg-accent hover:text-accent-foreground"
+        aria-label="展开浮动工具栏"
+        aria-expanded={open}
+        aria-controls="floating-map-actions"
+        title="导图工具：移入或点击展开"
+        onClick={() => {
+          if (window.matchMedia('(hover: none)').matches) toggle()
+          else expand()
+        }}
+      >
+        <PanelBottom className="size-3.5" />
+        <span>工具</span>
+      </Button>
       <motion.div
         initial={false}
-        animate={{ y: open ? 0 : 5 }}
-        transition={reduced ? { duration: 0 } : spring}
-        className="mx-auto flex w-fit max-w-full items-center rounded-[22px] border border-white/70 bg-background/85 p-2 shadow-[0_8px_30px_-12px_#352d4d40,inset_0_1px_0_#fff] ring-1 ring-foreground/5 backdrop-blur-xl [&_[data-slot=button]]:transition-[transform,background-color,color,box-shadow] [&_[data-slot=button]]:duration-200 [&_[data-slot=button]:hover]:-translate-y-0.5 motion-reduce:[&_[data-slot=button]]:transform-none"
+        animate={{ y: open ? 0 : 8, opacity: open ? 1 : 0 }}
+        transition={reduced ? { duration: 0 } : { duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        id="floating-map-actions"
+        aria-hidden={!open}
+        inert={!open}
+        className={`absolute bottom-[calc(100%+0.5rem)] w-full rounded-2xl border border-border/80 bg-background/95 p-1.5 shadow-[0_8px_30px_-10px_#352d4d30] ring-1 ring-background/80 backdrop-blur-xl ${open ? 'pointer-events-auto' : 'pointer-events-none'}`}
       >
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-9 shrink-0 gap-1.5 rounded-xl px-2 text-xs"
-          aria-label="展开浮动工具栏"
-          aria-expanded={open}
-          aria-controls="floating-map-actions"
-          title="导图工具：移入或点击展开"
-          onClick={() => {
-            if (window.matchMedia('(hover: none)').matches) toggle()
-            else expand()
-          }}
-        >
-          <PanelBottom className="size-4" />
-          <span>工具</span>
-        </Button>
-        <motion.div
-          id="floating-map-actions"
-          initial={false}
-          animate={{ width: open ? 'auto' : 0, opacity: open ? 1 : 0 }}
-          transition={
-            reduced
-              ? { duration: 0 }
-              : {
-                  width: open ? spring : { duration: 0.24, ease: [0.22, 1, 0.36, 1] },
-                  opacity: { duration: open ? 0.18 : 0.1, delay: open ? 0.06 : 0 },
-                }
-          }
-          aria-hidden={!open}
-          inert={!open}
-          className="min-w-0 overflow-hidden"
-        >
-          {/* Animate the reveal width, keeping the controls at their natural size. */}
-          <ScrollArea type="auto" className="h-11 w-max max-w-[min(calc(100cqw-8rem),64rem)]">
-            <div className="w-max px-1 pb-1">{children}</div>
-            <ScrollBar orientation="horizontal" className="h-1.5" />
-          </ScrollArea>
-        </motion.div>
+        <ScrollArea type="auto" className="h-[3.25rem] w-full">
+          <div className="w-max pb-1">{children}</div>
+          <ScrollBar orientation="horizontal" className="h-1.5" />
+        </ScrollArea>
       </motion.div>
     </div>
   )

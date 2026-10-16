@@ -1,3 +1,4 @@
+import { cn } from '../lib/utils'
 import { memo } from 'react'
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react'
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react'
@@ -44,10 +45,32 @@ export const TopicNode = memo(function TopicNode({ data, id }: NodeProps<TopicFl
     up: 'left-[calc(50%-9px)] -top-[11px]',
     down: 'left-[calc(50%-9px)] -bottom-[11px]',
   }[direction]
+  const hasContent =
+    Boolean(topic.image) ||
+    Boolean(topic.notes) ||
+    Boolean(topic.attachments?.length) ||
+    Boolean(topic.metadata)
   const style = topic.style
   return (
     <div
-      className={`topic nopan select-none ${root ? 'topic-root' : branch ? 'topic-branch' : 'topic-leaf'} ${selected ? 'is-selected' : ''} ${editing && editingSurface === 'canvas' ? 'is-editing' : ''} ${dropTarget ? 'drop-target' : ''} side-${side} ${topic.image || topic.notes || topic.attachments?.length || topic.metadata ? 'has-content flex flex-col items-center' : ''}`}
+      className={cn(
+        'topic nopan relative h-full w-full rounded-lg border-[1.5px] transition-[box-shadow,border-color] duration-150 select-none',
+        root
+          ? 'topic-root rounded-[14px] bg-[#8070c6] text-white'
+          : branch
+            ? 'topic-branch bg-[color-mix(in_srgb,var(--branch-color)_32%,#fff)] text-[#30313b]'
+            : 'topic-leaf text-[#30313b]',
+        selected
+          ? root
+            ? 'is-selected border-[#6653af] shadow-[0_0_0_3px_#9480d919]'
+            : 'is-selected border-[#9480d9] shadow-[0_0_0_2px_#9480d918]'
+          : 'border-transparent',
+        editing && editingSurface === 'canvas' && 'is-editing',
+        dropTarget &&
+          'drop-target border-dashed border-[#72a98d] text-[#48775e] shadow-[0_0_0_5px_#90bba42e]',
+        `side-${side}`,
+        hasContent && 'has-content flex flex-col items-center',
+      )}
       style={
         {
           '--branch-color': color,
@@ -84,7 +107,7 @@ export const TopicNode = memo(function TopicNode({ data, id }: NodeProps<TopicFl
         />
       )}
       <div
-        className={`topic-title ${topic.image || topic.notes || topic.attachments?.length || topic.metadata ? 'h-auto w-full min-h-0 flex-1' : 'h-full'}`}
+        className={`topic-title flex items-center justify-center px-[17px] py-2.5 text-center leading-normal [&>span]:break-words [&>span]:whitespace-pre-wrap ${hasContent ? 'h-auto w-full min-h-0 flex-1' : 'h-full'}`}
         style={{
           fontSize: style?.fontSize ?? (root ? 24 : 16),
           fontWeight: (style?.bold ?? (root || branch)) ? 600 : 400,

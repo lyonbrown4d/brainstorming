@@ -1,7 +1,7 @@
 import { Popover } from 'radix-ui'
 import { Link } from 'lucide-react'
 import { useEditor } from '../../state/editor'
-import { Button } from '../ui/button'
+import { DockAction } from '../DockAction'
 import { LinkPanel } from './LinkPanel'
 
 export function LinkAction() {
@@ -10,9 +10,9 @@ export function LinkAction() {
   return (
     <Popover.Root>
       <Popover.Trigger asChild>
-        <Button variant="ghost" size="icon" aria-label="主题超链接" title="主题超链接">
+        <DockAction caption="链接" aria-label="主题超链接" title="主题超链接">
           <Link className="size-4" />
-        </Button>
+        </DockAction>
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content

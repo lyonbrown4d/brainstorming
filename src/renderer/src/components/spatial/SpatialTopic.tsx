@@ -1,4 +1,5 @@
 /* eslint react/no-unknown-property: "off" -- React Three Fiber uses Three.js JSX properties. */
+import { Color } from 'three'
 import { Billboard, Html, RoundedBox } from '@react-three/drei'
 import { ChevronLeft, ChevronRight, FileText, Focus, Paperclip } from 'lucide-react'
 import { memo, type RefObject } from 'react'
@@ -49,6 +50,10 @@ export const SpatialTopic = memo(function SpatialTopic({
   onFocus,
   onCollapse,
 }: SpatialTopicProps) {
+  const cardFill =
+    node.depth > 1 && !topic.style?.fill
+      ? new Color(branchColor).lerp(new Color(fill), 0.82).getStyle()
+      : fill
   const width = node.width
   const height = node.height
   const hasImage = Boolean(
@@ -72,7 +77,7 @@ export const SpatialTopic = memo(function SpatialTopic({
             bevelSegments={2}
           >
             <meshBasicMaterial
-              color={dropTarget ? '#a78bfa' : '#8b78ee'}
+              color={dropTarget ? '#72a98d' : '#8b78ee'}
               transparent
               opacity={muted ? 0.25 : 0.9}
             />
@@ -105,17 +110,12 @@ export const SpatialTopic = memo(function SpatialTopic({
               )
           }}
         >
-          {detailed ? (
-            <meshStandardMaterial
-              color={fill}
-              roughness={0.36}
-              metalness={0.04}
-              transparent={muted}
-              opacity={muted ? 0.28 : 1}
-            />
-          ) : (
-            <meshLambertMaterial color={fill} transparent={muted} opacity={muted ? 0.28 : 1} />
-          )}
+          <meshBasicMaterial
+            color={cardFill}
+            toneMapped={false}
+            transparent={muted}
+            opacity={muted ? 0.28 : 1}
+          />
         </RoundedBox>
         {!root && detailed && (
           <RoundedBox
@@ -139,7 +139,7 @@ export const SpatialTopic = memo(function SpatialTopic({
             role="presentation"
             data-spatial-card-id={topic.id}
             data-drop-target={dropTarget || undefined}
-            className={`pointer-events-auto relative flex flex-col items-center justify-center gap-1 rounded-md px-4 py-2 ${dropTarget ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+            className={`pointer-events-auto relative flex flex-col items-center justify-center gap-1 rounded-md px-4 py-2 ${dropTarget ? 'outline-2 outline-offset-4 outline-dashed outline-[#72a98d]' : ''}`}
             style={{
               width: width * 100,
               height: height * 100,

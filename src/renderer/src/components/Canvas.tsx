@@ -7,8 +7,11 @@ import {
   useAnnotationInteraction,
 } from '../state/annotationInteraction'
 import { useCanvasRelations } from '../hooks/useCanvasRelations'
+import { canvasFitPadding } from '../hooks/useWorkbenchInsets'
+import { CanvasOverlay } from './workbench/CanvasOverlay'
 import { useCanvasViewport } from '../hooks/useCanvasViewport'
 import { useCanvasDrag } from '../hooks/useCanvasDrag'
+import { DragFeedback } from './workbench/DragFeedback'
 import { CanvasMinimap } from './CanvasMinimap'
 import { RelationEdge } from './annotations/RelationEdge'
 import { presentationDocument, usePresentation } from '../state/presentation'
@@ -31,6 +34,7 @@ export function Canvas() {
   const document = useEditor((state) => state.history.document)
   const activeSheetId = useEditor((state) => state.activeSheetId)
   const [savedView] = useState(() => useEditor.getState().views[activeSheetId])
+  const [initialFit] = useState(() => ({ padding: canvasFitPadding(), maxZoom: 1.2 }))
   const presentation = usePresentation()
   const presentedId =
     presentation.playing && presentation.sheetId === activeSheetId
@@ -44,7 +48,7 @@ export function Canvas() {
   const drag = useCanvasDrag(projection.nodes)
   return (
     <motion.section
-      className="canvas"
+      className="canvas relative min-w-0 flex-1 [container-name:mindmap] [container-type:inline-size]"
       style={{
         backgroundColor: documentAppearance(document).background,
         fontFamily: documentAppearance(document).fontFamily,
@@ -117,7 +121,7 @@ export function Canvas() {
               views: { ...state.views, [activeSheetId]: viewport },
             }))
         }}
-        fitViewOptions={{ padding: 0.12, maxZoom: 1.2 }}
+        fitViewOptions={initialFit}
         minZoom={0.15}
         maxZoom={2}
         deleteKeyCode={null}
@@ -142,7 +146,12 @@ export function Canvas() {
         <SelectionVisibility />
         {!presentation.playing && <CanvasMinimap />}
       </ReactFlow>
-      {!presentation.playing && <FloatingToolbar />}
+      {!presentation.playing && (
+        <CanvasOverlay>
+          <DragFeedback />
+          <FloatingToolbar />
+        </CanvasOverlay>
+      )}
     </motion.section>
   )
 }

@@ -3,6 +3,8 @@ import { Canvas } from '@react-three/fiber'
 import { PCFShadowMap } from 'three'
 import { layoutSpatialDocument, spatialSubtreeIds } from '../../../../layout/spatial'
 import { presentationDocument, usePresentation } from '../../state/presentation'
+import { CanvasOverlay } from '../workbench/CanvasOverlay'
+import { DragFeedback } from '../workbench/DragFeedback'
 import { SpatialControls } from './SpatialControls'
 import { SpatialScene } from './SpatialScene'
 import type { SpatialCameraActions, SpatialCanvasProps } from './types'
@@ -50,7 +52,7 @@ export default function SpatialCanvas({
 
   return (
     <section
-      className="relative h-full w-full overflow-hidden bg-[#fafafe]"
+      className="relative h-full w-full overflow-hidden bg-background [container-type:inline-size]"
       aria-label="3D 思维导图"
       data-spatial-surface
     >
@@ -103,7 +105,10 @@ export default function SpatialCanvas({
         />
       )}
       {!presentation.playing && (
-        <SpatialControls actions={actions} focused={focusId !== null} zoom={zoom} />
+        <CanvasOverlay>
+          <DragFeedback />
+          <SpatialControls actions={actions} focused={focusId !== null} zoom={zoom} />
+        </CanvasOverlay>
       )}
     </section>
   )

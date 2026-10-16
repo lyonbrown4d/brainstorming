@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useReactFlow } from '@xyflow/react'
 import { useReducedMotion } from 'motion/react'
 import { useEditor } from '../state/editor'
@@ -14,6 +14,7 @@ import { useSpatialView } from '../state/spatial'
 /** Synchronize transient playback with viewport, focus, keyboard and browser fullscreen. */
 export function usePresentationPlayback() {
   const flow = useReactFlow()
+  const pendingFit = useRef<Promise<boolean> | null>(null)
   const presentation = usePresentation()
   const sheetId = useEditor((state) => state.activeSheetId)
   const spatial = useSpatialView((state) => state.sheets[sheetId]?.mode === '3d')
@@ -55,7 +56,7 @@ export function usePresentationPlayback() {
     const step = presentation.steps[presentation.index]
     if (!step) return
     const frame = requestAnimationFrame(() => {
-      void flow.fitView({
+      pendingFit.current = flow.fitView({
         nodes: [{ id: step.topicId }],
         padding: 0.5,
         minZoom: 0.4,
@@ -69,8 +70,17 @@ export function usePresentationPlayback() {
   }, [flow, presentation.index, presentation.playing, presentation.steps, reducedMotion, spatial])
   useEffect(() => {
     const request = presentation.viewportRequest
-    if (request?.sheetId === sheetId && !spatial)
-      void flow.setViewport(request.view, { duration: 0 })
+    if (request?.sheetId !== sheetId || spatial) return
+    let current = true
+    // React Flow queues fitting until the current node measurements are ready.
+    // Restore after that request settles so a late presentation fit cannot overwrite it.
+    void Promise.resolve(pendingFit.current).then(() => {
+      if (current && usePresentation.getState().viewportRequest === request)
+        void flow.setViewport(request.view, { duration: 0 })
+    })
+    return () => {
+      current = false
+    }
   }, [flow, presentation.viewportRequest, sheetId, spatial])
   useEffect(() => {
     if (!presentation.playing) return

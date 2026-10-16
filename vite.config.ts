@@ -12,6 +12,8 @@ export const alias = {
 // Include the lazy 3D add-on up front so first use never triggers a full-page optimizer reload.
 export const rendererOptimizeDeps = {
   include: [
+    'clsx',
+    'tailwind-merge',
     '@react-three/fiber',
     '@react-three/drei',
     'three',

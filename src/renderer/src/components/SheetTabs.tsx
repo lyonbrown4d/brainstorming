@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
+import { LayoutGroup } from 'motion/react'
 import { Tabs } from 'radix-ui'
 import { Plus } from 'lucide-react'
 import { closestCenter, DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
@@ -11,14 +12,17 @@ import '../styles/sheets.css'
 import { beginCreation } from '../state/creation'
 
 export function SheetTabs() {
+  const layoutId = useId()
   const sheets = useEditor((state) => state.workbook.sheets)
   const activeId = useEditor((state) => state.activeSheetId)
   const busy = useEditor((state) => state.busy)
   const [dialog, setDialog] = useState<SheetDialogAction | null>(null)
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
   return (
-    <div className="sheet-bar">
-      <span className="sheet-bar-label">画布</span>
+    <div className="sheet-bar flex h-12 min-w-0 flex-1 items-center bg-background text-muted-foreground">
+      <span className="sheet-bar-label flex h-5 shrink-0 items-center border-r border-border px-5 text-xs">
+        画布
+      </span>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -29,28 +33,30 @@ export function SheetTabs() {
         }}
       >
         <Tabs.Root
-          className="sheet-tabs"
+          className="sheet-tabs min-w-0 overflow-x-auto [scrollbar-width:thin]"
           value={activeId}
           onValueChange={(id) => {
             useEditor.getState().switchSheet(id)
           }}
         >
-          <Tabs.List className="sheet-tab-list" aria-label="文档画布">
-            <SortableContext
-              items={sheets.map((sheet) => sheet.id)}
-              strategy={horizontalListSortingStrategy}
-            >
-              {sheets.map((sheet, index) => (
-                <SheetTabItem
-                  key={sheet.id}
-                  sheet={sheet}
-                  index={index}
-                  count={sheets.length}
-                  busy={busy}
-                  onDialog={setDialog}
-                />
-              ))}
-            </SortableContext>
+          <Tabs.List className="sheet-tab-list flex h-12 w-max min-w-full" aria-label="文档画布">
+            <LayoutGroup id={layoutId}>
+              <SortableContext
+                items={sheets.map((sheet) => sheet.id)}
+                strategy={horizontalListSortingStrategy}
+              >
+                {sheets.map((sheet, index) => (
+                  <SheetTabItem
+                    key={sheet.id}
+                    sheet={sheet}
+                    index={index}
+                    count={sheets.length}
+                    busy={busy}
+                    onDialog={setDialog}
+                  />
+                ))}
+              </SortableContext>
+            </LayoutGroup>
           </Tabs.List>
         </Tabs.Root>
       </DndContext>
@@ -58,7 +64,7 @@ export function SheetTabs() {
         variant="ghost"
         size="icon"
         type="button"
-        className="sheet-add"
+        className="sheet-add mx-1 size-8 shrink-0 rounded-lg p-0 text-muted-foreground hover:text-primary"
         aria-label="新建画布"
         title="新建画布"
         disabled={busy}

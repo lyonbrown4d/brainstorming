@@ -1,6 +1,6 @@
 import { Smile } from 'lucide-react'
 import { useEditor } from '../../state/editor'
-import { Button } from '../ui/button'
+import { DockAction } from '../DockAction'
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
 import { MarkerPicker } from './MarkerPicker'
 import { TaskQuickControls } from './TaskQuickControls'
@@ -13,15 +13,14 @@ export function MarkerAction() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
+        <DockAction
+          caption="标记"
           aria-label="图标与任务标记"
           title="图标与任务标记"
           disabled={busy}
         >
           <Smile className="size-4" />
-        </Button>
+        </DockAction>
       </PopoverTrigger>
       <PopoverContent
         side="top"

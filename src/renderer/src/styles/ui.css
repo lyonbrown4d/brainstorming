@@ -7,7 +7,7 @@
   --ui-primary-foreground: #fff;
   --ui-secondary: #f3f2f8;
   --ui-secondary-foreground: #625a79;
-  --ui-muted-foreground: #858b9b;
+  --ui-muted-foreground: var(--color-gray-500);
   --ui-accent: #f0eef8;
   --ui-accent-foreground: #6959bd;
   --ui-border: #e9e7f0;
@@ -34,53 +34,6 @@
   --color-destructive: var(--ui-destructive);
 }
 
-/* Existing canvas styles are unlayered; scope control resets to shadcn slots. */
-[data-slot='button'] {
-  @apply inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium;
-  border: 0;
-  cursor: pointer;
-}
-[data-slot='button'][data-variant='default'] {
-  background: var(--ui-primary);
-  color: var(--ui-primary-foreground);
-}
-[data-slot='button'][data-variant='default']:hover {
-  background: #6c5bb8;
-  color: var(--ui-primary-foreground);
-}
-[data-slot='button'][data-variant='ghost'] {
-  background: transparent;
-  color: var(--ui-muted-foreground);
-}
-[data-slot='button'][data-variant='ghost']:hover,
-[data-slot='button'][aria-pressed='true'] {
-  background: var(--ui-accent);
-  color: var(--ui-accent-foreground);
-}
-[data-slot='button'][data-variant='secondary'] {
-  background: var(--ui-secondary);
-  color: var(--ui-secondary-foreground);
-}
-[data-slot='button'][data-variant='outline'] {
-  border: 1px solid var(--ui-border);
-  background: var(--ui-background);
-  color: var(--ui-foreground);
-}
-[data-slot='button']:focus-visible {
-  outline: 2px solid var(--ui-ring);
-  outline-offset: 3px;
-}
-[data-slot='button']:disabled {
-  pointer-events: none;
-  opacity: 0.4;
-}
-.toolbar [data-slot='button'][data-size='icon'] {
-  width: 31px;
-  height: 31px;
-}
-.toolbar [data-slot='button'].save-button {
-  font-size: 11px;
-}
 [data-slot='tooltip-content'] {
   font-family: inherit;
 }

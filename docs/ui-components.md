@@ -2,10 +2,12 @@
 
 通用控件优先使用 shadcn/ui。缺少组件时，使用固定版本的官方 CLI 和 pnpm 获取，按项目的 `components.json` 放入 `src/renderer/src/components/ui`。
 
-本轮使用 CLI `shadcn@4.21.5` 获取 Button、Dialog、Tooltip、Badge、ScrollArea、Input、Select、Label、Separator 和 Popover。下载目录保留官方源码，不通过业务补丁修改组件结构、逻辑、默认样式或公开 API；Prettier 和 ESLint 不重写该目录，TypeScript 检查和交互测试仍覆盖其使用。
+本轮使用 CLI `shadcn@4.21.5` 获取 Button、Dialog、Tooltip、Badge、ScrollArea、Input、Select、Label、Separator、Popover、DropdownMenu、Toggle 和 ToggleGroup。下载目录保留官方源码，不通过业务补丁修改组件结构、逻辑、默认样式或公开 API；Prettier 和 ESLint 不重写该目录，TypeScript 检查和交互测试仍覆盖其使用。
 
 业务组合放在 `src/renderer/src/components`：
 
+- `CanvasOverlay` 用 Tailwind 布局及类型明确的动态 inset，把 Dock、缩略图和视角按钮限定在侧栏之间；侧栏覆盖动画不会重建或连续调整画布尺寸。
+- `ToolbarFileMenu` 组合 DropdownMenu，`ViewModeSwitch` 组合 ToggleGroup；`DockAction` 组合 Button，提供图标和短标签。
 - `FieldSelect` 组合 Select，统一业务选项、可访问名称和值校验。
 - `DialogContent` 组合官方 DialogContent、DialogClose 和 Button，通过公开的 `showCloseButton` 属性配置中文关闭按钮。
 - `MarkerAction` 组合官方 Popover、FieldSelect 和 ScrollArea；优先级与进度即时应用，Simple Icons 通过 Iconify offline 和随包图标数据呈现，不请求外部图标服务。

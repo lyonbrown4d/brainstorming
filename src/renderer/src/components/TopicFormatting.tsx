@@ -52,7 +52,7 @@ function ColorPalette({
   onChange: (value: string) => void
 }) {
   return (
-    <div className="color-palette flex items-center gap-2.5" role="group" aria-label={label}>
+    <div className="color-palette flex items-center gap-2" role="group" aria-label={label}>
       {colors.map((color) => (
         <Button
           variant="ghost"
@@ -181,8 +181,9 @@ export function TopicFormatting({
     )
   return (
     <div className="topic-formatting">
-      <section className="format-group border-t border-border py-[18px] first:mt-[18px] [&_h3]:mb-2.5 [&_h3]:text-[13px] [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-[18px]">
-        <h3>形状</h3>
+      <section className="format-group border-t border-border py-4 first:mt-4 [&_h3]:mb-2.5 [&_h3]:text-sm [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-[18px]">
+        <h3>外观</h3>
+        <span className="mb-2 block text-xs text-muted-foreground">形状</span>
         <div className="select-control relative flex items-center [&_.field-select]:w-full [&_.field-select]:pr-8 [&_.field-select]:pl-11">
           <span
             className={`shape-preview pointer-events-none absolute left-3 h-[15px] w-[22px] border-[1.5px] border-secondary-foreground ${style.shape === 'ellipse' ? 'rounded-full' : style.shape === 'rectangle' ? 'rounded-none' : 'rounded'}`}
@@ -206,7 +207,7 @@ export function TopicFormatting({
           }}
         />
       </section>
-      <section className="format-group border-t border-border py-[18px] first:mt-[18px] [&_h3]:mb-2.5 [&_h3]:text-[13px] [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-[18px]">
+      <section className="format-group border-t border-border py-4 first:mt-4 [&_h3]:mb-2.5 [&_h3]:text-sm [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-[18px]">
         <h3>文本</h3>
         <div className="font-controls mb-[15px] flex items-end gap-2 [&_[data-slot=button]]:h-9 [&_[data-slot=button]]:w-[35px] [&_[data-slot=button]]:border [&_[data-slot=button]]:border-border [&_[data-slot=button]]:bg-background [&_[data-slot=button][aria-pressed=true]]:border-primary/20 [&_[data-slot=button][aria-pressed=true]]:bg-accent [&_[data-slot=button][aria-pressed=true]]:text-accent-foreground">
           <div className="format-field flex flex-1 items-center gap-2.5 text-xs text-muted-foreground">
@@ -236,7 +237,7 @@ export function TopicFormatting({
           }}
         />
       </section>
-      <section className="format-group border-t border-border py-[18px] first:mt-[18px] [&_h3]:mb-2.5 [&_h3]:text-[13px] [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-[18px]">
+      <section className="format-group border-t border-border py-4 first:mt-4 [&_h3]:mb-2.5 [&_h3]:text-sm [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-[18px]">
         <h3>分支</h3>
         <div className="branch-controls flex gap-2.5 [&_.format-field]:flex [&_.format-field]:flex-1 [&_.format-field]:flex-col [&_.format-field]:gap-2 [&_.format-field]:text-[11px] [&_.format-field]:text-muted-foreground [&_.field-select]:w-full">
           <div className="format-field">

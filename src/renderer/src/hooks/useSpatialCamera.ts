@@ -8,6 +8,11 @@ import { useEditor } from '../state/editor'
 import { useReducedMotion } from 'motion/react'
 import { spatialBounds, type SpatialNode } from '../../../layout/spatial'
 import type { SpatialCameraActions, SpatialCameraState } from '../components/spatial/types'
+import {
+  spatialFramingTarget,
+  spatialSafeViewport,
+  type ViewportBounds,
+} from '../lib/spatialSafeViewport'
 
 interface SpatialCameraOptions {
   readonly controls: RefObject<CameraControlsImpl | null>
@@ -33,12 +38,21 @@ export function useSpatialCamera({
 }: SpatialCameraOptions) {
   const cameraRequest = usePresentation((state) => state.cameraRequest)
   const reduceMotion = useReducedMotion()
-  const width = useThree((state) => state.size.width)
-  const height = useThree((state) => state.size.height)
   const invalidate = useThree((state) => state.invalidate)
+  const get = useThree((state) => state.get)
   const previousFrame = useRef<string | null>(null)
   const homeDistance = useRef(16)
+  const framing = useRef(false)
+  const frameRevision = useRef(0)
   const animation = !reduceMotion
+  const duringFrame = useCallback((requests: readonly Promise<void>[]) => {
+    const revision = ++frameRevision.current
+    framing.current = true
+    const finish = () => {
+      if (frameRevision.current === revision) framing.current = false
+    }
+    void Promise.all(requests).then(finish, finish)
+  }, [])
 
   const report = useCallback(() => {
     const controller = controls.current
@@ -56,26 +70,40 @@ export function useSpatialCamera({
     (reset = false, transition = animation) => {
       const controller = controls.current
       if (!controller || nodes.length === 0) return
-      const { center, distance } = spatialFrame(controller, nodes)
+      const viewport = get().size
+      const { center, distance, safe } = spatialFrame(controller, nodes, viewport)
       homeDistance.current = distance
-      if (reset) {
-        const direction = new Vector3(0.15, 0.23, 1).normalize().multiplyScalar(distance)
-        void controller.setLookAt(
-          center.x + direction.x,
-          center.y + direction.y,
-          center.z + direction.z,
-          center.x,
-          center.y,
-          center.z,
-          transition,
-        )
+      const direction = reset ? new Vector3(0.15, 0.23, 1).normalize() : undefined
+      const target = spatialFramingTarget(
+        controller.camera,
+        center,
+        distance,
+        viewport,
+        safe,
+        direction,
+      )
+      if (direction) {
+        const offset = direction.multiplyScalar(distance)
+        duringFrame([
+          controller.setLookAt(
+            target.x + offset.x,
+            target.y + offset.y,
+            target.z + offset.z,
+            target.x,
+            target.y,
+            target.z,
+            transition,
+          ),
+        ])
       } else {
-        void controller.moveTo(center.x, center.y, center.z, transition)
-        void controller.dollyTo(distance, transition)
+        duringFrame([
+          controller.moveTo(target.x, target.y, target.z, transition),
+          controller.dollyTo(distance, transition),
+        ])
       }
       invalidate()
     },
-    [animation, controls, invalidate, nodes],
+    [animation, controls, duringFrame, get, invalidate, nodes],
   )
 
   const orient = useCallback(
@@ -92,41 +120,43 @@ export function useSpatialCamera({
   )
 
   useEffect(() => {
-    const frame = `${structureKey}:${focusId ?? ''}:${width}:${height}`
+    const frame = `${structureKey}:${focusId ?? ''}`
     if (previousFrame.current === frame) return
     const first = previousFrame.current === null
-    previousFrame.current = frame
     const controller = controls.current
-    if (!controller) return
+    if (!controller || nodes.length === 0) return
+    previousFrame.current = frame
     if (first && initialCamera) {
-      homeDistance.current = spatialFrame(controller, nodes).distance
-      void controller.setLookAt(...initialCamera.position, ...initialCamera.target, false)
+      homeDistance.current = spatialFrame(controller, nodes, get().size).distance
+      duringFrame([controller.setLookAt(...initialCamera.position, ...initialCamera.target, false)])
       invalidate()
     } else fit(first, !first && animation)
   }, [
     animation,
     controls,
+    duringFrame,
     fit,
     focusId,
-    height,
+    get,
     initialCamera,
     invalidate,
     nodes,
     structureKey,
-    width,
   ])
 
   useEffect(() => {
     if (cameraRequest?.sheetId !== useEditor.getState().activeSheetId) return
     const controller = controls.current
     if (!controller) return
-    void controller.setLookAt(
-      ...cameraRequest.camera.position,
-      ...cameraRequest.camera.target,
-      animation,
-    )
+    duringFrame([
+      controller.setLookAt(
+        ...cameraRequest.camera.position,
+        ...cameraRequest.camera.target,
+        animation,
+      ),
+    ])
     invalidate()
-  }, [animation, cameraRequest, controls, invalidate])
+  }, [animation, cameraRequest, controls, duringFrame, invalidate])
 
   useEffect(() => {
     actions.current = {
@@ -158,21 +188,32 @@ export function useSpatialCamera({
     [actions],
   )
 
-  return { report, orient, smoothTime: reduceMotion ? 0 : 0.18 }
+  return { report, orient, framing, smoothTime: reduceMotion ? 0 : 0.18 }
 }
 
-function spatialFrame(controller: CameraControlsImpl, nodes: readonly SpatialNode[]) {
+function spatialFrame(
+  controller: CameraControlsImpl,
+  nodes: readonly SpatialNode[],
+  viewport: ViewportBounds,
+) {
   const bounds = spatialBounds(nodes)
   const box = new Box3(new Vector3(...bounds.min), new Vector3(...bounds.max))
   const size = box.getSize(new Vector3())
+  const editor = useEditor.getState()
+  const playing = usePresentation.getState().playing
+  const safe = spatialSafeViewport(
+    viewport,
+    !playing && editor.outlineOpen,
+    !playing && editor.inspectorOpen,
+  )
   // The canonical fit distance remains the zoom baseline after restoring a zoomed camera.
   const distance = Math.max(
     4,
     controller.getDistanceToFitBox(
-      size.x * 1.22 + size.z * 0.35,
-      size.y * 1.42 + size.z * 0.35,
+      ((size.x * 1.08 + size.z * 0.25) * viewport.width) / Math.max(1, safe.width),
+      size.y * 1.25 + size.z * 0.25,
       Math.max(size.z, 0.2),
     ),
   )
-  return { center: box.getCenter(new Vector3()), distance }
+  return { center: box.getCenter(new Vector3()), distance, safe }
 }

@@ -16,7 +16,7 @@ import { RecentDocuments } from './RecentDocuments'
 export function WorkspaceHeader() {
   const screen = useWorkspace((state) => state.screen)
   return (
-    <header className="toolbar">
+    <header className="toolbar z-10 flex h-14 min-h-14 shrink-0 items-center border-b border-border bg-background px-5">
       <div className="flex items-center gap-3 text-primary">
         <Network className="size-6" />
         <span className="text-lg font-semibold">Trelyx</span>

@@ -1,9 +1,7 @@
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useThree } from '@react-three/fiber'
-import type { CameraControlsImpl } from '@react-three/drei'
-import type { MindMapDocument } from '@core'
 import { layoutDocument } from '../../../layout'
-import type { SpatialLayout, SpatialPoint } from '../../../layout/spatial'
+import type { SpatialPoint } from '../../../layout/spatial'
 import { canvasDropCommand } from '../lib/canvasDrop'
 import { findSpatialDrop, spatialPointerTopic } from '../lib/spatialDrop'
 import {
@@ -13,37 +11,17 @@ import {
   spatialDragDelta,
   spatialDragSelection,
   spatialRectangleSelection,
-  type SpatialDragPlane,
-  type SpatialScreenRect,
 } from '../lib/spatialDrag'
+import {
+  bindSpatialDragEvents,
+  type SpatialSelectionDragOptions,
+  type SpatialSelectionGesture,
+} from '../lib/spatialDragGesture'
 import { useEditor } from '../state/editor'
 import { usePresentation } from '../state/presentation'
 import { selectedTopicIds, setSelectedTopics } from '../state/selection'
 import { useAnnotationInteraction } from '../state/annotationInteraction'
-
-interface Options {
-  readonly document: MindMapDocument
-  readonly layout: SpatialLayout
-  readonly focusIds: ReadonlySet<string> | null
-  readonly controls: RefObject<CameraControlsImpl | null>
-  readonly enabled: boolean
-  readonly onSelectionBox: (box: SpatialScreenRect | null) => void
-}
-interface Gesture {
-  readonly pointerId: number
-  readonly target: Element
-  readonly sheetId: string
-  readonly start: { x: number; y: number }
-  readonly anchorId: string | undefined
-  readonly plane: SpatialDragPlane | undefined
-  readonly roots: string[]
-  readonly ids: ReadonlySet<string>
-  readonly selected: readonly string[]
-  readonly additive: boolean
-  moved: boolean
-  delta: SpatialPoint
-  boxIds: string[]
-}
+import { beginCanvasDrag, clearCanvasDrag, updateCanvasDrag } from '../state/canvasInteraction'
 
 /** Three.js owns projection/ray math; the application owns selection and one final command. */
 export function useSpatialSelectionDrag({
@@ -53,7 +31,7 @@ export function useSpatialSelectionDrag({
   controls,
   enabled,
   onSelectionBox,
-}: Options) {
+}: SpatialSelectionDragOptions) {
   const { camera, gl, scene, invalidate } = useThree()
   const [preview, setPreview] = useState<{ ids: ReadonlySet<string>; delta: SpatialPoint } | null>(
     null,
@@ -76,7 +54,7 @@ export function useSpatialSelectionDrag({
   useEffect(() => {
     const surface = gl.domElement.closest<HTMLElement>('[data-spatial-surface]')
     if (!surface || !enabled) return
-    let gesture: Gesture | null = null
+    let gesture: SpatialSelectionGesture | null = null
     const nodes = layout.nodes.filter((node) => !focusIds || focusIds.has(node.id))
     const valid = () =>
       useEditor.getState().history.document === document &&
@@ -85,7 +63,10 @@ export function useSpatialSelectionDrag({
     const finish = (commit: boolean) => {
       const current = gesture
       if (!current) return
-      if (commit && current.moved && valid()) {
+      const shouldCommit = commit && current.moved && valid()
+      gesture = null
+      if (current.token) clearCanvasDrag(current.token)
+      if (shouldCommit) {
         if (!current.anchorId)
           setSelectedTopics(
             current.additive ? [...current.selected, ...current.boxIds] : current.boxIds,
@@ -114,7 +95,6 @@ export function useSpatialSelectionDrag({
         }
       }
       suppressClick.current = current.moved
-      gesture = null
       if (current.target.hasPointerCapture(current.pointerId))
         current.target.releasePointerCapture(current.pointerId)
       if (controls.current) controls.current.enabled = !useEditor.getState().editingId
@@ -201,6 +181,7 @@ export function useSpatialSelectionDrag({
       if (!current.moved && current.anchorId) {
         setSelectedTopics(current.selected)
         useAnnotationInteraction.setState({ selected: null, editing: false })
+        current.token = beginCanvasDrag(document, current.sheetId, current.roots)
       }
       current.moved = true
       const viewport = gl.domElement.getBoundingClientRect()
@@ -229,6 +210,7 @@ export function useSpatialSelectionDrag({
             directions,
           )
           setDropTargetId(drop?.targetId ?? null)
+          if (current.token) updateCanvasDrag(current.token, drop)
         }
       }
       event.preventDefault()
@@ -256,24 +238,25 @@ export function useSpatialSelectionDrag({
       event.stopImmediatePropagation()
       finish(false)
     }
-    surface.addEventListener('pointerdown', down, true)
-    surface.addEventListener('click', click, true)
-    surface.addEventListener('lostpointercapture', lostCapture, true)
-    window.addEventListener('pointermove', move, true)
-    window.addEventListener('pointerup', up, true)
-    window.addEventListener('pointercancel', cancel, true)
-    window.addEventListener('keydown', key, true)
-    window.addEventListener('blur', cancel)
+    const unbind = bindSpatialDragEvents(surface, {
+      down,
+      move,
+      up,
+      lostCapture,
+      cancel,
+      click,
+      key,
+    })
+    const validate = () => {
+      if (gesture && !valid()) finish(false)
+    }
+    const unsubscribe = useEditor.subscribe(validate)
+    const unsubscribePresentation = usePresentation.subscribe(validate)
     return () => {
       finish(false)
-      surface.removeEventListener('pointerdown', down, true)
-      surface.removeEventListener('click', click, true)
-      surface.removeEventListener('lostpointercapture', lostCapture, true)
-      window.removeEventListener('pointermove', move, true)
-      window.removeEventListener('pointerup', up, true)
-      window.removeEventListener('pointercancel', cancel, true)
-      window.removeEventListener('keydown', key, true)
-      window.removeEventListener('blur', cancel)
+      unbind()
+      unsubscribe()
+      unsubscribePresentation()
     }
   }, [
     camera,

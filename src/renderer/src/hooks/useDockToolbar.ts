@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useEditor } from '../state/editor'
 import { useAnnotationInteraction } from '../state/annotationInteraction'
 import { isCompositionKey } from '../state/keyboard'
@@ -6,50 +6,54 @@ import { isCompositionKey } from '../state/keyboard'
 function hasOpenPanel(): boolean {
   return Boolean(
     document.querySelector(
-      '[role="dialog"][data-state="open"], [role="menu"][data-state="open"], [data-radix-popper-content-wrapper]',
+      '[role="dialog"][data-state="open"], [role="menu"][data-state="open"], [role="listbox"][data-state="open"]',
     ),
   )
 }
+
+function isInteractionPinned(): boolean {
+  const state = useAnnotationInteraction.getState()
+  return (
+    Boolean(state.fromId) ||
+    state.floating ||
+    state.editing ||
+    useEditor.getState().editingId !== null
+  )
+}
+
 export function useDockToolbar() {
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
+  const handle = useRef<HTMLButtonElement>(null)
   const inside = useRef(false)
   const keyboard = useRef(false)
+  const restoringFocus = useRef(false)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const pinned = useAnnotationInteraction(
     (state) => Boolean(state.fromId) || state.floating || state.editing,
   )
   const editing = useEditor((state) => state.editingId !== null)
-  const locked = (): boolean => {
-    const state = useAnnotationInteraction.getState()
-    return (
-      Boolean(state.fromId) ||
-      state.floating ||
-      state.editing ||
-      useEditor.getState().editingId !== null
-    )
-  }
-  const expand = (): void => {
+  const expand = useCallback((): void => {
     clearTimeout(timer.current)
     setOpen(true)
-  }
-  const schedule = (): void => {
+  }, [])
+  const schedule = useCallback((): void => {
     clearTimeout(timer.current)
     timer.current = setTimeout(() => {
       if (
         inside.current ||
-        locked() ||
+        isInteractionPinned() ||
         hasOpenPanel() ||
         (keyboard.current && root.current?.contains(document.activeElement))
       )
         return
       setOpen(false)
     }, 450)
-  }
+  }, [])
   useEffect(() => {
     if (pinned || editing) setOpen(true)
     else if (!inside.current) schedule()
-  }, [pinned, editing])
+  }, [pinned, editing, schedule])
   useEffect(() => {
     const changed = (): void => {
       if (!inside.current) schedule()
@@ -67,10 +71,17 @@ export function useDockToolbar() {
         event.key !== 'Escape' ||
         event.defaultPrevented ||
         isCompositionKey(event) ||
-        locked() ||
+        isInteractionPinned() ||
         hasOpenPanel()
       )
         return
+      // Return focus before making action controls inert, without opening on that focus event.
+      if (root.current?.contains(document.activeElement)) {
+        restoringFocus.current = true
+        handle.current?.focus({ preventScroll: true })
+        restoringFocus.current = false
+      }
+      clearTimeout(timer.current)
       setOpen(false)
     }
     const pointer = (): void => {
@@ -88,13 +99,14 @@ export function useDockToolbar() {
       window.removeEventListener('focusin', changed)
       window.removeEventListener('focusout', changed)
     }
-  }, [])
+  }, [schedule])
   return {
     root,
+    handle,
     open,
     expand,
     toggle: () => {
-      if (open && !locked() && !hasOpenPanel()) setOpen(false)
+      if (open && !isInteractionPinned() && !hasOpenPanel()) setOpen(false)
       else expand()
     },
     enter: () => {
@@ -105,7 +117,9 @@ export function useDockToolbar() {
       inside.current = false
       schedule()
     },
-    focus: expand,
+    focus: () => {
+      if (!restoringFocus.current) expand()
+    },
     blur: schedule,
   }
 }

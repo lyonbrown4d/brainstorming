@@ -16,7 +16,6 @@ import '../src/renderer/src/styles/ui.css'
 import '../src/renderer/src/styles/base.css'
 import '../src/renderer/src/styles/chrome.css'
 import '../src/renderer/src/styles/window.css'
-import '../src/renderer/src/styles/controls.css'
 
 function installRecentBridge(getRecentFiles: DesktopAPI['getRecentFiles']) {
   queryClient.removeQueries({ queryKey: ['recent-files'] })
@@ -84,7 +83,7 @@ const meta = {
   render: (_, { globals }) => (
     <TooltipProvider>
       <div
-        className="app-shell"
+        className="app-shell flex h-full w-full min-w-0 flex-col"
         data-platform={globals.platform === 'macos' ? 'macos' : 'windows'}
         data-focused={globals.focused !== false}
         data-fullscreen={globals.fullscreen === true}

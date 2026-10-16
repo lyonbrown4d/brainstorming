@@ -11,6 +11,7 @@ import {
 } from '@react-three/drei'
 import type { SpatialLayout } from '../../../../layout/spatial'
 import { spatialFramingNodes } from '../../../../layout/spatial-geometry'
+import { useSpatialSelectionVisibility } from '../../hooks/useSpatialSelectionVisibility'
 import { useSpatialCamera } from '../../hooks/useSpatialCamera'
 import { useSpatialGestures } from '../../hooks/useSpatialGestures'
 import { useSpatialSelectionDrag } from '../../hooks/useSpatialSelectionDrag'
@@ -65,6 +66,9 @@ export function SpatialScene({
   const selectedIds = useSelectedIds()
   const controls = useRef<CameraControlsImpl | null>(null)
   const gl = useThree((state) => state.gl)
+  const outlineOpen = useEditor((state) => state.outlineOpen)
+  const inspectorOpen = useEditor((state) => state.inspectorOpen)
+  const surfaceWidth = useThree((state) => state.size.width)
   const editing = useEditor((state) => state.editingSurface === 'spatial')
   const playing = usePresentation((state) => state.playing)
   const interaction = useSpatialSelectionDrag({
@@ -80,8 +84,8 @@ export function SpatialScene({
     () => spatialFramingNodes(baseLayout, focusIds),
     [focusIds, baseLayout],
   )
-  const structureKey = `${document.id}:${documentStructureKey(document)}:${baseLayout.nodes.map((node) => `${node.id}/${document.topics[node.id]?.side ?? ''}`).join(',')}:${baseLayout.edges.map((edge) => `${edge.source}>${edge.target}`).join(',')}`
-  const { report, orient, smoothTime } = useSpatialCamera({
+  const structureKey = `${document.id}:${documentStructureKey(document)}`
+  const { report, orient, smoothTime, framing } = useSpatialCamera({
     controls,
     actions,
     nodes: framedNodes,
@@ -90,6 +94,14 @@ export function SpatialScene({
     initialCamera,
     onCameraChange,
     onZoomChange,
+  })
+  useSpatialSelectionVisibility({
+    controls,
+    nodes: baseLayout.nodes,
+    selectedId,
+    frameKey: `${structureKey}:${focusId ?? ''}`,
+    framing,
+    enabled: !playing && !interaction.active,
   })
   useSpatialGestures({
     canvas: gl.domElement,
@@ -231,24 +243,29 @@ export function SpatialScene({
         onSleep={report}
       />
       <AdaptiveDpr />
-      <GizmoHelper alignment="bottom-right" margin={[62, 124]}>
-        <GizmoViewcube
-          faces={CUBE_FACES}
-          font="500 34px system-ui, sans-serif"
-          color="#f3f1fa"
-          hoverColor="#e5dfff"
-          textColor="#85809a"
-          strokeColor="#dedbea"
-          opacity={0.9}
-          onClick={(event) => {
-            event.stopPropagation()
-            const direction =
-              event.object.position.lengthSq() > 0 ? event.object.position : event.face?.normal
-            if (direction) orient(direction)
-            return null
-          }}
-        />
-      </GizmoHelper>
+      {(playing || surfaceWidth - (outlineOpen ? 216 : 0) - (inspectorOpen ? 256 : 0) > 640) && (
+        <GizmoHelper
+          alignment="bottom-right"
+          margin={[62 + (!playing && inspectorOpen ? 256 : 0), 124]}
+        >
+          <GizmoViewcube
+            faces={CUBE_FACES}
+            font="500 34px system-ui, sans-serif"
+            color="#f3f1fa"
+            hoverColor="#e5dfff"
+            textColor="#85809a"
+            strokeColor="#dedbea"
+            opacity={0.9}
+            onClick={(event) => {
+              event.stopPropagation()
+              const direction =
+                event.object.position.lengthSq() > 0 ? event.object.position : event.face?.normal
+              if (direction) orient(direction)
+              return null
+            }}
+          />
+        </GizmoHelper>
+      )}
     </>
   )
 }
