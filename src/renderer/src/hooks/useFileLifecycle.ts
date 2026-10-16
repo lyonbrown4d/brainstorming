@@ -2,7 +2,8 @@ import { useEffect } from 'react'
 import { $getRoot, getNearestEditorFromDOMNode, REDO_COMMAND, UNDO_COMMAND } from 'lexical'
 import { applyCommand, serializeWorkbook } from '@core'
 import { isDirty, useEditor } from '../state/editor'
-import { newDocument, openDocument, RECOVERY_KEY, saveDocument } from '../state/files'
+import { newDocument, openDocument, saveDocument } from '../state/files'
+import { readBrowserRecovery, writeBrowserRecovery } from '../state/recovery'
 
 export function useFileLifecycle(): void {
   useEffect(() => {
@@ -31,12 +32,17 @@ export function useFileLifecycle(): void {
       timer = setTimeout(() => {
         const current = useEditor.getState()
         let document = current.history.document
-        if (current.editingId && current.draft.trim()) {
-          document = applyCommand(document, {
-            type: 'renameTopic',
-            topicId: current.editingId,
-            title: current.draft.trim(),
-          })
+        if (current.editingId && (current.editingSurface === 'notes' || current.draft.trim())) {
+          try {
+            document = applyCommand(
+              document,
+              current.editingSurface === 'notes'
+                ? { type: 'setTopicNotes', topicId: current.editingId, notes: current.draft }
+                : { type: 'renameTopic', topicId: current.editingId, title: current.draft.trim() },
+            )
+          } catch {
+            return
+          }
         }
         const contents = serializeWorkbook({
           ...current.workbook,
@@ -44,11 +50,7 @@ export function useFileLifecycle(): void {
             sheet.id === current.activeSheetId ? { ...sheet, document } : sheet,
           ),
         })
-        const write = bridge
-          ? bridge.writeRecovery(contents)
-          : Promise.resolve().then(() => {
-              localStorage.setItem(RECOVERY_KEY, contents)
-            })
+        const write = bridge ? bridge.writeRecovery(contents) : writeBrowserRecovery(contents)
         void write.catch((error: unknown) => {
           useEditor
             .getState()
@@ -58,9 +60,7 @@ export function useFileLifecycle(): void {
         })
       }, 700)
     }
-    const read = bridge
-      ? bridge.readRecovery()
-      : Promise.resolve().then(() => localStorage.getItem(RECOVERY_KEY))
+    const read = bridge ? bridge.readRecovery() : readBrowserRecovery()
     void read
       .then((recovery) => {
         if (!alive) return

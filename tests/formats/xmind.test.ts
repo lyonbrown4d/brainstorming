@@ -43,6 +43,7 @@ describe('XMind import', () => {
       children: ['nested'],
     })
     expect(document?.topics.second?.title).toBe('Second\nline')
+    expect(document?.topics.first?.notes).toBe('暂不支持的备注')
     expect(document?.topics.root?.style).toEqual({
       fill: '#abcdef',
       color: '#123456',
@@ -56,9 +57,8 @@ describe('XMind import', () => {
         expect.stringContaining('布局'),
         expect.stringContaining('样式'),
         '未导入 XMind 图标（2 项）',
-        '未导入 XMind 备注（1 项）',
         '未导入 XMind 关联线（1 项）',
-        '未导入 XMind 图片（1 项）',
+        expect.stringContaining('图片不是有效的内嵌资源'),
         '未导入 XMind 概要范围（1 项）',
       ]),
     )
@@ -105,9 +105,8 @@ describe('XMind import', () => {
       shape: 'rounded',
     })
     expect(document?.topics['legacy-d']?.title).toBe('旧版游离主题')
-    expect(warnings).toEqual(
-      expect.arrayContaining([expect.stringContaining('备注'), expect.stringContaining('游离')]),
-    )
+    expect(document?.topics['legacy-c']?.notes).toBe('备注')
+    expect(warnings).toEqual(expect.arrayContaining([expect.stringContaining('游离')]))
   })
 
   it('prefers modern content and refuses invalid modern content instead of using stale XML', () => {

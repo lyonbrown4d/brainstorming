@@ -23,6 +23,8 @@ function installRecentBridge(getRecentFiles: DesktopAPI['getRecentFiles']) {
     getRecentFiles,
     getWindowState: () => Promise.resolve({ focused: true, fullScreen: false }),
     onWindowStateChanged: () => () => undefined,
+    selectAsset: () => Promise.resolve(null),
+    exportAsset: () => Promise.resolve(false),
     hasOpenFile: () => Promise.resolve(false),
     takeOpenFile: () => Promise.resolve(null),
     onOpenFile: () => () => undefined,

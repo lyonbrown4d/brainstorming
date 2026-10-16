@@ -2,6 +2,7 @@ import { applyCommand } from './commands'
 import type { MindMapDocument, Side, Topic } from './types'
 import { assertId, validateDocument } from './validation'
 import { normalizeTopicStyle } from './topic-style'
+import { documentAssetsData } from './topic-content'
 
 export function createDocument(
   title = '中心主题',
@@ -57,7 +58,10 @@ export function deserializeDocument(json: string): MindMapDocument {
   return documentData(parsed)
 }
 
-export function documentData(document: MindMapDocument): MindMapDocument {
+export function documentData(
+  document: MindMapDocument,
+  preserveUnusedAssets = false,
+): MindMapDocument {
   const topics: Record<string, Topic> = {}
   for (const topic of Object.values(document.topics)) {
     topics[topic.id] = {
@@ -67,8 +71,20 @@ export function documentData(document: MindMapDocument): MindMapDocument {
       collapsed: topic.collapsed,
       side: topic.side,
       ...(topic.style === undefined ? {} : { style: normalizeTopicStyle(topic.style) }),
+      ...(topic.notes?.trim() ? { notes: topic.notes } : {}),
+      ...(topic.image === undefined
+        ? {}
+        : {
+            image: {
+              assetId: topic.image.assetId,
+              width: topic.image.width,
+              height: topic.image.height,
+            },
+          }),
+      ...(topic.attachments?.length ? { attachments: [...topic.attachments] } : {}),
     }
   }
+  const assets = documentAssetsData(document, preserveUnusedAssets)
   return {
     format: 'trelyx',
     version: 1,
@@ -76,5 +92,6 @@ export function documentData(document: MindMapDocument): MindMapDocument {
     title: document.title,
     rootId: document.rootId,
     topics,
+    ...(assets === undefined ? {} : { assets }),
   }
 }

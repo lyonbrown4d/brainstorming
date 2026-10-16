@@ -5,7 +5,7 @@ import {
   createFixtureDocument,
   getVisibleTopicIds,
 } from '@core'
-import { layoutDocument, measureTopic } from './index'
+import { layoutDocument, measureTopic, measureTopicImage } from './index'
 import type { LayoutNode } from './index'
 
 function assertNoOverlap(nodes: readonly LayoutNode[]): void {
@@ -87,5 +87,46 @@ describe('deterministic bilateral tree layout', () => {
     const result = layoutDocument(createFixtureDocument(5_000, 'deep'))
     expect(result.nodes).toHaveLength(5_000)
     assertNoOverlap(result.nodes)
+  })
+
+  it('reserves image and indicator space without changing aspect ratio or overlapping branches', () => {
+    const fixture = createFixtureDocument(100)
+    const imageAsset = { id: 'image', name: '图.png', mimeType: 'image/png', data: 'AA==' }
+    let document = applyCommand(fixture, {
+      type: 'setTopicImage',
+      topicId: fixture.rootId,
+      asset: imageAsset,
+      width: 400,
+      height: 200,
+    })
+    for (const [index, topic] of Object.values(fixture.topics).entries()) {
+      if (index % 3 !== 0) continue
+      document = applyCommand(document, {
+        type: 'setTopicImage',
+        topicId: topic.id,
+        asset: imageAsset,
+        width: 100,
+        height: 400,
+      })
+      document = applyCommand(document, { type: 'setTopicNotes', topicId: topic.id, notes: '备注' })
+    }
+    const image = { assetId: 'image', width: 400, height: 200 }
+    const size = measureTopic('短标题', false, undefined, {
+      image,
+      notes: '备注',
+      attachments: ['image'],
+    })
+    const plain = measureTopic('短标题')
+    expect(measureTopicImage(image)).toEqual({ width: 200, height: 100 })
+    expect(measureTopicImage({ ...image, width: 100, height: 400 })).toEqual({
+      width: 35,
+      height: 140,
+    })
+    expect(size.width).toBeGreaterThanOrEqual(200)
+    expect(size.height).toBe(plain.height + 100 + 12 + 28)
+    const layout = layoutDocument(document)
+    expect(layout).toEqual(layoutDocument(document))
+    expect(layout.nodes).toHaveLength(100)
+    assertNoOverlap(layout.nodes)
   })
 })

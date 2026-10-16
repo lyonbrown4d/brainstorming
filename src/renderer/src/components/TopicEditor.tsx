@@ -28,7 +28,10 @@ export function TopicEditor({
   surface?: EditingSurface
 }) {
   const active = useEditor((state) => state.editingId === id && state.editingSurface === surface)
-  const committedTitle = useEditor((state) => state.history.document.topics[id]?.title ?? title)
+  const committedTitle = useEditor((state) => {
+    const topic = state.history.document.topics[id]
+    return surface === 'notes' ? (topic?.notes ?? '') : (topic?.title ?? title)
+  })
   // Lexical owns composition and selection. Never replace its state on each keystroke.
   const [extension] = useState(() =>
     defineExtension({
@@ -44,7 +47,7 @@ export function TopicEditor({
           FOCUS_COMMAND,
           () => {
             const state = useEditor.getState()
-            if (surface === 'inspector') state.startEdit(id, undefined, surface)
+            if (surface !== 'canvas') state.startEdit(id, undefined, surface)
             else if (state.editingId !== id || state.editingSurface !== surface) $selectAll()
             return false
           },
@@ -66,8 +69,16 @@ export function TopicEditor({
       <div className="topic-editor-shell">
         <ContentEditable
           id={`topic-${surface}-${id}`}
-          className={`${surface === 'canvas' ? 'topic-input' : 'topic-name-input'} nodrag nopan nowheel`}
-          aria-label={surface === 'inspector' ? '主题名称' : active ? '编辑主题标题' : '主题内容'}
+          className={`${surface === 'canvas' ? 'topic-input' : surface === 'notes' ? 'topic-notes-input min-h-28 max-h-[280px] px-2.5 py-[9px] text-[13px] leading-relaxed' : 'topic-name-input min-h-[38px] max-h-[180px] px-2.5 py-2 text-sm leading-normal'} ${surface === 'canvas' ? '' : 'w-full overflow-y-auto rounded-[7px] border border-border bg-background text-foreground whitespace-pre-wrap [overflow-wrap:anywhere] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&_p]:m-0'} nodrag nopan nowheel`}
+          aria-label={
+            surface === 'notes'
+              ? '主题备注'
+              : surface === 'inspector'
+                ? '主题名称'
+                : active
+                  ? '编辑主题标题'
+                  : '主题内容'
+          }
           aria-multiline
           spellCheck={false}
           data-topic-id={surface === 'canvas' ? id : undefined}

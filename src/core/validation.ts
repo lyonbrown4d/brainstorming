@@ -1,5 +1,6 @@
 import type { MindMapDocument, Topic } from './types'
 import { validateTopicStyle } from './topic-style'
+import { validateDocumentContent, validateTopicContent } from './topic-content'
 
 const forbiddenIds = new Set(['__proto__', 'prototype', 'constructor'])
 
@@ -35,6 +36,7 @@ function assertTopic(value: unknown, key: string): asserts value is Topic {
   }
   const children = own(value, 'children')
   if (Object.hasOwn(value, 'style')) validateTopicStyle(value.style)
+  validateTopicContent(value)
   if (!Array.isArray(children)) throw new Error(`主题 ${key} 的子主题列表无效`)
   for (const child of children) assertId(child)
 }
@@ -55,6 +57,7 @@ export function validateDocument(value: unknown): asserts value is MindMapDocume
   if (!isRecord(topics) || !Object.hasOwn(topics, rootId)) throw new Error('缺少中心主题')
   for (const [id, topic] of Object.entries(topics)) assertTopic(topic, id)
   const typedTopics = topics as Record<string, Topic>
+  validateDocumentContent(value, typedTopics)
   const root = typedTopics[rootId]
   if (!root || root.title !== value.title || root.side !== 'right')
     throw new Error('中心主题属性与文档不一致')

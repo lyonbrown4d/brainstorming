@@ -11,6 +11,20 @@ export interface TopicStyle {
   readonly lineWidth?: number
 }
 
+export interface DocumentAsset {
+  readonly id: string
+  readonly name: string
+  readonly mimeType: string
+  /** Canonical, padded base64 without a data URL prefix. */
+  readonly data: string
+}
+
+export interface TopicImage {
+  readonly assetId: string
+  readonly width: number
+  readonly height: number
+}
+
 export interface Topic {
   readonly id: string
   readonly title: string
@@ -18,6 +32,9 @@ export interface Topic {
   readonly collapsed: boolean
   readonly side: Side
   readonly style?: TopicStyle
+  readonly notes?: string
+  readonly image?: TopicImage
+  readonly attachments?: readonly string[]
 }
 
 export interface MindMapDocument {
@@ -27,9 +44,24 @@ export interface MindMapDocument {
   readonly title: string
   readonly rootId: string
   readonly topics: Readonly<Record<string, Topic>>
+  readonly assets?: Readonly<Record<string, DocumentAsset>>
 }
 
+export type TopicContentCommand =
+  | { readonly type: 'setTopicNotes'; readonly topicId: string; readonly notes: string }
+  | {
+      readonly type: 'setTopicImage'
+      readonly topicId: string
+      readonly asset: DocumentAsset
+      readonly width: number
+      readonly height: number
+    }
+  | { readonly type: 'removeTopicImage'; readonly topicId: string }
+  | { readonly type: 'addTopicAttachment'; readonly topicId: string; readonly asset: DocumentAsset }
+  | { readonly type: 'removeTopicAttachment'; readonly topicId: string; readonly assetId: string }
+
 export type Command =
+  | TopicContentCommand
   | {
       readonly type: 'addTopic'
       readonly parentId: string

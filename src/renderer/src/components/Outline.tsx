@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { ChevronDown, ChevronRight, ListTree, X } from 'lucide-react'
 import { useEditor } from '../state/editor'
+import { Button } from './ui/button'
 function OutlineBranch({ id, depth }: { id: string; depth: number }) {
   const topic = useEditor((state) => state.history.document.topics[id])
   const selected = useEditor((state) => state.selectedId === id)
@@ -12,20 +13,28 @@ function OutlineBranch({ id, depth }: { id: string; depth: number }) {
         style={{ paddingLeft: depth * 15 + 8 }}
       >
         {topic.children.length > 0 ? (
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-[19px]"
             aria-label={`${topic.collapsed ? '展开' : '折叠'}大纲 ${topic.title}`}
             onClick={() => {
               useEditor.getState().commitDraft()
               useEditor.getState().command({ type: 'toggleCollapse', topicId: id })
             }}
           >
-            {topic.collapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
-          </button>
+            {topic.collapsed ? (
+              <ChevronRight size={13} className="size-[13px]" />
+            ) : (
+              <ChevronDown size={13} className="size-[13px]" />
+            )}
+          </Button>
         ) : (
           <span className="outline-dot" />
         )}
-        <button
-          className="outline-title"
+        <Button
+          variant="ghost"
+          className="outline-title px-0 py-0"
           onClick={() => {
             useEditor.getState().select(id)
           }}
@@ -34,7 +43,7 @@ function OutlineBranch({ id, depth }: { id: string; depth: number }) {
           }}
         >
           {topic.title}
-        </button>
+        </Button>
       </div>
       {!topic.collapsed && topic.children.length > 0 && (
         <ul>
@@ -56,14 +65,17 @@ export function Outline() {
         <span>
           <ListTree size={16} /> 文档大纲
         </span>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-[25px]"
           aria-label="关闭大纲"
           onClick={() => {
             useEditor.setState({ outlineOpen: false })
           }}
         >
-          <X size={15} />
-        </button>
+          <X size={15} className="size-[15px]" />
+        </Button>
       </div>
       <div className="outline-summary">{count} 个主题 · 一个完整的想法</div>
       <ul className="outline-tree">

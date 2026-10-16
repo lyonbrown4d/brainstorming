@@ -32,7 +32,9 @@ export function applyWorkbookCommand(
     validateSheet(command.sheet)
     assertNewId(workbook, command.sheet.id)
     sheets.splice(insertionIndex(command.index, sheets.length), 0, sheetData(command.sheet))
-    return { ...workbook, sheets }
+    const updated = { ...workbook, sheets }
+    validateWorkbook(updated)
+    return updated
   }
   const sourceIndex = sheets.findIndex((sheet) => sheet.id === command.sheetId)
   const sheet = sheets[sourceIndex]
@@ -70,10 +72,12 @@ export function applyWorkbookCommand(
       validateDocument(command.document)
       assertId(command.document.id)
       if (command.document === sheet.document) return workbook
-      sheets[sourceIndex] = { ...sheet, document: documentData(command.document) }
+      sheets[sourceIndex] = { ...sheet, document: documentData(command.document, true) }
       break
     default:
       throw new Error('不支持的画布命令')
   }
-  return { ...workbook, sheets }
+  const updated = { ...workbook, sheets }
+  validateWorkbook(updated)
+  return updated
 }

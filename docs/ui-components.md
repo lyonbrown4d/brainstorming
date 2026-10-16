@@ -1,0 +1,17 @@
+# UI 组件来源与组合约定
+
+通用控件优先使用 shadcn/ui。缺少组件时，使用固定版本的官方 CLI 和 pnpm 获取，按项目的 `components.json` 放入 `src/renderer/src/components/ui`。
+
+本轮使用 CLI `shadcn@4.21.5` 获取 Button、Dialog、Tooltip、Badge、ScrollArea、Input、Select、Label 和 Separator。下载目录保留官方源码，不通过业务补丁修改组件结构、逻辑、默认样式或公开 API；Prettier 和 ESLint 不重写该目录，TypeScript 检查和交互测试仍覆盖其使用。
+
+业务组合放在 `src/renderer/src/components`：
+
+- `FieldSelect` 组合 Select，统一业务选项、可访问名称和值校验。
+- `DialogContent` 组合官方 DialogContent、DialogClose 和 Button，通过公开的 `showCloseButton` 属性配置中文关闭按钮。
+- `TopicContentPanel` 组合 Lexical、Button、Badge、ScrollArea 和图片预览，管理主题内容。
+
+差异优先通过组合、公开 props 和 `className` 实现，主题变量集中在 `styles/ui.css`。业务布局优先通过 Tailwind utilities 表达，动态画布值保留为类型明确的样式值；不把业务状态或导图命令放入基础组件。
+
+已有界面在迭代时一并检查基础控件。本轮替换主题样式选择器、移动父主题选择器、画布名称输入、画布控制、大纲和标签操作按钮；React Flow、Lexical 和 dnd-kit 继续负责各自的专业交互。
+
+升级时通过官方 CLI/注册表重新获取，审查 API 差异，再在组合层适配并运行类型、Storybook 和 E2E。不要为了适配业务修改下载组件，也不要以下载组件为模板复制另一套通用控件。

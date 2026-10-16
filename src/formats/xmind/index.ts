@@ -2,12 +2,24 @@ import { type MindMapSheet, type MindMapWorkbook, type Side, type Topic } from '
 import { truncateSheetName } from '../../core/workbook'
 import { readArchive } from '../archive'
 import type { ImportedWorkbook } from '../types'
+import { encodeTrelyx } from '../trelyx'
+import { EmbeddedContent } from './content'
 import { validateBoundedWorkbook } from '../trelyx/validation'
 import { idAllocator, list, record, text, topicIds, Warnings, type SourceRecord } from './common'
 import { parseLegacy } from './legacy'
 import { importStyle } from './styles'
 
-const topicFields = new Set(['id', 'title', 'children', 'branch', 'style', 'structureClass'])
+const topicFields = new Set([
+  'id',
+  'title',
+  'children',
+  'branch',
+  'style',
+  'structureClass',
+  'notes',
+  'image',
+  'href',
+])
 const sheetFields = new Set(['id', 'title', 'rootTopic'])
 
 /** Import supported XMind content only; all discarded presentation/features are reported. */
@@ -41,7 +53,7 @@ export function importXmind(bytes: Uint8Array): ImportedWorkbook {
       .map((sheet) => record(sheet, '画布').id)
       .filter((id): id is string => typeof id === 'string'),
   )
-  const convert = new WorkbookImporter(warnings, reservedSheetIds)
+  const convert = new WorkbookImporter(warnings, reservedSheetIds, entries)
   const imported = sheets.map((sheet, index) => convert.sheet(record(sheet, '画布'), index))
   const workbook: MindMapWorkbook = {
     format: 'trelyx',
@@ -51,19 +63,28 @@ export function importXmind(bytes: Uint8Array): ImportedWorkbook {
     sheets: imported,
   }
   for (const path of entries.keys()) {
-    if (/^(?:attachments|resources)\//i.test(path)) warnings.add('未导入 XMind 附件资源')
+    if (
+      /^(?:attachments|resources)\//i.test(path) &&
+      !path.endsWith('/') &&
+      !convert.used.has(path)
+    )
+      warnings.add('未导入 XMind 未引用或不支持的内嵌资源')
   }
   validateBoundedWorkbook(workbook)
+  encodeTrelyx(workbook)
   return { workbook, warnings: warnings.values() }
 }
 
 class WorkbookImporter {
+  readonly used = new Set<string>()
+  private readonly budget = { bytes: 0 }
   private count = 0
   private readonly sheetId: (value: unknown) => string
 
   constructor(
     private readonly warnings: Warnings,
     reservedSheetIds: ReadonlySet<string>,
+    private readonly entries: ReadonlyMap<string, Uint8Array>,
   ) {
     this.sheetId = idAllocator('xmind-sheet', warnings, reservedSheetIds)
   }
@@ -79,13 +100,22 @@ class WorkbookImporter {
     const topics: Record<string, Topic> = {}
     const rootTopic = record(source.rootTopic, '中心主题')
     const allocate = idAllocator(`xmind-topic-${index + 1}`, this.warnings, topicIds(rootTopic))
-    const rootId = this.topic(rootTopic, topics, allocate, 0, 'right')
+    const content = new EmbeddedContent(this.entries, this.used, this.budget, this.warnings)
+    const rootId = this.topic(rootTopic, topics, allocate, 0, 'right', content)
     const root = topics[rootId]
     if (!root) throw new Error('XMind 缺少中心主题')
     return {
       id,
       name,
-      document: { format: 'trelyx', version: 1, id, title: root.title, rootId, topics },
+      document: {
+        ...(Object.keys(content.assets).length ? { assets: content.assets } : {}),
+        format: 'trelyx',
+        version: 1,
+        id,
+        title: root.title,
+        rootId,
+        topics,
+      },
     }
   }
 
@@ -95,6 +125,7 @@ class WorkbookImporter {
     allocate: (value: unknown) => string,
     depth: number,
     side: Side,
+    content: EmbeddedContent,
   ): string {
     this.reserve(depth)
     const id = allocate(source.id)
@@ -114,6 +145,7 @@ class WorkbookImporter {
         allocate,
         depth + 1,
         depth === 0 ? (index % 2 === 0 ? 'right' : 'left') : side,
+        content,
       ),
     )
     for (const [kind, entries] of Object.entries(children)) {
@@ -132,7 +164,7 @@ class WorkbookImporter {
               : '其他类型'
       const title = `导入的${kindName}主题`
       const preserved = extra.map((child) =>
-        this.topic(record(child, '附加主题'), topics, allocate, depth + 2, side),
+        this.topic(record(child, '附加主题'), topics, allocate, depth + 2, side, content),
       )
       topics[groupId] = { id: groupId, title, children: preserved, collapsed: false, side }
       childIds.push(groupId)
@@ -148,6 +180,7 @@ class WorkbookImporter {
       collapsed: source.branch === 'folded',
       side,
       ...(style ? { style } : {}),
+      ...content.topic(source),
     }
     return id
   }

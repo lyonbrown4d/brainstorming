@@ -81,7 +81,7 @@ describe('bounded ZIP archive reading', () => {
   })
 
   it('enforces compressed, entry count, individual and cumulative size bounds before decompression', () => {
-    expect(() => readArchive(new Uint8Array(ARCHIVE_LIMITS.compressed + 1))).toThrow(/20 MiB/u)
+    expect(() => readArchive(new Uint8Array(ARCHIVE_LIMITS.compressed + 1))).toThrow(/32 MiB/u)
     expect(() =>
       readArchive(
         zipSync(
@@ -103,11 +103,14 @@ describe('bounded ZIP archive reading', () => {
             c: new Uint8Array(),
             d: new Uint8Array(),
             e: new Uint8Array(),
+            f: new Uint8Array(),
+            g: new Uint8Array(),
+            h: new Uint8Array(),
           }),
           9 * 1024 * 1024,
         ),
       ),
-    ).toThrow(/40 MiB/u)
+    ).toThrow(/64 MiB/u)
   })
 
   it('stops a compressed bomb whose metadata understates expanded output', () => {

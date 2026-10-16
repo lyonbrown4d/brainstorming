@@ -14,3 +14,14 @@ export function modernXmind(): Uint8Array {
 export function legacyXmind(): Uint8Array {
   return zipSync({ 'content.xml': fixture('legacy.xml'), 'styles.xml': fixture('styles.xml') })
 }
+
+/** Embedded content fixtures use actual PNG and arbitrary attachment bytes inside ZIP. */
+export function contentXmind(legacy = false): Uint8Array {
+  return zipSync({
+    [legacy ? 'content.xml' : 'content.json']: fixture(
+      legacy ? 'content-legacy.xml' : 'content-modern.json',
+    ),
+    'resources/pixel image.png': fixture('pixel image.png'),
+    'attachments/data.bin': fixture('data.bin'),
+  })
+}

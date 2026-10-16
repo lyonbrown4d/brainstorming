@@ -106,7 +106,7 @@ describe('桌面文件服务', () => {
     await writeFile(nativePath, contents)
     await expect(files.openSelected(nativePath)).rejects.toThrow()
     await writeFile(nativePath, Buffer.alloc(MAX_FILE_BYTES + 1))
-    await expect(files.openSelected(nativePath)).rejects.toThrow('20 MB')
+    await expect(files.openSelected(nativePath)).rejects.toThrow('32 MiB')
     expect(files.getRecentFiles()).toEqual([])
   })
 

@@ -1,0 +1,28 @@
+[
+  {
+    "id": "content-sheet",
+    "title": "内容导入",
+    "rootTopic": {
+      "id": "content-root",
+      "title": "备注与资源",
+      "notes": { "plain": { "content": "中文备注\n第二行" } },
+      "image": { "src": "xap:resources/pixel%20image.png", "width": 900, "height": 900 },
+      "href": "xap:attachments/data.bin",
+      "children": {
+        "attached": [
+          {
+            "id": "rich-topic",
+            "title": "富文本",
+            "notes": {
+              "html": {
+                "content": "<html><body><p>第一段 <b>加粗</b></p><p>第二段<br/>换行</p></body></html>"
+              }
+            },
+            "image": { "src": "resources/pixel%20image.png" },
+            "href": "attachments/data.bin"
+          }
+        ]
+      }
+    }
+  }
+]

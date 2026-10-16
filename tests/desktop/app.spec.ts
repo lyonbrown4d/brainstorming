@@ -6,6 +6,7 @@ import { createDocument, createWorkbook } from '../../src/core'
 import { encodeTrelyx } from '../../src/formats/trelyx'
 import { decodeFile } from '../../src/formats'
 import { modernXmind } from '../fixtures/xmind/archive'
+import { imageBase64, attachmentBytes } from '../fixtures/content'
 
 test('生产 Electron 启动、sandbox preload 和恢复闭环', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'trelyx-desktop-'))
@@ -56,6 +57,33 @@ test('生产 Electron 启动、sandbox preload 和恢复闭环', async () => {
     await expect
       .poll(async () => page.evaluate(() => window.trelyx?.readRecovery()))
       .toContain('原生桌面编辑')
+    await page.getByRole('button', { name: '样式面板', exact: true }).click()
+    const panel = page.getByRole('complementary', { name: '主题面板', exact: true })
+    await panel.getByRole('textbox', { name: '主题备注' }).fill('桌面备注\n第二行')
+    const imagePath = join(directory, '桌面图片.png')
+    const attachmentPath = join(directory, '资料.bin')
+    await Promise.all([
+      writeFile(imagePath, Buffer.from(imageBase64, 'base64')),
+      writeFile(attachmentPath, attachmentBytes),
+    ])
+    await app.evaluate(({ dialog }, path) => {
+      dialog.showOpenDialog = () => Promise.resolve({ canceled: false, filePaths: [path] })
+    }, imagePath)
+    await panel.getByRole('button', { name: '添加图片', exact: true }).click()
+    await expect(panel.getByRole('img', { name: '桌面图片.png' })).toBeVisible()
+    await app.evaluate(({ dialog }, path) => {
+      dialog.showOpenDialog = () => Promise.resolve({ canceled: false, filePaths: [path] })
+    }, attachmentPath)
+    await panel.getByRole('button', { name: '添加附件', exact: true }).click()
+    await expect(panel.getByText('资料.bin', { exact: true })).toBeVisible()
+    const exportedPath = join(directory, 'exported.bin')
+    await app.evaluate(({ dialog }, path) => {
+      dialog.showSaveDialog = () => Promise.resolve({ canceled: false, filePath: path })
+    }, exportedPath)
+    await panel.getByRole('button', { name: '另存附件 资料.bin' }).click()
+    await expect
+      .poll(() => readFile(exportedPath).catch(() => Buffer.alloc(0)))
+      .toEqual(Buffer.from(attachmentBytes))
     const savedPath = join(directory, 'native-save.trelyx')
     await app.evaluate(({ dialog }, path) => {
       dialog.showSaveDialog = () => Promise.resolve({ canceled: false, filePath: path })
@@ -78,6 +106,9 @@ test('生产 Electron 启动、sandbox preload 和恢复闭环', async () => {
     await page.getByRole('button', { name: '文件菜单', exact: true }).click()
     await page.getByRole('menuitem', { name: '打开导图', exact: true }).click()
     await expect(page.getByTestId('topic-root')).toContainText('原生桌面编辑')
+    await expect(panel.getByRole('textbox', { name: '主题备注' })).toHaveText('桌面备注\n第二行')
+    await expect(panel.getByRole('img', { name: '桌面图片.png' })).toBeVisible()
+    await expect(panel.getByText('资料.bin', { exact: true })).toBeVisible()
     expect(errors).toEqual([])
   } finally {
     // Terminate the test process rather than interact with the intentional native dirty-close prompt.

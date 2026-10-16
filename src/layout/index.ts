@@ -3,7 +3,7 @@ import { validateDocument } from '@core'
 import type { MindMapDocument, Side, Topic } from '@core'
 import { measureTopic } from './measure'
 
-export { measureTopic } from './measure'
+export { measureTopic, measureTopicImage } from './measure'
 
 export interface LayoutNode {
   readonly id: string
@@ -30,7 +30,7 @@ export function layoutDocument(document: MindMapDocument): MindMapLayout {
   validateDocument(document)
   const root = document.topics[document.rootId]
   if (root === undefined) throw new Error('缺少中心主题')
-  const rootSize = measureTopic(root.title, true, root.style?.fontSize)
+  const rootSize = measureTopic(root.title, true, root.style?.fontSize, root)
   const nodes: LayoutNode[] = [
     { id: root.id, x: -rootSize.width / 2, y: -rootSize.height / 2, ...rootSize, side: 'right' },
   ]
@@ -40,7 +40,7 @@ export function layoutDocument(document: MindMapDocument): MindMapLayout {
   const sizeOf = (topic: Topic) => {
     let size = measurements.get(topic.id)
     if (size === undefined) {
-      size = measureTopic(topic.title, false, topic.style?.fontSize)
+      size = measureTopic(topic.title, false, topic.style?.fontSize, topic)
       measurements.set(topic.id, size)
     }
     return size

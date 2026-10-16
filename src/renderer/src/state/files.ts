@@ -3,13 +3,13 @@ import type { DesktopAPI, OpenedDocument } from '@shared/contracts'
 import { isDirty, useEditor } from './editor'
 import { suggestedFileName } from './fileName'
 import { serializedWorkbook } from './workbookState'
+export { RECOVERY_KEY } from './recovery'
 
 declare global {
   interface Window {
     trelyx?: DesktopAPI
   }
 }
-export const RECOVERY_KEY = 'trelyx.recovery.native-v1'
 
 function confirmDiscard(): boolean {
   useEditor.getState().commitDraft()
@@ -26,8 +26,8 @@ function browserOpen(): Promise<OpenedDocument | null> {
         resolve(null)
         return
       }
-      if (file.size > 20 * 1024 * 1024) {
-        reject(new Error('文件超过 20 MB，无法打开'))
+      if (file.size > 32 * 1024 * 1024) {
+        reject(new Error('文件超过 32 MiB，无法打开'))
         return
       }
       void Promise.all([file.arrayBuffer(), import('../../../formats')])
@@ -83,6 +83,7 @@ export async function openDocument(recentPath?: string, pending = false): Promis
     const changedWhileReading =
       current.workbook !== openedFrom.workbook ||
       current.editingId !== openedFrom.editingId ||
+      current.editingSurface !== openedFrom.editingSurface ||
       current.draft !== openedFrom.draft
     if (
       changedWhileReading &&
@@ -107,6 +108,7 @@ export async function openDocument(recentPath?: string, pending = false): Promis
 export async function saveDocument(saveAs = false): Promise<void> {
   if (useEditor.getState().busy) return
   useEditor.getState().commitDraft()
+  if (useEditor.getState().editingId) return
   const { workbook, path } = useEditor.getState()
   const contents = serializedWorkbook(workbook)
   useEditor.setState({ busy: true, error: null })

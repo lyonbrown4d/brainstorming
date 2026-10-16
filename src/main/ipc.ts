@@ -9,6 +9,7 @@ import type { DocumentFiles } from './files'
 import { validateContents, validateSavePath } from './files'
 import type { OpenedDocument, SaveRequest } from '../shared/contracts'
 import { readWindowState } from './windowChrome'
+import { registerAssetIPC } from './assets'
 
 const openFilters = [{ name: '思维导图', extensions: ['trelyx', 'xmind'] }]
 const saveFilters = [{ name: 'Trelyx 思维导图', extensions: ['trelyx'] }]
@@ -30,6 +31,7 @@ export function registerIPC(
     }
     return window
   }
+  registerAssetIPC(trusted)
   ipcMain.handle('window:state', (event) => readWindowState(trusted(event)))
   ipcMain.handle('document:has-open-file', (event) => {
     trusted(event)

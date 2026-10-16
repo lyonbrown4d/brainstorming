@@ -1,9 +1,28 @@
-import { Bold, ChevronDown, Italic, MoreHorizontal } from 'lucide-react'
+import { Bold, Italic, MoreHorizontal } from 'lucide-react'
 import { Popover } from 'radix-ui'
 import { type TopicStyle } from '@core'
 import { defaultTopicStyle } from '../lib/topicAppearance'
 import { useEditor } from '../state/editor'
 import { Button } from './ui/button'
+import { FieldSelect } from './FieldSelect'
+
+const fontSizes = Array.from({ length: 21 }, (_, index) => ({
+  value: String(index + 12),
+  label: String(index + 12),
+}))
+const shapeOptions = [
+  { value: 'rounded', label: '圆角矩形' },
+  { value: 'rectangle', label: '矩形' },
+  { value: 'ellipse', label: '椭圆' },
+] as const
+const lineOptions = [
+  { value: 'curve', label: '曲线' },
+  { value: 'straight', label: '直线' },
+] as const
+const lineWidths = [1, 2, 3, 4, 5, 6].map((width) => ({
+  value: String(width),
+  label: `${width} px`,
+}))
 
 const fillColors = [
   { value: '#ffc7c7', name: '珊瑚' },
@@ -32,11 +51,13 @@ function ColorPalette({
   onChange: (value: string) => void
 }) {
   return (
-    <div className="color-palette" role="group" aria-label={label}>
+    <div className="color-palette flex items-center gap-2.5" role="group" aria-label={label}>
       {colors.map((color) => (
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           key={color.value}
-          className="color-swatch"
+          className="color-swatch size-8 shrink-0 rounded-[7px] border border-foreground/5 p-0 hover:-translate-y-px aria-pressed:outline-2 aria-pressed:outline-offset-[3px] aria-pressed:outline-ring motion-reduce:hover:translate-y-0"
           type="button"
           aria-label={`${label}：${color.name}`}
           aria-pressed={value.toLowerCase() === color.value}
@@ -80,20 +101,19 @@ export function TopicFormatting({
       })
   }
   const sizeControl = (
-    <select
-      className="font-size-select"
-      aria-label="字号"
-      value={fontSize}
-      onChange={(event) => {
-        update({ fontSize: Number(event.target.value) })
+    <FieldSelect
+      className={
+        compact
+          ? 'font-size-select w-[49px] border-0 bg-transparent px-0.5 data-[size=default]:h-[29px]'
+          : 'font-size-select w-[60px] flex-1'
+      }
+      label="字号"
+      value={String(fontSize)}
+      options={fontSizes}
+      onChange={(value) => {
+        update({ fontSize: Number(value) })
       }}
-    >
-      {Array.from({ length: 21 }, (_, index) => index + 12).map((size) => (
-        <option key={size} value={size}>
-          {size}
-        </option>
-      ))}
-    </select>
+    />
   )
   const boldControl = (
     <Button
@@ -110,19 +130,26 @@ export function TopicFormatting({
   )
   if (compact)
     return (
-      <div className="topic-context-toolbar nodrag nopan" role="toolbar" aria-label="主题格式">
+      <div
+        className="topic-context-toolbar nodrag nopan flex items-center rounded-[10px] border border-border bg-background px-[7px] py-[5px] shadow-[0_5px_16px_#352d4d0d] [&_[data-slot=button]]:h-[29px] [&_[data-slot=button]]:w-[31px]"
+        role="toolbar"
+        aria-label="主题格式"
+      >
         {sizeControl}
-        <span className="toolbar-separator" />
+        <span className="mx-[5px] h-[19px] w-px shrink-0 bg-border" />
         {boldControl}
         <Popover.Root>
           <Popover.Trigger asChild>
             <Button variant="ghost" size="icon" aria-label="主题填充">
-              <span className="current-fill" style={{ background: fill }} />
+              <span
+                className="current-fill block size-5 rounded-full border border-foreground/10"
+                style={{ background: fill }}
+              />
             </Button>
           </Popover.Trigger>
           <Popover.Portal>
             <Popover.Content
-              className="formatting-popover color-popover"
+              className="formatting-popover color-popover z-[65] w-auto rounded-xl border border-border bg-popover p-3.5 shadow-[0_6px_24px_#352d4d12]"
               sideOffset={10}
               aria-label="填充颜色"
             >
@@ -137,7 +164,7 @@ export function TopicFormatting({
             </Popover.Content>
           </Popover.Portal>
         </Popover.Root>
-        <span className="toolbar-separator" />
+        <span className="mx-[5px] h-[19px] w-px shrink-0 bg-border" />
         <Popover.Root>
           <Popover.Trigger asChild>
             <Button variant="ghost" size="icon" aria-label="更多主题样式">
@@ -146,7 +173,7 @@ export function TopicFormatting({
           </Popover.Trigger>
           <Popover.Portal>
             <Popover.Content
-              className="formatting-popover"
+              className="formatting-popover z-[65] w-[250px] rounded-xl border border-border bg-popover px-4 shadow-[0_6px_24px_#352d4d12] [&_.format-group:first-child]:mt-0 [&_.format-group:first-child]:border-t-0"
               sideOffset={10}
               align="end"
               aria-label="更多主题样式"
@@ -159,22 +186,20 @@ export function TopicFormatting({
     )
   return (
     <div className="topic-formatting">
-      <section className="format-group">
+      <section className="format-group border-t border-border py-[18px] first:mt-[18px] [&_h3]:mb-2.5 [&_h3]:text-[13px] [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-[18px]">
         <h3>形状</h3>
-        <div className="select-control">
-          <span className={`shape-preview shape-${style.shape ?? 'rounded'}`} />
-          <select
-            aria-label="主题形状"
+        <div className="select-control relative flex items-center [&_.field-select]:w-full [&_.field-select]:pr-8 [&_.field-select]:pl-11">
+          <span
+            className={`shape-preview pointer-events-none absolute left-3 h-[15px] w-[22px] border-[1.5px] border-secondary-foreground ${style.shape === 'ellipse' ? 'rounded-full' : style.shape === 'rectangle' ? 'rounded-none' : 'rounded'}`}
+          />
+          <FieldSelect
+            label="主题形状"
             value={style.shape ?? 'rounded'}
-            onChange={(event) => {
-              update({ shape: event.target.value as NonNullable<TopicStyle['shape']> })
+            options={shapeOptions}
+            onChange={(value) => {
+              update({ shape: value })
             }}
-          >
-            <option value="rounded">圆角矩形</option>
-            <option value="rectangle">矩形</option>
-            <option value="ellipse">椭圆</option>
-          </select>
-          <ChevronDown size={15} />
+          />
         </div>
         <h3>填充</h3>
         <ColorPalette
@@ -186,10 +211,13 @@ export function TopicFormatting({
           }}
         />
       </section>
-      <section className="format-group">
+      <section className="format-group border-t border-border py-[18px] first:mt-[18px] [&_h3]:mb-2.5 [&_h3]:text-[13px] [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-[18px]">
         <h3>文本</h3>
-        <div className="font-controls">
-          <label>字号{sizeControl}</label>
+        <div className="font-controls mb-[15px] flex items-end gap-2 [&_[data-slot=button]]:h-9 [&_[data-slot=button]]:w-[35px] [&_[data-slot=button]]:border [&_[data-slot=button]]:border-border [&_[data-slot=button]]:bg-background [&_[data-slot=button][aria-pressed=true]]:border-primary/20 [&_[data-slot=button][aria-pressed=true]]:bg-accent [&_[data-slot=button][aria-pressed=true]]:text-accent-foreground">
+          <div className="format-field flex flex-1 items-center gap-2.5 text-xs text-muted-foreground">
+            <span>字号</span>
+            {sizeControl}
+          </div>
           {boldControl}
           <Button
             variant="ghost"
@@ -203,7 +231,7 @@ export function TopicFormatting({
             <Italic size={18} />
           </Button>
         </div>
-        <span className="format-label">文字颜色</span>
+        <span className="format-label mb-2.5 block text-xs text-muted-foreground">文字颜色</span>
         <ColorPalette
           colors={textColors}
           value={color}
@@ -213,38 +241,31 @@ export function TopicFormatting({
           }}
         />
       </section>
-      <section className="format-group">
+      <section className="format-group border-t border-border py-[18px] first:mt-[18px] [&_h3]:mb-2.5 [&_h3]:text-[13px] [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-[18px]">
         <h3>分支</h3>
-        <div className="branch-controls">
-          <label>
-            线型
-            <select
-              aria-label="分支线型"
+        <div className="branch-controls flex gap-2.5 [&_.format-field]:flex [&_.format-field]:flex-1 [&_.format-field]:flex-col [&_.format-field]:gap-2 [&_.format-field]:text-[11px] [&_.format-field]:text-muted-foreground [&_.field-select]:w-full">
+          <div className="format-field">
+            <span>线型</span>
+            <FieldSelect
+              label="分支线型"
               value={style.lineStyle ?? 'curve'}
-              onChange={(event) => {
-                update({ lineStyle: event.target.value as NonNullable<TopicStyle['lineStyle']> })
+              options={lineOptions}
+              onChange={(value) => {
+                update({ lineStyle: value })
               }}
-            >
-              <option value="curve">曲线</option>
-              <option value="straight">直线</option>
-            </select>
-          </label>
-          <label>
-            粗细
-            <select
-              aria-label="分支粗细"
-              value={style.lineWidth ?? defaults.lineWidth}
-              onChange={(event) => {
-                update({ lineWidth: Number(event.target.value) })
+            />
+          </div>
+          <div className="format-field">
+            <span>粗细</span>
+            <FieldSelect
+              label="分支粗细"
+              value={String(style.lineWidth ?? defaults.lineWidth)}
+              options={lineWidths}
+              onChange={(value) => {
+                update({ lineWidth: Number(value) })
               }}
-            >
-              {[1, 2, 3, 4, 5, 6].map((width) => (
-                <option key={width} value={width}>
-                  {width} px
-                </option>
-              ))}
-            </select>
-          </label>
+            />
+          </div>
         </div>
       </section>
     </div>

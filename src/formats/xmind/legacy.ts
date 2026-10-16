@@ -85,6 +85,9 @@ export function parseLegacy(
       id: source.id,
       title: xmlText(source.title),
       children,
+      ...(source.notes !== undefined ? { notes: source.notes } : {}),
+      ...(source.img !== undefined ? { image: source.img } : {}),
+      ...(source.href !== undefined ? { href: source.href } : {}),
       ...(source.branch !== undefined ? { branch: source.branch } : {}),
       ...(source['structure-class'] !== undefined
         ? { structureClass: source['structure-class'] }
@@ -102,6 +105,9 @@ export function parseLegacy(
         'id',
         'title',
         'children',
+        'notes',
+        'img',
+        'href',
         'branch',
         'structure-class',
         'style-id',

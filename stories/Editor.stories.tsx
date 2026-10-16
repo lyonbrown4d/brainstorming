@@ -3,12 +3,13 @@ import { expect, userEvent, within, waitFor } from 'storybook/test'
 import { createExampleDocument, applyCommand } from '../src/core'
 import { App } from '../src/renderer/src/App'
 import { useEditor } from '../src/renderer/src/state/editor'
+import { clearBrowserRecovery } from '../src/renderer/src/state/recovery'
 const meta = {
   title: 'Trelyx/思维导图',
   component: App,
   parameters: { layout: 'fullscreen' },
-  beforeEach: () => {
-    localStorage.removeItem('trelyx.recovery.native-v1')
+  beforeEach: async () => {
+    await clearBrowserRecovery()
     useEditor.getState().replace(createExampleDocument())
     useEditor.setState({ recovery: null, outlineOpen: false, inspectorOpen: false })
   },

@@ -15,6 +15,7 @@ import { useEditor } from '../state/editor'
 import { TopicNode, type TopicFlowNode } from './TopicNode'
 import { SelectionVisibility } from './SelectionVisibility'
 import { FloatingToolbar } from './FloatingToolbar'
+import { Button } from './ui/button'
 import { branchColors as colors, branchFills } from '../lib/topicAppearance'
 const nodeTypes = { topic: TopicNode }
 function branchColors(document: MindMapDocument): Map<string, string> {
@@ -39,23 +40,29 @@ export function ZoomControls() {
   const { zoom } = useViewport()
   return (
     <div className="canvas-controls" aria-label="画布视图">
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         title="缩小"
         aria-label="缩小"
         onClick={() => void flow.zoomOut({ duration: reduceMotion ? 0 : 160 })}
       >
         <Minus size={16} />
-      </button>
+      </Button>
       <span className="zoom-value">{Math.round(zoom * 100)}%</span>
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         title="放大"
         aria-label="放大"
         onClick={() => void flow.zoomIn({ duration: reduceMotion ? 0 : 160 })}
       >
         <Plus size={16} />
-      </button>
+      </Button>
       <i />
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         title="适应画布"
         aria-label="适应画布"
         onClick={() =>
@@ -63,8 +70,10 @@ export function ZoomControls() {
         }
       >
         <Maximize2 size={16} />
-      </button>
-      <button
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
         title="聚焦选中主题"
         aria-label="聚焦选中主题"
         onClick={() => {
@@ -78,7 +87,7 @@ export function ZoomControls() {
         }}
       >
         <Focus size={16} />
-      </button>
+      </Button>
     </div>
   )
 }

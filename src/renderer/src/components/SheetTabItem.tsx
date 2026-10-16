@@ -5,6 +5,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useEditor } from '../state/editor'
 import type { SheetDialogAction } from './SheetDialog'
+import { Button } from './ui/button'
 
 interface SheetTabItemProps {
   sheet: { id: string; name: string }
@@ -36,7 +37,9 @@ export function SheetTabItem({ sheet, index, count, busy, onDialog }: SheetTabIt
       data-dragging={isDragging}
       style={{ transform: CSS.Transform.toString(transform), transition }}
     >
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         ref={setActivatorNodeRef}
         type="button"
         className="sheet-drag-handle"
@@ -46,8 +49,8 @@ export function SheetTabItem({ sheet, index, count, busy, onDialog }: SheetTabIt
         aria-label={`拖动画布 ${sheet.name}`}
         title="拖动排序，也可在画布菜单中移动"
       >
-        <GripVertical size={12} />
-      </button>
+        <GripVertical size={12} className="size-3" />
+      </Button>
       <Tabs.Trigger
         ref={trigger}
         value={sheet.id}

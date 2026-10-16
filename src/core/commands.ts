@@ -2,6 +2,7 @@ import { getParentId, getSubtreeIds, requireTopic } from './tree'
 import type { Command, MindMapDocument, Side, Topic } from './types'
 import { assertId, validateDocument } from './validation'
 import { normalizeTopicStyle, validateTopicStyle } from './topic-style'
+import { applyTopicContentCommand } from './content-commands'
 
 function insertionIndex(index: number | undefined, length: number): number {
   const result = index ?? length
@@ -107,6 +108,12 @@ export function applyCommand(document: MindMapDocument, command: Command): MindM
   if (command.type === 'addTopic') return add(document, command)
   const topic = requireTopic(document, command.topicId)
   switch (command.type) {
+    case 'setTopicNotes':
+    case 'setTopicImage':
+    case 'removeTopicImage':
+    case 'addTopicAttachment':
+    case 'removeTopicAttachment':
+      return applyTopicContentCommand(document, topic, command)
     case 'setTopicStyle': {
       validateTopicStyle(command.style)
       const style = normalizeTopicStyle(command.style)

@@ -7,12 +7,12 @@ import { encodeTrelyx } from '../formats/trelyx'
 import type { OpenedDocument, RecentFile } from '../shared/contracts'
 
 // Internal pretty-printed IPC JSON may exceed the compact native entry's 10 MiB.
-export const MAX_DOCUMENT_BYTES = 40 * 1024 * 1024
-export const MAX_FILE_BYTES = 20 * 1024 * 1024
+export const MAX_DOCUMENT_BYTES = 128 * 1024 * 1024
+export const MAX_FILE_BYTES = 32 * 1024 * 1024
 
 export function validateContents(value: unknown): asserts value is string {
   if (typeof value !== 'string' || Buffer.byteLength(value) > MAX_DOCUMENT_BYTES) {
-    throw new Error('文档内容无效或超过 40 MB')
+    throw new Error('文档内容无效或超过 128 MiB')
   }
   deserializeWorkbook(value)
 }
@@ -52,7 +52,7 @@ function isMissing(error: unknown): boolean {
 async function readDocument(path: string): Promise<OpenedDocument> {
   const handle = await open(path, 'r')
   try {
-    if ((await handle.stat()).size > MAX_FILE_BYTES) throw new Error('文件超过 20 MB')
+    if ((await handle.stat()).size > MAX_FILE_BYTES) throw new Error('文件超过 32 MiB')
     // A bounded stream also handles a file that grows after the stat check.
     const chunks: Buffer[] = []
     const stream = handle.createReadStream({ start: 0, end: MAX_FILE_BYTES, autoClose: false })
@@ -60,7 +60,7 @@ async function readDocument(path: string): Promise<OpenedDocument> {
     for await (const chunk of stream) {
       const bytes = chunk as Buffer
       size += bytes.length
-      if (size > MAX_FILE_BYTES) throw new Error('文件超过 20 MB')
+      if (size > MAX_FILE_BYTES) throw new Error('文件超过 32 MiB')
       chunks.push(bytes)
     }
     const decoded = decodeFile(Buffer.concat(chunks), path)

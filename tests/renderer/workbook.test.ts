@@ -15,6 +15,8 @@ function desktop(overrides: Partial<DesktopAPI> = {}): DesktopAPI {
     platform: 'macos',
     getWindowState: vi.fn(() => Promise.resolve({ focused: true, fullScreen: false })),
     onWindowStateChanged: vi.fn(() => () => undefined),
+    selectAsset: () => Promise.resolve(null),
+    exportAsset: () => Promise.resolve(false),
     hasOpenFile: () => Promise.resolve(false),
     takeOpenFile: () => Promise.resolve(null),
     onOpenFile: () => () => undefined,

@@ -22,6 +22,7 @@ const initial = loadWorkbook(exampleWorkbook())
 function editSheets(command: WorkbookCommand, nextId?: string): void {
   const state = useEditor.getState()
   state.commitDraft()
+  if (useEditor.getState().editingId) return
   const current = useEditor.getState()
   try {
     const before = snapshot(current)
@@ -75,28 +76,43 @@ export const useEditor = create<EditorState>((set, get) => ({
   structureFuture: [],
   select: (id) => {
     get().commitDraft()
+    if (get().editingId) return
     set({ selectedId: id })
   },
   startEdit: (id, value, surface = 'canvas') => {
     if (get().editingId === id && get().editingSurface === surface) return
     get().commitDraft()
+    if (get().editingId) return
     const topic = get().history.document.topics[id]
     if (topic)
-      set({ selectedId: id, editingId: id, editingSurface: surface, draft: value ?? topic.title })
+      set({
+        selectedId: id,
+        editingId: id,
+        editingSurface: surface,
+        draft: value ?? (surface === 'notes' ? (topic.notes ?? '') : topic.title),
+      })
   },
   setDraft: (draft) => {
     set({ draft })
   },
   commitDraft: () => {
-    const { editingId, draft, history } = get()
+    const { editingId, editingSurface, draft, history } = get()
     if (!editingId) return
+    const topic = history.document.topics[editingId]
+    if (!topic) return
+    const notes = editingSurface === 'notes'
+    const previous = notes ? (topic.notes ?? '') : topic.title
+    const next = notes ? draft : draft.trim() || '未命名主题'
+    if (
+      previous !== next &&
+      !get().command(
+        notes
+          ? { type: 'setTopicNotes', topicId: editingId, notes: next }
+          : { type: 'renameTopic', topicId: editingId, title: next },
+      )
+    )
+      return
     set({ editingId: null, editingSurface: null, draft: '' })
-    if (history.document.topics[editingId]?.title !== draft.trim())
-      get().command({
-        type: 'renameTopic',
-        topicId: editingId,
-        title: draft.trim() || '未命名主题',
-      })
   },
   cancelEdit: () => {
     set({ editingId: null, editingSurface: null, draft: '' })
@@ -126,6 +142,7 @@ export const useEditor = create<EditorState>((set, get) => ({
   },
   add: (kind) => {
     get().commitDraft()
+    if (get().editingId) return
     const {
       history: { document },
       selectedId,
@@ -151,6 +168,7 @@ export const useEditor = create<EditorState>((set, get) => ({
   },
   remove: () => {
     get().commitDraft()
+    if (get().editingId) return
     const {
       history: { document },
       selectedId,
@@ -161,10 +179,12 @@ export const useEditor = create<EditorState>((set, get) => ({
   },
   undo: () => {
     get().commitDraft()
+    if (get().editingId) return
     set(travelHistory(get(), 'undo'))
   },
   redo: () => {
     get().commitDraft()
+    if (get().editingId) return
     set(travelHistory(get(), 'redo'))
   },
   replace: (document, path = null, recovered = false) => {
@@ -191,6 +211,7 @@ export const useEditor = create<EditorState>((set, get) => ({
   switchSheet: (id) => {
     if (id === get().activeSheetId) return
     get().commitDraft()
+    if (get().editingId) return
     const state = get()
     const session = state.sessions[id]
     if (!session) {
@@ -241,7 +262,10 @@ export function editorIsDirty(state: EditorState): boolean {
   return (
     serializedWorkbook(state.workbook) !== state.baseline ||
     (state.editingId !== null &&
-      state.draft !== state.history.document.topics[state.editingId]?.title)
+      state.draft !==
+        (state.editingSurface === 'notes'
+          ? (state.history.document.topics[state.editingId]?.notes ?? '')
+          : state.history.document.topics[state.editingId]?.title))
   )
 }
 

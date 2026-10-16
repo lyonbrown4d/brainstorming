@@ -18,6 +18,8 @@ export default defineConfig(
       'playwright-report/**',
       '.moon/cache/**',
       'apm_modules/**',
+      // Third-party shadcn source is kept verbatim; business wrappers remain linted.
+      'src/renderer/src/components/ui/**',
     ],
   },
   js.configs.recommended,

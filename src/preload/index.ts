@@ -24,6 +24,8 @@ const api: DesktopAPI = {
     return () => ipcRenderer.removeListener('document:open-file-ready', listener)
   },
   openDocument: () => ipcRenderer.invoke('document:open'),
+  selectAsset: (kind) => ipcRenderer.invoke('asset:select', kind),
+  exportAsset: (asset) => ipcRenderer.invoke('asset:export', asset),
   saveDocument: (request) => ipcRenderer.invoke('document:save', request),
   readRecovery: () => ipcRenderer.invoke('recovery:read'),
   writeRecovery: (contents) => ipcRenderer.invoke('recovery:write', contents),

@@ -57,7 +57,9 @@ export function TopicEditorPlugin({
         if (tags.has('topic-sync') || (dirtyElements.size === 0 && dirtyLeaves.size === 0)) return
         const text = editorState.read(() => $getRoot().getTextContent())
         const state = useEditor.getState()
-        if (!ownsDraft() && text === state.history.document.topics[id]?.title) return
+        const topic = state.history.document.topics[id]
+        const committed = surface === 'notes' ? (topic?.notes ?? '') : topic?.title
+        if (!ownsDraft() && text === committed) return
         if (!ownsDraft()) state.startEdit(id, text, surface)
         else state.setDraft(text)
         if (!editor.getRootElement()?.contains(window.document.activeElement)) commit()
@@ -95,6 +97,7 @@ export function TopicEditorPlugin({
             if (ownsDraft()) state.cancelEdit()
             return true
           }
+          if (surface === 'notes' && (event.key === 'Enter' || event.key === 'Tab')) return false
           if (event.key === 'Enter' && event.shiftKey) return false
           if (event.key === 'Enter' || event.key === 'Tab') {
             if (surface === 'inspector') {

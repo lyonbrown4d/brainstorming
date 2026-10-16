@@ -25,3 +25,5 @@ format precedence. Copyright (c) 2022 XMind Ltd.; distributed under the MIT lice
 preserved verbatim in `LICENSE.official-viewer.txt`.
 
 SHA-256: `cbd8e31db17492d082069760f5ec9aaa69f4d732803b39da223f6b7df661d072`.
+
+`content-modern.json`、`content-legacy.xml`、`pixel image.png` 和 `data.bin` 是本仓库手工构造的内容样例，通过 `contentXmind()` 封装为实际内嵌资源 ZIP。它们覆盖中文纯文本备注、富文本备注转纯文本、按实际字节读取图片尺寸、URL 编码的资源路径、附件字节和重复引用；这些样例没有第三方授权依赖。

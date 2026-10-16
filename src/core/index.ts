@@ -9,7 +9,20 @@ export type {
   Side,
   Topic,
   TopicStyle,
+  DocumentAsset,
+  TopicImage,
+  TopicContentCommand,
 } from './types'
+export {
+  MAX_ASSET_BYTES,
+  MAX_DOCUMENT_ASSET_BYTES,
+  MAX_TOPIC_NOTES_LENGTH,
+  MAX_TOPIC_ATTACHMENTS,
+  MAX_IMAGE_DIMENSION,
+  MAX_IMAGE_PIXELS,
+  validateDocumentAsset,
+  validateTopicImage,
+} from './topic-content'
 export {
   createDocument,
   createExampleDocument,

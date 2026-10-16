@@ -1,14 +1,8 @@
+import { DialogContent } from './DialogContent'
 import { FileCheck2, X } from 'lucide-react'
 import { useEditor } from '../state/editor'
 import { Button } from './ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from './ui/dialog'
+import { Dialog, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 
 export function ImportNotice() {
   const report = useEditor((state) => state.importReport)

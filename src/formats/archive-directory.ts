@@ -1,10 +1,10 @@
 import { strFromU8 } from 'fflate'
 
 export const ARCHIVE_LIMITS = {
-  compressed: 20 * 1024 * 1024,
+  compressed: 32 * 1024 * 1024,
   entries: 512,
   entry: 10 * 1024 * 1024,
-  expanded: 40 * 1024 * 1024,
+  expanded: 64 * 1024 * 1024,
 } as const
 
 export interface ArchiveEntry {
@@ -41,7 +41,7 @@ export function archiveDirectory(bytes: Uint8Array): {
   entries: readonly ArchiveEntry[]
   dataEnd: number
 } {
-  if (bytes.length > ARCHIVE_LIMITS.compressed) throw new Error('ZIP 文件超过 20 MiB 限制')
+  if (bytes.length > ARCHIVE_LIMITS.compressed) throw new Error('ZIP 文件超过 32 MiB 限制')
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
   const u16 = (offset: number): number => view.getUint16(offset, true)
   const u32 = (offset: number): number => view.getUint32(offset, true)
@@ -71,7 +71,7 @@ export function archiveDirectory(bytes: Uint8Array): {
     const compressedSize = u32(cursor + 20)
     if (size > ARCHIVE_LIMITS.entry) throw new Error('ZIP 单个条目超过 10 MiB 限制')
     expanded += size
-    if (expanded > ARCHIVE_LIMITS.expanded) throw new Error('ZIP 解压后超过 40 MiB 限制')
+    if (expanded > ARCHIVE_LIMITS.expanded) throw new Error('ZIP 解压后超过 64 MiB 限制')
     const nameLength = u16(cursor + 28)
     const next = cursor + 46 + nameLength + u16(cursor + 30) + u16(cursor + 32)
     if (next > end || u16(cursor + 34) !== 0) invalid()

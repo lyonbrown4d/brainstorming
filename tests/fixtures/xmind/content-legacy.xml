@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<x:xmap-content xmlns:x="urn:xmind:xmap:xmlns:content:2.0" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <x:sheet id="content-sheet">
+    <x:title>内容导入</x:title>
+    <x:topic id="content-root" xlink:href="xap:attachments/data.bin">
+      <x:title>备注与资源</x:title>
+      <x:notes><x:plain><![CDATA[中文备注
+第二行]]></x:plain></x:notes>
+      <xhtml:img xhtml:src="xap:resources/pixel%20image.png" width="900" height="900"/>
+      <x:children><x:topics type="attached">
+        <x:topic id="rich-topic" xlink:href="attachments/data.bin">
+          <x:title>富文本</x:title>
+          <x:notes><x:html><xhtml:html><xhtml:body><xhtml:p>保留的富文本内容</xhtml:p><xhtml:p>第二段</xhtml:p></xhtml:body></xhtml:html></x:html></x:notes>
+          <xhtml:img xhtml:src="resources/pixel%20image.png"/>
+        </x:topic>
+      </x:topics></x:children>
+    </x:topic>
+  </x:sheet>
+</x:xmap-content>

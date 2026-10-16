@@ -1,14 +1,10 @@
-import { useRef, useState } from 'react'
+import { DialogContent } from './DialogContent'
+import { useId, useRef, useState } from 'react'
 import { useEditor } from '../state/editor'
 import { Button } from './ui/button'
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from './ui/dialog'
+import { Input } from './ui/input'
+import { Label } from './ui/label'
+import { Dialog, DialogClose, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 
 export interface SheetDialogAction {
   kind: 'rename' | 'delete'
@@ -26,6 +22,7 @@ export function SheetDialog({
   onClose: () => void
 }) {
   const [name, setName] = useState(action.name)
+  const nameId = useId()
   const submitting = useRef(false)
   const composing = useRef(false)
   const rename = action.kind === 'rename'
@@ -57,9 +54,10 @@ export function SheetDialog({
           }}
         >
           {rename && (
-            <label className="sheet-name-label">
+            <Label className="sheet-name-label items-stretch" htmlFor={nameId}>
               画布名称
-              <input
+              <Input
+                id={nameId}
                 value={name}
                 maxLength={80}
                 required
@@ -77,7 +75,7 @@ export function SheetDialog({
                     event.preventDefault()
                 }}
               />
-            </label>
+            </Label>
           )}
           <div className="sheet-dialog-actions">
             <DialogClose asChild>

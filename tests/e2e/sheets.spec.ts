@@ -33,7 +33,8 @@ test('多个画布保留独立内容与撤销，并在同一文件保存后重�
   const styleToggle = page.getByRole('button', { name: '样式面板', exact: true })
   if ((await styleToggle.getAttribute('aria-pressed')) !== 'true') await styleToggle.click()
   const stylePanel = page.getByRole('complementary', { name: '主题面板', exact: true })
-  await stylePanel.getByRole('combobox', { name: '字号', exact: true }).selectOption('20')
+  await stylePanel.getByRole('combobox', { name: '字号', exact: true }).click()
+  await page.getByRole('option', { name: '20', exact: true }).click()
   await stylePanel.getByRole('button', { name: '填充：珊瑚', exact: true }).click()
   await page.getByRole('button', { name: '文档大纲', exact: true }).click()
   await expect(page.getByRole('complementary', { name: '文档大纲' })).toBeVisible()
@@ -43,13 +44,13 @@ test('多个画布保留独立内容与撤销，并在同一文件保存后重�
   await page.getByRole('button', { name: '新建画布', exact: true }).click()
   const secondName = await page.getByRole('tab', { selected: true }).innerText()
   await renameSheet(page, secondName, '用户研究')
-  await expect(stylePanel.getByRole('combobox', { name: '字号', exact: true })).toHaveValue('24')
+  await expect(stylePanel.getByRole('combobox', { name: '字号', exact: true })).toHaveText('24')
   await renameTopic(page, '研究内容')
   await page.getByRole('button', { name: '撤销', exact: true }).click()
   await expect(page.getByTestId('topic-root')).not.toContainText('研究内容')
   await page.getByRole('tab', { name: '产品总览', exact: true }).click()
   await expect(page.getByTestId('topic-root')).toContainText('产品内容')
-  await expect(stylePanel.getByRole('combobox', { name: '字号', exact: true })).toHaveValue('20')
+  await expect(stylePanel.getByRole('combobox', { name: '字号', exact: true })).toHaveText('20')
   await expect(stylePanel.getByRole('button', { name: '填充：珊瑚', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',

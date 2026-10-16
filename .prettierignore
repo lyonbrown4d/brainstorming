@@ -9,3 +9,5 @@ pnpm-lock.yaml
 .moon/cache
 apm_modules
 test-results-desktop
+# Preserve downloaded shadcn source; format business compositions separately.
+src/renderer/src/components/ui

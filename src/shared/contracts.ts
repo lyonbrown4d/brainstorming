@@ -1,4 +1,5 @@
 import type { DesktopPlatform, WindowState } from './window'
+import type { DocumentAsset } from '../core'
 
 export type MenuAction = 'new' | 'open' | 'save' | 'saveAs' | 'undo' | 'redo'
 export interface OpenedDocument {
@@ -24,6 +25,8 @@ export interface DesktopAPI {
   takeOpenFile(): Promise<OpenedDocument | null>
   onOpenFile(callback: () => void): () => void
   openDocument(): Promise<OpenedDocument | null>
+  selectAsset(kind: 'image' | 'attachment'): Promise<DocumentAsset | null>
+  exportAsset(asset: DocumentAsset): Promise<boolean>
   saveDocument(request: SaveRequest): Promise<string | null>
   readRecovery(): Promise<string | null>
   writeRecovery(contents: string): Promise<void>

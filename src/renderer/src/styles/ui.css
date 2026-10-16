@@ -12,6 +12,7 @@
   --ui-accent-foreground: #6959bd;
   --ui-border: #e9e7f0;
   --ui-ring: #8e80d9;
+  --ui-destructive: #b54b4b;
 }
 
 @theme inline {
@@ -26,6 +27,11 @@
   --color-accent-foreground: var(--ui-accent-foreground);
   --color-border: var(--ui-border);
   --color-ring: var(--ui-ring);
+  --color-popover: var(--ui-background);
+  --color-popover-foreground: var(--ui-foreground);
+  --color-input: var(--ui-border);
+  --color-muted: var(--ui-secondary);
+  --color-destructive: var(--ui-destructive);
 }
 
 /* Existing canvas styles are unlayered; scope control resets to shadcn slots. */

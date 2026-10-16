@@ -1,13 +1,7 @@
+import { DialogContent } from './DialogContent'
 import { CircleHelp } from 'lucide-react'
 import { Button } from './ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from './ui/dialog'
+import { Dialog, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 
 const shortcuts = [
   ['Tab / Enter', '添加子主题 / 同级主题'],

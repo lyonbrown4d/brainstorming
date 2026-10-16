@@ -11,6 +11,8 @@ function desktop(overrides: Partial<DesktopAPI> = {}): DesktopAPI {
     platform: 'macos',
     getWindowState: vi.fn(() => Promise.resolve({ focused: true, fullScreen: false })),
     onWindowStateChanged: vi.fn(() => () => undefined),
+    selectAsset: () => Promise.resolve(null),
+    exportAsset: () => Promise.resolve(false),
     hasOpenFile: () => Promise.resolve(false),
     takeOpenFile: () => Promise.resolve(null),
     onOpenFile: () => () => undefined,
@@ -35,6 +37,24 @@ afterEach(() => {
 })
 
 describe('编辑器操作与草稿', () => {
+  it('备注草稿只提交一次历史；超长备注保留输入并阻止切换覆盖', () => {
+    const state = useEditor.getState()
+    state.startEdit('root', undefined, 'notes')
+    state.setDraft('第一行\n第二行')
+    state.commitDraft()
+    expect(useEditor.getState().history.document.title).toBe('起点')
+    expect(useEditor.getState().history.document.topics.root?.notes).toBe('第一行\n第二行')
+    expect(useEditor.getState().history.past).toHaveLength(1)
+    state.undo()
+    expect(useEditor.getState().history.document.topics.root?.notes).toBeUndefined()
+    state.startEdit('root', undefined, 'notes')
+    const oversized = '长'.repeat(100_001)
+    state.setDraft(oversized)
+    state.addSheet()
+    expect(useEditor.getState().workbook.sheets).toHaveLength(1)
+    expect(useEditor.getState().draft).toBe(oversized)
+    expect(useEditor.getState().error).toContain('100000')
+  })
   it('多次输入只在结束编辑时提交一次历史，撤销保留原文', () => {
     const state = useEditor.getState()
     state.startEdit('root')

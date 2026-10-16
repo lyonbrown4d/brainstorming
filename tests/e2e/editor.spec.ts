@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test'
-import { createDocument, createWorkbook, serializeWorkbook } from '../../src/core'
 import { composeChinese } from './ime'
 
 test.beforeEach(async ({ page }) => {
@@ -71,13 +70,41 @@ test('无效文件不替换当前文档，输入法 Enter 不创建主题', asyn
 })
 
 test('恢复文档需要用户选择，刷新后可以恢复', async ({ page }) => {
-  const document = createDocument('恢复的想法')
-  await page.evaluate(
-    (contents) => {
-      localStorage.setItem('trelyx.recovery.native-v1', contents)
-    },
-    serializeWorkbook(createWorkbook(document)),
-  )
+  page.on('dialog', (dialog) => dialog.accept())
+  await page.getByTestId('topic-root').dblclick()
+  await page.getByRole('textbox', { name: '编辑主题标题' }).fill('恢复的想法')
+  await page.locator('.react-flow__pane').click({ position: { x: 20, y: 20 } })
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const database = await new Promise<IDBDatabase>((resolve, reject) => {
+          const request = indexedDB.open('trelyx')
+          request.onsuccess = () => {
+            resolve(request.result)
+          }
+          request.onerror = () => {
+            reject(request.error ?? new Error('无法读取恢复记录'))
+          }
+        })
+        try {
+          return await new Promise<unknown>((resolve, reject) => {
+            const request = database
+              .transaction('recovery')
+              .objectStore('recovery')
+              .get('trelyx.recovery.native-v1')
+            request.onsuccess = () => {
+              resolve(request.result as unknown)
+            }
+            request.onerror = () => {
+              reject(request.error ?? new Error('无法读取恢复记录'))
+            }
+          })
+        } finally {
+          database.close()
+        }
+      }),
+    )
+    .toContain('恢复的想法')
   await page.reload()
   await expect(page.getByRole('button', { name: /恢复/ })).toBeVisible()
   await expect(page.getByTestId('topic-root')).not.toContainText('恢复的想法')
@@ -96,9 +123,9 @@ test('拖动分支更换父级、方向可撤销，帮助弹窗支持键盘关�
   await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 12 })
   await page.mouse.up()
   await page.getByRole('button', { name: '样式面板', exact: true }).click()
-  await expect(page.getByRole('combobox', { name: '移动到父主题' })).toHaveValue('experience')
+  await expect(page.getByRole('combobox', { name: '移动到父主题' })).toHaveText('核心体验')
   await page.getByRole('button', { name: '撤销', exact: true }).click()
-  await expect(page.getByRole('combobox', { name: '移动到父主题' })).toHaveValue('root')
+  await expect(page.getByRole('combobox', { name: '移动到父主题' })).toHaveText('产品规划')
   await page.getByRole('button', { name: '左侧', exact: true }).click()
   await expect(page.getByTestId('topic-vision')).toHaveClass(/side-left/)
   await page.getByRole('button', { name: '键盘快捷键', exact: true }).click()

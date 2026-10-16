@@ -6,6 +6,7 @@ import { horizontalListSortingStrategy, SortableContext } from '@dnd-kit/sortabl
 import { useEditor } from '../state/editor'
 import { SheetTabItem } from './SheetTabItem'
 import { SheetDialog, type SheetDialogAction } from './SheetDialog'
+import { Button } from './ui/button'
 import '../styles/sheets.css'
 
 export function SheetTabs() {
@@ -52,7 +53,9 @@ export function SheetTabs() {
           </Tabs.List>
         </Tabs.Root>
       </DndContext>
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         type="button"
         className="sheet-add"
         aria-label="新建画布"
@@ -62,8 +65,8 @@ export function SheetTabs() {
           useEditor.getState().addSheet()
         }}
       >
-        <Plus size={18} />
-      </button>
+        <Plus size={18} className="size-[18px]" />
+      </Button>
       {dialog && (
         <SheetDialog
           key={`${dialog.kind}-${dialog.id}`}
