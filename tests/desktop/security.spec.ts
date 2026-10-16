@@ -9,7 +9,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { decryptTrelyx, isEncryptedTrelyx } from '../../src/formats/encrypted'
-import { moreTools } from '../e2e/dock'
+import { openDock } from '../e2e/dock'
 
 const password = 'desktop-security-test'
 async function fileAction(page: Page, name: string): Promise<void> {
@@ -65,7 +65,7 @@ test('真实 Electron 密码文件、加密历史、重启解锁与恢复记录�
     })
     await expect(page.getByTestId('topic-root')).toBeVisible()
     await editTitle(page, '第一份机密内容')
-    await moreTools(page)
+    await openDock(page)
     await page.getByRole('button', { name: '文件密码', exact: true }).click()
     const settings = page.getByRole('dialog', { name: '文件密码', exact: true })
     await settings.getByLabel('密码', { exact: true }).fill(password)
@@ -83,7 +83,7 @@ test('真实 Electron 密码文件、加密历史、重启解锁与恢复记录�
     await editTitle(page, '第二份机密内容')
     await fileAction(page, '保存导图')
     await expect.poll(() => diskTitle(savedPath)).toBe('第二份机密内容')
-    await moreTools(page)
+    await openDock(page)
     await page.getByRole('button', { name: '版本历史', exact: true }).click()
     const history = page.getByRole('dialog', { name: '版本历史', exact: true })
     await expect(history.getByRole('button', { name: '恢复', exact: true })).toHaveCount(2)

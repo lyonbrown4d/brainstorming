@@ -14,14 +14,14 @@ export function SpatialControls({
 }) {
   return (
     <>
-      <p className="pointer-events-none absolute bottom-7 left-1/2 z-20 hidden -translate-x-1/2 text-xs text-muted-foreground xl:block">
-        双指平移 · 捏合缩放 · Alt+双指旋转 · 双击编辑
-      </p>
       <div
-        className="absolute right-5 bottom-5 z-30 flex items-center gap-2 text-muted-foreground"
+        className="absolute top-5 right-5 z-30 flex items-center gap-2 text-muted-foreground"
         role="group"
         aria-label="3D 画布视图"
       >
+        <p className="pointer-events-none absolute top-full right-0 mt-2 hidden text-xs whitespace-nowrap text-muted-foreground xl:block">
+          双指平移 · 捏合缩放 · Alt+双指旋转 · 双击编辑
+        </p>
         <div className="flex h-10 items-center rounded-xl border border-border/80 bg-background/95 p-1 shadow-sm">
           <Button
             variant="ghost"

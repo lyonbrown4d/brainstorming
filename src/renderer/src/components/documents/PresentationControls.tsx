@@ -60,6 +60,7 @@ export function PresentationControls() {
         </Popover.Trigger>
         <Popover.Portal>
           <Popover.Content
+            side="top"
             sideOffset={12}
             onCloseAutoFocus={(event) => {
               if (usePresentation.getState().playing) {
@@ -226,7 +227,7 @@ export function PresentationPlayback() {
     <>
       {playing && (
         <div
-          className="absolute right-4 bottom-5 z-30 flex items-center gap-2 rounded-xl border bg-background p-2 shadow-lg"
+          className="absolute top-20 right-4 z-30 flex items-center gap-2 rounded-xl border bg-background p-2 shadow-lg"
           role="toolbar"
           aria-label="演示播放控制"
         >

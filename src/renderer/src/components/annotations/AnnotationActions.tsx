@@ -11,7 +11,6 @@ import { isCompositionKey } from '../../state/keyboard'
 import { Button } from '../ui/button'
 
 export function AnnotationActions() {
-  const floating = useAnnotationInteraction((state) => state.floating)
   const fromId = useAnnotationInteraction((state) => state.fromId)
   const sheetId = useEditor((state) => state.activeSheetId)
   useEffect(() => {
@@ -89,14 +88,20 @@ export function AnnotationActions() {
       >
         <MessageSquareText className="size-4" />
       </Button>
-      {(Boolean(fromId) || floating) && (
-        <span
-          className="absolute top-full left-1/2 mt-2 -translate-x-1/2 rounded-lg border bg-background px-3 py-2 text-xs whitespace-nowrap shadow"
-          role="status"
-        >
-          {floating ? '点击画布空白添加游离主题 · Esc 取消' : '点击目标主题建立关联线 · Esc 取消'}
-        </span>
-      )}
     </>
+  )
+}
+
+export function AnnotationModeHint() {
+  const fromId = useAnnotationInteraction((state) => state.fromId)
+  const floating = useAnnotationInteraction((state) => state.floating)
+  if (!fromId && !floating) return null
+  return (
+    <span
+      className="block rounded-xl border bg-background/95 px-3 py-2 text-center text-xs shadow-sm"
+      role="status"
+    >
+      {floating ? '点击画布空白添加游离主题 · Esc 取消' : '点击目标主题建立关联线 · Esc 取消'}
+    </span>
   )
 }

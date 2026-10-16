@@ -3,7 +3,6 @@ import { useEditor } from '../state/editor'
 import { deleteSelectedTopics, moveSelectedTopics, useSelectedIds } from '../state/selection'
 import { Button } from './ui/button'
 import { FieldSelect } from './FieldSelect'
-import { TopicFormatting } from './TopicFormatting'
 
 export function SelectionToolbar() {
   const document = useEditor((state) => state.history.document)
@@ -28,12 +27,11 @@ export function SelectionToolbar() {
   if (ids.length < 2) return null
   return (
     <div
-      className="flex flex-wrap items-center gap-2 border-t pt-3"
+      className="flex shrink-0 items-center gap-2 border-x border-border px-2"
       role="group"
       aria-label="多选主题操作"
     >
       <span className="px-2 text-sm whitespace-nowrap">已选择 {ids.length} 个主题</span>
-      <TopicFormatting compact />
       {targets.length > 0 && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>移动到</span>

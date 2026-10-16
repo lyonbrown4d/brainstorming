@@ -143,6 +143,7 @@ export function TopicFormatting({
           <Popover.Portal>
             <Popover.Content
               className="formatting-popover color-popover z-[65] w-auto rounded-xl border border-border bg-popover p-3.5 shadow-[0_6px_24px_#352d4d12]"
+              side="top"
               sideOffset={10}
               aria-label="填充颜色"
             >
@@ -167,6 +168,7 @@ export function TopicFormatting({
           <Popover.Portal>
             <Popover.Content
               className="formatting-popover z-[65] w-[250px] rounded-xl border border-border bg-popover px-4 shadow-[0_6px_24px_#352d4d12] [&_.format-group:first-child]:mt-0 [&_.format-group:first-child]:border-t-0"
+              side="top"
               sideOffset={10}
               align="end"
               aria-label="更多主题样式"

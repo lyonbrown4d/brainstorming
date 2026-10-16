@@ -8,6 +8,3 @@ export async function dockAction(page: Page, label: string): Promise<void> {
   await openDock(page)
   await page.getByRole('button', { name: label, exact: true }).click()
 }
-export async function moreTools(page: Page): Promise<void> {
-  await dockAction(page, '更多导图工具')
-}

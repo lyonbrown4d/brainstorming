@@ -36,11 +36,14 @@ export const MultipleSelection: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
-    await userEvent.click(canvas.getByRole('button', { name: '更多导图工具' }))
     const page = within(canvasElement.ownerDocument.body)
     const tools = within(await page.findByRole('group', { name: '多选主题操作' }))
-    await expect(tools.getByText('已选择 2 个主题')).toBeVisible()
-    await userEvent.click(tools.getByRole('button', { name: '加粗' }))
+    await waitFor(() => expect(tools.getByText('已选择 2 个主题')).toBeVisible())
+    await userEvent.click(
+      within(canvas.getByRole('toolbar', { name: '主题格式' })).getByRole('button', {
+        name: '加粗',
+      }),
+    )
     await waitFor(async () => {
       await expect(useEditor.getState().history.document.topics.vision?.style?.bold).toBe(false)
       await expect(useEditor.getState().history.document.topics.experience?.style?.bold).toBe(false)
@@ -54,7 +57,6 @@ export const SearchAndReplace: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
-    await userEvent.click(canvas.getByRole('button', { name: '更多导图工具' }))
     await userEvent.click(
       within(canvasElement.ownerDocument.body).getByRole('button', { name: '查找与替换' }),
     )

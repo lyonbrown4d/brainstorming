@@ -151,7 +151,8 @@ test('切换保留平移与缩放，标签支持拖动排序，窄窗口仍可�
   await expect(page.getByRole('button', { name: '关闭大纲', exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: '关闭样式面板', exact: true })).toBeVisible()
   await openDock(page)
-  const bar = await page.getByRole('toolbar', { name: '导图操作', exact: true }).boundingBox()
+  // The tool row intentionally overflows horizontally; its visible Dock stays inside the canvas.
+  const bar = await page.locator('[data-slot=canvas-dock]').boundingBox()
   const canvas = await page.getByRole('tabpanel', { name: '当前画布', exact: true }).boundingBox()
   if (!bar || !canvas) throw new Error('缺少画布工具栏')
   expect(bar.x).toBeGreaterThanOrEqual(canvas.x)

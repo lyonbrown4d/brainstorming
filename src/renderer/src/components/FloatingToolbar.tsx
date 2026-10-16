@@ -1,4 +1,4 @@
-import { CopyPlus, PlusSquare, Redo2, Undo2, MoreHorizontal } from 'lucide-react'
+import { CopyPlus, PlusSquare, Redo2, Undo2 } from 'lucide-react'
 import { DockToolbar } from './DockToolbar'
 import { TopicFormatting } from './TopicFormatting'
 import { SelectionToolbar } from './SelectionToolbar'
@@ -6,8 +6,7 @@ import { AIAssistant } from './ai/AIAssistant'
 import { FileSecurity } from './files/FileSecurity'
 import { HistoryDialog } from './files/HistoryDialog'
 import { TopicFilter } from './documents/TopicFilter'
-import { Popover } from 'radix-ui'
-import { AnnotationActions } from './annotations/AnnotationActions'
+import { AnnotationActions, AnnotationModeHint } from './annotations/AnnotationActions'
 import { AnnotationStyleControls } from './annotations/AnnotationStyleControls'
 import { LinkAction } from './metadata/LinkAction'
 import { EditActions } from './EditActions'
@@ -52,9 +51,9 @@ export function FloatingToolbar() {
   const workbook = useEditor((state) => state.workbook)
   const sheetId = useEditor((state) => state.activeSheetId)
   return (
-    <DockToolbar>
+    <DockToolbar hint={<AnnotationModeHint />}>
       <div
-        className="flex flex-wrap items-center justify-center gap-0.5 whitespace-nowrap [&>button]:h-8 [&>button]:gap-1.5 [&>button]:px-2 [&>button]:text-xs [&>button>span]:hidden lg:[&>button>span]:inline"
+        className="flex h-10 w-max flex-nowrap items-center gap-0.5 whitespace-nowrap [&>button]:h-9 [&>button]:gap-1.5 [&>button]:rounded-xl [&>button]:border-transparent [&>button]:bg-transparent [&>button]:px-2 [&>button]:text-xs [&>button]:shadow-none [&>button:hover]:bg-accent [&>button>span]:hidden lg:[&>button>span]:inline [&>div]:shrink-0 [&>span]:shrink-0"
         role="toolbar"
         aria-label="导图操作"
       >
@@ -106,56 +105,39 @@ export function FloatingToolbar() {
           <Redo2 size={19} />
           <span>重做</span>
         </Action>
-        <Popover.Root>
-          <Popover.Trigger asChild>
-            <Button variant="ghost" size="icon" aria-label="更多导图工具" title="更多导图工具">
-              <MoreHorizontal className="size-5" />
-            </Button>
-          </Popover.Trigger>
-          <Popover.Portal>
-            <Popover.Content
-              sideOffset={12}
-              className="z-50 w-80 rounded-xl border bg-popover p-3 shadow-lg"
-              aria-label="更多导图工具"
-            >
-              <EditActions />
-              <SelectionToolbar />
-              <div className="mt-3 flex flex-wrap gap-2 border-t pt-3">
-                <DocumentSettingsPanel />
-                <TopicFilter />
-                <FileSecurity />
-                <HistoryDialog />
-                <AIAssistant
-                  onAddSheet={(document) => useEditor.getState().addDocumentSheet(document)}
-                />
-                <TemplateDialog />
-                <FloatingActions />
-                <OutlineEditor />
-                <PresentationControls />
-                <ImportTextDialog
-                  onImport={(document) => {
-                    const state = useEditor.getState()
-                    state.commitDraft()
-                    if (useEditor.getState().editingId || state.busy) return false
-                    if (isDirty() && !window.confirm('放弃当前更改并导入大纲？')) return false
-                    state.replace(document, null, true)
-                    return true
-                  }}
-                />
-                <ExportDialog
-                  workbook={workbook}
-                  currentSheetId={sheetId}
-                  {...(window.trelyx
-                    ? {
-                        onExport: (request) =>
-                          window.trelyx ? window.trelyx.exportFile(request) : Promise.resolve(null),
-                      }
-                    : {})}
-                />
-              </div>
-            </Popover.Content>
-          </Popover.Portal>
-        </Popover.Root>
+        <EditActions />
+        <SelectionToolbar />
+        <span className="toolbar-separator" />
+        <DocumentSettingsPanel />
+        <TopicFilter />
+        <TemplateDialog />
+        <FloatingActions />
+        <OutlineEditor />
+        <PresentationControls />
+        <span className="toolbar-separator" />
+        <ImportTextDialog
+          onImport={(document) => {
+            const state = useEditor.getState()
+            state.commitDraft()
+            if (useEditor.getState().editingId || state.busy) return false
+            if (isDirty() && !window.confirm('放弃当前更改并导入大纲？')) return false
+            state.replace(document, null, true)
+            return true
+          }}
+        />
+        <ExportDialog
+          workbook={workbook}
+          currentSheetId={sheetId}
+          {...(window.trelyx
+            ? {
+                onExport: (request) =>
+                  window.trelyx ? window.trelyx.exportFile(request) : Promise.resolve(null),
+              }
+            : {})}
+        />
+        <FileSecurity />
+        <HistoryDialog />
+        <AIAssistant onAddSheet={(document) => useEditor.getState().addDocumentSheet(document)} />
       </div>
     </DockToolbar>
   )

@@ -2,7 +2,7 @@ import { _electron as electron, expect, test } from '@playwright/test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { dockAction, moreTools } from '../e2e/dock'
+import { dockAction, openDock } from '../e2e/dock'
 
 test('原生自定义剪贴板跨画布复制子树，保留普通文本并一次撤销', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'trelyx-clipboard-'))
@@ -30,7 +30,7 @@ test('原生自定义剪贴板跨画布复制子树，保留普通文本并一�
     captured = true
     const page = await app.firstWindow()
     await page.getByTestId('topic-vision').click()
-    await moreTools(page)
+    await openDock(page)
     await page.getByRole('button', { name: '复制主题', exact: true }).click()
     await expect
       .poll(() => app.evaluate(({ clipboard }) => clipboard.readText()))
@@ -40,7 +40,7 @@ test('原生自定义剪贴板跨画布复制子树，保留普通文本并一�
     await page.keyboard.press('Escape')
     await page.getByRole('tab', { name: '用户研究', exact: true }).click()
     const before = await page.locator('.topic-count').textContent()
-    await moreTools(page)
+    await openDock(page)
     await page.getByRole('button', { name: '粘贴主题', exact: true }).click()
     await expect(page.locator('.topic-title').getByText('产品愿景', { exact: true })).toBeVisible()
     await expect(page.locator('.topic-title').getByText('本地优先', { exact: true })).toBeVisible()

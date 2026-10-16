@@ -48,6 +48,7 @@ export function FloatingActions() {
           </Popover.Trigger>
           <Popover.Portal>
             <Popover.Content
+              side="top"
               sideOffset={12}
               className="z-50 w-64 space-y-3 rounded-xl border bg-popover p-3 shadow-lg"
               aria-label="接入分支"

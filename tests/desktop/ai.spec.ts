@@ -3,7 +3,7 @@ import { createServer } from 'node:http'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { dockAction, moreTools } from '../e2e/dock'
+import { dockAction, openDock } from '../e2e/dock'
 
 // Local deterministic provider fixture: no external account, API key or internet request.
 test('真实 Electron AI 配置、预览、添加与一次撤销闭环', async () => {
@@ -86,7 +86,7 @@ test('真实 Electron AI 配置、预览、添加与一次撤销闭环', async (
     const originalTitle = await page.getByTestId('topic-root').textContent()
     const sheetTabs = page.getByRole('tablist', { name: '文档画布' }).getByRole('tab')
     const originalSheetCount = await sheetTabs.count()
-    await moreTools(page)
+    await openDock(page)
     await page.getByRole('button', { name: 'AI 助手', exact: true }).click()
     const dialog = page.getByRole('dialog', { name: 'AI 思维导图助手' })
     await dialog.getByRole('button', { name: '服务设置', exact: true }).click()

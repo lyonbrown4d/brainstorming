@@ -115,6 +115,7 @@ export function AnnotationStyleControls() {
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content
+          side="top"
           sideOffset={12}
           className="z-50 w-56 rounded-xl border bg-popover p-3 shadow-lg"
           aria-label="所选注解样式"

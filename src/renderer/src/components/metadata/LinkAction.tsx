@@ -16,6 +16,7 @@ export function LinkAction() {
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content
+          side="top"
           sideOffset={12}
           className="z-50 max-h-[70vh] w-72 overflow-auto rounded-xl border bg-popover p-4 shadow-lg"
           aria-label="主题超链接"

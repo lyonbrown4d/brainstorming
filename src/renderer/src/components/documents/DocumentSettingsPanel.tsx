@@ -41,6 +41,7 @@ export function DocumentSettingsPanel() {
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content
+          side="top"
           sideOffset={12}
           className="z-50 max-h-[75vh] w-80 overflow-y-auto rounded-xl border bg-popover p-4 shadow-lg"
           aria-label="布局与主题"

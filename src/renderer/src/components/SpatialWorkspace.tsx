@@ -123,7 +123,7 @@ export function SpatialWorkspace() {
       id="sheet-panel"
       role="tabpanel"
       aria-label="当前三维画布"
-      className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-background"
+      className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-background [container-type:inline-size]"
     >
       {supported ? (
         <SpatialBoundary>
@@ -157,7 +157,7 @@ export function SpatialWorkspace() {
         <>
           <FloatingToolbar />
           <PresentationPlayback />
-          <div className="pointer-events-none absolute top-20 left-4 z-10 flex max-w-[calc(100%-2rem)] items-center gap-3">
+          <div className="pointer-events-none absolute top-5 left-4 z-10 flex max-w-[calc(100%-2rem)] items-center gap-3">
             {focusId && (
               <>
                 <Button

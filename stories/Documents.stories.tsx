@@ -36,12 +36,20 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 export const DockCollapsed: Story = {}
+export const DockExpanded: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const handle = canvas.getByRole('button', { name: '展开浮动工具栏' })
+    await userEvent.hover(handle)
+    await expect(handle).toHaveAttribute('aria-expanded', 'true')
+    await waitFor(() => expect(canvas.getByRole('toolbar', { name: '导图操作' })).toBeVisible())
+  },
+}
 export const EditableTemplate: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement),
       page = within(canvasElement.ownerDocument.body)
     await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
-    await userEvent.click(canvas.getByRole('button', { name: '更多导图工具' }))
     await userEvent.click(page.getByRole('button', { name: '模板' }))
     const dialog = within(await page.findByRole('dialog', { name: '从模板创建' }))
     await userEvent.click(dialog.getByRole('button', { name: /学习笔记/ }))
@@ -56,7 +64,6 @@ export const SemanticFilter: Story = {
     const canvas = within(canvasElement),
       page = within(canvasElement.ownerDocument.body)
     await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
-    await userEvent.click(canvas.getByRole('button', { name: '更多导图工具' }))
     await userEvent.click(page.getByRole('button', { name: '主题筛选' }))
     await userEvent.click(page.getByRole('combobox', { name: '筛选任务状态' }))
     await userEvent.click(await page.findByRole('option', { name: '未完成任务' }))

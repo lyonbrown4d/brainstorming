@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 import { isEncryptedTrelyx, decryptTrelyx } from '../../src/formats/encrypted'
-import { moreTools } from './dock'
+import { openDock } from './dock'
 
 const password = 'browser-test-password'
 async function fileAction(page: Page, name: string): Promise<void> {
@@ -60,7 +60,7 @@ test('密码保护从 Dock 弹出后保持可用，下载/恢复加密，并支�
   await title.fill('保密导图')
   await page.locator('.react-flow__pane').click({ position: { x: 30, y: 30 } })
   await expect(page.getByTestId('topic-root')).toContainText('保密导图')
-  await moreTools(page)
+  await openDock(page)
   await page.getByRole('button', { name: '文件密码', exact: true }).click()
   const settings = page.getByRole('dialog', { name: '文件密码' })
   await expect(settings).toBeVisible()

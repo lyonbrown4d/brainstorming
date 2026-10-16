@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 import { importXmind } from '../../src/formats/xmind'
-import { moreTools, dockAction } from './dock'
+import { openDock, dockAction } from './dock'
 
 async function fileAction(page: Page, label: string) {
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
@@ -10,7 +10,7 @@ async function fileAction(page: Page, label: string) {
 
 test('完整导图可导出图片、PDF、大纲和XMind，超出当前视口的主题仍保留', async ({ page }) => {
   await page.goto('/')
-  await moreTools(page)
+  await openDock(page)
   await page.getByRole('button', { name: '导出', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: '导出导图', exact: true })
   for (const [label, extension] of [
@@ -82,7 +82,7 @@ test('跨Sheet查找、当前Sheet批量替换可整次撤销', async ({ page })
 test('密码保护的浏览器文件保存、错误重试、取消与重新解锁', async ({ page }) => {
   page.on('dialog', (dialog) => dialog.accept())
   await page.goto('/')
-  await moreTools(page)
+  await openDock(page)
   await page.getByRole('button', { name: '文件密码', exact: true }).click()
   const settings = page.getByRole('dialog', { name: '文件密码', exact: true })
   await settings.getByLabel('密码', { exact: true }).fill('test-passphrase-2026')

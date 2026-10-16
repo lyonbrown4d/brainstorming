@@ -39,6 +39,7 @@ export function TopicFilter() {
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content
+          side="top"
           sideOffset={12}
           className="z-50 max-h-[75vh] w-80 space-y-3 overflow-auto rounded-xl border bg-popover p-3 shadow-lg"
           aria-label="主题筛选"
