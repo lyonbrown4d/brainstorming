@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react'
+import { useReducedMotion } from 'motion/react'
 import { useReactFlow, useStore } from '@xyflow/react'
 import { useEditor } from '../state/editor'
 import type { TopicFlowNode } from './TopicNode'
 
 /** Keep keyboard navigation and newly created editors inside the visible canvas. */
 export function SelectionVisibility() {
+  const reduceMotion = useReducedMotion()
   const selectedId = useEditor((state) => state.selectedId)
   const document = useEditor((state) => state.history.document)
   const flow = useReactFlow<TopicFlowNode>()
@@ -32,12 +34,12 @@ export function SelectionVisibility() {
       )
         void flow.setCenter(node.position.x + nodeWidth / 2, node.position.y + nodeHeight / 2, {
           zoom: viewport.zoom,
-          duration: 180,
+          duration: reduceMotion ? 0 : 180,
         })
     })
     return () => {
       cancelAnimationFrame(frame)
     }
-  }, [document, selectedId, flow, width, height])
+  }, [document, selectedId, flow, width, height, reduceMotion])
   return null
 }

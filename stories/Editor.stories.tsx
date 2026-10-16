@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, userEvent, within, waitFor } from 'storybook/test'
 import { createExampleDocument, applyCommand } from '../src/core'
 import { App } from '../src/renderer/src/App'
 import { useEditor } from '../src/renderer/src/state/editor'
@@ -44,7 +44,7 @@ export const KeyboardEditing: Story = {
     await userEvent.type(input, '我的新想法')
     const actions = within(canvas.getByRole('toolbar', { name: '导图操作' }))
     await userEvent.click(actions.getByRole('button', { name: '添加子主题' }))
-    await expect(canvas.getByRole('textbox', { name: '编辑主题标题' })).toHaveValue('新主题')
+    await expect(canvas.getByRole('textbox', { name: '编辑主题标题' })).toHaveTextContent('新主题')
     await expect(canvas.getByTestId('topic-root')).toHaveTextContent('我的新想法')
     await expect(canvas.getByRole('heading', { level: 1 })).toHaveTextContent(originalTitle)
   },
@@ -103,12 +103,12 @@ export const FileMenu: Story = {
     const canvas = within(canvasElement)
     const page = within(canvasElement.ownerDocument.body)
     await userEvent.click(canvas.getByRole('button', { name: '文件菜单' }))
-    await expect(page.getByRole('menuitem', { name: '新建导图' })).toBeVisible()
+    await waitFor(() => expect(page.getByRole('menuitem', { name: '新建导图' })).toBeVisible())
     await expect(page.getByRole('menuitem', { name: '打开导图' })).toBeVisible()
     await expect(page.getByRole('menuitem', { name: '保存导图' })).toBeVisible()
     await expect(page.getByRole('menuitem', { name: '另存为' })).toBeVisible()
     await userEvent.hover(page.getByRole('menuitem', { name: '最近文件' }))
-    await expect(await page.findByText('桌面版会记住最近打开的文件。')).toBeVisible()
+    await waitFor(() => expect(page.getByText('桌面版会记住最近打开的文件。')).toBeVisible())
     await userEvent.keyboard('{Escape}{Escape}')
   },
 }

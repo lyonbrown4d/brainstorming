@@ -49,9 +49,6 @@ export function useKeyboardShortcuts(): void {
       } else if (event.key === 'F2') {
         event.preventDefault()
         state.startEdit(state.selectedId)
-      } else if (event.key.length === 1 && event.key !== ' ') {
-        event.preventDefault()
-        state.startEdit(state.selectedId, event.key)
       }
     }
     window.addEventListener('keydown', handler)

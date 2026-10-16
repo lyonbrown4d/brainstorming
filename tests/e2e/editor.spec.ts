@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { createDocument, serializeDocument } from '../../src/core'
+import { composeChinese } from './ime'
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
@@ -23,7 +24,7 @@ test('新增、编辑、折叠、撤销、保存与重新打开', async ({ page 
   await expect(page.locator('.topic-title').getByText('第一阶段', { exact: true })).toHaveCount(0)
   await page.getByRole('button', { name: '展开 项目计划', exact: true }).click()
   await expect(page.locator('.topic-title').getByText('第一阶段', { exact: true })).toBeVisible()
-  await page.locator('.topic-title').getByText('第一阶段', { exact: true }).click()
+  await page.locator('.topic-title').filter({ hasText: '第一阶段' }).click()
   await page.keyboard.press('Delete')
   await expect(page.locator('.topic-title').getByText('第一阶段', { exact: true })).toHaveCount(0)
   await page.getByRole('button', { name: '撤销', exact: true }).click()
@@ -48,11 +49,10 @@ test('无效文件不替换当前文档，输入法 Enter 不创建主题', asyn
   const title = page.getByTestId('topic-root')
   await title.dblclick()
   const input = page.getByRole('textbox', { name: '编辑主题标题' })
-  await input.dispatchEvent('compositionstart')
-  await input.fill('中文思维导图')
-  await input.press('Enter')
+  const count = await page.locator('.react-flow__node').count()
+  await composeChinese(page, input, '中文思维导图')
   await expect(input).toBeVisible()
-  await input.dispatchEvent('compositionend')
+  await expect(page.locator('.react-flow__node')).toHaveCount(count)
   await page.locator('.react-flow__pane').click({ position: { x: 20, y: 20 } })
   await expect(title).toContainText('中文思维导图')
   page.on('dialog', (dialog) => dialog.accept())

@@ -99,6 +99,7 @@ export function restoreStructure(
     history: active.history,
     selectedId: active.selectedId,
     editingId: null,
+    editingSurface: null,
     draft: '',
     dropTargetId: null,
   }

@@ -1,50 +1,9 @@
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ChevronRight, Trash2 } from 'lucide-react'
-import { useRef } from 'react'
 import { getParentId } from '@core'
 import { useEditor } from '../state/editor'
-import { isCompositionKey } from '../state/keyboard'
+import { TopicEditor } from './TopicEditor'
 import { Button } from './ui/button'
 import { TopicFormatting } from './TopicFormatting'
-
-function TopicNameInput({ id, title }: { id: string; title: string }) {
-  const composing = useRef(false)
-  const commit = (input: HTMLInputElement): void => {
-    const next = input.value.trim() || '未命名主题'
-    if (next !== title) {
-      useEditor.getState().commitDraft()
-      useEditor.getState().command({ type: 'renameTopic', topicId: id, title: next })
-    }
-  }
-  return (
-    <input
-      id={`topic-name-${id}`}
-      aria-label="主题名称"
-      defaultValue={title}
-      onCompositionStart={() => {
-        composing.current = true
-      }}
-      onCompositionEnd={(event) => {
-        composing.current = false
-        if (event.currentTarget.ownerDocument.activeElement !== event.currentTarget)
-          commit(event.currentTarget)
-      }}
-      onBlur={(event) => {
-        if (!composing.current) commit(event.currentTarget)
-      }}
-      onKeyDown={(event) => {
-        if (composing.current || isCompositionKey(event.nativeEvent)) return
-        if (event.key === 'Enter') {
-          event.preventDefault()
-          event.currentTarget.blur()
-        }
-        if (event.key === 'Escape') {
-          event.currentTarget.value = title
-          event.currentTarget.blur()
-        }
-      }}
-    />
-  )
-}
 
 export function Inspector() {
   const document = useEditor((state) => state.history.document)
@@ -97,13 +56,9 @@ export function Inspector() {
           <span>{root ? '中心主题' : firstLevel ? '一级分支' : '子主题'}</span>
           <span>{topic.children.length} 个子主题</span>
         </div>
-        <label className="topic-name-field" htmlFor={`topic-name-${selectedId}`}>
+        <label className="topic-name-field" htmlFor={`topic-inspector-${selectedId}`}>
           主题名称
-          <TopicNameInput
-            key={`${selectedId}:${topic.title}`}
-            id={selectedId}
-            title={topic.title}
-          />
+          <TopicEditor key={selectedId} id={selectedId} title={topic.title} surface="inspector" />
         </label>
         <TopicFormatting />
         {!root && (

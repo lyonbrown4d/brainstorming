@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { motion, useReducedMotion } from 'motion/react'
 import {
   ReactFlow,
   useNodesState,
@@ -33,22 +34,33 @@ function branchColors(document: MindMapDocument): Map<string, string> {
   return result
 }
 export function ZoomControls() {
+  const reduceMotion = useReducedMotion()
   const flow = useReactFlow<TopicFlowNode>()
   const { zoom } = useViewport()
   return (
     <div className="canvas-controls" aria-label="画布视图">
-      <button title="缩小" aria-label="缩小" onClick={() => void flow.zoomOut({ duration: 160 })}>
+      <button
+        title="缩小"
+        aria-label="缩小"
+        onClick={() => void flow.zoomOut({ duration: reduceMotion ? 0 : 160 })}
+      >
         <Minus size={16} />
       </button>
       <span className="zoom-value">{Math.round(zoom * 100)}%</span>
-      <button title="放大" aria-label="放大" onClick={() => void flow.zoomIn({ duration: 160 })}>
+      <button
+        title="放大"
+        aria-label="放大"
+        onClick={() => void flow.zoomIn({ duration: reduceMotion ? 0 : 160 })}
+      >
         <Plus size={16} />
       </button>
       <i />
       <button
         title="适应画布"
         aria-label="适应画布"
-        onClick={() => void flow.fitView({ padding: 0.12, maxZoom: 1.2, duration: 250 })}
+        onClick={() =>
+          void flow.fitView({ padding: 0.12, maxZoom: 1.2, duration: reduceMotion ? 0 : 250 })
+        }
       >
         <Maximize2 size={16} />
       </button>
@@ -61,7 +73,7 @@ export function ZoomControls() {
             void flow.setCenter(
               node.position.x + (node.width ?? 160) / 2,
               node.position.y + (node.height ?? 48) / 2,
-              { zoom: 1, duration: 250 },
+              { zoom: 1, duration: reduceMotion ? 0 : 250 },
             )
         }}
       >
@@ -71,6 +83,7 @@ export function ZoomControls() {
   )
 }
 export function Canvas() {
+  const reduceMotion = useReducedMotion()
   const document = useEditor((state) => state.history.document)
   const activeSheetId = useEditor((state) => state.activeSheetId)
   const [savedView] = useState(() => useEditor.getState().views[activeSheetId])
@@ -183,7 +196,15 @@ export function Canvas() {
     setNodes(projection.nodes)
   }
   return (
-    <section className="canvas" id="sheet-panel" role="tabpanel" aria-label="当前画布">
+    <motion.section
+      className="canvas"
+      id="sheet-panel"
+      role="tabpanel"
+      aria-label="当前画布"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: reduceMotion ? 0 : 0.12 }}
+    >
       <ReactFlow<TopicFlowNode>
         key={document.id}
         nodes={nodes}
@@ -192,19 +213,19 @@ export function Canvas() {
         onNodesChange={onNodesChange}
         onNodeClick={(_event, node) => {
           useEditor.getState().select(node.id)
-          if (window.document.activeElement instanceof HTMLElement)
-            window.document.activeElement.blur()
-        }}
-        onNodeDoubleClick={(_event, node) => {
-          useEditor.getState().startEdit(node.id)
+          window.document
+            .querySelector<HTMLElement>(`.topic-input[data-topic-id="${CSS.escape(node.id)}"]`)
+            ?.focus({ preventScroll: true })
         }}
         onNodeDragStart={onDragStart}
         onNodeDrag={onDrag}
         onNodeDragStop={onDragStop}
         onPaneClick={() => {
           useEditor.getState().commitDraft()
-          if (window.document.activeElement instanceof HTMLElement)
-            window.document.activeElement.blur()
+          const id = useEditor.getState().selectedId
+          window.document
+            .querySelector<HTMLElement>(`.topic-input[data-topic-id="${CSS.escape(id)}"]`)
+            ?.focus({ preventScroll: true })
         }}
         onlyRenderVisibleElements
         defaultViewport={savedView ?? { x: 0, y: 0, zoom: 1 }}
@@ -229,6 +250,6 @@ export function Canvas() {
         <SelectionVisibility />
       </ReactFlow>
       <FloatingToolbar />
-    </section>
+    </motion.section>
   )
 }

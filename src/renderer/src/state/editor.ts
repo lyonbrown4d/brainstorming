@@ -59,6 +59,7 @@ export const useEditor = create<EditorState>((set, get) => ({
   ...initial,
   dropTargetId: null,
   editingId: null,
+  editingSurface: null,
   draft: '',
   baseline: serializedWorkbook(initial.workbook),
   path: null,
@@ -75,10 +76,12 @@ export const useEditor = create<EditorState>((set, get) => ({
     get().commitDraft()
     set({ selectedId: id })
   },
-  startEdit: (id, value) => {
+  startEdit: (id, value, surface = 'canvas') => {
+    if (get().editingId === id && get().editingSurface === surface) return
     get().commitDraft()
     const topic = get().history.document.topics[id]
-    if (topic) set({ selectedId: id, editingId: id, draft: value ?? topic.title })
+    if (topic)
+      set({ selectedId: id, editingId: id, editingSurface: surface, draft: value ?? topic.title })
   },
   setDraft: (draft) => {
     set({ draft })
@@ -86,7 +89,7 @@ export const useEditor = create<EditorState>((set, get) => ({
   commitDraft: () => {
     const { editingId, draft, history } = get()
     if (!editingId) return
-    set({ editingId: null, draft: '' })
+    set({ editingId: null, editingSurface: null, draft: '' })
     if (history.document.topics[editingId]?.title !== draft.trim())
       get().command({
         type: 'renameTopic',
@@ -95,7 +98,7 @@ export const useEditor = create<EditorState>((set, get) => ({
       })
   },
   cancelEdit: () => {
-    set({ editingId: null, draft: '' })
+    set({ editingId: null, editingSurface: null, draft: '' })
   },
   command: (command) => {
     try {
@@ -168,6 +171,7 @@ export const useEditor = create<EditorState>((set, get) => ({
     set({
       ...loaded,
       editingId: null,
+      editingSurface: null,
       draft: '',
       baseline: recovered ? '' : serializedWorkbook(loaded.workbook),
       path,
@@ -199,6 +203,7 @@ export const useEditor = create<EditorState>((set, get) => ({
         ? session.selectedId
         : session.history.document.rootId,
       editingId: null,
+      editingSurface: null,
       draft: '',
       dropTargetId: null,
       error: null,

@@ -1,5 +1,7 @@
 import type { Command, HistoryState, MindMapDocument, MindMapWorkbook } from '@core'
 
+export type EditingSurface = 'canvas' | 'inspector'
+
 export interface SheetSession {
   history: HistoryState
   selectedId: string
@@ -26,6 +28,7 @@ export interface EditorData extends StructureSnapshot {
   selectedId: string
   dropTargetId: string | null
   editingId: string | null
+  editingSurface: EditingSurface | null
   draft: string
   baseline: string
   path: string | null
@@ -41,7 +44,7 @@ export interface EditorData extends StructureSnapshot {
 }
 export interface EditorState extends EditorData {
   select: (id: string) => void
-  startEdit: (id: string, initial?: string) => void
+  startEdit: (id: string, initial?: string, surface?: EditingSurface) => void
   setDraft: (value: string) => void
   commitDraft: () => void
   cancelEdit: () => void

@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { $getRoot, getNearestEditorFromDOMNode, REDO_COMMAND, UNDO_COMMAND } from 'lexical'
 import { applyCommand, serializeWorkbook } from '@core'
 import { isDirty, useEditor } from '../state/editor'
 import { newDocument, openDocument, RECOVERY_KEY, saveDocument } from '../state/files'
@@ -70,6 +71,19 @@ export function useFileLifecycle(): void {
     })
     const removeMenu = bridge?.onMenuAction((action) => {
       const state = useEditor.getState()
+      const target = window.document.activeElement
+      const editor =
+        target instanceof HTMLElement && target.isContentEditable
+          ? getNearestEditorFromDOMNode(target)
+          : null
+      if (editor?.isComposing()) return
+      if (editor && state.editingId) {
+        if (action === 'undo' || action === 'redo') {
+          editor.dispatchCommand(action === 'undo' ? UNDO_COMMAND : REDO_COMMAND, undefined)
+          return
+        }
+        state.setDraft(editor.read('latest', () => $getRoot().getTextContent()))
+      }
       switch (action) {
         case 'new':
           newDocument()

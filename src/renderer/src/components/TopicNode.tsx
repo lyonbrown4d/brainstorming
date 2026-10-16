@@ -1,80 +1,30 @@
-import { memo, useEffect, useRef } from 'react'
+import { memo } from 'react'
 import { Handle, Position, NodeToolbar, type Node, type NodeProps } from '@xyflow/react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Topic } from '@core'
 import { useEditor } from '../state/editor'
-import { isCompositionKey } from '../state/keyboard'
+import { TopicEditor } from './TopicEditor'
 import { TopicFormatting } from './TopicFormatting'
 export type TopicFlowNode = Node<
   { topic: Topic; root: boolean; branch?: boolean; fill?: string | undefined; color: string },
   'topic'
 >
 
-function TopicInput({ id }: { id: string }) {
-  const draft = useEditor((state) => state.draft)
-  const input = useRef<HTMLTextAreaElement>(null)
-  const composing = useRef(false)
-  useEffect(() => {
-    input.current?.focus()
-    input.current?.select()
-  }, [])
-  return (
-    <textarea
-      ref={input}
-      className="topic-input nodrag nowheel"
-      aria-label="编辑主题标题"
-      value={draft}
-      rows={Math.max(1, Math.ceil(draft.length / 15))}
-      onClick={(event) => {
-        event.stopPropagation()
-      }}
-      onDoubleClick={(event) => {
-        event.stopPropagation()
-      }}
-      onChange={(event) => {
-        useEditor.getState().setDraft(event.target.value)
-      }}
-      onCompositionStart={() => {
-        composing.current = true
-      }}
-      onCompositionEnd={() => {
-        composing.current = false
-      }}
-      onBlur={() => {
-        if (!composing.current) useEditor.getState().commitDraft()
-      }}
-      onKeyDown={(event) => {
-        if ((event.metaKey || event.ctrlKey) && ['s', 'o', 'n'].includes(event.key.toLowerCase()))
-          return
-        event.stopPropagation()
-        if (composing.current || isCompositionKey(event.nativeEvent)) return
-        if (event.key === 'Escape') {
-          event.preventDefault()
-          useEditor.getState().cancelEdit()
-        }
-        if ((event.key === 'Enter' && !event.shiftKey) || event.key === 'Tab') {
-          event.preventDefault()
-          useEditor.getState().commitDraft()
-          useEditor.getState().add(event.key === 'Tab' ? 'child' : 'sibling')
-        }
-      }}
-      data-topic-id={id}
-    />
-  )
-}
 export const TopicNode = memo(function TopicNode({ data, id }: NodeProps<TopicFlowNode>) {
   const selected = useEditor((state) => state.selectedId === id)
   const dropTarget = useEditor((state) => state.dropTargetId === id)
   const editing = useEditor((state) => state.editingId === id)
+  const editingSurface = useEditor((state) => state.editingSurface)
   const inspector = useEditor((state) => state.inspectorOpen)
   const { topic, root, branch = false, color } = data
   const style = topic.style
   return (
     <div
-      className={`topic ${root ? 'topic-root' : branch ? 'topic-branch' : 'topic-leaf'} ${selected ? 'is-selected' : ''} ${dropTarget ? 'drop-target' : ''} side-${topic.side}`}
+      className={`topic ${root ? 'topic-root' : branch ? 'topic-branch' : 'topic-leaf'} ${selected ? 'is-selected' : ''} ${editing && editingSurface === 'canvas' ? 'is-editing' : ''} ${dropTarget ? 'drop-target' : ''} side-${topic.side}`}
       style={
         {
           '--branch-color': color,
+          '--topic-fill': style?.fill ?? (root ? '#7666c4' : branch ? data.fill : '#fcfcfa'),
           background: style?.fill ?? (root ? '#7666c4' : branch ? data.fill : undefined),
           color: style?.color,
           borderRadius:
@@ -102,7 +52,11 @@ export const TopicNode = memo(function TopicNode({ data, id }: NodeProps<TopicFl
           useEditor.getState().startEdit(id)
         }}
       >
-        {editing ? <TopicInput id={id} /> : <span>{topic.title}</span>}
+        {selected || editing ? (
+          <TopicEditor id={id} title={topic.title} />
+        ) : (
+          <span>{topic.title}</span>
+        )}
       </div>
       <Handle
         type="source"

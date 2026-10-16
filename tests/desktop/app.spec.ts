@@ -31,7 +31,24 @@ test('生产 Electron 启动、sandbox preload 和恢复闭环', async () => {
     await page.getByRole('button', { name: /恢复/ }).click()
     await expect(page.getByTestId('topic-root')).toContainText('桌面恢复验证')
     await page.getByTestId('topic-root').dblclick()
-    await page.getByRole('textbox', { name: '编辑主题标题' }).fill('原生桌面编辑')
+    const input = page.getByRole('textbox', { name: '编辑主题标题' })
+    await input.fill('原生桌面编辑')
+    await input.press('End')
+    await page.keyboard.insertText('继续')
+    await expect(input).toHaveText('原生桌面编辑继续')
+    const invokeEditMenu = async (label: string) => {
+      await app.evaluate(({ Menu }, name) => {
+        const item = Menu.getApplicationMenu()
+          ?.items.find((entry) => entry.label === '编辑')
+          ?.submenu?.items.find((entry) => entry.label === name)
+        if (!item) throw new Error('缺少原生编辑菜单')
+        Reflect.apply(item.click, item, [])
+      }, label)
+    }
+    await invokeEditMenu('撤销')
+    await expect(input).not.toHaveText('原生桌面编辑继续')
+    await invokeEditMenu('重做')
+    await expect(input).toHaveText('原生桌面编辑继续')
     await page.locator('.react-flow__pane').click({ position: { x: 20, y: 20 } })
     await expect
       .poll(async () => page.evaluate(() => window.trelyx?.readRecovery()))
