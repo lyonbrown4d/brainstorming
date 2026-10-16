@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useEditor } from '../../state/editor'
 import {
   selectAnnotation,
@@ -23,13 +23,24 @@ export function InlineAnnotationLabel({
 }) {
   const sheetId = useEditor((state) => state.activeSheetId)
   const selected = useAnnotationInteraction(
-    (state) => state.selected?.id === id && state.selected.sheetId === sheetId,
+    (state) =>
+      state.selected?.kind === kind &&
+      state.selected.id === id &&
+      state.selected.sheetId === sheetId,
   )
   const editing = useAnnotationInteraction(
-    (state) => state.selected?.id === id && state.selected.sheetId === sheetId && state.editing,
+    (state) =>
+      state.selected?.kind === kind &&
+      state.selected.id === id &&
+      state.selected.sheetId === sheetId &&
+      state.editing,
   )
-  const [draft, setDraft] = useState(text)
+  const finished = useRef(false)
   const input = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
+  const attachInput = useCallback((element: HTMLInputElement | HTMLTextAreaElement | null) => {
+    input.current = element
+    if (element) finished.current = false
+  }, [])
   useEffect(() => {
     if (editing) {
       input.current?.focus()
@@ -37,12 +48,21 @@ export function InlineAnnotationLabel({
     }
   }, [editing])
   const start = (): void => {
-    setDraft(text)
     selectAnnotation(kind, id, true)
   }
   const commit = (): void => {
     const state = useEditor.getState()
-    if (!editing || state.activeSheetId !== sheetId) return
+    const selection = useAnnotationInteraction.getState()
+    if (
+      finished.current ||
+      !selection.editing ||
+      selection.selected?.id !== id ||
+      selection.selected.kind !== kind ||
+      state.activeSheetId !== sheetId
+    )
+      return
+    finished.current = true
+    const draft = input.current?.value ?? text
     const document = state.history.document
     let success = false
     if (kind === 'relation') {
@@ -65,14 +85,13 @@ export function InlineAnnotationLabel({
         })
     }
     if (success) useAnnotationInteraction.setState({ editing: false })
+    else finished.current = false
   }
   if (editing) {
     const Control = kind === 'callout' ? Textarea : Input
     return (
       <Control
-        ref={(element: HTMLInputElement | HTMLTextAreaElement | null) => {
-          input.current = element
-        }}
+        ref={attachInput}
         className="nodrag nopan nowheel pointer-events-auto min-h-8 w-48 bg-background text-xs"
         aria-label={
           kind === 'relation'
@@ -81,20 +100,19 @@ export function InlineAnnotationLabel({
               ? '编辑分组名称'
               : '编辑标注文字'
         }
-        value={draft}
+        defaultValue={text}
         maxLength={10000}
-        onChange={(event) => {
-          setDraft(event.target.value)
-        }}
         onPointerDown={(event) => {
           event.stopPropagation()
         }}
         onBlur={commit}
         onKeyDown={(event) => {
+          event.stopPropagation()
           if (isCompositionKey(event.nativeEvent)) return
           if (event.key === 'Escape') {
             event.preventDefault()
             event.stopPropagation()
+            finished.current = true
             useAnnotationInteraction.setState({ editing: false })
             return
           }

@@ -13,9 +13,12 @@ export function DockToolbar({ children, hint }: { children: ReactNode; hint?: Re
     <div
       ref={root}
       data-slot="canvas-dock"
-      className="absolute bottom-4 left-1/2 z-40 w-max max-w-[min(calc(100%-2rem),70rem)] -translate-x-1/2 pt-3"
+      className="absolute bottom-4 left-1/2 z-40 w-[min(calc(100%-2rem),70rem)] -translate-x-1/2 pt-3"
       onPointerEnter={(event) => {
         if (event.pointerType !== 'touch') enter()
+      }}
+      onPointerMove={(event) => {
+        if (!open && event.pointerType !== 'touch') enter()
       }}
       onPointerLeave={leave}
       onFocusCapture={(event) => {
@@ -32,7 +35,7 @@ export function DockToolbar({ children, hint }: { children: ReactNode; hint?: Re
         initial={false}
         animate={{ y: open ? 0 : 5 }}
         transition={reduced ? { duration: 0 } : spring}
-        className="flex max-w-full items-center rounded-[22px] border border-white/70 bg-background/85 p-2 shadow-[0_8px_30px_-12px_#352d4d40,inset_0_1px_0_#fff] ring-1 ring-foreground/5 backdrop-blur-xl [&_[data-slot=button]]:transition-[transform,background-color,color,box-shadow] [&_[data-slot=button]]:duration-200 [&_[data-slot=button]:hover]:-translate-y-0.5 motion-reduce:[&_[data-slot=button]]:transform-none"
+        className="mx-auto flex w-fit max-w-full items-center rounded-[22px] border border-white/70 bg-background/85 p-2 shadow-[0_8px_30px_-12px_#352d4d40,inset_0_1px_0_#fff] ring-1 ring-foreground/5 backdrop-blur-xl [&_[data-slot=button]]:transition-[transform,background-color,color,box-shadow] [&_[data-slot=button]]:duration-200 [&_[data-slot=button]:hover]:-translate-y-0.5 motion-reduce:[&_[data-slot=button]]:transform-none"
       >
         <Button
           variant="ghost"

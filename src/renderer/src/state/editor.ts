@@ -4,7 +4,6 @@ import {
   createDocument,
   applyWorkbookCommand,
   executeCommand,
-  getParentId,
   type WorkbookCommand,
   type MindMapDocument,
 } from '@core'
@@ -18,14 +17,17 @@ import {
   travelHistory,
   withHistory,
 } from './workbookState'
+import { usePresentation } from './presentation'
 import { useSpatialView } from './spatial'
 import { enterWorkspaceEditor } from './workspace'
 import { draftCommand } from './editorDraft'
 import { deleteSelectedTopics, useSelection } from './selection'
+import { addTopic } from './topicCreation'
 
 const initial = loadWorkbook(createDocument('未命名'))
 function editSheets(command: WorkbookCommand, nextId?: string): void {
   const state = useEditor.getState()
+  if (usePresentation.getState().playing) return
   state.commitDraft()
   if (useEditor.getState().editingId) return
   const current = useEditor.getState()
@@ -77,6 +79,7 @@ export const useEditor = create<EditorState>((set, get) => ({
   editingId: null,
   editingSurface: null,
   draft: '',
+  editSelection: 'all',
   richDraft: null,
   baseline: serializedWorkbook(initial.workbook),
   path: null,
@@ -98,7 +101,8 @@ export const useEditor = create<EditorState>((set, get) => ({
     }))
     set({ selectedId: id })
   },
-  startEdit: (id, value, surface = 'canvas') => {
+  startEdit: (id, value, surface = 'canvas', selection = 'all') => {
+    if (usePresentation.getState().playing) return
     const spatial = useSpatialView.getState().sheets[get().activeSheetId]?.mode === '3d'
     if (spatial && surface === 'canvas') surface = 'spatial'
     if (get().editingId === id && get().editingSurface === surface) return
@@ -117,6 +121,7 @@ export const useEditor = create<EditorState>((set, get) => ({
         selectedId: id,
         editingId: id,
         editingSurface: surface,
+        editSelection: selection,
         ...(spatial && (surface === 'inspector' || surface === 'notes')
           ? { inspectorOpen: true }
           : {}),
@@ -139,6 +144,7 @@ export const useEditor = create<EditorState>((set, get) => ({
     set({ editingId: null, editingSurface: null, draft: '', richDraft: null })
   },
   command: (command) => {
+    if (usePresentation.getState().playing) return false
     try {
       const state = get()
       const history = executeCommand(state.history, command)
@@ -169,39 +175,16 @@ export const useEditor = create<EditorState>((set, get) => ({
       return false
     }
   },
-  add: (kind) => {
-    get().commitDraft()
-    if (get().editingId) return
-    const {
-      history: { document },
-      selectedId,
-    } = get()
-    const parentId =
-      kind === 'child' ? selectedId : (getParentId(document, selectedId) ?? selectedId)
-    const parent = document.topics[parentId]
-    if (!parent) return
-    const id = crypto.randomUUID()
-    const current = document.topics[selectedId]
-    const side =
-      parentId === document.rootId && selectedId === document.rootId
-        ? parent.children.length % 2 === 0
-          ? 'right'
-          : 'left'
-        : (current?.side ?? 'right')
-    const index =
-      kind === 'sibling' && selectedId !== document.rootId
-        ? parent.children.indexOf(selectedId) + 1
-        : parent.children.length
-    if (get().command({ type: 'addTopic', parentId, id, title: '新主题', side, index }))
-      get().startEdit(id)
-  },
+  add: addTopic,
   remove: deleteSelectedTopics,
   undo: () => {
+    if (usePresentation.getState().playing) return
     get().commitDraft()
     if (get().editingId) return
     set(travelHistory(get(), 'undo'))
   },
   redo: () => {
+    if (usePresentation.getState().playing) return
     get().commitDraft()
     if (get().editingId) return
     set(travelHistory(get(), 'redo'))
@@ -225,6 +208,15 @@ export const useEditor = create<EditorState>((set, get) => ({
       clock: 0,
       structurePast: [],
       structureFuture: [],
+    })
+    usePresentation.setState({
+      cameraRequest: null,
+      viewportRequest: null,
+      steps: [],
+      sheetId: null,
+      workbookId: null,
+      index: 0,
+      generated: false,
     })
     enterWorkspaceEditor()
   },

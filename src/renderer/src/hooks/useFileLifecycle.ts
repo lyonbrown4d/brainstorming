@@ -7,6 +7,10 @@ import { draftCommand } from '../state/editorDraft'
 import { isDirty, useEditor } from '../state/editor'
 import { newDocument, openDocument, saveDocument, readRecoveryContents } from '../state/files'
 import { writeBrowserRecovery } from '../state/recovery'
+import { requestViewport } from '../state/viewport'
+import { usePresentation } from '../state/presentation'
+import { useSpatialView } from '../state/spatial'
+import { createRecoveryWriter } from '../lib/recoveryWriter'
 import { useWorkspace } from '../state/workspace'
 
 export function useFileLifecycle(): void {
@@ -15,7 +19,7 @@ export function useFileLifecycle(): void {
     let ready = false
     let recoveryRead = false
     let pendingOpen = true
-    let timer: ReturnType<typeof setTimeout> | undefined
+    let nativeStatus = ''
     const bridge = window.trelyx
     function openPending(): void {
       const state = useEditor.getState()
@@ -30,15 +34,31 @@ export function useFileLifecycle(): void {
     function synchronize(): void {
       const state = useEditor.getState()
       const workspace = useWorkspace.getState()
-      bridge?.setDirty(workspace.hasDocument && isDirty(), !ready || Boolean(state.recovery))
+      const dirty = workspace.hasDocument && isDirty()
+      const protectedRecovery = !ready || Boolean(state.recovery)
+      const status = `${dirty}:${protectedRecovery}`
+      if (status !== nativeStatus) {
+        bridge?.setDirty(dirty, protectedRecovery)
+        nativeStatus = status
+      }
       window.document.title =
         workspace.screen === 'editor'
-          ? `${isDirty() ? '• ' : ''}${state.workbook.title} — Trelyx`
+          ? `${dirty ? '• ' : ''}${state.workbook.title} — Trelyx`
           : 'Trelyx'
-      clearTimeout(timer)
-      if (!ready || state.recovery || state.busy || !workspace.hasDocument) return
-      timer = setTimeout(() => {
+      if (!ready || state.recovery || state.busy || !workspace.hasDocument) recoveryWriter.cancel()
+      else recoveryWriter.schedule()
+    }
+    const recoveryWriter = createRecoveryWriter(
+      async () => {
         const current = useEditor.getState()
+        if (
+          !alive ||
+          !ready ||
+          current.recovery ||
+          current.busy ||
+          !useWorkspace.getState().hasDocument
+        )
+          return
         let document = current.history.document
         try {
           const command = draftCommand(current)
@@ -52,16 +72,17 @@ export function useFileLifecycle(): void {
             sheet.id === current.activeSheetId ? { ...sheet, document } : sheet,
           ),
         })
-        const write = bridge ? bridge.writeRecovery(contents) : writeBrowserRecovery(contents)
-        void write.catch((error: unknown) => {
+        await (bridge ? bridge.writeRecovery(contents) : writeBrowserRecovery(contents))
+      },
+      (error) => {
+        if (alive)
           useEditor
             .getState()
             .setError(
               `自动恢复写入失败：${error instanceof Error ? error.message : '请手动保存文件。'}`,
             )
-        })
-      }, 700)
-    }
+      },
+    )
     const read = readRecoveryContents()
     void read
       .then((recovery) => {
@@ -99,6 +120,7 @@ export function useFileLifecycle(): void {
     })
     const unsubscribeWorkspace = useWorkspace.subscribe(synchronize)
     const removeMenu = bridge?.onMenuAction((action) => {
+      if (usePresentation.getState().playing) return
       if (useWorkspace.getState().screen !== 'editor' && action !== 'new' && action !== 'open')
         return
       const state = useEditor.getState()
@@ -126,6 +148,20 @@ export function useFileLifecycle(): void {
               ? content.markdown
               : content.text,
           )
+      }
+      if (['zoomIn', 'zoomOut', 'actualSize', 'centerRoot'].includes(action)) {
+        if (action === 'centerRoot') {
+          state.select(state.history.document.rootId)
+          useSpatialView.getState().setFocus(state.activeSheetId, null)
+        }
+        if (
+          action === 'zoomIn' ||
+          action === 'zoomOut' ||
+          action === 'actualSize' ||
+          action === 'centerRoot'
+        )
+          requestViewport(action)
+        return
       }
       switch (action) {
         case 'new':
@@ -155,7 +191,7 @@ export function useFileLifecycle(): void {
     synchronize()
     return () => {
       alive = false
-      clearTimeout(timer)
+      recoveryWriter.dispose()
       unsubscribe()
       unsubscribeWorkspace()
       removeMenu?.()

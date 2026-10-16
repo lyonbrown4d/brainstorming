@@ -8,6 +8,7 @@ import { browserPasswordFor } from './password'
 import { beginCreation } from './creation'
 import { confirmDiscard } from './documentDiscard'
 import { serializedWorkbook } from './workbookState'
+import { invalidateRecentFiles } from '../hooks/useRecentFiles'
 import { useWorkspace } from './workspace'
 export { RECOVERY_KEY } from './recovery'
 
@@ -68,6 +69,7 @@ export async function openDocument(recentPath?: string, pending = false): Promis
     if (!bridge && result.encrypted) adoptBrowserPassword(document.id)
     const imported = result.path === null
     current.replace(document, result.path, imported)
+    if (bridge) void invalidateRecentFiles()
     if (imported)
       useEditor.setState({
         importReport: {
@@ -121,8 +123,10 @@ export async function saveDocument(saveAs = false): Promise<void> {
       }, 1000)
       savedPath = link.download
     }
-    if (savedPath && useEditor.getState().workbook.id === workbook.id)
+    if (savedPath && useEditor.getState().workbook.id === workbook.id) {
       useEditor.setState({ baseline: contents, path: savedPath })
+      if (window.trelyx) void invalidateRecentFiles()
+    }
   } catch (error) {
     showError(error)
   } finally {

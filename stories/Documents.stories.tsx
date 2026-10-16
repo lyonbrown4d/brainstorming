@@ -74,3 +74,17 @@ export const SemanticFilter: Story = {
     })
   },
 }
+
+export const TopicMarkers: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const page = within(canvasElement.ownerDocument.body)
+    await userEvent.click(canvas.getByTestId('topic-vision'))
+    await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
+    await userEvent.click(canvas.getByRole('button', { name: '图标与任务标记' }))
+    await userEvent.click(page.getByRole('button', { name: '优先级 2' }))
+    await userEvent.click(page.getByRole('button', { name: '星标' }))
+    await expect(canvas.getByTestId('topic-vision')).toHaveTextContent('P2')
+    await expect(within(canvas.getByTestId('topic-vision')).getByLabelText('星标')).toBeVisible()
+  },
+}

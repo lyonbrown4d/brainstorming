@@ -3,7 +3,18 @@ import type { DesktopAPI, MenuAction } from '../shared/contracts'
 import { isWindowState } from '../shared/window'
 import type { StartupAPI } from '../shared/startup'
 
-const actions = new Set<MenuAction>(['new', 'open', 'save', 'saveAs', 'undo', 'redo'])
+const actions = new Set<MenuAction>([
+  'new',
+  'open',
+  'save',
+  'saveAs',
+  'undo',
+  'redo',
+  'zoomIn',
+  'zoomOut',
+  'actualSize',
+  'centerRoot',
+])
 const api: DesktopAPI = {
   platform:
     process.platform === 'darwin' ? 'macos' : process.platform === 'win32' ? 'windows' : 'linux',

@@ -21,7 +21,7 @@ export default function SpatialCanvas({
 }: SpatialCanvasProps) {
   const presentation = usePresentation()
   const presentedId = presentation.playing
-    ? document.presentation?.[presentation.index]?.topicId
+    ? presentation.steps[presentation.index]?.topicId
     : undefined
   const layout = useMemo(
     () => layoutSpatialDocument(presentationDocument(document, presentedId)),
@@ -87,7 +87,9 @@ export default function SpatialCanvas({
           />
         </Canvas>
       )}
-      <SpatialControls actions={actions} focused={focusId !== null} zoom={zoom} />
+      {!presentation.playing && (
+        <SpatialControls actions={actions} focused={focusId !== null} zoom={zoom} />
+      )}
     </section>
   )
 }

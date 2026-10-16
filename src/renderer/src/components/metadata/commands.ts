@@ -18,3 +18,13 @@ export function setMetadataField<K extends keyof TopicMetadata>(
   else metadata[key] = value
   return runAnnotationCommand({ type: 'setTopicMetadata', topicId, metadata })
 }
+
+export function toggleTopicMarker(topicId: string, marker: string): boolean {
+  const current = useEditor.getState().history.document.topics[topicId]?.metadata?.markers ?? []
+  if (!current.includes(marker) && (current.length >= 32 || marker.length > 64)) return false
+  return setMetadataField(
+    topicId,
+    'markers',
+    current.includes(marker) ? current.filter((value) => value !== marker) : [...current, marker],
+  )
+}

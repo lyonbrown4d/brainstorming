@@ -4,7 +4,17 @@ import type { FileSecurityAPI } from './fileSecurity'
 import type { AIAPI } from './ai'
 import type { ExportRequest } from './exports'
 
-export type MenuAction = 'new' | 'open' | 'save' | 'saveAs' | 'undo' | 'redo'
+export type MenuAction =
+  | 'new'
+  | 'open'
+  | 'save'
+  | 'saveAs'
+  | 'undo'
+  | 'redo'
+  | 'zoomIn'
+  | 'zoomOut'
+  | 'actualSize'
+  | 'centerRoot'
 export interface OpenedDocument {
   path: string | null
   contents: string

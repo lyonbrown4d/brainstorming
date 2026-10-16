@@ -36,7 +36,10 @@ export function installMenu(send: (action: MenuAction) => void): void {
     {
       label: '视图',
       submenu: [
-        { role: 'resetZoom', label: '实际大小' },
+        action('放大', 'zoomIn', 'CmdOrCtrl+Plus'),
+        action('缩小', 'zoomOut', 'CmdOrCtrl+-'),
+        action('实际大小', 'actualSize', 'CmdOrCtrl+0'),
+        action('前往中心主题', 'centerRoot', 'CmdOrCtrl+R'),
         { role: 'togglefullscreen', label: '全屏' },
       ],
     },

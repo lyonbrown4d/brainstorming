@@ -5,7 +5,7 @@ import { interactAnnotationTopic, useAnnotationInteraction } from '../state/anno
 import { useEditor } from '../state/editor'
 import { defaultSpatialView, useSpatialView, visibleSpatialFocus } from '../state/spatial'
 import { isCompositionKey } from '../state/keyboard'
-import { PresentationPlayback } from './documents/PresentationControls'
+import { usePresentation } from '../state/presentation'
 import { FloatingToolbar } from './FloatingToolbar'
 import { changeViewMode } from './ViewModeSwitch'
 import { Button } from './ui/button'
@@ -63,11 +63,18 @@ function focusPath(document: MindMapDocument, focusId: string): readonly string[
 }
 
 export function SpatialWorkspace() {
+  const presentation = usePresentation()
+  const playing = presentation.playing
   const document = useEditor((state) => state.history.document)
   const selectedId = useEditor((state) => state.selectedId)
   const sheetId = useEditor((state) => state.activeSheetId)
   const view = useSpatialView((state) => state.sheets[sheetId] ?? defaultSpatialView)
-  const focusId = visibleSpatialFocus(document, view.focusId)
+  const step = playing ? presentation.steps[presentation.index] : undefined
+  const focusId = step
+    ? step.camera || step.topicId === document.rootId
+      ? null
+      : step.topicId
+    : visibleSpatialFocus(document, view.focusId)
   const [supported] = useState(supportsSpatialCanvas)
   const saveCamera = useCallback(
     (camera: SpatialCameraState): void => {
@@ -79,17 +86,20 @@ export function SpatialWorkspace() {
     useSpatialView.getState().setFocus(sheetId, null)
   }
   const selectTopic = useCallback((id: string): void => {
+    if (usePresentation.getState().playing) return
     if (interactAnnotationTopic(id)) return
     useAnnotationInteraction.setState({ selected: null, editing: false })
     useEditor.getState().select(id)
   }, [])
   const collapseTopic = useCallback((id: string): void => {
+    if (usePresentation.getState().playing) return
     const editor = useEditor.getState()
     editor.commitDraft()
     if (!useEditor.getState().editingId) editor.command({ type: 'toggleCollapse', topicId: id })
   }, [])
   const focusTopic = useCallback(
     (id: string): void => {
+      if (usePresentation.getState().playing) return
       useEditor.getState().select(id)
       const editor = useEditor.getState()
       if (editor.editingId || !editor.history.document.topics[id]) return
@@ -153,10 +163,9 @@ export function SpatialWorkspace() {
       ) : (
         <SpatialUnavailable />
       )}
-      {supported && (
+      {supported && !playing && (
         <>
           <FloatingToolbar />
-          <PresentationPlayback />
           <div className="pointer-events-none absolute top-5 left-4 z-10 flex max-w-[calc(100%-2rem)] items-center gap-3">
             {focusId && (
               <>

@@ -36,7 +36,8 @@ export function relationEdges(document: MindMapDocument, visibleIds: ReadonlySet
         target: relation.to,
         label: relation.title,
         type: 'relation',
-        selectable: false,
+        selectable: true,
+        reconnectable: true,
         style: {
           stroke: color,
           strokeWidth: relation.width ?? 2,

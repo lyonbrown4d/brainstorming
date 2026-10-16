@@ -1,45 +1,22 @@
-import { useEffect, useState } from 'react'
 import { File, RefreshCw } from 'lucide-react'
-import type { RecentFile } from '@shared/contracts'
+import { useRecentFiles } from '../../hooks/useRecentFiles'
 import { openDocument } from '../../state/files'
 import { Button } from '../ui/button'
 
-type RecentState =
-  { status: 'loading' } | { status: 'error' } | { status: 'ready'; files: readonly RecentFile[] }
-
 export function RecentDocuments({ busy }: { busy: boolean }) {
-  const [attempt, setAttempt] = useState(0)
-  const [recent, setRecent] = useState<RecentState>(() =>
-    window.trelyx ? { status: 'loading' } : { status: 'ready', files: [] },
-  )
-  useEffect(() => {
-    let active = true
-    const bridge = window.trelyx
-    if (!bridge) return
-    void bridge.getRecentFiles().then(
-      (files) => {
-        if (active) setRecent({ status: 'ready', files })
-      },
-      () => {
-        if (active) setRecent({ status: 'error' })
-      },
-    )
-    return () => {
-      active = false
-    }
-  }, [attempt])
+  const recent = useRecentFiles()
   return (
     <aside
       className="border-t bg-background px-6 py-8 xl:w-64 xl:shrink-0 xl:border-t-0 xl:border-l"
       aria-label="最近文件"
     >
       <h2 className="mb-4 text-sm font-semibold">最近打开</h2>
-      {recent.status === 'loading' && (
+      {recent.isPending && (
         <p role="status" className="text-xs text-muted-foreground">
           正在读取最近文件…
         </p>
       )}
-      {recent.status === 'error' && (
+      {recent.isError && (
         <div className="space-y-3">
           <p role="alert" className="text-xs text-muted-foreground">
             最近文件读取失败。
@@ -47,9 +24,9 @@ export function RecentDocuments({ busy }: { busy: boolean }) {
           <Button
             variant="outline"
             size="sm"
+            disabled={recent.isFetching}
             onClick={() => {
-              setRecent({ status: 'loading' })
-              setAttempt((value) => value + 1)
+              void recent.refetch()
             }}
           >
             <RefreshCw className="size-4" />
@@ -57,10 +34,10 @@ export function RecentDocuments({ busy }: { busy: boolean }) {
           </Button>
         </div>
       )}
-      {recent.status === 'ready' &&
-        (recent.files.length ? (
+      {recent.isSuccess &&
+        (recent.data.length ? (
           <div className="space-y-2">
-            {recent.files.map((file) => (
+            {recent.data.map((file) => (
               <Button
                 key={file.path}
                 variant="ghost"

@@ -39,6 +39,9 @@ export function projectCanvas(document: MindMapDocument) {
         id: node.id,
         type: 'topic' as const,
         position: { x: node.x, y: node.y },
+        // Known layout dimensions keep fresh nodes visible when Lexical takes focus.
+        initialWidth: node.width,
+        initialHeight: node.height,
         style: { width: node.width, height: node.height },
         data: {
           topic,

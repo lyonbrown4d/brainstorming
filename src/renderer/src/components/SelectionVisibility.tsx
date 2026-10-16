@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useReducedMotion } from 'motion/react'
 import { useReactFlow, useStore } from '@xyflow/react'
+import { usePresentation } from '../state/presentation'
 import { useEditor } from '../state/editor'
 import type { TopicFlowNode } from './TopicNode'
 import { documentStructureKey } from '@shared/layout-geometry'
@@ -8,16 +9,20 @@ import { documentStructureKey } from '@shared/layout-geometry'
 /** Keep keyboard navigation and newly created editors inside the visible canvas. */
 export function SelectionVisibility() {
   const reduceMotion = useReducedMotion()
+  const playing = usePresentation((state) => state.playing)
+  const restoreRequest = usePresentation((state) => state.viewportRequest)
   const selectedId = useEditor((state) => state.selectedId)
   const document = useEditor((state) => state.history.document)
   const flow = useReactFlow<TopicFlowNode>()
   const width = useStore((state) => state.width)
   const height = useStore((state) => state.height)
   const structure = documentStructureKey(document)
-  const previous = useRef({ document, selectedId, structure })
+  const previous = useRef({ document, selectedId, structure, restoreRequest })
   useEffect(() => {
     const prior = previous.current
-    previous.current = { document, selectedId, structure }
+    previous.current = { document, selectedId, structure, restoreRequest }
+    // Playback owns framing; its exit snapshot must also preserve an offscreen selection.
+    if (playing || prior.restoreRequest !== restoreRequest) return
     // Mounting a sheet restores its viewport; only subsequent navigation should reveal topics.
     if (prior.document === document && prior.selectedId === selectedId) return
     const frame = requestAnimationFrame(() => {
@@ -46,6 +51,6 @@ export function SelectionVisibility() {
     return () => {
       cancelAnimationFrame(frame)
     }
-  }, [document, selectedId, structure, flow, width, height, reduceMotion])
+  }, [document, selectedId, structure, flow, width, height, reduceMotion, playing, restoreRequest])
   return null
 }

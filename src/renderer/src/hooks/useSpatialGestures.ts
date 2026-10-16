@@ -39,7 +39,7 @@ export function useSpatialGestures({
       const gesture = spatialWheelGesture(event, size)
       if (!gesture) return
       if (!enabled || !controller.enabled) {
-        if (event.ctrlKey) event.preventDefault()
+        if (event.ctrlKey || event.metaKey) event.preventDefault()
         return
       }
       // The non-passive listener also prevents browser page zoom during Ctrl+wheel pinch.

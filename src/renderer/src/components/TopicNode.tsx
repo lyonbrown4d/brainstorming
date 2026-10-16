@@ -3,6 +3,7 @@ import { Handle, Position, type Node, type NodeProps } from '@xyflow/react'
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react'
 import type { Topic } from '@core'
 import type { LayoutDirection } from '@layout'
+import { usePresentation } from '../state/presentation'
 import { useEditor } from '../state/editor'
 import { useTopicSelected } from '../state/selection'
 import { CanvasTopicTitle } from './metadata/CanvasTopicTitle'
@@ -46,7 +47,7 @@ export const TopicNode = memo(function TopicNode({ data, id }: NodeProps<TopicFl
   const style = topic.style
   return (
     <div
-      className={`topic nopan ${root ? 'topic-root' : branch ? 'topic-branch' : 'topic-leaf'} ${selected ? 'is-selected' : ''} ${editing && editingSurface === 'canvas' ? 'is-editing' : ''} ${dropTarget ? 'drop-target' : ''} side-${side} ${topic.image || topic.notes || topic.attachments?.length || topic.metadata ? 'has-content flex flex-col items-center' : ''}`}
+      className={`topic nopan select-none ${root ? 'topic-root' : branch ? 'topic-branch' : 'topic-leaf'} ${selected ? 'is-selected' : ''} ${editing && editingSurface === 'canvas' ? 'is-editing' : ''} ${dropTarget ? 'drop-target' : ''} side-${side} ${topic.image || topic.notes || topic.attachments?.length || topic.metadata ? 'has-content flex flex-col items-center' : ''}`}
       style={
         {
           '--branch-color': color,
@@ -90,7 +91,15 @@ export const TopicNode = memo(function TopicNode({ data, id }: NodeProps<TopicFl
           fontStyle: style?.italic ? 'italic' : 'normal',
         }}
         onDoubleClick={() => {
-          useEditor.getState().startEdit(id)
+          if (usePresentation.getState().playing) return
+          useEditor
+            .getState()
+            .startEdit(
+              id,
+              undefined,
+              'canvas',
+              topic.title === '新主题' || topic.title === '游离主题' ? 'all' : 'end',
+            )
         }}
       >
         {primary || editing ? (

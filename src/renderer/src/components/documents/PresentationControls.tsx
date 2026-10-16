@@ -1,25 +1,15 @@
 import type { PresentationStep } from '@core'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Popover } from 'radix-ui'
-import {
-  ArrowDown,
-  ArrowLeft,
-  ArrowRight,
-  ArrowUp,
-  ListOrdered,
-  Play,
-  Plus,
-  Square,
-  Trash2,
-} from 'lucide-react'
-import { useReactFlow } from '@xyflow/react'
+import { ArrowDown, ArrowUp, Play, Plus, Trash2 } from 'lucide-react'
 import { useEditor } from '../../state/editor'
 import { selectedTopicIds } from '../../state/selection'
-import { showPresentationStep, stopPresentation, usePresentation } from '../../state/presentation'
+import { presentationSteps, showPresentationStep, usePresentation } from '../../state/presentation'
 import { useSpatialView } from '../../state/spatial'
-import { isCompositionKey } from '../../state/keyboard'
 import { runAnnotationCommand } from '../annotations/commands'
 import { Button } from '../ui/button'
+
+export { PresentationPlayback } from './PresentationPlayback'
 
 const emptySteps: readonly PresentationStep[] = []
 
@@ -75,7 +65,8 @@ export function PresentationControls() {
           >
             <p className="text-sm font-medium">演示步骤</p>
             <p className="text-xs text-muted-foreground">
-              添加所选主题；三维视图会记录当前视角。播放时方向键或空格切换，Esc 退出。
+              添加所选主题；三维视图会记录当前视角。未添加时按可见主题自动演示。方向键或空格切换，Esc
+              退出。
             </p>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={add}>
@@ -84,7 +75,6 @@ export function PresentationControls() {
               </Button>
               <Button
                 size="sm"
-                disabled={!steps.length}
                 onClick={() => {
                   showPresentationStep(0)
                   setOpen(false)
@@ -145,123 +135,26 @@ export function PresentationControls() {
                 </li>
               ))}
             </ol>
-            {!steps.length && <p className="text-xs text-muted-foreground">尚未添加演示步骤。</p>}
+            {!steps.length && (
+              <div className="space-y-2 text-xs text-muted-foreground">
+                <p>自动演示 {presentationSteps(document).length} 个可见主题，不修改文档。</p>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    runAnnotationCommand({
+                      type: 'setPresentation',
+                      steps: presentationSteps(document),
+                    })
+                  }}
+                >
+                  生成并保存步骤
+                </Button>
+              </div>
+            )}
           </Popover.Content>
         </Popover.Portal>
       </Popover.Root>
-    </>
-  )
-}
-
-export function PresentationPlayback() {
-  const flow = useReactFlow()
-  const document = useEditor((state) => state.history.document)
-  const sheetId = useEditor((state) => state.activeSheetId)
-  const workbookId = useEditor((state) => state.workbook.id)
-  const presentation = usePresentation()
-  const steps = document.presentation ?? emptySteps
-  const playing =
-    presentation.playing &&
-    presentation.sheetId === sheetId &&
-    presentation.workbookId === workbookId
-  useEffect(() => {
-    if (!playing) return
-    const panel = window.document.getElementById('sheet-panel')
-    panel?.setAttribute('tabindex', '-1')
-    panel?.focus()
-    return () => {
-      panel?.removeAttribute('tabindex')
-    }
-  }, [playing])
-  useEffect(() => {
-    if (presentation.playing && (!playing || !steps[presentation.index])) stopPresentation()
-  }, [playing, presentation.playing, presentation.index, steps])
-  useEffect(() => {
-    if (!playing) return
-    const step = steps[presentation.index]
-    if (step && useSpatialView.getState().sheets[sheetId]?.mode !== '3d')
-      void flow.fitView({
-        nodes: [{ id: step.topicId }],
-        padding: 0.5,
-        minZoom: 0.4,
-        maxZoom: 1.2,
-        duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 250,
-      })
-  }, [flow, playing, presentation.index, sheetId, steps])
-  useEffect(() => {
-    if (!playing) return
-    const handler = (event: KeyboardEvent): void => {
-      if (
-        event.defaultPrevented ||
-        isCompositionKey(event) ||
-        event.ctrlKey ||
-        event.metaKey ||
-        event.altKey
-      )
-        return
-      const target = event.target
-      if (
-        target instanceof HTMLElement &&
-        (target.isContentEditable ||
-          target.closest('input,textarea,select,[role="dialog"],[role="menu"]'))
-      )
-        return
-      if (!['ArrowLeft', 'ArrowRight', ' ', 'Escape'].includes(event.key)) return
-      event.preventDefault()
-      event.stopPropagation()
-      if (event.key === 'Escape') stopPresentation()
-      else
-        showPresentationStep(
-          Math.max(
-            0,
-            Math.min(steps.length - 1, presentation.index + (event.key === 'ArrowLeft' ? -1 : 1)),
-          ),
-        )
-    }
-    window.addEventListener('keydown', handler, true)
-    return () => {
-      window.removeEventListener('keydown', handler, true)
-    }
-  }, [playing, presentation.index, steps.length])
-  return (
-    <>
-      {playing && (
-        <div
-          className="absolute top-20 right-4 z-30 flex items-center gap-2 rounded-xl border bg-background p-2 shadow-lg"
-          role="toolbar"
-          aria-label="演示播放控制"
-        >
-          <ListOrdered className="size-4" />
-          <span className="text-xs">
-            {presentation.index + 1} / {steps.length}
-          </span>
-          <Button
-            size="icon"
-            variant="ghost"
-            aria-label="上一步演示"
-            disabled={presentation.index === 0}
-            onClick={() => {
-              showPresentationStep(presentation.index - 1)
-            }}
-          >
-            <ArrowLeft className="size-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            aria-label="下一步演示"
-            disabled={presentation.index >= steps.length - 1}
-            onClick={() => {
-              showPresentationStep(presentation.index + 1)
-            }}
-          >
-            <ArrowRight className="size-4" />
-          </Button>
-          <Button size="icon" variant="ghost" aria-label="退出演示" onClick={stopPresentation}>
-            <Square className="size-4" />
-          </Button>
-        </div>
-      )}
     </>
   )
 }

@@ -2,12 +2,13 @@
 
 通用控件优先使用 shadcn/ui。缺少组件时，使用固定版本的官方 CLI 和 pnpm 获取，按项目的 `components.json` 放入 `src/renderer/src/components/ui`。
 
-本轮使用 CLI `shadcn@4.21.5` 获取 Button、Dialog、Tooltip、Badge、ScrollArea、Input、Select、Label 和 Separator。下载目录保留官方源码，不通过业务补丁修改组件结构、逻辑、默认样式或公开 API；Prettier 和 ESLint 不重写该目录，TypeScript 检查和交互测试仍覆盖其使用。
+本轮使用 CLI `shadcn@4.21.5` 获取 Button、Dialog、Tooltip、Badge、ScrollArea、Input、Select、Label、Separator 和 Popover。下载目录保留官方源码，不通过业务补丁修改组件结构、逻辑、默认样式或公开 API；Prettier 和 ESLint 不重写该目录，TypeScript 检查和交互测试仍覆盖其使用。
 
 业务组合放在 `src/renderer/src/components`：
 
 - `FieldSelect` 组合 Select，统一业务选项、可访问名称和值校验。
 - `DialogContent` 组合官方 DialogContent、DialogClose 和 Button，通过公开的 `showCloseButton` 属性配置中文关闭按钮。
+- `MarkerAction` 组合官方 Popover、FieldSelect 和 ScrollArea；优先级与进度即时应用，Simple Icons 通过 Iconify offline 和随包图标数据呈现，不请求外部图标服务。
 - `TopicContentPanel` 组合 Lexical、Button、Badge、ScrollArea 和图片预览，管理主题内容。
 
 差异优先通过组合、公开 props 和 `className` 实现，主题变量集中在 `styles/ui.css`。业务布局优先通过 Tailwind utilities 表达，动态画布值保留为类型明确的样式值；不把业务状态或导图命令放入基础组件。

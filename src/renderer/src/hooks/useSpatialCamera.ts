@@ -3,6 +3,7 @@ import { useThree } from '@react-three/fiber'
 import type { CameraControlsImpl } from '@react-three/drei'
 import { Box3, Vector3 } from 'three'
 import { usePresentation } from '../state/presentation'
+import { useViewportRequest } from '../state/viewport'
 import { useEditor } from '../state/editor'
 import { useReducedMotion } from 'motion/react'
 import { spatialBounds, type SpatialNode } from '../../../layout/spatial'
@@ -146,6 +147,16 @@ export function useSpatialCamera({
       actions.current = null
     }
   }, [actions, animation, controls, fit, invalidate])
+
+  useEffect(
+    () =>
+      useViewportRequest.subscribe(({ action }) => {
+        if (action === 'zoomIn' || action === 'zoomOut')
+          actions.current?.zoom(action === 'zoomIn' ? 'in' : 'out')
+        else if (action === 'actualSize' || action === 'centerRoot') actions.current?.fit()
+      }),
+    [actions],
+  )
 
   return { report, orient, smoothTime: reduceMotion ? 0 : 0.18 }
 }

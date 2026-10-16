@@ -17,6 +17,26 @@ test('自定义标题栏保留操作、窄窗布局与原生全屏状态', async
       )
       .toBe(true)
     await expect(page.locator('#startup-screen')).toHaveCount(0)
+    const viewAction = async (label: string) => {
+      await app.evaluate(({ Menu }, name) => {
+        const item = Menu.getApplicationMenu()
+          ?.items.find((entry) => entry.label === '视图')
+          ?.submenu?.items.find((entry) => entry.label === name)
+        if (!item) throw new Error('缺少原生视图菜单')
+        Reflect.apply(item.click, item, [])
+      }, label)
+    }
+    await viewAction('实际大小')
+    await expect(page.locator('.zoom-value')).toHaveText('100%')
+    await viewAction('放大')
+    await expect(page.locator('.zoom-value')).not.toHaveText('100%')
+    expect(
+      await app.evaluate(({ BrowserWindow }) =>
+        BrowserWindow.getAllWindows()[0]?.webContents.getZoomFactor(),
+      ),
+    ).toBe(1)
+    await viewAction('实际大小')
+    await expect(page.locator('.zoom-value')).toHaveText('100%')
     const shell = page.locator('.app-shell')
     const platform =
       process.platform === 'darwin' ? 'macos' : process.platform === 'win32' ? 'windows' : 'linux'

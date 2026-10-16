@@ -2,7 +2,7 @@ import { AudioLines, CheckCircle2, Circle, Link2, Sigma, Tag } from 'lucide-reac
 import type { TopicMetadata } from '@core'
 import { Button } from '../ui/button'
 import { openTopicLink } from './LinkPanel'
-import { markerOptions } from './markers'
+import { MarkerIcon } from './MarkerIcon'
 
 export function TopicMetadataBadges({ metadata }: { metadata: TopicMetadata | undefined }) {
   if (!metadata) return null
@@ -27,16 +27,10 @@ export function TopicMetadataBadges({ metadata }: { metadata: TopicMetadata | un
           {task.priority && <span>P{task.priority}</span>}
         </span>
       )}
-      {markers.slice(0, 2).map((marker) => {
-        const option = markerOptions.find((item) => item.value === marker)
-        return option ? (
-          <option.Icon key={marker} className="size-3 shrink-0" aria-label={option.title} />
-        ) : (
-          <span key={marker} className="max-w-8 truncate" title={marker}>
-            {marker}
-          </span>
-        )
-      })}
+      {markers.slice(0, 4).map((marker) => (
+        <MarkerIcon key={marker} marker={marker} className="size-3 shrink-0" />
+      ))}
+      {markers.length > 4 && <span title={markers.join('、')}>+{markers.length - 4}</span>}
       {labels.length > 0 && (
         <span className="flex min-w-0 items-center gap-0.5" title={labels.join('、')}>
           <Tag className="size-3 shrink-0" />

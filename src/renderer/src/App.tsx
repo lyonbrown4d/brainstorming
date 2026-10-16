@@ -1,3 +1,7 @@
+import { QueryClientProvider } from '@tanstack/react-query'
+import { queryClient } from './lib/queryClient'
+import { usePresentation } from './state/presentation'
+import { PresentationPlayback } from './components/documents/PresentationControls'
 import { ReactFlowProvider } from '@xyflow/react'
 import { X } from 'lucide-react'
 import { useMemo } from 'react'
@@ -39,6 +43,7 @@ export function App() {
   useFileLifecycle()
   useKeyboardShortcuts()
   const chrome = useWindowChrome()
+  const playing = usePresentation((state) => state.playing)
   const screen = useWorkspace((state) => state.screen)
   const outline = useEditor((state) => state.outlineOpen)
   const inspector = useEditor((state) => state.inspectorOpen)
@@ -49,89 +54,94 @@ export function App() {
   const topics = useEditor((state) => state.history.document.topics)
   const count = useMemo(() => Object.keys(topics).length, [topics])
   return (
-    <MotionConfig reducedMotion="user">
-      <TooltipProvider>
-        <div
-          className="app-shell"
-          data-platform={chrome.platform}
-          data-focused={chrome.focused}
-          data-fullscreen={chrome.fullScreen}
-        >
-          {screen === 'editor' ? <Toolbar /> : <WorkspaceHeader />}
-          <div className="app-body">
-            <main className="workspace-main min-h-0">
-              {recovery && (
-                <div className="recovery-banner" role="status">
-                  <span>发现上次的自动恢复记录，是否继续之前的思路？</span>
-                  <Button variant="ghost" size="sm" onClick={restoreRecovery}>
-                    恢复导图
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      useEditor.setState({ recovery: null })
-                    }}
-                  >
-                    忽略记录
-                  </Button>
-                </div>
-              )}
-              {error && screen === 'editor' && (
-                <div className="error-banner" role="alert">
-                  <span>{error}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="关闭错误提示"
-                    onClick={() => {
-                      useEditor.getState().setError(null)
-                    }}
-                  >
-                    <X size={15} />
-                  </Button>
-                </div>
-              )}
-              <ImportNotice />
-              {screen === 'editor' && <SearchPanel />}
-              <PasswordPrompt />
-              {screen !== 'editor' ? (
-                <CreationWorkspace />
-              ) : (
-                <ReactFlowProvider>
-                  <div className="workspace-content">
-                    <AnimatePresence initial={false}>
-                      {outline && (
-                        <AnimatedPanel key="outline">
-                          <Outline />
-                        </AnimatedPanel>
-                      )}
-                    </AnimatePresence>
-                    {spatial ? (
-                      <SpatialWorkspace key={activeSheetId} />
-                    ) : (
-                      <Canvas key={activeSheetId} />
-                    )}
-                    <AnimatePresence initial={false}>
-                      {inspector && (
-                        <AnimatedPanel key="inspector" side="right">
-                          <Inspector />
-                        </AnimatedPanel>
-                      )}
-                    </AnimatePresence>
+    <QueryClientProvider client={queryClient}>
+      <MotionConfig reducedMotion="user">
+        <TooltipProvider>
+          <div
+            className="app-shell"
+            data-platform={chrome.platform}
+            data-focused={chrome.focused}
+            data-fullscreen={chrome.fullScreen}
+          >
+            {!playing && (screen === 'editor' ? <Toolbar /> : <WorkspaceHeader />)}
+            <div className="app-body">
+              <main className="workspace-main min-h-0">
+                {recovery && (
+                  <div className="recovery-banner" role="status">
+                    <span>发现上次的自动恢复记录，是否继续之前的思路？</span>
+                    <Button variant="ghost" size="sm" onClick={restoreRecovery}>
+                      恢复导图
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        useEditor.setState({ recovery: null })
+                      }}
+                    >
+                      忽略记录
+                    </Button>
                   </div>
-                  <footer className="status-bar">
-                    <SheetTabs />
-                    <span className="topic-count">{count} 个主题</span>
-                    {!spatial && <ZoomControls />}
-                    <KeyboardHelp />
-                  </footer>
-                </ReactFlowProvider>
-              )}
-            </main>
+                )}
+                {error && screen === 'editor' && (
+                  <div className="error-banner" role="alert">
+                    <span>{error}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="关闭错误提示"
+                      onClick={() => {
+                        useEditor.getState().setError(null)
+                      }}
+                    >
+                      <X size={15} />
+                    </Button>
+                  </div>
+                )}
+                <ImportNotice />
+                {screen === 'editor' && !playing && <SearchPanel />}
+                <PasswordPrompt />
+                {screen !== 'editor' ? (
+                  <CreationWorkspace />
+                ) : (
+                  <ReactFlowProvider>
+                    <div className="workspace-content">
+                      <AnimatePresence initial={false}>
+                        {outline && !playing && (
+                          <AnimatedPanel key="outline">
+                            <Outline />
+                          </AnimatedPanel>
+                        )}
+                      </AnimatePresence>
+                      {spatial ? (
+                        <SpatialWorkspace key={activeSheetId} />
+                      ) : (
+                        <Canvas key={activeSheetId} />
+                      )}
+                      <AnimatePresence initial={false}>
+                        {inspector && !playing && (
+                          <AnimatedPanel key="inspector" side="right">
+                            <Inspector />
+                          </AnimatedPanel>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                    <PresentationPlayback />
+                    {!playing && (
+                      <footer className="status-bar">
+                        <SheetTabs />
+                        <span className="topic-count">{count} 个主题</span>
+                        {!spatial && <ZoomControls />}
+                        <KeyboardHelp />
+                      </footer>
+                    )}
+                  </ReactFlowProvider>
+                )}
+              </main>
+            </div>
           </div>
-        </div>
-      </TooltipProvider>
-    </MotionConfig>
+        </TooltipProvider>
+      </MotionConfig>
+    </QueryClientProvider>
   )
 }

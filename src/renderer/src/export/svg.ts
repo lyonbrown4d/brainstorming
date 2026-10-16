@@ -6,6 +6,8 @@ import { imageDimensions } from '../../../assets'
 import { annotationExtents, drawExportAnnotations, exportAnnotations } from './annotations'
 import { documentAppearance, topicAppearance } from '@shared/appearance'
 import { layoutEdgePath } from '@shared/layout-geometry'
+import { brandMarkerIcon } from '@shared/markerIcons'
+import { drawMarkerIcons } from './markers'
 import { drawStructureGeometry, structureExtents } from './structures'
 
 export interface SheetSvg {
@@ -191,30 +193,48 @@ export function renderSheetSvg(document: MindMapDocument, includeCollapsed = fal
       ),
     )
     const metadata = topic.metadata
+    const brandCount = metadata?.markers?.filter((marker) => brandMarkerIcon(marker)).length ?? 0
     const metadataText = [
       metadata?.task
         ? `${metadata.task.done ? '✓' : '○'} ${metadata.task.progress ?? 0}%${metadata.task.priority ? ` P${metadata.task.priority}` : ''}`
         : '',
       metadata?.labels?.join('、') ?? '',
-      metadata?.markers?.join(' ') ?? '',
+      metadata?.markers
+        ?.filter((marker) => !brandMarkerIcon(marker))
+        .map((marker) => marker.replace('simple-icons:', ''))
+        .join(' ') ?? '',
+      brandCount > 4 ? `+${brandCount - 4}` : '',
       metadata?.link ? '链接' : '',
       metadata?.equation ? '公式' : '',
       metadata?.audioAssetId ? '音频' : '',
     ]
       .filter(Boolean)
       .join(' · ')
-    const firstBadgeLine = wrappedTitle(metadataText, 10, node.width - 24)[0] ?? ''
+    const iconWidth = drawMarkerIcons(
+      xml,
+      group,
+      metadata?.markers ?? [],
+      node.width,
+      contentY + lines.length * lineHeight + 18,
+      style.color,
+      Boolean(metadataText),
+    )
+    const firstBadgeLine =
+      wrappedTitle(metadataText, 10, Math.max(12, node.width - 24 - iconWidth))[0] ?? ''
     const badge =
       firstBadgeLine === metadataText
         ? metadataText
         : `${Array.from(firstBadgeLine).slice(0, -1).join('')}…`
-    if (metadataText)
-      element('title', {}, group).appendChild(xml.createTextNode(xmlText(metadataText)))
+    const metadataDescription = [metadataText, metadata?.markers?.join(' ')]
+      .filter(Boolean)
+      .join(' · ')
+    if (metadataDescription)
+      element('title', {}, group).appendChild(xml.createTextNode(xmlText(metadataDescription)))
     if (metadataText)
       element(
         'text',
         {
-          x: node.width / 2,
+          x: (node.width + iconWidth) / 2,
           y: contentY + lines.length * lineHeight + 18,
           'text-anchor': 'middle',
           fill: style.color,

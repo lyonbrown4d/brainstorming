@@ -23,6 +23,7 @@ test('选中后连续输入不丢首字，中文组词、换行、取消和整�
   await expect(input).toHaveText('replacement')
   await input.press('Escape')
   await expect(input).toHaveText('产品规划')
+  await input.press('F2')
   await composeChinese(page, input, '中文主题')
   await input.press('Shift+Enter')
   await page.keyboard.insertText('第二行也能继续输入')

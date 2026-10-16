@@ -1,7 +1,9 @@
 import { create } from 'zustand'
+import { usePresentation } from './presentation'
 import { useEditor } from './editor'
 import { selectedTopicIds } from './selection'
 import { runAnnotationCommand } from '../components/annotations/commands'
+import { isCompositionKey } from './keyboard'
 
 export type AnnotationKind = 'relation' | 'group' | 'callout'
 export interface AnnotationSelection {
@@ -18,10 +20,63 @@ export const useAnnotationInteraction = create<{
 }>(() => ({ floating: false, fromId: null, sheetId: null, selected: null, editing: false }))
 
 export function selectAnnotation(kind: AnnotationKind, id: string, editing = false): void {
+  if (usePresentation.getState().playing) return
+  useEditor.getState().commitDraft()
+  if (useEditor.getState().editingId) return
+  if (typeof window !== 'undefined') {
+    const active = window.document.activeElement
+    if (active instanceof HTMLElement && active.closest('.topic-input')) active.blur()
+  }
   useAnnotationInteraction.setState({
     selected: { kind, id, sheetId: useEditor.getState().activeSheetId },
     editing,
+    fromId: null,
+    floating: false,
   })
+}
+
+export function handleAnnotationKey(event: KeyboardEvent): boolean {
+  if (event.defaultPrevented || isCompositionKey(event)) return false
+  const target = event.target
+  if (
+    target instanceof HTMLElement &&
+    (target.isContentEditable || target.closest('input, textarea, select'))
+  )
+    return false
+  const interaction = useAnnotationInteraction.getState()
+  if (
+    event.key === 'Escape' &&
+    (interaction.selected || interaction.fromId || interaction.floating)
+  ) {
+    event.preventDefault()
+    useAnnotationInteraction.setState({
+      selected: null,
+      editing: false,
+      fromId: null,
+      sheetId: null,
+      floating: false,
+    })
+    return true
+  }
+  const selected = interaction.selected
+  if (selected?.sheetId !== useEditor.getState().activeSheetId) return false
+  if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return false
+  if ([' ', 'F2', 'Enter'].includes(event.key)) {
+    event.preventDefault()
+    useAnnotationInteraction.setState({ editing: true })
+    return true
+  }
+  if (event.key !== 'Delete' && event.key !== 'Backspace') return false
+  event.preventDefault()
+  const success = runAnnotationCommand(
+    selected.kind === 'relation'
+      ? { type: 'removeRelation', relationId: selected.id }
+      : selected.kind === 'group'
+        ? { type: 'removeGroup', groupId: selected.id }
+        : { type: 'removeCallout', calloutId: selected.id },
+  )
+  if (success) useAnnotationInteraction.setState({ selected: null, editing: false })
+  return true
 }
 export function toggleRelationMode(): void {
   const current = useAnnotationInteraction.getState()

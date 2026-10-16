@@ -8,6 +8,7 @@ import { HistoryDialog } from './files/HistoryDialog'
 import { TopicFilter } from './documents/TopicFilter'
 import { AnnotationActions, AnnotationModeHint } from './annotations/AnnotationActions'
 import { AnnotationStyleControls } from './annotations/AnnotationStyleControls'
+import { MarkerAction } from './metadata/MarkerAction'
 import { LinkAction } from './metadata/LinkAction'
 import { EditActions } from './EditActions'
 import { ImportTextDialog } from './ImportTextDialog'
@@ -82,6 +83,7 @@ export function FloatingToolbar() {
         <TopicFormatting compact />
         <AnnotationActions />
         <LinkAction />
+        <MarkerAction />
         <AnnotationStyleControls />
         <span className="toolbar-separator" />
         <Action

@@ -1,3 +1,4 @@
+import { prepareMarkerIcons } from '@shared/markerIcons'
 import type { MindMapDocument } from '@core'
 import { renderSheetSvg } from './svg'
 
@@ -6,6 +7,7 @@ export async function printSheet(
   document: MindMapDocument,
   includeCollapsed = false,
 ): Promise<void> {
+  await prepareMarkerIcons(document)
   const source = renderSheetSvg(document, includeCollapsed)
   const url = URL.createObjectURL(new Blob([source.svg], { type: 'image/svg+xml;charset=utf-8' }))
   const frame = window.document.createElement('iframe')

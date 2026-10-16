@@ -12,8 +12,8 @@ import {
   SlidersHorizontal,
 } from 'lucide-react'
 import { DropdownMenu } from 'radix-ui'
-import { useRef, useState } from 'react'
-import type { RecentFile } from '@shared/contracts'
+import { useState } from 'react'
+import { useRecentFiles } from '../hooks/useRecentFiles'
 import { useEditor, editorIsDirty } from '../state/editor'
 import { newDocument, openDocument, saveDocument } from '../state/files'
 import { Button } from './ui/button'
@@ -21,33 +21,12 @@ import { ViewModeSwitch } from './ViewModeSwitch'
 import { useSpatialView } from '../state/spatial'
 import { showWorkspaceHome } from '../state/creation'
 
-type RecentFilesState =
-  { status: 'loading' } | { status: 'ready'; files: readonly RecentFile[] } | { status: 'error' }
-
 function RecentFilesMenu() {
-  const [recent, setRecent] = useState<RecentFilesState>({ status: 'ready', files: [] })
-  const request = useRef(0)
+  const [open, setOpen] = useState(false)
+  const recent = useRecentFiles(open)
   const busy = useEditor((state) => state.busy)
-  const load = (open: boolean): void => {
-    const currentRequest = ++request.current
-    if (!open) return
-    const bridge = window.trelyx
-    if (!bridge) {
-      setRecent({ status: 'ready', files: [] })
-      return
-    }
-    setRecent({ status: 'loading' })
-    void bridge.getRecentFiles().then(
-      (files) => {
-        if (request.current === currentRequest) setRecent({ status: 'ready', files })
-      },
-      () => {
-        if (request.current === currentRequest) setRecent({ status: 'error' })
-      },
-    )
-  }
   return (
-    <DropdownMenu.Sub onOpenChange={load}>
+    <DropdownMenu.Sub onOpenChange={setOpen}>
       <DropdownMenu.SubTrigger className="control-menu-item" aria-label="最近文件">
         <History size={16} />
         最近文件
@@ -61,19 +40,20 @@ function RecentFilesMenu() {
           aria-label="最近文件列表"
         >
           <DropdownMenu.Label className="control-menu-label">最近文件</DropdownMenu.Label>
-          {recent.status === 'loading' && (
+          {recent.isFetching && (
             <DropdownMenu.Item className="control-menu-item" disabled>
               正在读取…
             </DropdownMenu.Item>
           )}
-          {recent.status === 'error' && (
+          {recent.isError && !recent.isFetching && (
             <DropdownMenu.Item className="control-menu-item" disabled>
               无法读取最近文件，请重新打开此菜单。
             </DropdownMenu.Item>
           )}
-          {recent.status === 'ready' &&
-            (recent.files.length > 0 ? (
-              recent.files.map((file) => (
+          {recent.isSuccess &&
+            !recent.isFetching &&
+            (recent.data.length > 0 ? (
+              recent.data.map((file) => (
                 <DropdownMenu.Item
                   key={file.path}
                   className="control-menu-item"

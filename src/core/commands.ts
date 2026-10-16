@@ -17,6 +17,7 @@ import {
 } from './selection-commands'
 import { pasteTopics } from './clipboard'
 import { replaceTopicText } from './search'
+import { insertParentTopic, removeTopicOnly } from './structural-commands'
 
 function add(
   document: MindMapDocument,
@@ -50,6 +51,8 @@ function applySingleCommand(
     return clearFloatingRoots(moveTopics(document, command), command.topicIds)
   if (command.type === 'pasteTopics') return pasteTopics(document, command)
   if (command.type === 'addTopic') return add(document, command)
+  if (command.type === 'insertParentTopic') return insertParentTopic(document, command)
+  if (command.type === 'removeTopicOnly') return removeTopicOnly(document, command.topicId)
   const topic = requireTopic(document, command.topicId)
   switch (command.type) {
     case 'setTopicNotes':

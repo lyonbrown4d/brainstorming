@@ -4,12 +4,21 @@ import { Button } from './ui/button'
 import { Dialog, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 
 const shortcuts = [
-  ['Tab / Enter', '添加子主题 / 同级主题'],
+  ['Tab / Enter', '添加子主题 / 同级主题（编辑中 Enter 确认）'],
+  ['Space / 双击', '编辑：占位文字全选，已有文字从末尾续写'],
+  ['F2 / 直接输入', '全选编辑 / 替换主题文字'],
+  ['⌘ Enter', '在当前主题上方插入父主题'],
+  ['⌘ Backspace', '删除当前主题，保留子主题'],
+  ['⌥ ↑ / ↓', '调整同级主题顺序'],
+  ['⌘ /', '折叠 / 展开子主题'],
+  ['⌘ R', '前往中心主题'],
+  ['⌘ + / − / 0', '放大 / 缩小 / 实际大小'],
   ['↑ ↓ ← →', '在主题之间导航'],
-  ['Delete', '删除当前分支'],
+  ['Delete / Backspace', '删除选中的主题分支或注解'],
   ['⌘ Z / ⇧⌘ Z', '撤销 / 重做'],
   ['⌘ S / ⌘ O / ⌘ N', '保存 / 打开 / 新建'],
   ['Shift + Enter', '编辑时换行'],
+  ['拖动画布空白', '平移画布；按住 Shift 拖动框选主题'],
 ] as const
 
 export function KeyboardHelp() {
@@ -24,7 +33,7 @@ export function KeyboardHelp() {
         <DialogHeader>
           <DialogTitle>键盘快捷键</DialogTitle>
           <DialogDescription>
-            让思考保持流动。选中主题后直接输入文字，或按 F2 编辑。
+            单击选择主题；编辑时可选择文字，Shift + Enter 换行，Esc 取消。
           </DialogDescription>
         </DialogHeader>
         <dl className="grid grid-cols-[auto_1fr] items-center gap-x-6 gap-y-4 text-xs">
@@ -37,7 +46,9 @@ export function KeyboardHelp() {
             </div>
           ))}
         </dl>
-        <p className="text-xs text-muted-foreground">Windows / Linux 使用 Ctrl 代替 ⌘。</p>
+        <p className="text-xs text-muted-foreground">
+          Windows / Linux 使用 Ctrl 代替 ⌘、Alt 代替 ⌥；仅删除当前主题使用 Ctrl + Delete。
+        </p>
       </DialogContent>
     </Dialog>
   )

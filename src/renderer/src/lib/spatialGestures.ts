@@ -2,6 +2,7 @@ interface SpatialWheelInput {
   readonly deltaX: number
   readonly deltaY: number
   readonly deltaMode: number
+  readonly metaKey?: boolean
   readonly ctrlKey: boolean
   readonly altKey: boolean
   readonly shiftKey: boolean
@@ -39,10 +40,10 @@ export function spatialWheelGesture(
   let x = clamp(event.deltaX * scaleX)
   let y = clamp(event.deltaY * scaleY)
   // Some browsers already put Shift+wheel on deltaX; only translate the unmapped case.
-  if (event.shiftKey && x === 0 && !event.ctrlKey) {
+  if (event.shiftKey && x === 0 && !(event.ctrlKey || event.metaKey)) {
     x = y
     y = 0
   }
   if (x === 0 && y === 0) return null
-  return { kind: event.ctrlKey ? 'dolly' : event.altKey ? 'rotate' : 'pan', x, y }
+  return { kind: event.ctrlKey || event.metaKey ? 'dolly' : event.altKey ? 'rotate' : 'pan', x, y }
 }

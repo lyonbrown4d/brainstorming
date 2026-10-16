@@ -117,6 +117,13 @@ export type Command =
       readonly side?: Side
     }
   | { readonly type: 'renameTopic'; readonly topicId: string; readonly title: string }
+  | {
+      readonly type: 'insertParentTopic'
+      readonly topicId: string
+      readonly id: string
+      readonly title: string
+    }
+  | { readonly type: 'removeTopicOnly'; readonly topicId: string }
   | { readonly type: 'deleteTopic'; readonly topicId: string }
   | {
       readonly type: 'moveTopic'

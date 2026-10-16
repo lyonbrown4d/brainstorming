@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
+import { queryClient } from '../src/renderer/src/lib/queryClient'
 import type { DesktopAPI } from '../src/shared/contracts'
 import {
   createDocument,
@@ -18,6 +19,7 @@ import '../src/renderer/src/styles/window.css'
 import '../src/renderer/src/styles/controls.css'
 
 function installRecentBridge(getRecentFiles: DesktopAPI['getRecentFiles']) {
+  queryClient.removeQueries({ queryKey: ['recent-files'] })
   const previous = window.trelyx
   window.trelyx = {
     platform: 'macos',
@@ -58,6 +60,7 @@ function installRecentBridge(getRecentFiles: DesktopAPI['getRecentFiles']) {
     onMenuAction: () => () => undefined,
   }
   return () => {
+    queryClient.removeQueries({ queryKey: ['recent-files'] })
     if (previous) window.trelyx = previous
     else delete window.trelyx
   }

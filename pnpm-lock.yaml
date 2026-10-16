@@ -23,6 +23,12 @@ importers:
       '@dnd-kit/utilities':
         specifier: 3.2.2
         version: 3.2.2(react@19.3.1)
+      '@iconify-json/simple-icons':
+        specifier: 1.2.100
+        version: 1.2.100
+      '@iconify/react':
+        specifier: 6.0.2
+        version: 6.0.2(react@19.3.1)
       '@lexical/extension':
         specifier: 0.52.0
         version: 0.52.0(typescript@5.9.3)
@@ -59,6 +65,9 @@ importers:
       '@scure/base':
         specifier: 2.4.0
         version: 2.4.0
+      '@tanstack/react-query':
+        specifier: ^5.104.3
+        version: 5.104.3(react@19.3.1)
       '@xmldom/xmldom':
         specifier: 0.9.12
         version: 0.9.12
@@ -134,6 +143,9 @@ importers:
       react-markdown:
         specifier: 10.1.0
         version: 10.1.0(@types/react@19.3.0)(react@19.3.1)
+      rxjs:
+        specifier: ^7.8.2
+        version: 7.8.2
       tailwind-merge:
         specifier: 3.7.0
         version: 3.7.0
@@ -1220,6 +1232,17 @@ packages:
 
   '@iarna/toml@2.2.5':
     resolution: {integrity: sha512-trnsAYxU3xnS1gPHPyU961coFyLkh4gAD/0zQ5mymY4yOZ+CYvsPqUbOFSw0aDM4y0tV7tiFxL/1XfXPNC6IPg==}
+
+  '@iconify-json/simple-icons@1.2.100':
+    resolution: {integrity: sha512-536pN2RCEQyy5bYwzayrs4e9egr8cmtVcbdSHLaQl/ULUsihzn1eZ0+Hhn50zgz9cbEotiynKsKQSEjFJ7qKmw==}
+
+  '@iconify/react@6.0.2':
+    resolution: {integrity: sha512-SMmC2sactfpJD427WJEDN6PMyznTFMhByK9yLW0gOTtnjzzbsi/Ke/XqsumsavFPwNiXs8jSiYeZTmLCLwO+Fg==}
+    peerDependencies:
+      react: '>=16'
+
+  '@iconify/types@2.0.0':
+    resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
 
   '@isaacs/fs-minipass@4.0.1':
     resolution: {integrity: sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w==}
@@ -3505,6 +3528,14 @@ packages:
     resolution: {integrity: sha512-yYU8cogLeSh/ms2jh8Fj7jaba/EWa7Ja6GoUqYZaraEuCI5YS6ms6ObZgjjedm+jm6XZjdNRWBpPP6Z86oOxcw==}
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
+
+  '@tanstack/query-core@5.104.3':
+    resolution: {integrity: sha512-DZY9TuJAOgU3UyHUhXb4CcTYEHNZszlwkPg4VViIwTxOKzLprPUU+rbaPZQd3srqkGOtpaDdKpW972UV/LKlcg==}
+
+  '@tanstack/react-query@5.104.3':
+    resolution: {integrity: sha512-5Ts1ImwJKqoJgPkLxl9WrPQy1JEoEmti3MaaODCfBamHUGFk57IFrc+AIksPq+BAm10EsroX56qm398Z42LG7w==}
+    peerDependencies:
+      react: ^18 || ^19
 
   '@tanstack/react-virtual@3.13.25':
     resolution: {integrity: sha512-bmNoqMu6gcAW9JGrKVB0Q1tN1i5RONZF8r1fW0bbE4Oyf3DwEGnzzQJ2OW+Ozg1P4s8PyugkHg2ULZoFQN+cqw==}
@@ -6415,6 +6446,9 @@ packages:
     resolution: {integrity: sha512-DPe5pVFaAsinSaV6QjQ6gdiedWDcRCbUuiQfQa2wmWV7+xC9bGulGI8+TdRmoFkAPaBXk8CrAbnlY2ISniJ47Q==}
     engines: {node: '>=18'}
 
+  rxjs@7.8.2:
+    resolution: {integrity: sha512-dhKf903U/PQZY6boNNtAGdWbG85WAbjT/1xYoZIC7FAY0yWapOBQVsVrDl58W86//e1VpMNBtRV4MaXfdMySFA==}
+
   safe-array-concat@1.1.4:
     resolution: {integrity: sha512-wtZlHyOje6OZTGqAoaDKxFkgRtkF9CnHAVnCHKfuj200wAgL+bSJhdsCD2l0Qx/2ekEXjPWcyKkfGb5CPboslg==}
     engines: {node: '>=0.4'}
@@ -8220,6 +8254,17 @@ snapshots:
   '@humanwhocodes/retry@0.4.3': {}
 
   '@iarna/toml@2.2.5': {}
+
+  '@iconify-json/simple-icons@1.2.100':
+    dependencies:
+      '@iconify/types': 2.0.0
+
+  '@iconify/react@6.0.2(react@19.3.1)':
+    dependencies:
+      '@iconify/types': 2.0.0
+      react: 19.3.1
+
+  '@iconify/types@2.0.0': {}
 
   '@isaacs/fs-minipass@4.0.1':
     dependencies:
@@ -10342,6 +10387,13 @@ snapshots:
       '@tailwindcss/oxide': 4.3.3
       tailwindcss: 4.3.3
       vite: 8.3.4(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
+
+  '@tanstack/query-core@5.104.3': {}
+
+  '@tanstack/react-query@5.104.3(react@19.3.1)':
+    dependencies:
+      '@tanstack/query-core': 5.104.3
+      react: 19.3.1
 
   '@tanstack/react-virtual@3.13.25(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
     dependencies:
@@ -14026,6 +14078,10 @@ snapshots:
     optional: true
 
   run-applescript@7.1.0: {}
+
+  rxjs@7.8.2:
+    dependencies:
+      tslib: 2.8.1
 
   safe-array-concat@1.1.4:
     dependencies:

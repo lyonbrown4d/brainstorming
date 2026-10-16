@@ -10,7 +10,14 @@ export const alias = {
   '@renderer': fileURLToPath(new URL('./src/renderer/src', import.meta.url)),
 }
 // Include the lazy 3D add-on up front so first use never triggers a full-page optimizer reload.
-export const rendererOptimizeDeps = { include: ['three', 'three/addons/loaders/SVGLoader.js'] }
+export const rendererOptimizeDeps = {
+  include: [
+    'three',
+    'three/addons/loaders/SVGLoader.js',
+    '@iconify/react/offline',
+    '@iconify-json/simple-icons',
+  ],
+}
 export const rendererInputs = {
   index: fileURLToPath(new URL('./src/renderer/index.html', import.meta.url)),
   splash: fileURLToPath(new URL('./src/renderer/splash.html', import.meta.url)),

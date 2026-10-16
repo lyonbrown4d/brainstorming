@@ -1,3 +1,4 @@
+import { prepareMarkerIcons } from '@shared/markerIcons'
 import type { MindMapWorkbook } from '@core'
 import {
   encodeMarkdown,
@@ -95,6 +96,7 @@ export async function createExport(
       bytes = encodeXmind(selected)
       break
     default: {
+      await prepareMarkerIcons(sheet.document)
       const source = renderSheetSvg(sheet.document, options.includeCollapsed)
       if (options.format === 'svg') bytes = encoder.encode(source.svg)
       else {

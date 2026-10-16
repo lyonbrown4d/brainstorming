@@ -1,9 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import {
   $createParagraphNode,
+  $createRangeSelectionFromDom,
   $createTextNode,
   $getRoot,
   $selectAll,
+  $setSelection,
   BLUR_COMMAND,
   CLEAR_HISTORY_COMMAND,
   COMMAND_PRIORITY_HIGH,
@@ -12,10 +14,11 @@ import {
 } from 'lexical'
 import { mergeRegister } from '@lexical/utils'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import { usePresentation } from '../state/presentation'
 import { useEditor } from '../state/editor'
 import type { EditingSurface } from '../state/editorTypes'
-import { handleTopicShortcut } from '../state/editingShortcuts'
-import { getNavigationTarget, isCompositionKey } from '../state/keyboard'
+import { handleTopicNavigation, handleTopicShortcut } from '../state/editingShortcuts'
+import { isCompositionKey } from '../state/keyboard'
 
 export function TopicEditorPlugin({
   id,
@@ -29,6 +32,26 @@ export function TopicEditorPlugin({
   active: boolean
 }) {
   const [editor] = useLexicalComposerContext()
+  const nativeActivation = useRef(false)
+  const playing = usePresentation((state) => state.playing)
+  useEffect(() => {
+    editor.setEditable(!playing)
+  }, [editor, playing])
+  useEffect(() => {
+    const preserveNativeSelection = nativeActivation.current
+    nativeActivation.current = false
+    if (surface !== 'canvas' && surface !== 'spatial') return
+    if (editor.isComposing()) return
+    if (active && preserveNativeSelection) return
+    if (active) {
+      editor.update(() => {
+        if (useEditor.getState().editSelection === 'end') $getRoot().selectEnd()
+        else $selectAll()
+      })
+    } else if (editor.getRootElement()?.contains(window.document.activeElement)) {
+      editor.update(() => $selectAll())
+    }
+  }, [active, editor, surface])
   useEffect(() => {
     if (active || editor.isComposing()) return
     if (editor.read('latest', () => $getRoot().getTextContent()) !== title)
@@ -61,8 +84,11 @@ export function TopicEditorPlugin({
         const topic = state.history.document.topics[id]
         const committed = surface === 'notes' ? (topic?.notes ?? '') : topic?.title
         if (!ownsDraft() && text === committed) return
-        if (!ownsDraft()) state.startEdit(id, text, surface)
-        else state.setDraft(text)
+        if (!ownsDraft()) {
+          // The browser/Lexical already placed the caret (or owns an IME range).
+          nativeActivation.current = true
+          state.startEdit(id, text, surface, 'end')
+        } else state.setDraft(text)
         if (!editor.getRootElement()?.contains(window.document.activeElement)) commit()
       }),
       editor.registerCommand(
@@ -86,6 +112,20 @@ export function TopicEditorPlugin({
               event.preventDefault()
             return false
           }
+          // Native selectionchange may arrive after this keydown. Let Lexical resolve
+          // the current DOM range before its own deletion commands consume it.
+          if (ownsDraft() && (event.key === 'Backspace' || event.key === 'Delete')) {
+            const root = editor.getRootElement()
+            const nativeSelection = root?.ownerDocument.getSelection()
+            if (
+              nativeSelection &&
+              root?.contains(nativeSelection.anchorNode) &&
+              root.contains(nativeSelection.focusNode)
+            ) {
+              const selection = $createRangeSelectionFromDom(nativeSelection, editor)
+              if (selection) $setSelection(selection)
+            }
+          }
           const state = useEditor.getState()
           const modifier = event.metaKey || event.ctrlKey
           const key = event.key.toLowerCase()
@@ -104,53 +144,38 @@ export function TopicEditorPlugin({
             if (ownsDraft()) state.cancelEdit()
             return true
           }
-          if (surface === 'notes' && (event.key === 'Enter' || event.key === 'Tab')) return false
-          if (event.key === 'Enter' && event.shiftKey) return false
-          if (event.key === 'Enter' || event.key === 'Tab') {
-            if (surface === 'inspector') {
-              if (event.key === 'Tab') return false
-              event.preventDefault()
-              commit()
-              editor.getRootElement()?.blur()
-              return true
-            }
-            event.preventDefault()
-            commit()
-            state.add(event.key === 'Tab' ? 'child' : 'sibling')
-            if (surface === 'outline') {
-              const next = useEditor.getState().editingId
-              if (next) state.startEdit(next, undefined, 'outline')
-            }
-            return true
-          }
+          if (surface === 'notes') return false
+          const mapSurface = surface === 'canvas' || surface === 'spatial' || surface === 'outline'
           if (
-            (surface === 'canvas' || surface === 'spatial' || surface === 'outline') &&
-            !ownsDraft()
+            mapSurface &&
+            (!ownsDraft() ||
+              (modifier && (key === 'enter' || ['=', '+', '-', '0', 'r'].includes(key))))
           ) {
-            if (key !== 'a' && handleTopicShortcut(event)) return true
-            if (event.key === 'Delete' || event.key === 'Backspace') {
-              event.preventDefault()
-              state.remove()
-              return true
-            }
-            if (modifier && key === 'z') {
+            if (handleTopicShortcut(event)) return true
+            if (!ownsDraft() && handleTopicNavigation(event, id)) return true
+            if (!ownsDraft() && modifier && key === 'z') {
               event.preventDefault()
               if (event.shiftKey) state.redo()
               else state.undo()
               return true
             }
-            if (!modifier && event.key.startsWith('Arrow')) {
-              const next = getNavigationTarget(state.history.document, id, event.key)
-              if (next) state.select(next)
-              event.preventDefault()
+          }
+          if (event.key === 'Enter' && event.shiftKey) return false
+          if (event.key === 'Enter' || event.key === 'Tab') {
+            if (surface === 'inspector' && event.key === 'Tab') return false
+            event.preventDefault()
+            commit()
+            if (event.key === 'Enter') {
+              // Finish editing first. A subsequent Return creates a sibling.
+              if (surface !== 'canvas') editor.getRootElement()?.blur()
               return true
             }
-            if (event.key === 'F2') {
-              event.preventDefault()
-              $selectAll()
-              state.startEdit(id)
-              return true
+            state.add('child')
+            if (surface === 'outline') {
+              const next = useEditor.getState().editingId
+              if (next) state.startEdit(next, undefined, 'outline')
             }
+            return true
           }
           return false
         },

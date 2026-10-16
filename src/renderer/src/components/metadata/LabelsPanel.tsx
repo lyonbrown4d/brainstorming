@@ -4,10 +4,8 @@ import type { TopicMetadata } from '@core'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Badge } from '../ui/badge'
-import { setMetadataField } from './commands'
-import { markerOptions } from './markers'
-
-const markers = markerOptions
+import { setMetadataField, toggleTopicMarker } from './commands'
+import { MarkerPicker } from './MarkerPicker'
 
 export function LabelsPanel({ topicId, metadata }: { topicId: string; metadata: TopicMetadata }) {
   const [label, setLabel] = useState('')
@@ -69,50 +67,12 @@ export function LabelsPanel({ topicId, metadata }: { topicId: string; metadata: 
           </Badge>
         ))}
       </div>
-      <div className="flex flex-wrap gap-2" role="group" aria-label="主题图标">
-        {markers.map(({ value, title, Icon }) => (
-          <Button
-            key={value}
-            variant="outline"
-            size="sm"
-            aria-label={title}
-            aria-pressed={currentMarkers.includes(value)}
-            className="aria-pressed:bg-accent"
-            onClick={() => {
-              setMetadataField(
-                topicId,
-                'markers',
-                currentMarkers.includes(value)
-                  ? currentMarkers.filter((item) => item !== value)
-                  : [...currentMarkers, value],
-              )
-            }}
-          >
-            <Icon className="size-4" />
-            {title}
-          </Button>
-        ))}
-        {currentMarkers
-          .filter((value) => !markers.some((marker) => marker.value === value))
-          .map((value) => (
-            <Button
-              key={value}
-              variant="outline"
-              size="sm"
-              aria-label={`移除图标 ${value}`}
-              onClick={() => {
-                setMetadataField(
-                  topicId,
-                  'markers',
-                  currentMarkers.filter((item) => item !== value),
-                )
-              }}
-            >
-              {value}
-              <X className="size-3" />
-            </Button>
-          ))}
-      </div>
+      <MarkerPicker
+        selected={currentMarkers}
+        onToggle={(marker) => {
+          toggleTopicMarker(topicId, marker)
+        }}
+      />
     </section>
   )
 }

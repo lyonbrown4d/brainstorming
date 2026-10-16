@@ -47,6 +47,11 @@ export const KeyboardEditing: Story = {
     const actions = within(canvas.getByRole('toolbar', { name: '导图操作' }))
     await userEvent.click(actions.getByRole('button', { name: '添加子主题' }))
     await expect(canvas.getByRole('textbox', { name: '编辑主题标题' })).toHaveTextContent('新主题')
+    await expect(canvas.getByRole('textbox', { name: '编辑主题标题' })).toHaveFocus()
+    await userEvent.keyboard('后续想法')
+    await expect(canvas.getByRole('textbox', { name: '编辑主题标题' })).toHaveTextContent(
+      '后续想法',
+    )
     await expect(canvas.getByTestId('topic-root')).toHaveTextContent('我的新想法')
     await expect(canvas.getByRole('heading', { level: 1 })).toHaveTextContent(originalTitle)
   },
@@ -82,7 +87,7 @@ export const KeyboardHelpDialog: Story = {
     await userEvent.click(trigger)
     const dialog = await page.findByRole('dialog', { name: '键盘快捷键' })
     await expect(dialog).toBeVisible()
-    await expect(within(dialog).getByText('Windows / Linux 使用 Ctrl 代替 ⌘。')).toBeVisible()
+    await expect(within(dialog).getByText(/Windows \/ Linux 使用 Ctrl 代替 ⌘/)).toBeVisible()
     await userEvent.tab()
     await expect(within(dialog).getByRole('button', { name: '关闭快捷键' })).toHaveFocus()
     await userEvent.keyboard('{Escape}')
