@@ -1,3 +1,4 @@
+import { mainWindow } from './windows'
 import { completeDocumentCreation } from '../e2e/workspace'
 import { _electron as electron, expect, test } from '@playwright/test'
 import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises'
@@ -17,7 +18,7 @@ test('生产 Electron 启动、sandbox preload 和恢复闭环', async () => {
   )
   const app = await electron.launch({ args: ['.', `--user-data-dir=${directory}`] })
   try {
-    const page = await app.firstWindow()
+    const page = await mainWindow(app)
     page.on('dialog', (dialog) => {
       void dialog.accept()
     })
@@ -131,7 +132,7 @@ test('系统传入的文件在启动和 macOS 打开事件中使用相同打开�
   ])
   const app = await electron.launch({ args: ['.', `--user-data-dir=${directory}`, firstPath] })
   try {
-    const page = await app.firstWindow()
+    const page = await mainWindow(app)
     await expect(page.getByTestId('topic-root')).toContainText('启动文件')
     await app.evaluate(({ app }, path) => {
       app.emit('open-file', { preventDefault: () => undefined }, path)

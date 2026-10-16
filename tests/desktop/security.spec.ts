@@ -1,3 +1,4 @@
+import { mainWindow } from './windows'
 import { enterExampleIfHome } from '../e2e/workspace'
 import {
   _electron as electron,
@@ -67,7 +68,7 @@ test('真实 Electron 密码文件、加密历史、重启解锁与恢复记录�
   let app: ElectronApplication | null = null
   try {
     app = await electron.launch({ args: ['.', `--user-data-dir=${profile}`] })
-    let page = await app.firstWindow()
+    let page = await mainWindow(app)
     await enterExampleIfHome(page)
     page.on('dialog', (dialog) => {
       void dialog.accept()
@@ -109,7 +110,7 @@ test('真实 Electron 密码文件、加密历史、重启解锁与恢复记录�
     app = await electron.launch({
       args: ['.', `--user-data-dir=${join(directory, 'new-profile')}`, savedPath],
     })
-    page = await app.firstWindow()
+    page = await mainWindow(app)
     const prompt = page.getByRole('dialog', { name: '解锁思维导图', exact: true })
     await expect(prompt).toBeVisible()
     await prompt.getByRole('button', { name: '取消', exact: true }).click()
@@ -131,7 +132,7 @@ test('真实 Electron 密码文件、加密历史、重启解锁与恢复记录�
     app = null
 
     app = await electron.launch({ args: ['.', `--user-data-dir=${profile}`] })
-    page = await app.firstWindow()
+    page = await mainWindow(app)
     page.on('dialog', (dialog) => {
       void dialog.accept()
     })

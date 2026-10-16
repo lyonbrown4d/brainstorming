@@ -1,3 +1,4 @@
+import { mainWindow } from './windows'
 import { _electron as electron, expect, test } from '@playwright/test'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -9,7 +10,7 @@ test('桌面首页创建并保存后，新建独立画布沿用原文件路径�
   const path = join(directory, '设计工作簿.trelyx')
   const app = await electron.launch({ args: ['.', `--user-data-dir=${directory}`] })
   try {
-    const page = await app.firstWindow()
+    const page = await mainWindow(app)
     await expect(page.getByRole('button', { name: '探索示例', exact: true })).toBeVisible()
     await expect(page.getByTestId('topic-root')).toHaveCount(0)
     await page.getByRole('textbox', { name: '文档名称', exact: true }).fill('桌面设计')

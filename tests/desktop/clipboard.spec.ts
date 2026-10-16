@@ -1,3 +1,4 @@
+import { mainWindow } from './windows'
 import { enterExampleIfHome } from '../e2e/workspace'
 import { _electron as electron, expect, test } from '@playwright/test'
 import { mkdtemp, rm } from 'node:fs/promises'
@@ -29,7 +30,7 @@ test('原生自定义剪贴板跨画布复制子树，保留普通文本并一�
       Object.assign(globalThis, { trelyxClipboardSnapshot: snapshot })
     })
     captured = true
-    const page = await app.firstWindow()
+    const page = await mainWindow(app)
     await enterExampleIfHome(page)
     await page.getByTestId('topic-vision').click()
     await openDock(page)

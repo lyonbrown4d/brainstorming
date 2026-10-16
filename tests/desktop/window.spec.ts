@@ -1,3 +1,4 @@
+import { mainWindow } from './windows'
 import { enterExampleIfHome } from '../e2e/workspace'
 import { _electron as electron, expect, test } from '@playwright/test'
 import { mkdtemp, rm } from 'node:fs/promises'
@@ -8,8 +9,14 @@ test('自定义标题栏保留操作、窄窗布局与原生全屏状态', async
   const directory = await mkdtemp(join(tmpdir(), 'trelyx-window-'))
   const app = await electron.launch({ args: ['.', `--user-data-dir=${directory}`] })
   try {
-    const page = await app.firstWindow()
+    const page = await mainWindow(app)
     await enterExampleIfHome(page)
+    await expect
+      .poll(() =>
+        app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.isVisible()),
+      )
+      .toBe(true)
+    await expect(page.locator('#startup-screen')).toHaveCount(0)
     const shell = page.locator('.app-shell')
     const platform =
       process.platform === 'darwin' ? 'macos' : process.platform === 'win32' ? 'windows' : 'linux'
@@ -42,8 +49,9 @@ test('自定义标题栏保留操作、窄窗布局与原生全屏状态', async
     })
     expect(layout.titleRight).toBeLessThanOrEqual(layout.actionsLeft)
     expect(layout.actionsRight).toBeLessThanOrEqual(layout.width)
-    await app.evaluate(({ BrowserWindow }) => {
+    await app.evaluate(({ app, BrowserWindow }) => {
       const window = BrowserWindow.getAllWindows()[0]
+      app.focus({ steal: true })
       window?.show()
       window?.focus()
       window?.setFullScreen(true)
@@ -60,8 +68,9 @@ test('自定义标题栏保留操作、窄窗布局与原生全屏状态', async
     })
     await expect(shell).toHaveAttribute('data-fullscreen', 'false')
     if (platform === 'macos') await expect(toolbar).toHaveCSS('padding-left', '112px')
-    await app.evaluate(({ BrowserWindow }) => {
+    await app.evaluate(({ app, BrowserWindow }) => {
       const window = BrowserWindow.getAllWindows()[0]
+      app.focus({ steal: true })
       window?.setSize(1280, 850)
       window?.focus()
     })

@@ -6,6 +6,7 @@ import { registerIPC } from './ipc'
 import { installMenu } from './menu'
 import { OpenFileRequests } from './openFiles'
 import { installWindowChrome, windowChromeOptions } from './windowChrome'
+import { StartupWindow } from './startupWindow'
 
 app.setName('Trelyx')
 const openFiles = new OpenFileRequests()
@@ -20,11 +21,27 @@ let confirming = false
 let quitting = false
 let files: DocumentFiles
 let initialized = false
+let startup: StartupWindow | null = null
+
+function startSplash(): void {
+  startup = new StartupWindow(
+    app.isPackaged ? undefined : desktopConfig.rendererURL,
+    () => {
+      startup?.dispose()
+      startup = null
+      window?.destroy()
+      app.quit()
+    },
+    () => {
+      startup = null
+    },
+  )
+}
 
 function notifyOpenFile(): void {
   if (!window && app.isReady() && initialized) createWindow()
   if (window?.isMinimized()) window.restore()
-  window?.focus()
+  if (window?.isVisible()) window.focus()
   window?.webContents.send('document:open-file-ready')
 }
 
@@ -36,11 +53,12 @@ app.on('second-instance', (_event, arguments_) => {
   if (openFiles.enqueueArguments(arguments_)) notifyOpenFile()
   else {
     if (window?.isMinimized()) window.restore()
-    window?.focus()
+    if (window?.isVisible()) window.focus()
   }
 })
 
 function createWindow(): void {
+  if (!startup) startSplash()
   dirty = false
   preserveRecovery = true
   closing = false
@@ -50,7 +68,8 @@ function createWindow(): void {
     minWidth: 800,
     minHeight: 600,
     title: 'Trelyx',
-    backgroundColor: '#f5f5f4',
+    show: false,
+    backgroundColor: '#f3f2f8',
     ...windowChromeOptions(process.platform),
     webPreferences: {
       preload: join(import.meta.dirname, '../preload/index.cjs'),
@@ -61,6 +80,7 @@ function createWindow(): void {
     },
   })
   const current = window
+  startup?.attach(current)
   installWindowChrome(current)
   current.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
   current.webContents.on('will-navigate', (event) => {
@@ -111,6 +131,7 @@ function createWindow(): void {
   })
   current.on('closed', () => {
     window = null
+    startup = null
     if (quitting) app.quit()
   })
   const rendererURL = app.isPackaged ? undefined : desktopConfig.rendererURL
@@ -118,7 +139,8 @@ function createWindow(): void {
     ? current.loadURL(rendererURL)
     : current.loadFile(join(import.meta.dirname, '../renderer/index.html'))
   void loading.catch(() => {
-    dialog.showErrorBox('无法打开 Trelyx', '界面加载失败，请重新启动应用。')
+    if (current.isDestroyed()) return
+    startup?.fail()
   })
 }
 
@@ -126,8 +148,10 @@ if (primaryInstance)
   void app
     .whenReady()
     .then(async () => {
+      startSplash()
       files = new DocumentFiles(app.getPath('userData'))
       await files.initialize()
+      if (quitting) return
       registerIPC(
         () => window,
         files,
@@ -148,6 +172,7 @@ if (primaryInstance)
       })
     })
     .catch(() => {
+      startup?.dispose()
       dialog.showErrorBox('无法启动 Trelyx', '本地应用数据无法初始化，请检查存储空间与目录权限。')
       app.quit()
     })
@@ -158,4 +183,5 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   quitting = true
+  startup?.dispose()
 })

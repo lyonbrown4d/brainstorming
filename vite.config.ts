@@ -11,11 +11,19 @@ export const alias = {
 }
 // Include the lazy 3D add-on up front so first use never triggers a full-page optimizer reload.
 export const rendererOptimizeDeps = { include: ['three', 'three/addons/loaders/SVGLoader.js'] }
+export const rendererInputs = {
+  index: fileURLToPath(new URL('./src/renderer/index.html', import.meta.url)),
+  splash: fileURLToPath(new URL('./src/renderer/splash.html', import.meta.url)),
+}
 export default defineConfig({
   root: fileURLToPath(new URL('./src/renderer', import.meta.url)),
   base: './',
   plugins: [react(), tailwindcss()],
   resolve: { alias, dedupe: ['three'] },
   optimizeDeps: rendererOptimizeDeps,
-  build: { outDir: fileURLToPath(new URL('./out/renderer', import.meta.url)), emptyOutDir: true },
+  build: {
+    outDir: fileURLToPath(new URL('./out/renderer', import.meta.url)),
+    emptyOutDir: true,
+    rollupOptions: { input: rendererInputs },
+  },
 })

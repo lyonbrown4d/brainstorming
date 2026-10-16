@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { DesktopAPI, MenuAction } from '../shared/contracts'
 import { isWindowState } from '../shared/window'
+import type { StartupAPI } from '../shared/startup'
 
 const actions = new Set<MenuAction>(['new', 'open', 'save', 'saveAs', 'undo', 'redo'])
 const api: DesktopAPI = {
@@ -62,3 +63,12 @@ const api: DesktopAPI = {
   },
 }
 contextBridge.exposeInMainWorld('trelyx', api)
+const startup: StartupAPI = {
+  ready: () => {
+    ipcRenderer.send('startup:ready')
+  },
+  failed: () => {
+    ipcRenderer.send('startup:failed')
+  },
+}
+contextBridge.exposeInMainWorld('trelyxStartup', startup)

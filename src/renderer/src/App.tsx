@@ -21,6 +21,7 @@ import { restoreRecovery } from './state/files'
 import { useFileLifecycle } from './hooks/useFileLifecycle'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useWindowChrome } from './hooks/useWindowChrome'
+import { useStartupScreen } from './hooks/useStartupScreen'
 import { useWorkspace } from './state/workspace'
 import { CreationWorkspace, WorkspaceHeader } from './components/creation/CreationWorkspace'
 import '@xyflow/react/dist/style.css'
@@ -34,6 +35,7 @@ import './styles/controls.css'
 import './styles/motion.css'
 
 export function App() {
+  useStartupScreen()
   useFileLifecycle()
   useKeyboardShortcuts()
   const chrome = useWindowChrome()
