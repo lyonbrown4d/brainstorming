@@ -1,3 +1,4 @@
+import { completeDocumentCreation, openExample } from './workspace'
 import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 import { applyCommand, createExampleDocument, createWorkbook } from '../../src/core'
@@ -8,6 +9,7 @@ import { dockAction } from './dock'
 async function fileAction(page: Page, name: string) {
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name, exact: true }).click()
+  if (name === '新建导图') await completeDocumentCreation(page)
 }
 async function openPicker(page: Page) {
   await dockAction(page, '图形结构')
@@ -22,7 +24,7 @@ async function save(page: Page) {
 }
 
 test('缩略图可用键盘应用全部结构，切换保留主题并支持一次撤销重做', async ({ page }, testInfo) => {
-  await page.goto('/')
+  await openExample(page)
   await expect(page.getByTestId('topic-root')).toBeVisible()
   const titles = (await page.locator('.topic-title').allTextContents()).sort()
   const picker = await openPicker(page)
@@ -99,7 +101,7 @@ test('当前画布清除根覆盖，保留批量分支结构；重置可撤销�
   const originalTitles = Object.fromEntries(
     Object.values(document.topics).map((topic) => [topic.id, topic.title]),
   )
-  await page.goto('/')
+  await openExample(page)
   const chooser = page.waitForEvent('filechooser')
   await fileAction(page, '打开导图')
   await (
@@ -162,7 +164,7 @@ test('当前画布清除根覆盖，保留批量分支结构；重置可撤销�
 })
 
 test('同一文件的画布独立保存结构与撤销历史', async ({ page }) => {
-  await page.goto('/')
+  await openExample(page)
   let picker = await openPicker(page)
   await picker.getByRole('button', { name: '应用向右括号图', exact: true }).click()
   await page.keyboard.press('Escape')

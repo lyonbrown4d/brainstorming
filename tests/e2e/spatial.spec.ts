@@ -1,14 +1,16 @@
+import { completeDocumentCreation, enterExampleIfHome, openExample } from './workspace'
 import { dockAction } from './dock'
 import { expect, test, type Page } from '@playwright/test'
 
 async function fileAction(page: Page, name: string) {
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name, exact: true }).click()
+  if (name === '新建导图') await completeDocumentCreation(page)
 }
 
 test.beforeEach(async ({ page }) => {
   page.on('dialog', (dialog) => dialog.accept())
-  await page.goto('/')
+  await openExample(page)
 })
 
 test('三维聚焦、折叠、中文编辑与二维共享历史，整份文档保存重开', async ({ page }, testInfo) => {
@@ -105,6 +107,7 @@ test('图形能力不可用时说明原因并能返回二维继续编辑', async
     } as typeof original
   })
   await page.reload()
+  await enterExampleIfHome(page)
   await page.getByRole('button', { name: '三维视图', exact: true }).click()
   await expect(page.getByRole('alert')).toContainText('WebGL 2')
   await page.getByRole('button', { name: '返回二维视图' }).click()

@@ -8,6 +8,7 @@ import { SheetTabItem } from './SheetTabItem'
 import { SheetDialog, type SheetDialogAction } from './SheetDialog'
 import { Button } from './ui/button'
 import '../styles/sheets.css'
+import { beginCreation } from '../state/creation'
 
 export function SheetTabs() {
   const sheets = useEditor((state) => state.workbook.sheets)
@@ -62,7 +63,7 @@ export function SheetTabs() {
         title="新建画布"
         disabled={busy}
         onClick={() => {
-          useEditor.getState().addSheet()
+          beginCreation('sheet')
         }}
       >
         <Plus size={18} className="size-[18px]" />

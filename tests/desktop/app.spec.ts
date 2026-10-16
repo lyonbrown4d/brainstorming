@@ -1,3 +1,4 @@
+import { completeDocumentCreation } from '../e2e/workspace'
 import { _electron as electron, expect, test } from '@playwright/test'
 import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -24,7 +25,7 @@ test('生产 Electron 启动、sandbox preload 和恢复闭环', async () => {
     page.on('pageerror', (error) => {
       errors.push(error.message)
     })
-    await expect(page.getByTestId('topic-root')).toBeVisible()
+    await expect(page.getByRole('button', { name: '探索示例', exact: true })).toBeVisible()
     const security = await page.evaluate(() => ({
       nodeIntegration: 'require' in window,
       bridge: typeof window.trelyx?.saveDocument,
@@ -100,6 +101,7 @@ test('生产 Electron 启动、sandbox preload 和恢复闭环', async () => {
     await expect(page.locator('.save-status')).toContainText('已保存')
     await page.getByRole('button', { name: '文件菜单', exact: true }).click()
     await page.getByRole('menuitem', { name: '新建导图', exact: true }).click()
+    await completeDocumentCreation(page)
     await app.evaluate(({ dialog }, path) => {
       dialog.showOpenDialog = () => Promise.resolve({ canceled: false, filePaths: [path] })
     }, savedPath)

@@ -1,3 +1,4 @@
+import { completeDocumentCreation, openExample } from './workspace'
 import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 import { isEncryptedTrelyx, decryptTrelyx } from '../../src/formats/encrypted'
@@ -7,6 +8,7 @@ const password = 'browser-test-password'
 async function fileAction(page: Page, name: string): Promise<void> {
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name, exact: true }).click()
+  if (name === '新建导图') await completeDocumentCreation(page)
 }
 async function openFile(page: Page, path: string): Promise<void> {
   const chooser = page.waitForEvent('filechooser')
@@ -54,7 +56,8 @@ async function recoveryEncrypted(page: Page): Promise<boolean> {
 test('密码保护从 Dock 弹出后保持可用，下载/恢复加密，并支持取消和错密码后重新打开', async ({
   page,
 }) => {
-  await page.goto('/')
+  page.on('dialog', (dialog) => dialog.accept())
+  await openExample(page)
   await page.getByTestId('topic-root').dblclick()
   const title = page.getByTestId('topic-root').locator('[contenteditable="true"]')
   await title.fill('保密导图')
@@ -97,5 +100,6 @@ test('密码保护从 Dock 弹出后保持可用，下载/恢复加密，并支�
   await expect(recovery).toBeVisible()
   await recovery.getByRole('button', { name: '取消', exact: true }).click()
   await expect.poll(() => recoveryEncrypted(page)).toBe(true)
-  await expect(page.getByTestId('topic-root')).toContainText('产品规划')
+  await expect(page.getByTestId('topic-root')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: '探索示例', exact: true })).toBeVisible()
 })

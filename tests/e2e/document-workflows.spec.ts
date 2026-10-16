@@ -1,10 +1,11 @@
+import { openExample } from './workspace'
 import { expect, test } from '@playwright/test'
 import { openDock, dockAction } from './dock'
 import { readFile } from 'node:fs/promises'
 import { decodeTrelyx } from '../../src/formats/trelyx'
 
 test('保存多布局、主题、游离位置和演示步骤，播放不修改保存内容', async ({ page }) => {
-  await page.goto('/')
+  await openExample(page)
   await openDock(page)
   await page.getByRole('button', { name: '图形结构', exact: true }).click()
   await page.getByRole('button', { name: '应用向右逻辑图', exact: true }).click()

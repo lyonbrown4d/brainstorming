@@ -1,3 +1,4 @@
+import { openExample } from './workspace'
 import { dockAction } from './dock'
 import { expect, test } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
@@ -5,7 +6,7 @@ import { decodeTrelyx } from '../../src/formats/trelyx'
 import { composeChinese } from './ime'
 
 test('选中后连续输入不丢首字，中文组词、换行、取消和整次撤销正常', async ({ page }) => {
-  await page.goto('/')
+  await openExample(page)
   const input = page.getByTestId('topic-root').locator('[contenteditable="true"]')
   await page.getByTestId('topic-root').click()
   await expect(input).toBeFocused()
@@ -37,7 +38,7 @@ test('选中后连续输入不丢首字，中文组词、换行、取消和整�
 })
 
 test('右侧同样使用 Lexical，中文草稿在快捷键保存时完整写入', async ({ page }) => {
-  await page.goto('/')
+  await openExample(page)
   await page.getByRole('button', { name: '样式面板', exact: true }).click()
   const input = page.getByRole('textbox', { name: '主题名称', exact: true })
   await input.click()
@@ -53,7 +54,7 @@ test('右侧同样使用 Lexical，中文草稿在快捷键保存时完整写入
 
 test('减少动态效果时侧栏立即关闭，快速切换面板与画布保持可用', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await page.goto('/')
+  await openExample(page)
   const outline = page.getByRole('button', { name: '文档大纲', exact: true })
   const styles = page.getByRole('button', { name: '样式面板', exact: true })
   await outline.click()

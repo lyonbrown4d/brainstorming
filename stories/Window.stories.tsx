@@ -8,6 +8,7 @@ import {
   createExampleDocument,
 } from '../src/core'
 import { useEditor } from '../src/renderer/src/state/editor'
+import { useWorkspace } from '../src/renderer/src/state/workspace'
 import { Toolbar } from '../src/renderer/src/components/Toolbar'
 import { TooltipProvider } from '../src/renderer/src/components/ui/tooltip'
 import '../src/renderer/src/styles/ui.css'
@@ -107,7 +108,8 @@ export const Fullscreen: Story = {
     await expect(button).toHaveFocus()
     await userEvent.keyboard('{Enter}')
     await userEvent.click(page.getByRole('menuitem', { name: '新建导图' }))
-    await expect(canvas.getByRole('heading', { level: 1 })).toHaveTextContent('新的想法')
+    await expect(useWorkspace.getState().screen).toBe('create-document')
+    await expect(canvas.getByRole('heading', { level: 1 })).toHaveTextContent('产品规划')
   },
 }
 

@@ -1,3 +1,4 @@
+import { completeDocumentCreation, openExample } from './workspace'
 import { dockAction } from './dock'
 import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
@@ -8,13 +9,14 @@ import { composeChinese } from './ime'
 async function fileAction(page: Page, name: string) {
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name, exact: true }).click()
+  if (name === '新建导图') await completeDocumentCreation(page)
 }
 
 test('备注中文编辑、图片和附件在多画布复制排序、删除撤销、保存重开后完整保留', async ({
   page,
 }, testInfo) => {
   page.on('dialog', (dialog) => dialog.accept())
-  await page.goto('/')
+  await openExample(page)
   await fileAction(page, '新建导图')
   const firstName = await page.getByRole('tab', { selected: true }).innerText()
   await page.getByRole('button', { name: '样式面板', exact: true }).click()
@@ -96,7 +98,7 @@ test('备注中文编辑、图片和附件在多画布复制排序、删除撤�
 })
 
 test('损坏图片被拒绝，主题和已有备注保持不变', async ({ page }) => {
-  await page.goto('/')
+  await openExample(page)
   await page.getByRole('button', { name: '样式面板', exact: true }).click()
   const panel = page.getByRole('complementary', { name: '主题面板', exact: true })
   await panel.getByRole('textbox', { name: '主题备注' }).fill('保留这份备注')

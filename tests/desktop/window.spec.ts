@@ -1,3 +1,4 @@
+import { enterExampleIfHome } from '../e2e/workspace'
 import { _electron as electron, expect, test } from '@playwright/test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -8,6 +9,7 @@ test('自定义标题栏保留操作、窄窗布局与原生全屏状态', async
   const app = await electron.launch({ args: ['.', `--user-data-dir=${directory}`] })
   try {
     const page = await app.firstWindow()
+    await enterExampleIfHome(page)
     const shell = page.locator('.app-shell')
     const platform =
       process.platform === 'darwin' ? 'macos' : process.platform === 'win32' ? 'windows' : 'linux'

@@ -1,3 +1,4 @@
+import { enterExampleIfHome } from '../e2e/workspace'
 import { _electron as electron, expect, test, type ElectronApplication } from '@playwright/test'
 import { createServer } from 'node:http'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
@@ -72,6 +73,7 @@ test('真实 Electron AI 配置、预览、添加与一次撤销闭环', async (
     if (!address || typeof address === 'string') throw new Error('本地 AI fixture 端口不可用')
     app = await electron.launch({ args: ['.', `--user-data-dir=${directory}`] })
     const page = await app.firstWindow()
+    await enterExampleIfHome(page)
     const errors: string[] = []
     page.on('pageerror', (error) => {
       errors.push(error.message)

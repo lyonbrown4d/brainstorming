@@ -18,12 +18,12 @@ import {
   travelHistory,
   withHistory,
 } from './workbookState'
-import { exampleWorkbook } from './example'
 import { useSpatialView } from './spatial'
+import { enterWorkspaceEditor } from './workspace'
 import { draftCommand } from './editorDraft'
 import { deleteSelectedTopics, useSelection } from './selection'
 
-const initial = loadWorkbook(exampleWorkbook())
+const initial = loadWorkbook(createDocument('未命名'))
 function editSheets(command: WorkbookCommand, nextId?: string): void {
   const state = useEditor.getState()
   state.commitDraft()
@@ -226,6 +226,7 @@ export const useEditor = create<EditorState>((set, get) => ({
       structurePast: [],
       structureFuture: [],
     })
+    enterWorkspaceEditor()
   },
   setError: (error) => {
     set({ error })

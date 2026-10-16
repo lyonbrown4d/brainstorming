@@ -1,11 +1,14 @@
-import { createDocument, deserializeWorkbook } from '@core'
+import { deserializeWorkbook } from '@core'
 import type { DesktopAPI } from '@shared/contracts'
-import { isDirty, useEditor } from './editor'
+import { useEditor } from './editor'
 import { suggestedFileName } from './fileName'
 import { browserOpen, adoptBrowserPassword, cancelBrowserPassword } from './browserFiles'
 import { activateOpenedDocument, cancelOpenedDocument, unlockOpenedDocument } from './lockedFiles'
-import { browserPasswordFor, resetBrowserPassword } from './password'
+import { browserPasswordFor } from './password'
+import { beginCreation } from './creation'
+import { confirmDiscard } from './documentDiscard'
 import { serializedWorkbook } from './workbookState'
+import { useWorkspace } from './workspace'
 export { RECOVERY_KEY } from './recovery'
 
 declare global {
@@ -14,17 +17,11 @@ declare global {
   }
 }
 
-function confirmDiscard(): boolean {
-  useEditor.getState().commitDraft()
-  return !isDirty() || window.confirm('当前导图有未保存的更改。放弃这些更改并继续？')
-}
 function showError(error: unknown): void {
   useEditor.getState().setError(error instanceof Error ? error.message : '文件操作失败，请重试。')
 }
 export function newDocument(): void {
-  if (useEditor.getState().busy || !confirmDiscard()) return
-  resetBrowserPassword()
-  useEditor.getState().replace(createDocument('新的想法'))
+  beginCreation('document')
 }
 export async function openDocument(recentPath?: string, pending = false): Promise<void> {
   if (useEditor.getState().busy) return
@@ -85,7 +82,12 @@ export async function openDocument(recentPath?: string, pending = false): Promis
   }
 }
 export async function saveDocument(saveAs = false): Promise<void> {
-  if (useEditor.getState().busy) return
+  if (
+    useEditor.getState().busy ||
+    !useWorkspace.getState().hasDocument ||
+    useWorkspace.getState().screen !== 'editor'
+  )
+    return
   useEditor.getState().commitDraft()
   if (useEditor.getState().editingId) return
   const { workbook, path } = useEditor.getState()

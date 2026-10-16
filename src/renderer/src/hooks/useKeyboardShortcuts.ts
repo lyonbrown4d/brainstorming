@@ -3,6 +3,8 @@ import { useEditor } from '../state/editor'
 import { newDocument, openDocument, saveDocument } from '../state/files'
 import { getNavigationTarget, isCompositionKey } from '../state/keyboard'
 import { handleTopicShortcut } from '../state/editingShortcuts'
+import { useWorkspace } from '../state/workspace'
+import { cancelCreation } from '../state/creation'
 
 export function useKeyboardShortcuts(): void {
   useEffect(() => {
@@ -21,6 +23,10 @@ export function useKeyboardShortcuts(): void {
         if (key === 's') void saveDocument(event.shiftKey)
         else if (key === 'o') void openDocument()
         else newDocument()
+        return
+      }
+      if (useWorkspace.getState().screen !== 'editor') {
+        if (event.key === 'Escape') cancelCreation()
         return
       }
       if (modifier && key === 'f') {

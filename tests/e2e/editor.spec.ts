@@ -1,17 +1,20 @@
+import { completeDocumentCreation, openExample } from './workspace'
 import { dockAction } from './dock'
 import { expect, test } from '@playwright/test'
 import { composeChinese } from './ime'
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/')
+  await openExample(page)
 })
 
 test('新增、编辑、折叠、撤销、保存与重新打开', async ({ page }, testInfo) => {
+  page.on('dialog', (dialog) => dialog.accept())
   await expect(page.getByTestId('topic-root')).toBeVisible()
   await expect(page.getByText('快捷记录灵感', { exact: true })).toBeVisible()
   await page.screenshot({ path: testInfo.outputPath('trelyx-v0.1.png') })
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name: '新建导图', exact: true }).click()
+  await completeDocumentCreation(page)
   await page.getByTestId('topic-root').click()
   await page.keyboard.press('Tab')
   const input = page.getByRole('textbox', { name: '编辑主题标题' })
@@ -37,6 +40,7 @@ test('新增、编辑、折叠、撤销、保存与重新打开', async ({ page 
   if (!path) throw new Error('保存未生成文件')
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name: '新建导图', exact: true }).click()
+  await completeDocumentCreation(page)
   const picker = page.waitForEvent('filechooser')
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name: '打开导图', exact: true }).click()
@@ -108,7 +112,7 @@ test('恢复文档需要用户选择，刷新后可以恢复', async ({ page }) 
     .toContain('恢复的想法')
   await page.reload()
   await expect(page.getByRole('button', { name: /恢复/ })).toBeVisible()
-  await expect(page.getByTestId('topic-root')).not.toContainText('恢复的想法')
+  await expect(page.getByTestId('topic-root')).toHaveCount(0)
   await page.getByRole('button', { name: /恢复/ }).click()
   await expect(page.getByTestId('topic-root')).toContainText('恢复的想法')
 })

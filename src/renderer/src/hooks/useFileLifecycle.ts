@@ -7,6 +7,7 @@ import { draftCommand } from '../state/editorDraft'
 import { isDirty, useEditor } from '../state/editor'
 import { newDocument, openDocument, saveDocument, readRecoveryContents } from '../state/files'
 import { writeBrowserRecovery } from '../state/recovery'
+import { useWorkspace } from '../state/workspace'
 
 export function useFileLifecycle(): void {
   useEffect(() => {
@@ -28,10 +29,14 @@ export function useFileLifecycle(): void {
     })
     function synchronize(): void {
       const state = useEditor.getState()
-      bridge?.setDirty(isDirty(), !ready || Boolean(state.recovery))
-      window.document.title = `${isDirty() ? '• ' : ''}${state.workbook.title} — Trelyx`
+      const workspace = useWorkspace.getState()
+      bridge?.setDirty(workspace.hasDocument && isDirty(), !ready || Boolean(state.recovery))
+      window.document.title =
+        workspace.screen === 'editor'
+          ? `${isDirty() ? '• ' : ''}${state.workbook.title} — Trelyx`
+          : 'Trelyx'
       clearTimeout(timer)
-      if (!ready || state.recovery || state.busy) return
+      if (!ready || state.recovery || state.busy || !workspace.hasDocument) return
       timer = setTimeout(() => {
         const current = useEditor.getState()
         let document = current.history.document
@@ -92,7 +97,10 @@ export function useFileLifecycle(): void {
         synchronize()
       if (state.busy !== previous.busy || state.recovery !== previous.recovery) openPending()
     })
+    const unsubscribeWorkspace = useWorkspace.subscribe(synchronize)
     const removeMenu = bridge?.onMenuAction((action) => {
+      if (useWorkspace.getState().screen !== 'editor' && action !== 'new' && action !== 'open')
+        return
       const state = useEditor.getState()
       const target = window.document.activeElement
       const editor =
@@ -149,6 +157,7 @@ export function useFileLifecycle(): void {
       alive = false
       clearTimeout(timer)
       unsubscribe()
+      unsubscribeWorkspace()
       removeMenu?.()
       removeOpenFile?.()
       window.removeEventListener('beforeunload', beforeUnload)

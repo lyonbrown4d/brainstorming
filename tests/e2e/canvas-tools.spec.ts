@@ -1,8 +1,9 @@
+import { openExample } from './workspace'
 import { expect, test } from '@playwright/test'
 import { dockAction, openDock } from './dock'
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/')
+  await openExample(page)
 })
 
 test('Dock hover、延迟收起、键盘聚焦和弹出面板保持展开', async ({ page }, testInfo) => {

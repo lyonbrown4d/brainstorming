@@ -1,3 +1,4 @@
+import { openExample } from './workspace'
 import { expect, test, type Page } from '@playwright/test'
 import { structureOptions } from '../../src/renderer/src/components/documents/structureOptions'
 import { dockAction } from './dock'
@@ -25,7 +26,7 @@ test('三维显示全部结构并保留可编辑主题，记录实际 WebGL 画�
   test.setTimeout(120_000)
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
-  await page.goto('/')
+  await openExample(page)
   await page.getByRole('button', { name: '三维视图', exact: true }).click()
   for (const { value, label } of structureOptions) {
     await applyStructure(page, label)
@@ -50,7 +51,7 @@ test('新增三维结构均可原位中文编辑并与二维共用一次撤销�
   test.setTimeout(180_000)
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
-  await page.goto('/')
+  await openExample(page)
   await page.getByRole('button', { name: '三维视图', exact: true }).click()
   for (const { label } of structureOptions.filter((option) => newStructures.has(option.value))) {
     await applyStructure(page, label)

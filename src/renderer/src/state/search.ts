@@ -1,26 +1,8 @@
-import { create } from 'zustand'
 import { getParentId, searchWorkbook, type SearchMatch, type SearchOptions } from '@core'
 import { useEditor } from './editor'
 import { useSpatialView } from './spatial'
-
-interface SearchState {
-  open: boolean
-  query: string
-  replacement: string
-  matchCase: boolean
-  wholeWord: boolean
-  includeNotes: boolean
-  allSheets: boolean
-}
-export const useSearch = create<SearchState>(() => ({
-  open: false,
-  query: '',
-  replacement: '',
-  matchCase: false,
-  wholeWord: false,
-  includeNotes: true,
-  allSheets: false,
-}))
+import { useSearch } from './searchState'
+export { useSearch } from './searchState'
 export function searchOptions(): SearchOptions {
   const state = useSearch.getState()
   return {

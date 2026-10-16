@@ -1,3 +1,4 @@
+import { completeDocumentCreation, openExample } from './workspace'
 import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 import { importXmind } from '../../src/formats/xmind'
@@ -6,10 +7,11 @@ import { openDock, dockAction } from './dock'
 async function fileAction(page: Page, label: string) {
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name: label, exact: true }).click()
+  if (label === '新建导图') await completeDocumentCreation(page)
 }
 
 test('完整导图可导出图片、PDF、大纲和XMind，超出当前视口的主题仍保留', async ({ page }) => {
-  await page.goto('/')
+  await openExample(page)
   await openDock(page)
   await page.getByRole('button', { name: '导出', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: '导出导图', exact: true })
@@ -53,7 +55,7 @@ test('完整导图可导出图片、PDF、大纲和XMind，超出当前视口的
 })
 
 test('跨Sheet查找、当前Sheet批量替换可整次撤销', async ({ page }) => {
-  await page.goto('/')
+  await openExample(page)
   await page.getByTestId('topic-root').click()
   await page.keyboard.press('ControlOrMeta+f')
   const search = page.getByRole('dialog', { name: '查找与替换', exact: true })
@@ -81,7 +83,7 @@ test('跨Sheet查找、当前Sheet批量替换可整次撤销', async ({ page })
 
 test('密码保护的浏览器文件保存、错误重试、取消与重新解锁', async ({ page }) => {
   page.on('dialog', (dialog) => dialog.accept())
-  await page.goto('/')
+  await openExample(page)
   await openDock(page)
   await page.getByRole('button', { name: '文件密码', exact: true }).click()
   const settings = page.getByRole('dialog', { name: '文件密码', exact: true })

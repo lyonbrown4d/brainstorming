@@ -1,9 +1,11 @@
+import { completeDocumentCreation, openExample } from './workspace'
 import { dockAction, openDock } from './dock'
 import { expect, test, type Page } from '@playwright/test'
 
 async function fileAction(page: Page, name: string) {
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name, exact: true }).click()
+  if (name === '新建导图') await completeDocumentCreation(page)
 }
 
 async function renameSheet(page: Page, current: string, name: string) {
@@ -23,7 +25,7 @@ async function renameTopic(page: Page, title: string) {
 
 test.beforeEach(async ({ page }) => {
   page.on('dialog', (dialog) => dialog.accept())
-  await page.goto('/')
+  await openExample(page)
 })
 
 test('多个画布保留独立内容与撤销，并在同一文件保存后重新打开', async ({ page }) => {
@@ -43,6 +45,7 @@ test('多个画布保留独立内容与撤销，并在同一文件保存后重�
   await page.getByRole('button', { name: '关闭大纲', exact: true }).click()
   await expect(stylePanel).toBeVisible()
   await page.getByRole('button', { name: '新建画布', exact: true }).click()
+  await page.getByRole('button', { name: '创建画布', exact: true }).click()
   const secondName = await page.getByRole('tab', { selected: true }).innerText()
   await renameSheet(page, secondName, '用户研究')
   await expect(stylePanel.getByRole('combobox', { name: '字号', exact: true })).toHaveText('24')

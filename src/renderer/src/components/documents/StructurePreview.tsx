@@ -29,7 +29,7 @@ function node([x, y]: Point, index: number) {
       width={18}
       height={10}
       rx={3}
-      fill={index === 0 ? 'currentColor' : 'var(--background)'}
+      fill={index === 0 ? 'currentColor' : 'var(--ui-background)'}
       stroke="currentColor"
       strokeWidth={1.5}
     />
@@ -141,7 +141,7 @@ export function StructurePreview({ kind }: { kind: LayoutKind }) {
   return (
     <svg
       viewBox="0 0 120 72"
-      className="h-14 w-full text-primary"
+      className="size-auto h-14 w-full text-primary"
       aria-hidden="true"
       focusable="false"
     >

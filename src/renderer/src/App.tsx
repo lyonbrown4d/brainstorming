@@ -21,6 +21,8 @@ import { restoreRecovery } from './state/files'
 import { useFileLifecycle } from './hooks/useFileLifecycle'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useWindowChrome } from './hooks/useWindowChrome'
+import { useWorkspace } from './state/workspace'
+import { CreationWorkspace, WorkspaceHeader } from './components/creation/CreationWorkspace'
 import '@xyflow/react/dist/style.css'
 import './styles/ui.css'
 import './styles/base.css'
@@ -35,6 +37,7 @@ export function App() {
   useFileLifecycle()
   useKeyboardShortcuts()
   const chrome = useWindowChrome()
+  const screen = useWorkspace((state) => state.screen)
   const outline = useEditor((state) => state.outlineOpen)
   const inspector = useEditor((state) => state.inspectorOpen)
   const activeSheetId = useEditor((state) => state.activeSheetId)
@@ -52,9 +55,9 @@ export function App() {
           data-focused={chrome.focused}
           data-fullscreen={chrome.fullScreen}
         >
-          <Toolbar />
+          {screen === 'editor' ? <Toolbar /> : <WorkspaceHeader />}
           <div className="app-body">
-            <main className="workspace-main">
+            <main className="workspace-main min-h-0">
               {recovery && (
                 <div className="recovery-banner" role="status">
                   <span>发现上次的自动恢复记录，是否继续之前的思路？</span>
@@ -72,7 +75,7 @@ export function App() {
                   </Button>
                 </div>
               )}
-              {error && (
+              {error && screen === 'editor' && (
                 <div className="error-banner" role="alert">
                   <span>{error}</span>
                   <Button
@@ -88,37 +91,41 @@ export function App() {
                 </div>
               )}
               <ImportNotice />
-              <SearchPanel />
+              {screen === 'editor' && <SearchPanel />}
               <PasswordPrompt />
-              <ReactFlowProvider>
-                <div className="workspace-content">
-                  <AnimatePresence initial={false}>
-                    {outline && (
-                      <AnimatedPanel key="outline">
-                        <Outline />
-                      </AnimatedPanel>
+              {screen !== 'editor' ? (
+                <CreationWorkspace />
+              ) : (
+                <ReactFlowProvider>
+                  <div className="workspace-content">
+                    <AnimatePresence initial={false}>
+                      {outline && (
+                        <AnimatedPanel key="outline">
+                          <Outline />
+                        </AnimatedPanel>
+                      )}
+                    </AnimatePresence>
+                    {spatial ? (
+                      <SpatialWorkspace key={activeSheetId} />
+                    ) : (
+                      <Canvas key={activeSheetId} />
                     )}
-                  </AnimatePresence>
-                  {spatial ? (
-                    <SpatialWorkspace key={activeSheetId} />
-                  ) : (
-                    <Canvas key={activeSheetId} />
-                  )}
-                  <AnimatePresence initial={false}>
-                    {inspector && (
-                      <AnimatedPanel key="inspector" side="right">
-                        <Inspector />
-                      </AnimatedPanel>
-                    )}
-                  </AnimatePresence>
-                </div>
-                <footer className="status-bar">
-                  <SheetTabs />
-                  <span className="topic-count">{count} 个主题</span>
-                  {!spatial && <ZoomControls />}
-                  <KeyboardHelp />
-                </footer>
-              </ReactFlowProvider>
+                    <AnimatePresence initial={false}>
+                      {inspector && (
+                        <AnimatedPanel key="inspector" side="right">
+                          <Inspector />
+                        </AnimatedPanel>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  <footer className="status-bar">
+                    <SheetTabs />
+                    <span className="topic-count">{count} 个主题</span>
+                    {!spatial && <ZoomControls />}
+                    <KeyboardHelp />
+                  </footer>
+                </ReactFlowProvider>
+              )}
             </main>
           </div>
         </div>

@@ -1,3 +1,4 @@
+import { enterExampleIfHome } from '../e2e/workspace'
 import {
   _electron as electron,
   expect,
@@ -13,6 +14,13 @@ import { openDock } from '../e2e/dock'
 
 const password = 'desktop-security-test'
 async function fileAction(page: Page, name: string): Promise<void> {
+  if (
+    name === '打开导图' &&
+    (await page.getByRole('button', { name: '打开本地文件', exact: true }).isVisible())
+  ) {
+    await page.getByRole('button', { name: '打开本地文件', exact: true }).click()
+    return
+  }
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name, exact: true }).click()
 }
@@ -60,6 +68,7 @@ test('真实 Electron 密码文件、加密历史、重启解锁与恢复记录�
   try {
     app = await electron.launch({ args: ['.', `--user-data-dir=${profile}`] })
     let page = await app.firstWindow()
+    await enterExampleIfHome(page)
     page.on('dialog', (dialog) => {
       void dialog.accept()
     })
@@ -104,7 +113,8 @@ test('真实 Electron 密码文件、加密历史、重启解锁与恢复记录�
     const prompt = page.getByRole('dialog', { name: '解锁思维导图', exact: true })
     await expect(prompt).toBeVisible()
     await prompt.getByRole('button', { name: '取消', exact: true }).click()
-    await expect(page.getByTestId('topic-root')).toContainText('产品规划')
+    await expect(page.getByTestId('topic-root')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: '打开本地文件', exact: true })).toBeVisible()
     expect(await diskTitle(savedPath)).toBe('第二份机密内容')
     await app.evaluate(({ dialog }, path) => {
       dialog.showOpenDialog = () => Promise.resolve({ canceled: false, filePaths: [path] })

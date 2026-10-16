@@ -19,6 +19,7 @@ import { newDocument, openDocument, saveDocument } from '../state/files'
 import { Button } from './ui/button'
 import { ViewModeSwitch } from './ViewModeSwitch'
 import { useSpatialView } from '../state/spatial'
+import { showWorkspaceHome } from '../state/creation'
 
 type RecentFilesState =
   { status: 'loading' } | { status: 'ready'; files: readonly RecentFile[] } | { status: 'error' }
@@ -107,10 +108,16 @@ export function Toolbar() {
   return (
     <header className="toolbar relative">
       <div className="toolbar-identity">
-        <div className="toolbar-brand">
+        <Button
+          variant="ghost"
+          className="toolbar-brand"
+          aria-label="返回首页"
+          disabled={busy}
+          onClick={showWorkspaceHome}
+        >
           <Network size={25} strokeWidth={1.7} />
           <span>Trelyx</span>
-        </div>
+        </Button>
         <span className="toolbar-separator" />
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>

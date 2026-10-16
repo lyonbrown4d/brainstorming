@@ -1,3 +1,4 @@
+import { enterExampleIfHome } from '../e2e/workspace'
 import { _electron as electron, expect, test } from '@playwright/test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -29,6 +30,7 @@ test('原生自定义剪贴板跨画布复制子树，保留普通文本并一�
     })
     captured = true
     const page = await app.firstWindow()
+    await enterExampleIfHome(page)
     await page.getByTestId('topic-vision').click()
     await openDock(page)
     await page.getByRole('button', { name: '复制主题', exact: true }).click()

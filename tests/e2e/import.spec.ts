@@ -1,11 +1,28 @@
+import { completeDocumentCreation, openExample } from './workspace'
 import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 import { decodeTrelyx } from '../../src/formats/trelyx'
 import { legacyXmind, modernXmind } from '../fixtures/xmind/archive'
 
 async function fileAction(page: Page, name: string) {
+  if (name === '打开导图')
+    await expect
+      .poll(
+        async () =>
+          (await page.getByRole('button', { name: '打开本地文件', exact: true }).isVisible()) ||
+          (await page.getByRole('button', { name: '文件菜单', exact: true }).isVisible()),
+      )
+      .toBe(true)
+  if (
+    name === '打开导图' &&
+    (await page.getByRole('button', { name: '打开本地文件', exact: true }).isVisible())
+  ) {
+    await page.getByRole('button', { name: '打开本地文件', exact: true }).click()
+    return
+  }
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name, exact: true }).click()
+  if (name === '新建导图') await completeDocumentCreation(page)
 }
 
 for (const variant of [
@@ -13,6 +30,7 @@ for (const variant of [
   { name: '旧版', bytes: legacyXmind, root: 'legacy-root', title: '中文旧版', sheet: '旧版第二页' },
 ]) {
   test(`${variant.name} XMind 导入、查看报告、编辑、保存原生文件并重开`, async ({ page }) => {
+    page.on('dialog', (dialog) => dialog.accept())
     await page.goto('/')
     const picker = page.waitForEvent('filechooser')
     await fileAction(page, '打开导图')
@@ -55,7 +73,8 @@ for (const variant of [
 }
 
 test('旧 JSON 文件与损坏 XMind 不替换当前导图', async ({ page }) => {
-  await page.goto('/')
+  page.on('dialog', (dialog) => dialog.accept())
+  await openExample(page)
   for (const [name, contents] of [
     ['old.trelyx', '{"format":"trelyx","version":2}'],
     ['bad.xmind', 'bad'],
