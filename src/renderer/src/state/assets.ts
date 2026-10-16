@@ -1,11 +1,14 @@
 import { applyCommand, type DocumentAsset } from '@core'
 import { useEditor } from './editor'
 
-async function selectBrowserAsset(kind: 'image' | 'attachment'): Promise<DocumentAsset | null> {
+async function selectBrowserAsset(
+  kind: 'image' | 'attachment' | 'audio',
+): Promise<DocumentAsset | null> {
   const file = await new Promise<File | null>((resolve) => {
     const input = document.createElement('input')
     input.type = 'file'
     if (kind === 'image') input.accept = '.png,.jpg,.jpeg,.gif,.webp'
+    if (kind === 'audio') input.accept = '.mp3,.wav,.ogg,.webm,.m4a,.aac,.flac'
     input.onchange = () => {
       resolve(input.files?.[0] ?? null)
     }
@@ -21,6 +24,8 @@ async function selectBrowserAsset(kind: 'image' | 'attachment'): Promise<Documen
     import('../../../assets'),
   ])
   const asset = createAsset(new Uint8Array(buffer), file.name)
+  if (kind === 'audio' && !asset.mimeType.startsWith('audio/'))
+    throw new Error('请选择支持的音频文件')
   if (kind === 'image') {
     imageDimensions(asset)
     const bitmap = await createImageBitmap(new Blob([buffer]))
@@ -31,7 +36,7 @@ async function selectBrowserAsset(kind: 'image' | 'attachment'): Promise<Documen
 
 export async function importTopicAssets(
   topicId: string,
-  kind: 'image' | 'attachment',
+  kind: 'image' | 'attachment' | 'audio',
 ): Promise<void> {
   const state = useEditor.getState()
   if (state.busy) return
@@ -59,7 +64,9 @@ export async function importTopicAssets(
     const command =
       kind === 'image'
         ? { type: 'setTopicImage' as const, topicId, asset, ...imageDimensions(asset) }
-        : { type: 'addTopicAttachment' as const, topicId, asset }
+        : kind === 'audio'
+          ? { type: 'setTopicAudio' as const, topicId, asset }
+          : { type: 'addTopicAttachment' as const, topicId, asset }
     const candidate = applyCommand(current.history.document, command)
     // A successful insert must remain representable by the native writer.
     encodeTrelyx({

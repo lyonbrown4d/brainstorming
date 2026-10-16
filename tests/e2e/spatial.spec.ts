@@ -1,3 +1,4 @@
+import { dockAction } from './dock'
 import { expect, test, type Page } from '@playwright/test'
 
 async function fileAction(page: Page, name: string) {
@@ -32,16 +33,16 @@ test('三维聚焦、折叠、中文编辑与二维共享历史，整份文档�
   await expect(
     page.getByRole('button', { name: '选择主题 快捷记录灵感', exact: true }),
   ).toHaveCount(0)
-  await page.getByRole('button', { name: '撤销', exact: true }).click()
+  await dockAction(page, '撤销')
   await expect(
     page.getByRole('button', { name: '选择主题 快捷记录灵感', exact: true }),
   ).toBeVisible()
   await page.getByRole('button', { name: '二维视图', exact: true }).click()
   await expect(page.getByTestId('topic-experience')).toContainText('三维中文体验')
   await expect(notes).toHaveText('空间中查看\n侧栏中编辑')
-  await page.getByRole('button', { name: '撤销', exact: true }).click()
+  await dockAction(page, '撤销')
   await expect(notes).toHaveText('')
-  await page.getByRole('button', { name: '重做', exact: true }).click()
+  await dockAction(page, '重做')
   await page.getByRole('button', { name: '三维视图', exact: true }).click()
   const download = page.waitForEvent('download')
   await fileAction(page, '保存导图')
@@ -154,7 +155,7 @@ test('三维卡片原位中文编辑，触控板平移、捏合和修饰键旋�
   await page.getByRole('button', { name: '二维视图', exact: true }).click()
   await expect(page.getByTestId('topic-root')).toContainText('空间中文输入')
   await expect(page.locator('.status-bar')).toContainText('13 个主题')
-  await page.getByRole('button', { name: '撤销', exact: true }).click()
+  await dockAction(page, '撤销')
   await expect(page.getByTestId('topic-root')).toContainText('产品规划')
   await page.getByRole('button', { name: '三维视图', exact: true }).click()
   await root.dblclick()

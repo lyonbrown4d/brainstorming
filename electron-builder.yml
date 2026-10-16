@@ -16,6 +16,8 @@ fileAssociations:
     name: XMind 思维导图
     role: Viewer
 mac:
+  extendInfo:
+    NSMicrophoneUsageDescription: 在你点击录音时录制主题的语音备注。
   category: public.app-category.productivity
   target:
     - dmg

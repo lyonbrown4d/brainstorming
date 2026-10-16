@@ -3,10 +3,11 @@ import { getParentId } from '@core'
 import { useEffect } from 'react'
 import { useEditor } from '../state/editor'
 import { useSpatialView } from '../state/spatial'
-import { TopicEditor } from './TopicEditor'
+import { TopicRichTitle } from './metadata/TopicRichTitle'
 import { Button } from './ui/button'
 import { TopicFormatting } from './TopicFormatting'
 import { TopicContentPanel } from './TopicContentPanel'
+import { TopicMetadataPanel } from './metadata/TopicMetadataPanel'
 import { FieldSelect } from './FieldSelect'
 
 export function Inspector() {
@@ -71,15 +72,10 @@ export function Inspector() {
           <span>{root ? '中心主题' : firstLevel ? '一级分支' : '子主题'}</span>
           <span>{topic.children.length} 个子主题</span>
         </div>
-        <label
-          className="topic-name-field flex flex-col gap-[9px] text-xs text-secondary-foreground"
-          htmlFor={`topic-inspector-${selectedId}`}
-        >
-          主题名称
-          <TopicEditor key={selectedId} id={selectedId} title={topic.title} surface="inspector" />
-        </label>
+        <TopicRichTitle key={`title:${selectedId}`} topicId={selectedId} />
         <TopicContentPanel key={selectedId} topicId={selectedId} />
         <TopicFormatting />
+        <TopicMetadataPanel key={`metadata:${selectedId}`} topicId={selectedId} />
         {!root && (
           <section className="format-group border-t border-border py-[18px] [&_h3]:mb-2.5 [&_h3]:text-[13px] [&_h3]:font-medium [&_h3]:text-secondary-foreground position-group pb-0">
             <h3>分支位置</h3>

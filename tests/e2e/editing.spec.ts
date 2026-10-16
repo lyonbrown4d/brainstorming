@@ -1,3 +1,4 @@
+import { dockAction } from './dock'
 import { expect, test } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 import { decodeTrelyx } from '../../src/formats/trelyx'
@@ -28,9 +29,9 @@ test('选中后连续输入不丢首字，中文组词、换行、取消和整�
   const count = await page.locator('.react-flow__node').count()
   await page.locator('.react-flow__pane').click({ position: { x: 20, y: 20 } })
   await expect(input).toContainText('中文主题')
-  await page.getByRole('button', { name: '撤销', exact: true }).click()
+  await dockAction(page, '撤销')
   await expect(page.getByTestId('topic-root')).toContainText('产品规划')
-  await page.getByRole('button', { name: '重做', exact: true }).click()
+  await dockAction(page, '重做')
   await expect(page.getByTestId('topic-root')).toContainText('第二行也能继续输入')
   await expect(page.locator('.react-flow__node')).toHaveCount(count)
 })

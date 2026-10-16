@@ -6,6 +6,9 @@ import type { DocumentAsset, Topic } from '@core'
 import type { SpatialNode } from '../../../../layout/spatial'
 import { Button } from '../ui/button'
 import { useEditor } from '../../state/editor'
+import { interactAnnotationTopic } from '../../state/annotationInteraction'
+import { selectTopic } from '../../state/selection'
+import { TopicMetadataBadges } from '../metadata/TopicMetadataBadges'
 import { SpatialTopicLabel } from './SpatialTopicLabel'
 
 interface SpatialTopicProps {
@@ -18,6 +21,8 @@ interface SpatialTopicProps {
   readonly muted: boolean
   readonly fill: string
   readonly branchColor: string
+  readonly textColor: string
+  readonly fontFamily: string
   readonly imageAsset: DocumentAsset | undefined
   readonly onSelect: (id: string) => void
   readonly onFocus: (id: string) => void
@@ -34,6 +39,8 @@ export const SpatialTopic = memo(function SpatialTopic({
   muted,
   fill,
   branchColor,
+  textColor,
+  fontFamily,
   imageAsset,
   onSelect,
   onFocus,
@@ -46,9 +53,10 @@ export const SpatialTopic = memo(function SpatialTopic({
     imageAsset &&
     ['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(imageAsset.mimeType),
   )
-  const content = Boolean(topic.notes) || Boolean(topic.attachments?.length)
+  const content =
+    Boolean(topic.notes) || Boolean(topic.attachments?.length) || Boolean(topic.metadata)
   const radius = topic.style?.shape === 'rectangle' ? 0.012 : Math.min(height * 0.2, 0.065)
-  const labelColor = topic.style?.color ?? (root ? '#ffffff' : '#26273c')
+  const labelColor = textColor
   return (
     <Billboard position={[...node.position]} follow>
       <group rotation={[0.025, -0.09, 0]}>
@@ -72,7 +80,9 @@ export const SpatialTopic = memo(function SpatialTopic({
           receiveShadow={detailed}
           onClick={(event) => {
             event.stopPropagation()
-            onSelect(topic.id)
+            if (interactAnnotationTopic(topic.id)) return
+            if (event.metaKey || event.ctrlKey || event.shiftKey) selectTopic(topic.id, true)
+            else onSelect(topic.id)
           }}
           onDoubleClick={(event) => {
             event.stopPropagation()
@@ -116,6 +126,7 @@ export const SpatialTopic = memo(function SpatialTopic({
               height: height * 100,
               opacity: muted ? 0.34 : 1,
               color: labelColor,
+              fontFamily,
             }}
           >
             {hasImage && imageAsset && (
@@ -136,6 +147,7 @@ export const SpatialTopic = memo(function SpatialTopic({
               color={labelColor}
               onSelect={onSelect}
             />
+            <TopicMetadataBadges metadata={topic.metadata} />
             {selected && (
               <Button
                 type="button"

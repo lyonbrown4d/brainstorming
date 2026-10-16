@@ -8,6 +8,8 @@ import { validateBoundedWorkbook } from '../trelyx/validation'
 import { idAllocator, list, record, text, topicIds, Warnings, type SourceRecord } from './common'
 import { parseLegacy } from './legacy'
 import { importStyle } from './styles'
+import { standardMetadata } from './metadata'
+import { restoreDocumentExtension, restoreTopicExtension, trelyxExtension } from './extensions'
 
 const topicFields = new Set([
   'id',
@@ -19,8 +21,11 @@ const topicFields = new Set([
   'notes',
   'image',
   'href',
+  'extensions',
+  'class',
+  'labels',
 ])
-const sheetFields = new Set(['id', 'title', 'rootTopic'])
+const sheetFields = new Set(['id', 'title', 'rootTopic', 'extensions', 'class'])
 
 /** Import supported XMind content only; all discarded presentation/features are reported. */
 export function importXmind(bytes: Uint8Array): ImportedWorkbook {
@@ -55,11 +60,12 @@ export function importXmind(bytes: Uint8Array): ImportedWorkbook {
   )
   const convert = new WorkbookImporter(warnings, reservedSheetIds, entries)
   const imported = sheets.map((sheet, index) => convert.sheet(record(sheet, '画布'), index))
+  const identity = convert.identity
   const workbook: MindMapWorkbook = {
     format: 'trelyx',
     version: 2,
-    id: 'xmind-import',
-    title: imported[0]?.name ?? 'XMind',
+    id: identity?.id ?? 'xmind-import',
+    title: identity?.title ?? imported[0]?.name ?? 'XMind',
     sheets: imported,
   }
   for (const path of entries.keys()) {
@@ -77,6 +83,7 @@ export function importXmind(bytes: Uint8Array): ImportedWorkbook {
 
 class WorkbookImporter {
   readonly used = new Set<string>()
+  identity: { id: string; title: string } | undefined
   private readonly budget = { bytes: 0 }
   private count = 0
   private readonly sheetId: (value: unknown) => string
@@ -96,6 +103,18 @@ class WorkbookImporter {
       ? truncateSheetName(originalName)
       : `画布 ${index + 1}`
     if (name !== originalName) this.warnings.add('画布名称已调整为 Trelyx 支持的长度或默认名称')
+    const extension = trelyxExtension(source, this.warnings, 'sheet')
+    if (extension?.workbook !== undefined) {
+      const identity = record(extension.workbook, 'Trelyx workbook')
+      if (typeof identity.id !== 'string' || typeof identity.title !== 'string')
+        throw new Error('XMind Trelyx 工作簿信息无效')
+      if (
+        this.identity &&
+        (this.identity.id !== identity.id || this.identity.title !== identity.title)
+      )
+        throw new Error('XMind Trelyx 工作簿信息不一致')
+      this.identity = { id: identity.id, title: identity.title }
+    }
     const id = this.sheetId(source.id)
     const topics: Record<string, Topic> = {}
     const rootTopic = record(source.rootTopic, '中心主题')
@@ -107,15 +126,18 @@ class WorkbookImporter {
     return {
       id,
       name,
-      document: {
-        ...(Object.keys(content.assets).length ? { assets: content.assets } : {}),
-        format: 'trelyx',
-        version: 1,
-        id,
-        title: root.title,
-        rootId,
-        topics,
-      },
+      document: restoreDocumentExtension(
+        {
+          ...(Object.keys(content.assets).length ? { assets: content.assets } : {}),
+          format: 'trelyx',
+          version: 1,
+          id,
+          title: root.title,
+          rootId,
+          topics,
+        },
+        extension,
+      ),
     }
   }
 
@@ -131,6 +153,8 @@ class WorkbookImporter {
     const id = allocate(source.id)
     const title = text(source.title, '主题标题')
     const style = importStyle(source.style, this.warnings)
+    const metadata = standardMetadata(source, this.warnings)
+    const extension = trelyxExtension(source, this.warnings)
     this.warnings.omitted(source, topicFields)
     if (source.structureClass !== undefined) this.warnings.add('XMind 布局已转换为 Trelyx 左右布局')
     if (source.branch !== undefined && source.branch !== 'folded' && source.branch !== 'expanded')
@@ -173,15 +197,20 @@ class WorkbookImporter {
         extra.length,
       )
     }
-    topics[id] = {
-      id,
-      title,
-      children: childIds,
-      collapsed: source.branch === 'folded',
-      side,
-      ...(style ? { style } : {}),
-      ...content.topic(source),
-    }
+    topics[id] = restoreTopicExtension(
+      {
+        id,
+        title,
+        children: childIds,
+        collapsed: source.branch === 'folded',
+        side,
+        ...(style ? { style } : {}),
+        ...(metadata ? { metadata } : {}),
+        ...content.topic(metadata?.link ? { ...source, href: undefined } : source),
+      },
+      extension,
+      content,
+    )
     return id
   }
 

@@ -12,8 +12,10 @@ import {
 import type { SpatialLayout } from '../../../../layout/spatial'
 import { useSpatialCamera } from '../../hooks/useSpatialCamera'
 import { useSpatialGestures } from '../../hooks/useSpatialGestures'
-import { branchColors, branchFills } from '../../lib/topicAppearance'
+import { documentAppearance, topicAppearance } from '@shared/appearance'
 import { useEditor } from '../../state/editor'
+import { useSelectedIds } from '../../state/selection'
+import { SpatialAnnotations } from '../annotations/SpatialAnnotations'
 import { SpatialConnections } from './SpatialConnections'
 import { SpatialTopic } from './SpatialTopic'
 import type { SpatialCameraActions, SpatialCameraState, SpatialCanvasProps } from './types'
@@ -52,6 +54,7 @@ export function SpatialScene({
   onZoomChange,
   onContextLost,
 }: SpatialSceneProps) {
+  const selectedIds = useSelectedIds()
   const controls = useRef<CameraControlsImpl | null>(null)
   const gl = useThree((state) => state.gl)
   const editing = useEditor((state) => state.editingSurface === 'spatial')
@@ -80,15 +83,14 @@ export function SpatialScene({
     () => new Map(layout.nodes.map((node) => [node.id, node])),
     [layout.nodes],
   )
-  const palette = useMemo(() => {
-    const colors = new Map<string, string>()
-    const fills = new Map<string, string>()
-    for (const [index, id] of (document.topics[document.rootId]?.children ?? []).entries()) {
-      colors.set(id, branchColors[index % branchColors.length] ?? '#9788d3')
-      fills.set(id, branchFills[index % branchFills.length] ?? '#d9d3fa')
-    }
-    return { colors, fills }
-  }, [document.rootId, document.topics])
+  const appearance = documentAppearance(document)
+  const colors = useMemo(
+    () =>
+      new Map(
+        layout.nodes.map((node) => [node.branchId, topicAppearance(document, node.id).stroke]),
+      ),
+    [document, layout.nodes],
+  )
   const floor = layout.bounds.min[1] - 1.05
   const shadowExtent = Math.max(8, Math.min(40, layout.bounds.max[0] - layout.bounds.min[0]))
   const extent = Math.hypot(
@@ -110,7 +112,7 @@ export function SpatialScene({
 
   return (
     <>
-      <color attach="background" args={['#fafafe']} />
+      <color attach="background" args={[appearance.background]} />
       <ambientLight intensity={1.9} />
       <hemisphereLight args={['#ffffff', '#c4bed7', 1.2]} />
       <directionalLight
@@ -150,9 +152,10 @@ export function SpatialScene({
         document={document}
         layout={layout}
         nodesById={nodesById}
-        colors={palette.colors}
+        colors={colors}
         focusIds={focusIds}
       />
+      <SpatialAnnotations document={document} layout={layout} labelPortal={labelPortal} />
       {layout.nodes.map((node) => {
         const topic = document.topics[node.id]
         if (!topic) return null
@@ -165,17 +168,12 @@ export function SpatialScene({
             labelPortal={labelPortal}
             root={root}
             detailed={detailed}
-            selected={node.id === selectedId}
+            selected={selectedIds.length ? selectedIds.includes(node.id) : node.id === selectedId}
             muted={focusIds !== null && !focusIds.has(node.id)}
-            fill={
-              topic.style?.fill ??
-              (root
-                ? '#7666c4'
-                : node.depth === 1
-                  ? (palette.fills.get(node.branchId) ?? '#d9d3fa')
-                  : '#ffffff')
-            }
-            branchColor={palette.colors.get(node.branchId) ?? '#9788d3'}
+            fill={topicAppearance(document, node.id).fill}
+            branchColor={topicAppearance(document, node.id).stroke}
+            textColor={topicAppearance(document, node.id).color}
+            fontFamily={appearance.fontFamily}
             imageAsset={topic.image ? document.assets?.[topic.image.assetId] : undefined}
             onSelect={onSelect}
             onFocus={onFocus}

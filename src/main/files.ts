@@ -1,9 +1,15 @@
-import writeFileAtomic from 'write-file-atomic'
-import { open, mkdir, unlink, readFile } from 'node:fs/promises'
+import { atomicWrite } from './file-security/write'
+export { atomicWrite } from './file-security/write'
+import { mkdir, unlink, readFile } from 'node:fs/promises'
 import { basename, extname, join, resolve } from 'node:path'
 import { deserializeWorkbook, serializeWorkbook } from '@core'
 import { decodeFile } from '../formats'
 import { encodeTrelyx } from '../formats/trelyx'
+import { decryptTrelyx, encryptTrelyx, isEncryptedTrelyx } from '../formats/encrypted'
+import { FileSecuritySession } from './file-security/session'
+import { DocumentBackups } from './file-security/backups'
+import { readDocumentBytes } from './file-security/read'
+import { validateFilePassword, validateSecurityDocumentId } from '../shared/fileSecurity'
 import type { OpenedDocument, RecentFile } from '../shared/contracts'
 
 // Internal pretty-printed IPC JSON may exceed the compact native entry's 10 MiB.
@@ -37,44 +43,26 @@ export function validateSavePath(value: unknown): asserts value is string {
   validatePath(value, ['.trelyx'])
 }
 
-export async function atomicWrite(path: string, contents: string | Uint8Array): Promise<void> {
-  await writeFileAtomic(path, typeof contents === 'string' ? contents : Buffer.from(contents), {
-    encoding: 'utf8',
-    mode: 0o600,
-    fsync: true,
-  })
-}
-
 function isMissing(error: unknown): boolean {
   return error instanceof Error && 'code' in error && error.code === 'ENOENT'
 }
 
-async function readDocument(path: string): Promise<OpenedDocument> {
-  const handle = await open(path, 'r')
-  try {
-    if ((await handle.stat()).size > MAX_FILE_BYTES) throw new Error('文件超过 32 MiB')
-    // A bounded stream also handles a file that grows after the stat check.
-    const chunks: Buffer[] = []
-    const stream = handle.createReadStream({ start: 0, end: MAX_FILE_BYTES, autoClose: false })
-    let size = 0
-    for await (const chunk of stream) {
-      const bytes = chunk as Buffer
-      size += bytes.length
-      if (size > MAX_FILE_BYTES) throw new Error('文件超过 32 MiB')
-      chunks.push(bytes)
-    }
-    const decoded = decodeFile(Buffer.concat(chunks), path)
-    const contents = serializeWorkbook(decoded.workbook)
-    validateContents(contents)
-    return decoded.imported
-      ? { path: null, sourcePath: path, contents, warnings: decoded.warnings }
-      : { path, contents, warnings: decoded.warnings }
-  } finally {
-    await handle.close()
-  }
+function decodeDocument(
+  bytes: Uint8Array,
+  path: string,
+  exposedPath: string | null = path,
+): OpenedDocument {
+  const decoded = decodeFile(bytes, path)
+  const contents = serializeWorkbook(decoded.workbook)
+  validateContents(contents)
+  return decoded.imported
+    ? { path: null, sourcePath: path, contents, warnings: decoded.warnings }
+    : { path: exposedPath, contents, warnings: decoded.warnings }
 }
 
 export class DocumentFiles {
+  private readonly security = new FileSecuritySession()
+  private readonly backups: DocumentBackups
   private readonly authorizedPaths = new Set<string>()
   private recentPaths: string[] = []
   private recoveryQueue: Promise<void> = Promise.resolve()
@@ -82,6 +70,7 @@ export class DocumentFiles {
   private readonly recentPath: string
 
   constructor(private readonly storageDirectory: string) {
+    this.backups = new DocumentBackups(join(storageDirectory, 'history-v1'))
     this.recoveryPath = join(storageDirectory, 'recovery-v1.trelyx')
     this.recentPath = join(storageDirectory, 'recent-files.json')
   }
@@ -115,7 +104,10 @@ export class DocumentFiles {
   async openSelected(path: string): Promise<OpenedDocument> {
     validateOpenPath(path)
     const absolute = resolve(path)
-    const document = await readDocument(absolute)
+    const bytes = await readDocumentBytes(absolute)
+    if (extname(absolute).toLowerCase() === '.trelyx' && (await isEncryptedTrelyx(bytes)))
+      return this.security.lock(bytes, absolute, true)
+    const document = decodeDocument(bytes, absolute)
     if (document.path !== null) this.authorizedPaths.add(absolute)
     await this.remember(absolute)
     return document
@@ -134,18 +126,27 @@ export class DocumentFiles {
     return absolute
   }
 
-  async save(path: string, contents: unknown): Promise<string> {
+  async save(path: string, contents: unknown, password?: string | null): Promise<string> {
     validateContents(contents)
     validateSavePath(path)
     if (!this.authorizedPaths.has(path)) throw new Error('请先通过文件对话框选择保存位置')
-    await atomicWrite(path, encodeTrelyx(deserializeWorkbook(contents)))
+    const workbook = deserializeWorkbook(contents)
+    if (password !== undefined && password !== null) validateFilePassword(password)
+    const key = password === undefined ? this.security.passwordFor(workbook.id) : password
+    const bytes =
+      key === null ? encodeTrelyx(workbook) : await encryptTrelyx(workbook, key, 'existing')
+    await atomicWrite(path, bytes)
+    await this.configurePassword(workbook.id, key, password === undefined)
+    await this.backups.write(workbook.id, bytes, key !== null)
     await this.remember(path)
     return path
   }
 
   async readRecovery(): Promise<string | null> {
     try {
-      return (await readDocument(this.recoveryPath)).contents
+      const bytes = await readDocumentBytes(this.recoveryPath)
+      if (await isEncryptedTrelyx(bytes)) throw new Error('恢复记录已加密，请输入密码')
+      return decodeDocument(bytes, this.recoveryPath, null).contents
     } catch (error) {
       if (isMissing(error)) return null
       throw new Error('自动恢复文件无法读取，请保留原文件后重试', { cause: error })
@@ -154,8 +155,13 @@ export class DocumentFiles {
 
   writeRecovery(contents: unknown): Promise<void> {
     validateContents(contents)
-    const bytes = encodeTrelyx(deserializeWorkbook(contents))
-    const write = this.recoveryQueue.then(() => atomicWrite(this.recoveryPath, bytes))
+    const workbook = deserializeWorkbook(contents)
+    const key = this.security.passwordFor(workbook.id)
+    const write = this.recoveryQueue.then(async () => {
+      const bytes =
+        key === null ? encodeTrelyx(workbook) : await encryptTrelyx(workbook, key, 'existing')
+      await atomicWrite(this.recoveryPath, bytes)
+    })
     this.recoveryQueue = write.catch(() => undefined)
     return write
   }
@@ -165,6 +171,95 @@ export class DocumentFiles {
     await unlink(this.recoveryPath).catch((error: unknown) => {
       if (!isMissing(error)) throw error
     })
+  }
+
+  getFileSecurity(documentId: unknown) {
+    return this.security.state(documentId)
+  }
+  setFilePassword(documentId: unknown, password: unknown): Promise<{ encrypted: boolean }> {
+    return this.configurePassword(documentId, password)
+  }
+  private async configurePassword(
+    documentId: unknown,
+    password: unknown,
+    existing = false,
+  ): Promise<{ encrypted: boolean }> {
+    validateSecurityDocumentId(documentId)
+    const previous = this.security.passwordFor(documentId)
+    const state = this.security.configure(documentId, password, existing)
+    const key = this.security.passwordFor(documentId)
+    if (key === previous) return state
+    const change = this.recoveryQueue.then(async () => {
+      try {
+        const bytes = await readDocumentBytes(this.recoveryPath)
+        const encrypted = await isEncryptedTrelyx(bytes)
+        if (encrypted && previous === null) {
+          await this.backups.protect(documentId, key)
+          return
+        }
+        const workbook =
+          encrypted && previous !== null
+            ? await decryptTrelyx(bytes, previous)
+            : decodeFile(bytes, this.recoveryPath).workbook
+        if (workbook.id !== documentId) {
+          await this.backups.protect(documentId, key)
+          return
+        }
+        await atomicWrite(
+          this.recoveryPath,
+          key === null ? encodeTrelyx(workbook) : await encryptTrelyx(workbook, key, 'existing'),
+        )
+      } catch (error) {
+        if (!isMissing(error)) throw new Error('密码设置失败：无法保护现有恢复记录')
+      }
+      await this.backups.protect(documentId, key)
+    })
+    this.recoveryQueue = change.catch(() => undefined)
+    try {
+      await change
+    } catch (error) {
+      this.security.configure(documentId, previous, true)
+      throw error
+    }
+    return state
+  }
+  unlockDocument(token: unknown, password: unknown): Promise<OpenedDocument> {
+    return this.security.unlock(token, password)
+  }
+  cancelUnlock(token: unknown): void {
+    this.security.cancel(token)
+  }
+  async activateUnlockedDocument(token: unknown): Promise<{ encrypted: boolean }> {
+    const activated = this.security.activate(token)
+    await this.configurePassword(activated.documentId, activated.password, true)
+    if (activated.path !== null && activated.authorize) {
+      this.authorizedPaths.add(activated.path)
+      await this.remember(activated.path)
+    }
+    return { encrypted: true }
+  }
+  async readLockedRecovery(): Promise<OpenedDocument | null> {
+    try {
+      const bytes = await readDocumentBytes(this.recoveryPath)
+      return (await isEncryptedTrelyx(bytes))
+        ? this.security.lock(bytes, null)
+        : decodeDocument(bytes, this.recoveryPath, null)
+    } catch (error) {
+      if (isMissing(error)) return null
+      throw new Error('自动恢复文件无法读取，请保留原文件后重试')
+    }
+  }
+  listDocumentBackups(documentId: unknown) {
+    return this.backups.list(documentId)
+  }
+  async restoreDocumentBackup(id: unknown): Promise<OpenedDocument> {
+    const bytes = await this.backups.read(id)
+    const encrypted = await isEncryptedTrelyx(bytes)
+    if (typeof id !== 'string' || id.endsWith('-e.trelyx') !== encrypted)
+      throw new Error('版本文件加密状态与记录不一致')
+    return encrypted
+      ? this.security.lock(bytes, null)
+      : decodeDocument(bytes, 'backup.trelyx', null)
   }
 
   private async remember(path: string): Promise<void> {

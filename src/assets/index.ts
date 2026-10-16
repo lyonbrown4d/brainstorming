@@ -1,3 +1,4 @@
+import { audioMime } from './audio'
 import { base64 } from '@scure/base'
 import { imageSize } from 'image-size'
 import { validateDocumentAsset, type DocumentAsset } from '../core'
@@ -50,7 +51,7 @@ export function createAsset(
   const asset: DocumentAsset = {
     id,
     name: safeAssetName(name),
-    mimeType: rasterMime(bytes) ?? 'application/octet-stream',
+    mimeType: rasterMime(bytes) ?? audioMime(bytes) ?? 'application/octet-stream',
     data: base64.encode(bytes),
   }
   validateDocumentAsset(asset)

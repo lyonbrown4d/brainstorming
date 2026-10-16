@@ -58,3 +58,9 @@ preload 仅暴露平台、窗口焦点及全屏状态；读取状态仍校验当
 ## Agent 配置
 
 项目指令集中在 `AGENTS.md`，APM CLI 固定 `0.33.0`，显式目标为 Codex。当前没有外部 Agent 依赖；`apm.lock.yaml` 由真实的 `apm lock` 生成。执行 `uvx --from apm-cli==0.33.0 apm install --frozen` 可检查恢复配置。APM 不复制个人登录状态或模型授权。
+
+## 新增能力回归
+
+`tests/e2e/canvas-tools.spec.ts` 验证 Dock 收放、键盘可达性、子面板及连线模式保持展开，画布直接创建与编辑注解。已有 E2E 通过同一可访问入口展开 Dock，不依赖强制显示 CSS。`extended-workflows.spec.ts` 覆盖实际下载、XMind 往返、搜索替换和密码解锁；桌面测试另验证受限 bridge、离线 AI 服务与历史恢复。
+
+AI 测试使用本机模拟 HTTP 服务和真实 SDK，不使用个人密钥，不请求付费服务。实际第三方服务及实体麦克风硬件仍需按目标系统验证。macOS 打包配置提供录音用途说明；签名和平台权限要在安装产物上复核。

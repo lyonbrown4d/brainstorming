@@ -12,6 +12,7 @@ export type {
   DocumentAsset,
   TopicImage,
   TopicContentCommand,
+  TopicClipboard,
 } from './types'
 export {
   MAX_ASSET_BYTES,
@@ -41,3 +42,38 @@ export {
   validateWorkbook,
 } from './workbook'
 export { applyWorkbookCommand } from './workbook-commands'
+
+export { createTopicClipboard, validateTopicClipboard } from './clipboard'
+export { normalizeTopicSelection } from './selection'
+export { searchDocument, searchWorkbook } from './search'
+export type { SearchOptions, SearchMatch, DocumentSearchMatch } from './search'
+
+export type {
+  LayoutKind,
+  TopicLink,
+  TopicTask,
+  TopicMetadata,
+  DocumentSettings,
+  Relation,
+  TopicGroup,
+  TopicCallout,
+  FloatingPosition,
+  PresentationStep,
+  DocumentAnnotations,
+  DocumentExtensions,
+  ExtensionCommand,
+} from './extensions'
+export { LAYOUT_KINDS } from './extensions'
+export {
+  validateTopicMetadata,
+  validateDocumentSettings,
+  validateLayoutKind,
+} from './metadata-validation'
+export {
+  validateRelation,
+  validateTopicGroup,
+  validateTopicCallout,
+  validateFloatingPosition,
+  validatePresentationStep,
+} from './annotation-validation'
+export { AUDIO_MIME_TYPES, validateAudioAsset } from './topic-content'

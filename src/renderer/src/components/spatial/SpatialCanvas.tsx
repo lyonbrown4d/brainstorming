@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { PCFShadowMap } from 'three'
 import { layoutSpatialDocument, spatialSubtreeIds } from '../../../../layout/spatial'
+import { presentationDocument, usePresentation } from '../../state/presentation'
 import { SpatialControls } from './SpatialControls'
 import { SpatialScene } from './SpatialScene'
 import type { SpatialCameraActions, SpatialCanvasProps } from './types'
@@ -18,7 +19,14 @@ export default function SpatialCanvas({
   onCollapse,
   onCameraChange,
 }: SpatialCanvasProps) {
-  const layout = useMemo(() => layoutSpatialDocument(document), [document])
+  const presentation = usePresentation()
+  const presentedId = presentation.playing
+    ? document.presentation?.[presentation.index]?.topicId
+    : undefined
+  const layout = useMemo(
+    () => layoutSpatialDocument(presentationDocument(document, presentedId)),
+    [document, presentedId],
+  )
   const extent = Math.hypot(
     ...layout.bounds.max.map((value, index) => value - (layout.bounds.min[index] ?? 0)),
   )

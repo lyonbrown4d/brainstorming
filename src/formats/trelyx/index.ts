@@ -1,5 +1,6 @@
 import { strToU8, zipSync } from 'fflate'
 import type { MindMapWorkbook } from '../../core/types'
+import { documentExtensionData } from '../../core/extension-data'
 import { documentData } from '../../core/document'
 import { ARCHIVE_LIMITS, readArchive } from '../archive'
 import { assertUsedAssets, encodeAssets, validateAssetContent } from './assets'
@@ -46,7 +47,14 @@ export function encodeTrelyx(workbook: MindMapWorkbook): Uint8Array {
       return {
         id: sheet.id,
         name: sheet.name,
-        document: { id, title, rootId, topics, ...(assets ? { assets } : {}) },
+        document: {
+          id,
+          title,
+          rootId,
+          topics,
+          ...documentExtensionData(sheet.document),
+          ...(assets ? { assets } : {}),
+        },
       }
     }),
   }

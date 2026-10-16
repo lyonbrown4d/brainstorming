@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, type RefObject } from 'react'
 import { useThree } from '@react-three/fiber'
 import type { CameraControlsImpl } from '@react-three/drei'
 import { Box3, Vector3 } from 'three'
+import { usePresentation } from '../state/presentation'
+import { useEditor } from '../state/editor'
 import { useReducedMotion } from 'motion/react'
 import { spatialBounds, type SpatialNode } from '../../../layout/spatial'
 import type { SpatialCameraActions, SpatialCameraState } from '../components/spatial/types'
@@ -28,6 +30,7 @@ export function useSpatialCamera({
   onCameraChange,
   onZoomChange,
 }: SpatialCameraOptions) {
+  const cameraRequest = usePresentation((state) => state.cameraRequest)
   const reduceMotion = useReducedMotion()
   const width = useThree((state) => state.size.width)
   const height = useThree((state) => state.size.height)
@@ -111,6 +114,18 @@ export function useSpatialCamera({
     structureKey,
     width,
   ])
+
+  useEffect(() => {
+    if (cameraRequest?.sheetId !== useEditor.getState().activeSheetId) return
+    const controller = controls.current
+    if (!controller) return
+    void controller.setLookAt(
+      ...cameraRequest.camera.position,
+      ...cameraRequest.camera.target,
+      animation,
+    )
+    invalidate()
+  }, [animation, cameraRequest, controls, invalidate])
 
   useEffect(() => {
     actions.current = {

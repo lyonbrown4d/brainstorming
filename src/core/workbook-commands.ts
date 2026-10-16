@@ -1,3 +1,4 @@
+import { cleanupRemovedWorkbookTargets, remapSheetLinks } from './workbook-links'
 import { documentData } from './document'
 import type { MindMapSheet, MindMapWorkbook, WorkbookCommand } from './types'
 import { assertId, validateDocument } from './validation'
@@ -52,7 +53,11 @@ export function applyWorkbookCommand(
       const copy: MindMapSheet = {
         id: command.id,
         name,
-        document: { ...documentData(sheet.document), id: command.id },
+        document: remapSheetLinks(
+          { ...documentData(sheet.document), id: command.id },
+          sheet.id,
+          command.id,
+        ),
       }
       sheets.splice(sourceIndex + 1, 0, copy)
       break
@@ -77,7 +82,7 @@ export function applyWorkbookCommand(
     default:
       throw new Error('不支持的画布命令')
   }
-  const updated = { ...workbook, sheets }
+  const updated = cleanupRemovedWorkbookTargets(workbook, { ...workbook, sheets })
   validateWorkbook(updated)
   return updated
 }

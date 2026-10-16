@@ -30,6 +30,7 @@ interface BranchGroup {
   readonly id: string
   readonly side: 'left' | 'right'
   readonly z: number
+  readonly floating: boolean
   minY: number
   maxY: number
   offsetY: number
@@ -47,22 +48,37 @@ export function layoutSpatialDocument(document: MindMapDocument): SpatialLayout 
   const planar = layoutDocument(document)
   const root = document.topics[document.rootId]
   if (root === undefined) throw new Error('缺少中心主题')
-  const branches = root.collapsed ? [] : root.children
+  const floating = new Set(document.floatingIds ?? [])
+  const branches = root.children.filter((id) => floating.has(id) || !root.collapsed)
+  const preservePlanar =
+    (document.settings?.layout ?? 'map') !== 'map' ||
+    Object.values(document.topics).some(
+      (topic) => topic.structure !== undefined && topic.structure !== 'map',
+    )
+  const normalBranches = branches.filter((id) => !floating.has(id))
+  const normalIndex = new Map(normalBranches.map((id, index) => [id, index]))
+  const floatingIndex = new Map([...floating].map((id, index) => [id, index]))
   const groups = new Map<string, BranchGroup>()
-  for (const [index, id] of branches.entries()) {
+  for (const id of branches) {
     const topic = document.topics[id]
     if (topic === undefined) continue
     groups.set(id, {
       id,
       side: topic.side,
-      z: branches.length < 2 ? 0.7 : (index / (branches.length - 1) - 0.5) * 2.4,
+      floating: floating.has(id),
+      z: floating.has(id)
+        ? 0.7 + Math.min(2, (floatingIndex.get(id) ?? 0) * 0.3)
+        : normalBranches.length < 2
+          ? 0.7
+          : ((normalIndex.get(id) ?? 0) / (normalBranches.length - 1) - 0.5) * 2.4,
       minY: Infinity,
       maxY: -Infinity,
       offsetY: 0,
     })
   }
   const ancestry = new Map<string, { branchId: string; depth: number }>()
-  const pending = [{ id: root.id, branchId: root.id, depth: 0 }]
+  const pending = [...floating].map((id) => ({ id, branchId: id, depth: 1 }))
+  pending.push({ id: root.id, branchId: root.id, depth: 0 })
   while (pending.length > 0) {
     const current = pending.pop()
     if (current === undefined) break
@@ -71,7 +87,7 @@ export function layoutSpatialDocument(document: MindMapDocument): SpatialLayout 
     if (topic === undefined || topic.collapsed) continue
     for (let index = topic.children.length - 1; index >= 0; index -= 1) {
       const id = topic.children[index]
-      if (id !== undefined)
+      if (id !== undefined && (current.id !== root.id || !floating.has(id)))
         pending.push({
           id,
           branchId: current.depth === 0 ? id : current.branchId,
@@ -87,7 +103,9 @@ export function layoutSpatialDocument(document: MindMapDocument): SpatialLayout 
     group.maxY = Math.max(group.maxY, (node.y + node.height) / PIXELS_PER_UNIT)
   }
   for (const side of ['left', 'right'] as const) {
-    const sideGroups = [...groups.values()].filter((group) => group.side === side)
+    const sideGroups = [...groups.values()].filter(
+      (group) => group.side === side && !group.floating && !preservePlanar,
+    )
     const height = sideGroups.reduce((sum, group) => sum + group.maxY - group.minY, 0)
     let cursor = -(height + Math.max(0, sideGroups.length - 1) * BRANCH_GAP) / 2
     for (const group of sideGroups) {
@@ -114,7 +132,13 @@ function spatialNode(
     id: node.id,
     position:
       group === undefined
-        ? [0, 0, 0]
+        ? depth === 0
+          ? [0, 0, 0]
+          : [
+              (node.x + node.width / 2) / PIXELS_PER_UNIT,
+              -(node.y + node.height / 2) / PIXELS_PER_UNIT,
+              0,
+            ]
         : [
             (node.x + node.width / 2) / PIXELS_PER_UNIT,
             -((node.y + node.height / 2) / PIXELS_PER_UNIT + group.offsetY),

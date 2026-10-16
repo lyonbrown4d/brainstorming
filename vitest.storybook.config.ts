@@ -9,6 +9,8 @@ export default defineConfig({
   plugins: [storybookTest({ configDir: resolve('.storybook') })],
   test: {
     name: 'storybook',
+    // Serialize WebGL stories to avoid competing GPU contexts on developer machines and CI.
+    fileParallelism: false,
     browser: {
       enabled: true,
       provider: playwright(),

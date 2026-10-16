@@ -1,4 +1,5 @@
 import { CubicBezierLine } from '@react-three/drei'
+import { topicAppearance } from '@shared/appearance'
 import type { MindMapDocument } from '@core'
 import type { SpatialLayout, SpatialNode } from '../../../../layout/spatial'
 
@@ -41,7 +42,7 @@ export function SpatialConnections({
         midA={[start[0] + bend * direction, start[1], start[2]]}
         midB={[end[0] - bend * direction, end[1], end[2]]}
         color={colors.get(target.branchId) ?? '#9788d3'}
-        lineWidth={topic?.style?.lineWidth ?? (source.depth === 0 ? 3.5 : 2.4)}
+        lineWidth={topicAppearance(document, target.id).lineWidth}
         transparent
         opacity={faded ? 0.16 : 0.82}
       />

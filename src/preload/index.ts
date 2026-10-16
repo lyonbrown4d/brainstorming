@@ -23,10 +23,27 @@ const api: DesktopAPI = {
     ipcRenderer.on('document:open-file-ready', listener)
     return () => ipcRenderer.removeListener('document:open-file-ready', listener)
   },
+  getAISettings: () => ipcRenderer.invoke('ai:settings:get'),
+  saveAISettings: (settings) => ipcRenderer.invoke('ai:settings:save', settings),
+  generateMindMap: (request) => ipcRenderer.invoke('ai:generate', request),
+  cancelAIGeneration: (requestId) => ipcRenderer.invoke('ai:cancel', requestId),
   openDocument: () => ipcRenderer.invoke('document:open'),
   selectAsset: (kind) => ipcRenderer.invoke('asset:select', kind),
   exportAsset: (asset) => ipcRenderer.invoke('asset:export', asset),
+  exportFile: (request) => ipcRenderer.invoke('file:export', request),
+  writeTopicClipboard: (contents, plainText) =>
+    ipcRenderer.invoke('clipboard:write-topics', contents, plainText),
+  readTopicClipboard: () => ipcRenderer.invoke('clipboard:read-topics'),
+  openExternal: (url) => ipcRenderer.invoke('system:open-external', url),
   saveDocument: (request) => ipcRenderer.invoke('document:save', request),
+  unlockDocument: (token, password) => ipcRenderer.invoke('document:unlock', token, password),
+  activateUnlockedDocument: (token) => ipcRenderer.invoke('document:activate-unlocked', token),
+  cancelUnlock: (token) => ipcRenderer.invoke('document:cancel-unlock', token),
+  getFileSecurity: (id) => ipcRenderer.invoke('document:security', id),
+  setFilePassword: (id, password) => ipcRenderer.invoke('document:set-password', id, password),
+  readLockedRecovery: () => ipcRenderer.invoke('recovery:read-locked'),
+  listDocumentBackups: (id) => ipcRenderer.invoke('document:backups', id),
+  restoreDocumentBackup: (id) => ipcRenderer.invoke('document:restore-backup', id),
   readRecovery: () => ipcRenderer.invoke('recovery:read'),
   writeRecovery: (contents) => ipcRenderer.invoke('recovery:write', contents),
   setDirty: (dirty, preserveRecovery = false) => {

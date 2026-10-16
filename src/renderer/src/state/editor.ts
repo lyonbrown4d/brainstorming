@@ -1,10 +1,12 @@
 import { create } from 'zustand'
+import { truncateSheetName } from '@core/workbook'
 import {
   createDocument,
   applyWorkbookCommand,
   executeCommand,
   getParentId,
   type WorkbookCommand,
+  type MindMapDocument,
 } from '@core'
 import type { EditorState } from './editorTypes'
 import {
@@ -18,6 +20,8 @@ import {
 } from './workbookState'
 import { exampleWorkbook } from './example'
 import { useSpatialView } from './spatial'
+import { draftCommand } from './editorDraft'
+import { deleteSelectedTopics, useSelection } from './selection'
 
 const initial = loadWorkbook(exampleWorkbook())
 function editSheets(command: WorkbookCommand, nextId?: string): void {
@@ -57,12 +61,23 @@ function editSheets(command: WorkbookCommand, nextId?: string): void {
     state.setError(error instanceof Error ? error.message : '画布操作失败')
   }
 }
+export function addDocumentSheet(document: MindMapDocument): boolean {
+  if (useEditor.getState().busy) return false
+  const id = crypto.randomUUID()
+  const name = truncateSheetName(document.title.replace(/[\p{Cc}]/gu, ' ').trim()) || '新画布'
+  editSheets(
+    { type: 'addSheet', sheet: { id, name, document: { ...document, id: crypto.randomUUID() } } },
+    id,
+  )
+  return useEditor.getState().activeSheetId === id
+}
 export const useEditor = create<EditorState>((set, get) => ({
   ...initial,
   dropTargetId: null,
   editingId: null,
   editingSurface: null,
   draft: '',
+  richDraft: null,
   baseline: serializedWorkbook(initial.workbook),
   path: null,
   error: null,
@@ -78,6 +93,9 @@ export const useEditor = create<EditorState>((set, get) => ({
   select: (id) => {
     get().commitDraft()
     if (get().editingId) return
+    useSelection.setState((selection) => ({
+      sheets: { ...selection.sheets, [get().activeSheetId]: [id] },
+    }))
     set({ selectedId: id })
   },
   startEdit: (id, value, surface = 'canvas') => {
@@ -87,6 +105,13 @@ export const useEditor = create<EditorState>((set, get) => ({
     get().commitDraft()
     if (get().editingId) return
     const topic = get().history.document.topics[id]
+    if (topic) {
+      const ids = useSelection.getState().sheets[get().activeSheetId]
+      if (ids && (ids.length !== 1 || ids[0] !== id))
+        useSelection.setState((selection) => ({
+          sheets: { ...selection.sheets, [get().activeSheetId]: [id] },
+        }))
+    }
     if (topic)
       set({
         selectedId: id,
@@ -95,39 +120,37 @@ export const useEditor = create<EditorState>((set, get) => ({
         ...(spatial && (surface === 'inspector' || surface === 'notes')
           ? { inspectorOpen: true }
           : {}),
+        richDraft: surface === 'rich-title' ? (topic.metadata?.richTitle ?? topic.title) : null,
         draft: value ?? (surface === 'notes' ? (topic.notes ?? '') : topic.title),
       })
   },
   setDraft: (draft) => {
     set({ draft })
   },
+  setRichDraft: (richDraft, draft) => {
+    set({ richDraft, draft })
+  },
   commitDraft: () => {
-    const { editingId, editingSurface, draft, history } = get()
-    if (!editingId) return
-    const topic = history.document.topics[editingId]
-    if (!topic) return
-    const notes = editingSurface === 'notes'
-    const previous = notes ? (topic.notes ?? '') : topic.title
-    const next = notes ? draft : draft.trim() || '未命名主题'
-    if (
-      previous !== next &&
-      !get().command(
-        notes
-          ? { type: 'setTopicNotes', topicId: editingId, notes: next }
-          : { type: 'renameTopic', topicId: editingId, title: next },
-      )
-    )
-      return
-    set({ editingId: null, editingSurface: null, draft: '' })
+    const command = draftCommand(get())
+    if (command && !get().command(command)) return
+    set({ editingId: null, editingSurface: null, draft: '', richDraft: null })
   },
   cancelEdit: () => {
-    set({ editingId: null, editingSurface: null, draft: '' })
+    set({ editingId: null, editingSurface: null, draft: '', richDraft: null })
   },
   command: (command) => {
     try {
       const state = get()
       const history = executeCommand(state.history, command)
       if (history !== state.history) {
+        const ids = useSelection.getState().sheets[state.activeSheetId]
+        if (ids)
+          useSelection.setState((selection) => ({
+            sheets: {
+              ...selection.sheets,
+              [state.activeSheetId]: ids.filter((id) => history.document.topics[id]),
+            },
+          }))
         const session = state.sessions[state.activeSheetId] ?? sessionFor(state.history.document)
         set({
           ...withHistory(state, history, {
@@ -172,17 +195,7 @@ export const useEditor = create<EditorState>((set, get) => ({
     if (get().command({ type: 'addTopic', parentId, id, title: '新主题', side, index }))
       get().startEdit(id)
   },
-  remove: () => {
-    get().commitDraft()
-    if (get().editingId) return
-    const {
-      history: { document },
-      selectedId,
-    } = get()
-    const parent = getParentId(document, selectedId)
-    if (parent && get().command({ type: 'deleteTopic', topicId: selectedId }))
-      set({ selectedId: parent })
-  },
+  remove: deleteSelectedTopics,
   undo: () => {
     get().commitDraft()
     if (get().editingId) return
@@ -196,11 +209,13 @@ export const useEditor = create<EditorState>((set, get) => ({
   replace: (document, path = null, recovered = false) => {
     const loaded = loadWorkbook(document)
     useSpatialView.getState().reset()
+    useSelection.setState({ sheets: {} })
     set({
       ...loaded,
       editingId: null,
       editingSurface: null,
       draft: '',
+      richDraft: null,
       baseline: recovered ? '' : serializedWorkbook(loaded.workbook),
       path,
       error: null,
@@ -235,10 +250,12 @@ export const useEditor = create<EditorState>((set, get) => ({
       editingId: null,
       editingSurface: null,
       draft: '',
+      richDraft: null,
       dropTargetId: null,
       error: null,
     })
   },
+  addDocumentSheet,
   addSheet: () => {
     const id = crypto.randomUUID()
     const names = new Set(get().workbook.sheets.map((sheet) => sheet.name))
@@ -266,14 +283,7 @@ export const useEditor = create<EditorState>((set, get) => ({
 }))
 
 export function editorIsDirty(state: EditorState): boolean {
-  return (
-    serializedWorkbook(state.workbook) !== state.baseline ||
-    (state.editingId !== null &&
-      state.draft !==
-        (state.editingSurface === 'notes'
-          ? (state.history.document.topics[state.editingId]?.notes ?? '')
-          : state.history.document.topics[state.editingId]?.title))
-  )
+  return serializedWorkbook(state.workbook) !== state.baseline || draftCommand(state) !== null
 }
 
 export function isDirty(): boolean {

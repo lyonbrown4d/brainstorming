@@ -52,6 +52,7 @@ type Story = StoryObj<typeof meta>
 export const NotesImagesAttachments: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
     const panel = within(canvas.getByRole('complementary', { name: '主题面板' }))
     await expect(panel.getByRole('textbox', { name: '主题备注' })).toHaveTextContent(
       '备注保留换行。',
@@ -67,10 +68,12 @@ export const NotesImagesAttachments: Story = {
     await expect(panel.getByRole('button', { name: '预览图片' })).toHaveFocus()
     await userEvent.click(panel.getByRole('button', { name: '移除图片' }))
     await expect(panel.queryByRole('img')).not.toBeInTheDocument()
+    await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
     await userEvent.click(canvas.getByRole('button', { name: /^撤销/ }))
     await expect(panel.getByRole('img', { name: '灵感色卡.png' })).toBeVisible()
     await userEvent.click(panel.getByRole('button', { name: '移除附件 参考资料.txt' }))
     await expect(panel.queryByText('参考资料.txt')).not.toBeInTheDocument()
+    await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
     await userEvent.click(canvas.getByRole('button', { name: /^撤销/ }))
     await expect(panel.getByText('参考资料.txt')).toBeVisible()
   },
@@ -79,6 +82,7 @@ export const NotesImagesAttachments: Story = {
 export const MultilineNotes: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
     const notes = canvas.getByRole('textbox', { name: '主题备注' })
     const title = canvas.getByRole('textbox', { name: '主题名称' }).textContent
     await userEvent.click(notes)
@@ -99,6 +103,7 @@ export const NotesFromCanvas: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
     const root = within(canvas.getByTestId('topic-root'))
     await userEvent.click(root.getByRole('button', { name: '查看主题备注' }))
     await expect(canvas.getByRole('complementary', { name: '主题面板' })).toBeVisible()
@@ -111,16 +116,18 @@ export const NotesFromCanvas: Story = {
 export const FormattingControls: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
     const page = within(canvasElement.ownerDocument.body)
-    await userEvent.click(canvas.getByRole('combobox', { name: '主题形状' }))
+    const panel = within(canvas.getByRole('complementary', { name: '主题面板' }))
+    await userEvent.click(panel.getByRole('combobox', { name: '主题形状' }))
     await userEvent.click(await page.findByRole('option', { name: '椭圆' }))
-    await expect(canvas.getByRole('combobox', { name: '主题形状' })).toHaveTextContent('椭圆')
-    await userEvent.click(canvas.getByRole('combobox', { name: '字号' }))
+    await expect(panel.getByRole('combobox', { name: '主题形状' })).toHaveTextContent('椭圆')
+    await userEvent.click(panel.getByRole('combobox', { name: '字号' }))
     await userEvent.click(await page.findByRole('option', { name: '20' }))
-    await expect(canvas.getByRole('combobox', { name: '字号' })).toHaveTextContent('20')
-    await userEvent.click(canvas.getByRole('combobox', { name: '分支线型' }))
+    await expect(panel.getByRole('combobox', { name: '字号' })).toHaveTextContent('20')
+    await userEvent.click(panel.getByRole('combobox', { name: '分支线型' }))
     await userEvent.click(await page.findByRole('option', { name: '直线' }))
-    await expect(canvas.getByRole('combobox', { name: '分支线型' })).toHaveTextContent('直线')
+    await expect(panel.getByRole('combobox', { name: '分支线型' })).toHaveTextContent('直线')
     await expect(canvas.getByTestId('topic-root')).toHaveStyle({ borderRadius: '50%' })
   },
 }

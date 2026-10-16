@@ -1,0 +1,44 @@
+import { expect, test } from '@playwright/test'
+import { moreTools, dockAction } from './dock'
+import { readFile } from 'node:fs/promises'
+import { decodeTrelyx } from '../../src/formats/trelyx'
+
+test('保存多布局、主题、游离位置和演示步骤，播放不修改保存内容', async ({ page }) => {
+  await page.goto('/')
+  await moreTools(page)
+  await page.getByRole('button', { name: '布局与主题', exact: true }).click()
+  await page.getByRole('combobox', { name: '画布布局', exact: true }).click()
+  await page.getByRole('option', { name: '向右逻辑图', exact: true }).click()
+  await page.getByRole('combobox', { name: '主题配色', exact: true }).click()
+  await page.getByRole('option', { name: '海洋', exact: true }).click()
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('Escape')
+  await page.getByTestId('topic-root').click()
+  await moreTools(page)
+  await page.getByRole('button', { name: '演示', exact: true }).click()
+  await page.getByRole('button', { name: '添加所选主题步骤', exact: true }).click()
+  await page.getByRole('button', { name: '开始演示', exact: true }).click()
+  const playback = page.getByRole('toolbar', { name: '演示播放控制', exact: true })
+  await expect(playback).toContainText('1 / 1')
+  await playback.getByRole('button', { name: '退出演示', exact: true }).click()
+  await moreTools(page)
+  await page.getByRole('button', { name: '新增游离主题', exact: true }).click()
+  await page.locator('.react-flow__pane').click({ position: { x: 180, y: 600 } })
+  const editor = page.getByRole('textbox', { name: '编辑主题标题', exact: true })
+  await editor.fill('独立的想法')
+  await page.keyboard.press('Escape')
+  // Escape cancels the text change, while the explicit floating creation remains undoable.
+  await expect(page.locator('.topic-title').getByText('游离主题', { exact: true })).toBeVisible()
+  const download = page.waitForEvent('download')
+  await page.keyboard.press('ControlOrMeta+s')
+  const path = await (await download).path()
+  if (!path) throw new Error('没有保存文件')
+  const workbook = decodeTrelyx(await readFile(path))
+  const document = workbook.sheets[0]?.document
+  expect(document?.settings).toMatchObject({ layout: 'logic-right', theme: 'ocean' })
+  expect(document?.presentation).toHaveLength(1)
+  expect(document?.floatingIds).toHaveLength(1)
+  expect(Object.keys(document?.floatingPositions ?? {})).toHaveLength(1)
+  await dockAction(page, '撤销')
+  await expect(page.locator('.topic-title').getByText('游离主题', { exact: true })).toHaveCount(0)
+})

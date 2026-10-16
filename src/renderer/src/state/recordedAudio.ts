@@ -1,0 +1,53 @@
+import { applyCommand } from '@core'
+import { useEditor } from './editor'
+
+export interface RecordingTarget {
+  readonly workbookId: string
+  readonly sheetId: string
+  readonly topicId: string
+}
+export async function persistRecordedAudio(
+  blob: Blob,
+  target: RecordingTarget,
+  isCurrent: () => boolean,
+): Promise<boolean> {
+  if (!blob.size || blob.size > 8 * 1024 * 1024) throw new Error('录音为空或超过 8 MiB')
+  const [{ createAsset }, { encodeTrelyx }, buffer] = await Promise.all([
+    import('../../../assets'),
+    import('../../../formats/trelyx'),
+    blob.arrayBuffer(),
+  ])
+  const current = useEditor.getState()
+  if (
+    !isCurrent() ||
+    current.workbook.id !== target.workbookId ||
+    current.activeSheetId !== target.sheetId ||
+    current.selectedId !== target.topicId ||
+    !current.history.document.topics[target.topicId]
+  )
+    return false
+  const mime = blob.type.split(';')[0] ?? ''
+  const extensions: Readonly<Record<string, string>> = {
+    'audio/mp4': 'm4a',
+    'audio/ogg': 'ogg',
+    'audio/wav': 'wav',
+    'audio/mpeg': 'mp3',
+    'audio/aac': 'aac',
+    'audio/flac': 'flac',
+  }
+  const asset = createAsset(
+    new Uint8Array(buffer),
+    `录音-${Date.now()}.${extensions[mime] ?? 'webm'}`,
+  )
+  if (!asset.mimeType.startsWith('audio/'))
+    throw new Error('录音格式无法识别，可以导入本地音频文件')
+  const command = { type: 'setTopicAudio' as const, topicId: target.topicId, asset }
+  const candidate = applyCommand(current.history.document, command)
+  encodeTrelyx({
+    ...current.workbook,
+    sheets: current.workbook.sheets.map((sheet) =>
+      sheet.id === target.sheetId ? { ...sheet, document: candidate } : sheet,
+    ),
+  })
+  return isCurrent() && current.command(command)
+}

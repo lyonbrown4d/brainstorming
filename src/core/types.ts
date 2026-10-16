@@ -1,3 +1,11 @@
+import type {
+  DocumentAnnotations,
+  DocumentExtensions,
+  ExtensionCommand,
+  LayoutKind,
+  TopicMetadata,
+} from './extensions'
+
 export type Side = 'left' | 'right'
 
 export interface TopicStyle {
@@ -35,9 +43,11 @@ export interface Topic {
   readonly notes?: string
   readonly image?: TopicImage
   readonly attachments?: readonly string[]
+  readonly metadata?: TopicMetadata
+  readonly structure?: LayoutKind
 }
 
-export interface MindMapDocument {
+export interface MindMapDocument extends DocumentExtensions {
   readonly format: 'trelyx'
   readonly version: 1
   readonly id: string
@@ -60,7 +70,43 @@ export type TopicContentCommand =
   | { readonly type: 'addTopicAttachment'; readonly topicId: string; readonly asset: DocumentAsset }
   | { readonly type: 'removeTopicAttachment'; readonly topicId: string; readonly assetId: string }
 
+export interface TopicClipboard extends DocumentAnnotations {
+  readonly format: 'trelyx.topics'
+  readonly version: 1
+  readonly roots: readonly string[]
+  readonly topics: Readonly<Record<string, Topic>>
+  readonly assets?: Readonly<Record<string, DocumentAsset>>
+}
+
 export type Command =
+  | ExtensionCommand
+  | { readonly type: 'batch'; readonly commands: readonly Command[] }
+  | { readonly type: 'deleteTopics'; readonly topicIds: readonly string[] }
+  | {
+      readonly type: 'moveTopics'
+      readonly topicIds: readonly string[]
+      readonly parentId: string
+      readonly index?: number
+      readonly side?: Side
+    }
+  | {
+      readonly type: 'pasteTopics'
+      readonly parentId: string
+      readonly clipboard: TopicClipboard
+      readonly topicIds: Readonly<Record<string, string>>
+      readonly assetIds: Readonly<Record<string, string>>
+      readonly annotationIds?: Readonly<Record<string, string>>
+    }
+  | {
+      readonly type: 'replaceTopicText'
+      readonly topicId: string
+      readonly query: string
+      readonly replacement: string
+      readonly field?: 'title' | 'notes'
+      readonly matchCase?: boolean
+      readonly wholeWord?: boolean
+      readonly includeNotes?: boolean
+    }
   | TopicContentCommand
   | {
       readonly type: 'addTopic'

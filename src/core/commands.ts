@@ -1,47 +1,22 @@
-import { getParentId, getSubtreeIds, requireTopic } from './tree'
-import type { Command, MindMapDocument, Side, Topic } from './types'
+import { withPlainTitle } from './extension-data'
+import { applyExtensionCommand, isExtensionCommand } from './extension-commands'
+import { clearFloatingRoots } from './extension-references'
+import { requireTopic } from './tree'
+import type { Command, MindMapDocument } from './types'
 import { assertId, validateDocument } from './validation'
 import { normalizeTopicStyle, validateTopicStyle } from './topic-style'
 import { applyTopicContentCommand } from './content-commands'
-
-function insertionIndex(index: number | undefined, length: number): number {
-  const result = index ?? length
-  if (!Number.isInteger(result) || result < 0 || result > length)
-    throw new Error('子主题插入位置超出范围')
-  return result
-}
-
-function assertSide(side: unknown): asserts side is Side {
-  if (side !== 'left' && side !== 'right') throw new Error('主题方向无效')
-}
-
-function branchSide(document: MindMapDocument, parent: Topic, side?: Side): Side {
-  if (side !== undefined) assertSide(side)
-  if (parent.id !== document.rootId) {
-    if (side !== undefined && side !== parent.side) throw new Error('子主题必须继承父分支方向')
-    return parent.side
-  }
-  return side ?? (parent.children.length % 2 === 0 ? 'right' : 'left')
-}
-
-function assertNonRoot(document: MindMapDocument, id: string): string {
-  if (id === document.rootId) throw new Error('不能删除、移动或改变中心主题的方向')
-  const parentId = getParentId(document, id)
-  if (parentId === undefined) throw new Error(`主题 ${id} 没有父主题`)
-  return parentId
-}
-
-function updateSide(
-  document: MindMapDocument,
-  topics: Record<string, Topic>,
-  id: string,
-  side: Side,
-): void {
-  for (const childId of getSubtreeIds(document, id)) {
-    const topic = requireTopic(document, childId)
-    if (topic.side !== side) topics[childId] = { ...topic, side }
-  }
-}
+import {
+  assertNonRoot,
+  assertSide,
+  branchSide,
+  deleteTopics,
+  insertionIndex,
+  moveTopics,
+  updateSide,
+} from './selection-commands'
+import { pasteTopics } from './clipboard'
+import { replaceTopicText } from './search'
 
 function add(
   document: MindMapDocument,
@@ -64,47 +39,16 @@ function add(
   }
 }
 
-function remove(document: MindMapDocument, topic: Topic): MindMapDocument {
-  const parent = requireTopic(document, assertNonRoot(document, topic.id))
-  const removedIds = new Set(getSubtreeIds(document, topic.id))
-  const topics = {
-    ...Object.fromEntries(Object.entries(document.topics).filter(([id]) => !removedIds.has(id))),
-    [parent.id]: { ...parent, children: parent.children.filter((id) => id !== topic.id) },
-  }
-  return { ...document, topics }
-}
-
-function move(
-  document: MindMapDocument,
-  topic: Topic,
-  command: Extract<Command, { type: 'moveTopic' }>,
-): MindMapDocument {
-  const oldParent = requireTopic(document, assertNonRoot(document, topic.id))
-  const parent = requireTopic(document, command.parentId)
-  if (getSubtreeIds(document, topic.id).includes(parent.id))
-    throw new Error('不能将主题移动到自身或后代中')
-  const children = parent.children.filter((id) => id !== topic.id)
-  children.splice(insertionIndex(command.index, children.length), 0, topic.id)
-  const side = branchSide(
-    document,
-    parent,
-    command.side ?? (parent.id === document.rootId ? topic.side : undefined),
-  )
-  const sameOrder =
-    oldParent.id === parent.id && children.every((id, index) => id === parent.children[index])
-  if (sameOrder && side === topic.side && !parent.collapsed) return document
-  const topics = {
-    ...document.topics,
-    [oldParent.id]: { ...oldParent, children: oldParent.children.filter((id) => id !== topic.id) },
-    [parent.id]: { ...parent, children, collapsed: false },
-  }
-  updateSide(document, topics, topic.id, side)
-  return { ...document, topics }
-}
-
 /** All document edits pass through this atomic, immutable command boundary. */
-export function applyCommand(document: MindMapDocument, command: Command): MindMapDocument {
-  validateDocument(document)
+function applySingleCommand(
+  document: MindMapDocument,
+  command: Exclude<Command, { type: 'batch' }>,
+): MindMapDocument {
+  if (isExtensionCommand(command)) return applyExtensionCommand(document, command)
+  if (command.type === 'deleteTopics') return deleteTopics(document, command.topicIds)
+  if (command.type === 'moveTopics')
+    return clearFloatingRoots(moveTopics(document, command), command.topicIds)
+  if (command.type === 'pasteTopics') return pasteTopics(document, command)
   if (command.type === 'addTopic') return add(document, command)
   const topic = requireTopic(document, command.topicId)
   switch (command.type) {
@@ -114,6 +58,8 @@ export function applyCommand(document: MindMapDocument, command: Command): MindM
     case 'addTopicAttachment':
     case 'removeTopicAttachment':
       return applyTopicContentCommand(document, topic, command)
+    case 'replaceTopicText':
+      return replaceTopicText(document, topic, command)
     case 'setTopicStyle': {
       validateTopicStyle(command.style)
       const style = normalizeTopicStyle(command.style)
@@ -127,13 +73,16 @@ export function applyCommand(document: MindMapDocument, command: Command): MindM
       return {
         ...document,
         title: topic.id === document.rootId ? command.title : document.title,
-        topics: { ...document.topics, [topic.id]: { ...topic, title: command.title } },
+        topics: { ...document.topics, [topic.id]: withPlainTitle(topic, command.title) },
       }
     }
     case 'deleteTopic':
-      return remove(document, topic)
+      return deleteTopics(document, [topic.id])
     case 'moveTopic':
-      return move(document, topic, command)
+      return clearFloatingRoots(
+        moveTopics(document, { ...command, type: 'moveTopics', topicIds: [topic.id] }),
+        [topic.id],
+      )
     case 'toggleCollapse':
       return {
         ...document,
@@ -151,4 +100,34 @@ export function applyCommand(document: MindMapDocument, command: Command): MindM
     default:
       throw new Error('不支持的主题命令')
   }
+}
+
+function assertBatchCommands(value: unknown): void {
+  if (!Array.isArray(value)) throw new Error('批量命令列表无效')
+}
+
+/** One command, including a nested batch, commits exactly one immutable snapshot. */
+export function applyCommand(document: MindMapDocument, command: Command): MindMapDocument {
+  validateDocument(document)
+  const pending = [{ command, depth: 0 }]
+  let result = document
+  let count = 0
+  while (pending.length > 0) {
+    const next = pending.pop()
+    if (!next) break
+    count += 1
+    if (count > 10_000 || next.depth > 32) throw new Error('批量命令超过数量或嵌套限制')
+    if (next.command.type === 'batch') {
+      assertBatchCommands(next.command.commands)
+      if (next.command.commands.length + pending.length + count > 10_000)
+        throw new Error('批量命令超过数量限制')
+      for (let index = next.command.commands.length - 1; index >= 0; index -= 1) {
+        const child = next.command.commands[index]
+        if (child === undefined) throw new Error('批量命令内容无效')
+        pending.push({ command: child, depth: next.depth + 1 })
+      }
+    } else result = applySingleCommand(result, next.command)
+  }
+  validateDocument(result)
+  return result
 }

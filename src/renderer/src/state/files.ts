@@ -1,7 +1,10 @@
-import { createDocument, deserializeWorkbook, serializeWorkbook } from '@core'
-import type { DesktopAPI, OpenedDocument } from '@shared/contracts'
+import { createDocument, deserializeWorkbook } from '@core'
+import type { DesktopAPI } from '@shared/contracts'
 import { isDirty, useEditor } from './editor'
 import { suggestedFileName } from './fileName'
+import { browserOpen, adoptBrowserPassword, cancelBrowserPassword } from './browserFiles'
+import { activateOpenedDocument, cancelOpenedDocument, unlockOpenedDocument } from './lockedFiles'
+import { browserPasswordFor, resetBrowserPassword } from './password'
 import { serializedWorkbook } from './workbookState'
 export { RECOVERY_KEY } from './recovery'
 
@@ -15,44 +18,12 @@ function confirmDiscard(): boolean {
   useEditor.getState().commitDraft()
   return !isDirty() || window.confirm('当前导图有未保存的更改。放弃这些更改并继续？')
 }
-function browserOpen(): Promise<OpenedDocument | null> {
-  return new Promise((resolve, reject) => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = '.trelyx,.xmind'
-    input.onchange = () => {
-      const file = input.files?.[0]
-      if (!file) {
-        resolve(null)
-        return
-      }
-      if (file.size > 32 * 1024 * 1024) {
-        reject(new Error('文件超过 32 MiB，无法打开'))
-        return
-      }
-      void Promise.all([file.arrayBuffer(), import('../../../formats')])
-        .then(([buffer, { decodeFile }]) => {
-          const result = decodeFile(new Uint8Array(buffer), file.name)
-          resolve({
-            path: result.imported ? null : file.name,
-            sourcePath: file.name,
-            contents: serializeWorkbook(result.workbook),
-            warnings: result.warnings,
-          })
-        })
-        .catch(reject)
-    }
-    input.oncancel = () => {
-      resolve(null)
-    }
-    input.click()
-  })
-}
 function showError(error: unknown): void {
   useEditor.getState().setError(error instanceof Error ? error.message : '文件操作失败，请重试。')
 }
 export function newDocument(): void {
   if (useEditor.getState().busy || !confirmDiscard()) return
+  resetBrowserPassword()
   useEditor.getState().replace(createDocument('新的想法'))
 }
 export async function openDocument(recentPath?: string, pending = false): Promise<void> {
@@ -70,13 +41,15 @@ export async function openDocument(recentPath?: string, pending = false): Promis
   useEditor.setState({ busy: true })
   try {
     const bridge = window.trelyx
-    const result = bridge
+    const selected = bridge
       ? await (pending
           ? bridge.takeOpenFile()
           : recentPath
             ? bridge.openRecent(recentPath)
             : bridge.openDocument())
       : await browserOpen()
+    if (!selected) return
+    const result = await unlockOpenedDocument(selected)
     if (!result) return
     const document = deserializeWorkbook(result.contents)
     const current = useEditor.getState()
@@ -84,12 +57,18 @@ export async function openDocument(recentPath?: string, pending = false): Promis
       current.workbook !== openedFrom.workbook ||
       current.editingId !== openedFrom.editingId ||
       current.editingSurface !== openedFrom.editingSurface ||
-      current.draft !== openedFrom.draft
+      current.draft !== openedFrom.draft ||
+      current.richDraft !== openedFrom.richDraft
     if (
       changedWhileReading &&
       !window.confirm('读取文件期间，当前导图又有了更改。放弃这些更改并打开文件？')
-    )
+    ) {
+      await cancelOpenedDocument(result)
+      cancelBrowserPassword()
       return
+    }
+    await activateOpenedDocument(result)
+    if (!bridge && result.encrypted) adoptBrowserPassword(document.id)
     const imported = result.path === null
     current.replace(document, result.path, imported)
     if (imported)
@@ -121,8 +100,13 @@ export async function saveDocument(saveAs = false): Promise<void> {
         suggestedName: suggestedFileName(workbook.title),
       })
     } else {
-      const { encodeTrelyx } = await import('../../../formats/trelyx')
-      const bytes = encodeTrelyx(workbook)
+      const password = browserPasswordFor(workbook.id)
+      const bytes =
+        password === null
+          ? (await import('../../../formats/trelyx')).encodeTrelyx(workbook)
+          : await (
+              await import('../../../formats/encrypted')
+            ).encryptTrelyx(workbook, password, 'existing')
       const url = URL.createObjectURL(
         new Blob([new Uint8Array(bytes).buffer], { type: 'application/vnd.trelyx+zip' }),
       )
@@ -143,13 +127,10 @@ export async function saveDocument(saveAs = false): Promise<void> {
     useEditor.setState({ busy: false })
   }
 }
-export function restoreRecovery(): void {
-  const contents = useEditor.getState().recovery
-  if (!contents || !confirmDiscard()) return
-  try {
-    useEditor.getState().replace(deserializeWorkbook(contents), null, true)
-    useEditor.setState({ recovery: null })
-  } catch (error) {
-    showError(error)
-  }
-}
+export {
+  restoreRecovery,
+  readRecoveryContents,
+  retryRecovery,
+  restoreBackup,
+  changeFilePassword,
+} from './fileSecurityActions'

@@ -12,6 +12,8 @@ import { Canvas, ZoomControls } from './components/Canvas'
 import { SheetTabs } from './components/SheetTabs'
 import { Inspector } from './components/Inspector'
 import { Outline } from './components/Outline'
+import { SearchPanel } from './components/SearchPanel'
+import { PasswordPrompt } from './components/files/PasswordPrompt'
 import { SpatialWorkspace } from './components/SpatialWorkspace'
 import { useEditor } from './state/editor'
 import { useSpatialView } from './state/spatial'
@@ -86,6 +88,8 @@ export function App() {
                 </div>
               )}
               <ImportNotice />
+              <SearchPanel />
+              <PasswordPrompt />
               <ReactFlowProvider>
                 <div className="workspace-content">
                   <AnimatePresence initial={false}>

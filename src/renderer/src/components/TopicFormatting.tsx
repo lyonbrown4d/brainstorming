@@ -3,6 +3,7 @@ import { Popover } from 'radix-ui'
 import { type TopicStyle } from '@core'
 import { defaultTopicStyle } from '../lib/topicAppearance'
 import { useEditor } from '../state/editor'
+import { updateSelectedStyle } from '../state/selection'
 import { Button } from './ui/button'
 import { FieldSelect } from './FieldSelect'
 
@@ -90,15 +91,7 @@ export function TopicFormatting({
   const fill = style.fill ?? defaults.fill
   const color = style.color ?? defaults.color
   const update = (patch: TopicStyle): void => {
-    const state = useEditor.getState()
-    state.commitDraft()
-    const current = useEditor.getState().history.document.topics[topic.id]
-    if (current)
-      state.command({
-        type: 'setTopicStyle',
-        topicId: topic.id,
-        style: { ...current.style, ...patch },
-      })
+    updateSelectedStyle(patch, topic.id)
   }
   const sizeControl = (
     <FieldSelect

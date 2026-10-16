@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   showOpenDialog: vi.fn(),
   showSaveDialog: vi.fn(),
 }))
+vi.mock('../../src/main/ai', () => ({ registerAIIPC: vi.fn() }))
 vi.mock('electron', () => ({
   dialog: { showOpenDialog: mocks.showOpenDialog, showSaveDialog: mocks.showSaveDialog },
   ipcMain: {

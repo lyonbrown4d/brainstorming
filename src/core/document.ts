@@ -1,3 +1,4 @@
+import { documentExtensionData, topicExtensionData } from './extension-data'
 import { applyCommand } from './commands'
 import type { MindMapDocument, Side, Topic } from './types'
 import { assertId, validateDocument } from './validation'
@@ -65,6 +66,7 @@ export function documentData(
   const topics: Record<string, Topic> = {}
   for (const topic of Object.values(document.topics)) {
     topics[topic.id] = {
+      ...topicExtensionData(topic),
       id: topic.id,
       title: topic.title,
       children: [...topic.children],
@@ -90,6 +92,7 @@ export function documentData(
     version: 1,
     id: document.id,
     title: document.title,
+    ...documentExtensionData(document),
     rootId: document.rootId,
     topics,
     ...(assets === undefined ? {} : { assets }),

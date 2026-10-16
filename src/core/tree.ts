@@ -26,10 +26,12 @@ export function getSubtreeIds(document: MindMapDocument, topicId: string): strin
   return result
 }
 
-/** Visible depth-first order, with collapsed descendants omitted. */
+/** Visible depth-first order; floating roots remain independent of center collapse. */
 export function getVisibleTopicIds(document: MindMapDocument): readonly string[] {
   const result: string[] = []
-  const pending = [document.rootId]
+  const floating = new Set(document.floatingIds ?? [])
+  const pending = [...(document.floatingIds ?? [])].reverse()
+  pending.push(document.rootId)
   while (pending.length > 0) {
     const id = pending.pop()
     if (id === undefined) break
@@ -38,7 +40,8 @@ export function getVisibleTopicIds(document: MindMapDocument): readonly string[]
     if (!topic.collapsed) {
       for (let index = topic.children.length - 1; index >= 0; index -= 1) {
         const childId = topic.children[index]
-        if (childId !== undefined) pending.push(childId)
+        if (childId !== undefined && (id !== document.rootId || !floating.has(childId)))
+          pending.push(childId)
       }
     }
   }

@@ -1,5 +1,8 @@
 import type { DesktopPlatform, WindowState } from './window'
 import type { DocumentAsset } from '../core'
+import type { FileSecurityAPI } from './fileSecurity'
+import type { AIAPI } from './ai'
+import type { ExportRequest } from './exports'
 
 export type MenuAction = 'new' | 'open' | 'save' | 'saveAs' | 'undo' | 'redo'
 export interface OpenedDocument {
@@ -7,6 +10,9 @@ export interface OpenedDocument {
   contents: string
   sourcePath?: string
   warnings?: readonly string[]
+  lockedToken?: string
+  sessionToken?: string
+  encrypted?: boolean
 }
 export interface RecentFile {
   path: string
@@ -16,8 +22,9 @@ export interface SaveRequest {
   path: string | null
   contents: string
   suggestedName: string
+  password?: string | null
 }
-export interface DesktopAPI {
+export interface DesktopAPI extends FileSecurityAPI, AIAPI {
   readonly platform: DesktopPlatform
   getWindowState(): Promise<WindowState>
   onWindowStateChanged(callback: (state: WindowState) => void): () => void
@@ -25,8 +32,12 @@ export interface DesktopAPI {
   takeOpenFile(): Promise<OpenedDocument | null>
   onOpenFile(callback: () => void): () => void
   openDocument(): Promise<OpenedDocument | null>
-  selectAsset(kind: 'image' | 'attachment'): Promise<DocumentAsset | null>
+  selectAsset(kind: 'image' | 'attachment' | 'audio'): Promise<DocumentAsset | null>
   exportAsset(asset: DocumentAsset): Promise<boolean>
+  exportFile(request: ExportRequest): Promise<string | null>
+  writeTopicClipboard(contents: string, plainText: string): Promise<void>
+  readTopicClipboard(): Promise<string>
+  openExternal(url: string): Promise<void>
   saveDocument(request: SaveRequest): Promise<string | null>
   readRecovery(): Promise<string | null>
   writeRecovery(contents: string): Promise<void>

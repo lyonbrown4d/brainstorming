@@ -1,8 +1,8 @@
 # 架构与文档格式
 
-Trelyx 是单 package 桌面应用。React Flow 负责画布交互，d3-hierarchy 负责树布局，shadcn/ui 和 Radix 负责通用控件，dnd-kit 负责画布标签排序，Zustand 保存编辑状态，Electron 负责系统集成。
+Trelyx 是单 package 桌面应用。React Flow 负责画布交互，d3-hierarchy 与 Dagre 负责多结构布局，shadcn/ui 和 Radix 负责通用控件，dnd-kit 负责画布标签排序，Zustand 保存编辑状态，Electron 负责系统集成。
 
-三维视图按需加载 Three.js、React Three Fiber 和 Drei。`layout/spatial.ts` 从同一主题树派生空间坐标，Drei 负责相机、圆角几何、连线和中文标签投影；不将 Three 类型或 XYZ 坐标写入 core。独立 Zustand 视图状态保存各 Sheet 的维度、聚焦和相机，打开文档时重置。标题原位编辑仍由现有 Lexical 扩展提交类型化改名命令；触控板适配仅将浏览器 wheel 意图转换为 CameraControls 的平移、缩放和旋转调用。
+三维视图按需加载 Three.js、React Three Fiber 和 Drei。`layout/spatial.ts` 从同一主题树派生空间坐标，Drei 负责相机、圆角几何、连线和中文标签投影；不将 Three 类型写入 core；普通相机仅是会话状态，显式保存的演示步骤使用纯数值坐标。独立 Zustand 视图状态保存各 Sheet 的维度、聚焦和相机，打开文档时重置。标题原位编辑仍由现有 Lexical 扩展提交类型化改名命令；触控板适配仅将浏览器 wheel 意图转换为 CameraControls 的平移、缩放和旋转调用。
 
 ## 目录与依赖
 
@@ -26,7 +26,7 @@ src/
   formats/               # ZIP、原生协议与 XMind 转换
 ```
 
-`@core`、`@layout`、`@shared`、`@renderer` 分别映射上述目录。core 不导入 DOM、React、Electron、renderer 或 React Flow；布局和界面均可依赖 core。应用不使用外部服务、数据库、账户或云同步。
+`@core`、`@layout`、`@shared`、`@renderer` 分别映射上述目录。core 不导入 DOM、React、Electron、renderer 或 React Flow；布局和界面均可依赖 core。文档编辑不依赖账户或云同步。AI 服务由用户主动配置，主进程使用成熟 SDK 调用；renderer 不持有持久化服务密钥。
 
 ## 编辑与画布历史
 
@@ -36,7 +36,7 @@ src/
 
 主题树是内容来源；React Flow 节点与边是布局投影。一次拖拽结束才提交移动命令，中间坐标不进入历史。折叠后不投影后代，画布只挂载视口中的元素。文本估算包含字号、边框与留量，字体平台差异仍需在对应系统复核。
 
-主题编辑复用 Lexical 的 `LexicalExtensionComposer`、`PlainTextExtension`、`AutoFocusExtension` 和 `HistoryExtension`。仅选中主题、当前编辑主题和右侧名称区域挂载编辑器，未选主题保持普通文本。Lexical 管理 DOM、组合输入、选区、粘贴及编辑内撤销；渲染层集成只处理导图快捷键、草稿和提交。编辑期间不随每个字符重设 Lexical 状态，提交、取消或文档撤销后才同步主题树中的文本，避免旧 React Flow 投影覆盖新内容。文件保存纯文本标题和备注；图片与附件在各画布内以稳定资源 ID 引用。
+主题编辑复用 Lexical 的 `LexicalExtensionComposer`、`PlainTextExtension`、`AutoFocusExtension` 和 `HistoryExtension`。仅选中主题、当前编辑主题和右侧名称区域挂载编辑器，未选主题保持普通文本。Lexical 管理 DOM、组合输入、选区、粘贴及编辑内撤销；渲染层集成只处理导图快捷键、草稿和提交。编辑期间不随每个字符重设 Lexical 状态，提交、取消或文档撤销后才同步主题树中的文本，避免旧 React Flow 投影覆盖新内容。文件保存纯文本标题及可移植的 Markdown 格式；局部标题与富文本备注使用 Lexical 官方 RichText/List/Link/Markdown 扩展。图片、附件与音频在各画布内以稳定资源 ID 引用。
 
 Motion 管理侧栏进出和 Sheet 切换淡入；面板使用位移与透明度，避免逐帧改宽度触发 React Flow 测量循环。动效不记录到文档或历史中，减少动态效果设置也作用于缩放、适应视口和选区自动定位。
 
@@ -65,3 +65,15 @@ renderer 通过 `src/shared/contracts.ts` 的 DesktopAPI 调用 preload。主进
 一个原生文件保存工作簿的有序 sheets 和所有引用资源。ZIP 中资源路径为 assets/<sheet-index>/<asset-id>，画布排序后重新生成包内路径；稳定的工作簿、Sheet、主题和资源 ID 不受排序影响。同名或同 ID 的附件在不同页隔离。删除再撤销恢复完整内容，保存不携带撤销历史。整份工作簿资源总量限制为 24 MiB，复制导致超限时保留原工作簿并提示。
 
 资源读取、文件选择和导出由受信任 IPC 与主进程执行，单资源上限 8 MiB，图片类型通过字节签名确认，禁止将 SVG/HTML 当作图片。附件只提供显式另存，不自动执行。浏览器使用 idb-keyval 在 IndexedDB 保存恢复记录，避免附件超出 localStorage 常见容量。
+
+## 注解、交换与安全
+
+浮动 Dock 统一呈现画布工具。`annotationInteraction` 只保存连线起点、放置模式、注解选中和内联编辑状态；创建关联线、边界、概要、标注或游离主题时才发出 core 命令。React Flow 自定义边与 ViewportPortal 负责二维投影，三维注解使用稳定的 Drei HTML portal。UI 不通过单独的模态表单替代画布选择。
+
+core 批命令先构造并验证完整结果，再一次写入历史；选区、搜索与演示播放状态在独立 Zustand store 中。主题剪贴板使用经过校验的版本化数据，粘贴重新生成主题、资源与注解 ID，并预检工作簿预算。桌面剪贴板同时提供可读文本与自定义类型；不把 React Flow 元素作为文件协议。
+
+格式转换复用 fflate、mdast、XML 库和 jsPDF；完整图形输出调用纯布局，不依赖屏幕上已挂载的节点。XMind 自有扩展严格校验后才回写模型。第三方导入缺失和有损映射通过报告说明。
+
+密码原生文件复用 AES ZIP 库。桌面密码、待解锁文件与 token 由主进程会话管理，完成文档接受后才激活；token 限时且不能访问任意路径。密码变化串行保护恢复记录，开启时保护已有明文历史；旧加密历史保留旧密码。版本历史只暴露生成的标识，不暴露任意文件读写 API。
+
+AI 配置使用系统 safeStorage 加密持久化密钥；不可用或 basic_text 时仅保存在内存。主进程限制提示、上下文、主题数量、树深、响应大小、输出 token 和时限，校验结构化结果。renderer 先预览，再通过已有命令添加新 Sheet 或新分支；异步期间文档变更会阻止应用旧结果。

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useEditor } from '../state/editor'
 import { newDocument, openDocument, saveDocument } from '../state/files'
 import { getNavigationTarget, isCompositionKey } from '../state/keyboard'
+import { handleTopicShortcut } from '../state/editingShortcuts'
 
 export function useKeyboardShortcuts(): void {
   useEffect(() => {
@@ -22,12 +23,19 @@ export function useKeyboardShortcuts(): void {
         else newDocument()
         return
       }
+      if (modifier && key === 'f') {
+        state.commitDraft()
+        if (!useEditor.getState().editingId) handleTopicShortcut(event)
+        else event.preventDefault()
+        return
+      }
       const target = event.target
       if (
         target instanceof HTMLElement &&
         (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
       )
         return
+      if (handleTopicShortcut(event)) return
       if (modifier && key === 'z') {
         event.preventDefault()
         if (event.shiftKey) state.redo()

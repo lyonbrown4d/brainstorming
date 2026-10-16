@@ -5,7 +5,12 @@ import { decodeAssets } from './assets'
 export const DOCUMENT_LIMITS = { topics: 20_000, depth: 128, sheets: 128 } as const
 
 export function record(value: unknown): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value))
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    Array.isArray(value) ||
+    (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null)
+  )
     throw new Error('Trelyx 文档结构无效')
   return value as Record<string, unknown>
 }
@@ -48,7 +53,20 @@ export function nativeWorkbook(
     const sheet = record(value)
     onlyKeys(sheet, ['id', 'name', 'document'])
     const document = record(sheet.document)
-    onlyKeys(document, ['id', 'title', 'rootId', 'topics', 'assets'])
+    onlyKeys(document, [
+      'id',
+      'title',
+      'rootId',
+      'topics',
+      'assets',
+      'settings',
+      'relations',
+      'groups',
+      'callouts',
+      'floatingIds',
+      'floatingPositions',
+      'presentation',
+    ])
     const topics = record(document.topics)
     for (const value of Object.values(topics)) {
       const topic = record(value)
@@ -62,6 +80,8 @@ export function nativeWorkbook(
         'notes',
         'image',
         'attachments',
+        'metadata',
+        'structure',
       ])
       if (Object.hasOwn(topic, 'image'))
         onlyKeys(record(topic.image), ['assetId', 'width', 'height'])

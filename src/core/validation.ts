@@ -1,4 +1,6 @@
 import type { MindMapDocument, Topic } from './types'
+import { validateDocumentExtensions } from './extension-references'
+import { validateLayoutKind, validateTopicMetadata } from './metadata-validation'
 import { validateTopicStyle } from './topic-style'
 import { validateDocumentContent, validateTopicContent } from './topic-content'
 
@@ -36,6 +38,8 @@ function assertTopic(value: unknown, key: string): asserts value is Topic {
   }
   const children = own(value, 'children')
   if (Object.hasOwn(value, 'style')) validateTopicStyle(value.style)
+  if (Object.hasOwn(value, 'metadata')) validateTopicMetadata(value.metadata)
+  if (Object.hasOwn(value, 'structure')) validateLayoutKind(value.structure)
   validateTopicContent(value)
   if (!Array.isArray(children)) throw new Error(`主题 ${key} 的子主题列表无效`)
   for (const child of children) assertId(child)
@@ -79,4 +83,5 @@ export function validateDocument(value: unknown): asserts value is MindMapDocume
     }
   }
   if (visited.size !== Object.keys(topics).length) throw new Error('文档包含不可达主题')
+  validateDocumentExtensions(value, typedTopics, rootId)
 }

@@ -10,6 +10,8 @@ import { validateContents, validateSavePath } from './files'
 import type { OpenedDocument, SaveRequest } from '../shared/contracts'
 import { readWindowState } from './windowChrome'
 import { registerAssetIPC } from './assets'
+import { registerEditingIPC } from './editing'
+import { registerAIIPC } from './ai'
 
 const openFilters = [{ name: '思维导图', extensions: ['trelyx', 'xmind'] }]
 const saveFilters = [{ name: 'Trelyx 思维导图', extensions: ['trelyx'] }]
@@ -32,6 +34,8 @@ export function registerIPC(
     return window
   }
   registerAssetIPC(trusted)
+  registerEditingIPC(trusted)
+  registerAIIPC(trusted)
   ipcMain.handle('window:state', (event) => readWindowState(trusted(event)))
   ipcMain.handle('document:has-open-file', (event) => {
     trusted(event)
@@ -66,7 +70,15 @@ export function registerIPC(
       if (result.canceled || !result.filePath) return null
       path = files.authorizeSelected(result.filePath)
     }
-    return files.save(path, request.contents)
+    if (
+      request.password !== undefined &&
+      request.password !== null &&
+      typeof request.password !== 'string'
+    )
+      throw new Error('密码设置无效')
+    return request.password === undefined
+      ? files.save(path, request.contents)
+      : files.save(path, request.contents, request.password)
   })
   ipcMain.handle('document:recent', (event) => {
     trusted(event)
@@ -79,6 +91,38 @@ export function registerIPC(
   ipcMain.handle('recovery:read', (event) => {
     trusted(event)
     return files.readRecovery()
+  })
+  ipcMain.handle('document:unlock', (event, token: unknown, password: unknown) => {
+    trusted(event)
+    return files.unlockDocument(token, password)
+  })
+  ipcMain.handle('document:activate-unlocked', (event, token: unknown) => {
+    trusted(event)
+    return files.activateUnlockedDocument(token)
+  })
+  ipcMain.handle('document:cancel-unlock', (event, token: unknown) => {
+    trusted(event)
+    files.cancelUnlock(token)
+  })
+  ipcMain.handle('document:security', (event, id: unknown) => {
+    trusted(event)
+    return files.getFileSecurity(id)
+  })
+  ipcMain.handle('document:set-password', (event, id: unknown, password: unknown) => {
+    trusted(event)
+    return files.setFilePassword(id, password)
+  })
+  ipcMain.handle('recovery:read-locked', (event) => {
+    trusted(event)
+    return files.readLockedRecovery()
+  })
+  ipcMain.handle('document:backups', (event, id: unknown) => {
+    trusted(event)
+    return files.listDocumentBackups(id)
+  })
+  ipcMain.handle('document:restore-backup', (event, id: unknown) => {
+    trusted(event)
+    return files.restoreDocumentBackup(id)
   })
   ipcMain.handle('recovery:write', (event, contents: unknown) => {
     trusted(event)

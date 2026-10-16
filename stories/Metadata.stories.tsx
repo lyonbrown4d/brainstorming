@@ -1,0 +1,80 @@
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { expect, userEvent, within, waitFor } from 'storybook/test'
+import { applyCommand, createExampleDocument } from '../src/core'
+import { App } from '../src/renderer/src/App'
+import { useEditor } from '../src/renderer/src/state/editor'
+import { clearBrowserRecovery } from '../src/renderer/src/state/recovery'
+
+const meta = {
+  title: 'Trelyx/注解与富文本',
+  component: App,
+  parameters: { layout: 'fullscreen' },
+  beforeEach: async () => {
+    await clearBrowserRecovery()
+    let document = applyCommand(createExampleDocument(), {
+      type: 'setTopicMetadata',
+      topicId: 'root',
+      metadata: {
+        labels: ['产品'],
+        markers: ['star'],
+        task: { done: false, priority: 1, progress: 25 },
+        equation: 'E = mc^2',
+      },
+    })
+    document = applyCommand(document, {
+      type: 'upsertRelation',
+      relation: {
+        id: 'story-relation',
+        from: 'vision',
+        to: 'experience',
+        title: '愿景驱动体验',
+        dashed: true,
+      },
+    })
+    document = applyCommand(document, {
+      type: 'upsertGroup',
+      group: {
+        id: 'story-group',
+        kind: 'boundary',
+        topicIds: ['vision-0', 'vision-1'],
+        title: '产品原则',
+      },
+    })
+    useEditor.getState().replace(document)
+    useEditor.setState({ inspectorOpen: true, outlineOpen: false, recovery: null })
+  },
+} satisfies Meta<typeof App>
+export default meta
+type Story = StoryObj<typeof meta>
+export const MetadataAndAnnotations: Story = {}
+export const RichNotes: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const panel = within(canvas.getByRole('complementary', { name: '主题面板' }))
+    await userEvent.click(panel.getByRole('button', { name: 'Markdown 富文本' }))
+    const editor = panel.getByRole('textbox', { name: '富文本备注' })
+    await userEvent.click(editor)
+    await userEvent.type(editor, '可保存的富文本备注')
+    await userEvent.tab()
+    await waitFor(async () => {
+      await expect(useEditor.getState().history.document.topics.root?.notes).toContain(
+        '可保存的富文本备注',
+      )
+    })
+    await expect(panel.getByRole('toolbar', { name: '备注文本格式' })).toBeVisible()
+  },
+}
+export const AnnotationCrud: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
+    await userEvent.click(canvas.getByRole('button', { name: '添加标注' }))
+    const input = await canvas.findByRole('textbox', { name: '编辑标注文字' })
+    await userEvent.clear(input)
+    await userEvent.type(input, '下次迭代验证')
+    await userEvent.tab()
+    await expect(canvas.getByRole('button', { name: '标注：下次迭代验证' })).toBeVisible()
+    useEditor.getState().undo()
+    await waitFor(() => expect(canvas.getByRole('button', { name: '标注：标注' })).toBeVisible())
+  },
+}

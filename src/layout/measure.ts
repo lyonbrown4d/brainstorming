@@ -14,7 +14,7 @@ export function measureTopic(
   title: string,
   isRoot = false,
   customFontSize?: number,
-  content?: Pick<Topic, 'image' | 'notes' | 'attachments'>,
+  content?: Pick<Topic, 'image' | 'notes' | 'attachments' | 'metadata'>,
 ): { width: number; height: number } {
   const fontSize = customFontSize ?? (isRoot ? 24 : 16)
   // Include the renderer's padding, borders, and a small font-metric tolerance.
@@ -41,6 +41,17 @@ export function measureTopic(
   }
   longestLine = Math.max(longestLine, lineWidth)
   const image = content?.image ? measureTopicImage(content.image) : undefined
+  const metadata = content?.metadata
+  const badgesHeight =
+    metadata &&
+    (metadata.labels?.length ||
+      metadata.markers?.length ||
+      metadata.link ||
+      metadata.task ||
+      metadata.equation ||
+      metadata.audioAssetId)
+      ? 28
+      : 0
   const detailsHeight = content?.notes || content?.attachments?.length ? 28 : 0
   return {
     width: Math.max(
@@ -51,6 +62,7 @@ export function measureTopic(
     height:
       Math.max(isRoot ? 64 : 44, lines * Math.ceil(fontSize * 1.5) + (isRoot ? 28 : 20)) +
       (image ? image.height + 12 : 0) +
-      detailsHeight,
+      detailsHeight +
+      badgesHeight,
   }
 }

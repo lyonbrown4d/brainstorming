@@ -1,3 +1,4 @@
+import { dockAction, openDock } from './dock'
 import { expect, test, type Page } from '@playwright/test'
 
 async function fileAction(page: Page, name: string) {
@@ -46,7 +47,7 @@ test('多个画布保留独立内容与撤销，并在同一文件保存后重�
   await renameSheet(page, secondName, '用户研究')
   await expect(stylePanel.getByRole('combobox', { name: '字号', exact: true })).toHaveText('24')
   await renameTopic(page, '研究内容')
-  await page.getByRole('button', { name: '撤销', exact: true }).click()
+  await dockAction(page, '撤销')
   await expect(page.getByTestId('topic-root')).not.toContainText('研究内容')
   await page.getByRole('tab', { name: '产品总览', exact: true }).click()
   await expect(page.getByTestId('topic-root')).toContainText('产品内容')
@@ -56,7 +57,7 @@ test('多个画布保留独立内容与撤销，并在同一文件保存后重�
     'true',
   )
   await page.getByRole('tab', { name: '用户研究', exact: true }).click()
-  await page.getByRole('button', { name: '重做', exact: true }).click()
+  await dockAction(page, '重做')
   await expect(page.getByTestId('topic-root')).toContainText('研究内容')
   await page.getByTestId('topic-root').dblclick()
   await page.getByRole('textbox', { name: '编辑主题标题' }).fill('已提交的研究草稿')
@@ -149,6 +150,7 @@ test('切换保留平移与缩放，标签支持拖动排序，窄窗口仍可�
   await page.setViewportSize({ width: 800, height: 600 })
   await expect(page.getByRole('button', { name: '关闭大纲', exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: '关闭样式面板', exact: true })).toBeVisible()
+  await openDock(page)
   const bar = await page.getByRole('toolbar', { name: '导图操作', exact: true }).boundingBox()
   const canvas = await page.getByRole('tabpanel', { name: '当前画布', exact: true }).boundingBox()
   if (!bar || !canvas) throw new Error('缺少画布工具栏')

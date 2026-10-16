@@ -1,6 +1,9 @@
 import type { Topic } from '@core'
 import { useEditor } from '../../state/editor'
+import { interactAnnotationTopic } from '../../state/annotationInteraction'
+import { selectTopic } from '../../state/selection'
 import { isCompositionKey } from '../../state/keyboard'
+import { TopicTitleDisplay } from '../metadata/TopicTitleDisplay'
 import { TopicEditor } from '../TopicEditor'
 
 interface SpatialTopicLabelProps {
@@ -61,7 +64,9 @@ export function SpatialTopicLabel({
       }}
       onClick={(event) => {
         event.stopPropagation()
-        onSelect(topic.id)
+        if (interactAnnotationTopic(topic.id)) return
+        if (event.metaKey || event.ctrlKey || event.shiftKey) selectTopic(topic.id, true)
+        else onSelect(topic.id)
       }}
       onDoubleClick={(event) => {
         event.stopPropagation()
@@ -74,7 +79,7 @@ export function SpatialTopicLabel({
         useEditor.getState().startEdit(topic.id, undefined, 'spatial')
       }}
     >
-      {topic.title || '未命名主题'}
+      <TopicTitleDisplay topic={topic} />
     </button>
   )
 }

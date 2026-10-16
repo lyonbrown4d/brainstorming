@@ -1,9 +1,11 @@
 import { Component, lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react'
 import { ArrowLeft, Focus } from 'lucide-react'
 import { getParentId, type MindMapDocument } from '@core'
+import { interactAnnotationTopic, useAnnotationInteraction } from '../state/annotationInteraction'
 import { useEditor } from '../state/editor'
 import { defaultSpatialView, useSpatialView, visibleSpatialFocus } from '../state/spatial'
 import { isCompositionKey } from '../state/keyboard'
+import { PresentationPlayback } from './documents/PresentationControls'
 import { FloatingToolbar } from './FloatingToolbar'
 import { changeViewMode } from './ViewModeSwitch'
 import { Button } from './ui/button'
@@ -77,6 +79,8 @@ export function SpatialWorkspace() {
     useSpatialView.getState().setFocus(sheetId, null)
   }
   const selectTopic = useCallback((id: string): void => {
+    if (interactAnnotationTopic(id)) return
+    useAnnotationInteraction.setState({ selected: null, editing: false })
     useEditor.getState().select(id)
   }, [])
   const collapseTopic = useCallback((id: string): void => {
@@ -152,6 +156,7 @@ export function SpatialWorkspace() {
       {supported && (
         <>
           <FloatingToolbar />
+          <PresentationPlayback />
           <div className="pointer-events-none absolute top-20 left-4 z-10 flex max-w-[calc(100%-2rem)] items-center gap-3">
             {focusId && (
               <>

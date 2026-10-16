@@ -14,6 +14,7 @@ import { mergeRegister } from '@lexical/utils'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { useEditor } from '../state/editor'
 import type { EditingSurface } from '../state/editorTypes'
+import { handleTopicShortcut } from '../state/editingShortcuts'
 import { getNavigationTarget, isCompositionKey } from '../state/keyboard'
 
 export function TopicEditorPlugin({
@@ -92,6 +93,12 @@ export function TopicEditorPlugin({
             commit()
             return false
           }
+          if (modifier && key === 'f') {
+            commit()
+            if (!useEditor.getState().editingId) return handleTopicShortcut(event)
+            event.preventDefault()
+            return true
+          }
           if (event.key === 'Escape') {
             event.preventDefault()
             if (ownsDraft()) state.cancelEdit()
@@ -110,9 +117,17 @@ export function TopicEditorPlugin({
             event.preventDefault()
             commit()
             state.add(event.key === 'Tab' ? 'child' : 'sibling')
+            if (surface === 'outline') {
+              const next = useEditor.getState().editingId
+              if (next) state.startEdit(next, undefined, 'outline')
+            }
             return true
           }
-          if ((surface === 'canvas' || surface === 'spatial') && !ownsDraft()) {
+          if (
+            (surface === 'canvas' || surface === 'spatial' || surface === 'outline') &&
+            !ownsDraft()
+          ) {
+            if (key !== 'a' && handleTopicShortcut(event)) return true
             if (event.key === 'Delete' || event.key === 'Backspace') {
               event.preventDefault()
               state.remove()

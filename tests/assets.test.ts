@@ -30,6 +30,36 @@ describe('embedded asset boundary', () => {
     expect(() => imageDimensions({ ...svg, mimeType: 'image/png' })).toThrow()
   })
 
+  it.each([
+    ['wav', 'audio/wav', [82, 73, 70, 70, 4, 0, 0, 0, 87, 65, 86, 69]],
+    ['mp3', 'audio/mpeg', [73, 68, 51, 4, 0, 0, 0, 0, 0, 0]],
+    ['ogg', 'audio/ogg', [79, 103, 103, 83, 0, 0, 0, 0]],
+    ['webm', 'audio/webm', [26, 69, 223, 163, 0, 0, 0, 0]],
+    ['m4a', 'audio/mp4', [0, 0, 0, 20, 102, 116, 121, 112, 77, 52, 65, 32]],
+    ['aac', 'audio/aac', [255, 241, 80, 128]],
+    ['flac', 'audio/flac', [102, 76, 97, 67, 0, 0, 0, 34]],
+  ] as const)(
+    'detects %s audio containers from bytes and normalizes MIME aliases',
+    (extension, mime, header) => {
+      const bytes = Uint8Array.from(header)
+      const asset = createAsset(bytes, `audio.${extension}`, 'audio')
+      expect(asset.mimeType).toBe(mime)
+      expect(assetBytes(asset)).toEqual(bytes)
+      expect(() => imageDimensions(asset)).toThrow('图片仅支持')
+    },
+  )
+
+  it('does not trust audio filename extensions or admit unsupported media', () => {
+    const disguised = createAsset(
+      new TextEncoder().encode('<script>bad</script>'),
+      'fake.mp3',
+      'fake',
+    )
+    expect(disguised.mimeType).toBe('application/octet-stream')
+    const midi = createAsset(Uint8Array.from([77, 84, 104, 100, 0, 0, 0, 6]), 'music.mid', 'midi')
+    expect(midi.mimeType).toBe('application/octet-stream')
+  })
+
   it('rejects oversized bytes and malformed base64 before allocation', () => {
     expect(() => createAsset(new Uint8Array(MAX_ASSET_BYTES + 1), 'big.bin')).toThrow('8 MiB')
     expect(() =>

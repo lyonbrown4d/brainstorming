@@ -8,6 +8,15 @@ export const MAX_IMAGE_DIMENSION = 8192
 export const MAX_IMAGE_PIXELS = 40_000_000
 
 const imageMimeTypes = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp'])
+export const AUDIO_MIME_TYPES = [
+  'audio/mpeg',
+  'audio/wav',
+  'audio/ogg',
+  'audio/webm',
+  'audio/mp4',
+  'audio/aac',
+  'audio/flac',
+] as const
 const forbiddenIds = new Set(['__proto__', 'prototype', 'constructor'])
 const mimePattern = /^[a-z0-9!#$%&'*+.^_`|~-]+\/[a-z0-9!#$%&'*+.^_`|~-]+$/
 const base64Alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
@@ -76,6 +85,12 @@ export function validateDocumentAsset(value: unknown): asserts value is Document
   })
 }
 
+export function validateAudioAsset(value: unknown): asserts value is DocumentAsset {
+  validateDocumentAsset(value)
+  if (!(AUDIO_MIME_TYPES as readonly string[]).includes(value.mimeType))
+    throw new Error('录音资源格式不受支持')
+}
+
 export function validateTopicNotes(value: unknown): asserts value is string {
   if (typeof value !== 'string' || value.length > MAX_TOPIC_NOTES_LENGTH)
     throw new Error('备注须为不超过 100000 字符的文本')
@@ -115,6 +130,7 @@ export function referencedAssetIds(topics: Readonly<Record<string, Topic>>): Set
   const ids = new Set<string>()
   for (const topic of Object.values(topics)) {
     if (topic.image) ids.add(topic.image.assetId)
+    if (topic.metadata?.audioAssetId) ids.add(topic.metadata.audioAssetId)
     for (const id of topic.attachments ?? []) ids.add(id)
   }
   return ids
@@ -144,6 +160,7 @@ export function validateDocumentContent(
   }
   if (total > MAX_DOCUMENT_ASSET_BYTES) throw new Error('文档资源总量超过 24 MiB')
   for (const topic of Object.values(topics)) {
+    if (topic.metadata?.audioAssetId) validateAudioAsset(assets[topic.metadata.audioAssetId])
     if (topic.image) {
       const asset = assets[topic.image.assetId] as DocumentAsset
       if (!imageMimeTypes.has(asset.mimeType)) throw new Error('主题图片格式不受支持')

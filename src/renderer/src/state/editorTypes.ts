@@ -1,6 +1,6 @@
 import type { Command, HistoryState, MindMapDocument, MindMapWorkbook } from '@core'
 
-export type EditingSurface = 'canvas' | 'spatial' | 'inspector' | 'notes'
+export type EditingSurface = 'canvas' | 'spatial' | 'inspector' | 'notes' | 'rich-title' | 'outline'
 
 export interface SheetSession {
   history: HistoryState
@@ -30,6 +30,7 @@ export interface EditorData extends StructureSnapshot {
   editingId: string | null
   editingSurface: EditingSurface | null
   draft: string
+  richDraft: string | null
   baseline: string
   path: string | null
   error: string | null
@@ -47,6 +48,7 @@ export interface EditorState extends EditorData {
   select: (id: string) => void
   startEdit: (id: string, initial?: string, surface?: EditingSurface) => void
   setDraft: (value: string) => void
+  setRichDraft: (markdown: string, plainTitle: string) => void
   commitDraft: () => void
   cancelEdit: () => void
   command: (command: Command) => boolean
@@ -62,6 +64,7 @@ export interface EditorState extends EditorData {
   setError: (error: string | null) => void
   switchSheet: (id: string) => void
   addSheet: () => void
+  addDocumentSheet: (document: MindMapDocument) => boolean
   renameSheet: (id: string, name: string) => void
   duplicateSheet: (id: string) => void
   deleteSheet: (id: string) => void

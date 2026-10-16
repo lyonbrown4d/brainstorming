@@ -5,9 +5,8 @@ import {
   validateTopicImage,
   validateTopicNotes,
 } from './topic-content'
-import { validateDocument } from './validation'
 
-function withAsset(document: MindMapDocument, asset: DocumentAsset): MindMapDocument {
+export function withAsset(document: MindMapDocument, asset: DocumentAsset): MindMapDocument {
   validateDocumentAsset(asset)
   const existing = Object.hasOwn(document.assets ?? {}, asset.id)
     ? document.assets?.[asset.id]
@@ -26,7 +25,6 @@ function withAsset(document: MindMapDocument, asset: DocumentAsset): MindMapDocu
 
 function replaceTopic(document: MindMapDocument, topic: Topic): MindMapDocument {
   const result = { ...document, topics: { ...document.topics, [topic.id]: topic } }
-  validateDocument(result)
   return result
 }
 

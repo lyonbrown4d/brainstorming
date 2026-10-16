@@ -248,8 +248,8 @@ describe('XMind embedded content', () => {
     }
   })
 
-  it('reports unreferenced embedded resources and external links instead of silently claiming support', () => {
-    const { warnings } = importXmind(
+  it('imports safe external links and reports unreferenced embedded resources', () => {
+    const { workbook, warnings } = importXmind(
       zipSync({
         'content.json': strToU8(
           JSON.stringify([
@@ -259,11 +259,11 @@ describe('XMind embedded content', () => {
         'attachments/unused.bin': fixture('data.bin'),
       }),
     )
-    expect(warnings).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining('外部链接'),
-        expect.stringContaining('未引用'),
-      ]),
-    )
+    const document = workbook.sheets[0]?.document
+    expect(document?.topics[document.rootId]?.metadata?.link).toEqual({
+      kind: 'url',
+      url: 'https://example.com',
+    })
+    expect(warnings).toEqual(expect.arrayContaining([expect.stringContaining('未引用')]))
   })
 })

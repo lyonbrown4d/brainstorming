@@ -2,7 +2,7 @@ import { Download, ImagePlus, Paperclip, Trash2 } from 'lucide-react'
 import type { Command } from '@core'
 import { useEditor } from '../state/editor'
 import { exportTopicAsset, importTopicAssets } from '../state/assets'
-import { TopicEditor } from './TopicEditor'
+import { TopicNotes } from './metadata/TopicNotes'
 import { TopicImage } from './TopicImage'
 import { TopicImagePreview } from './TopicImagePreview'
 import { Button } from './ui/button'
@@ -60,18 +60,7 @@ export function TopicContentPanel({ topicId }: { topicId: string }) {
   if (!topic) return null
   return (
     <div className="topic-content-panel">
-      <section className="format-group border-t border-border py-[18px] [&_h3]:mb-2.5 [&_h3]:text-[13px] [&_h3]:font-medium [&_h3]:text-secondary-foreground first:mt-[18px]">
-        <label
-          className="topic-notes-field flex flex-col gap-2.5 text-[13px] text-secondary-foreground"
-          htmlFor={`topic-notes-${topicId}`}
-        >
-          <span>备注</span>
-          <TopicEditor id={topicId} title={topic.notes ?? ''} surface="notes" />
-        </label>
-        <p className="topic-content-hint mt-2 text-[11px] leading-relaxed text-muted-foreground">
-          支持多行文字，离开编辑框后保存。
-        </p>
-      </section>
+      <TopicNotes topicId={topicId} />
       <section className="format-group border-t border-border py-[18px] [&_h3]:mb-2.5 [&_h3]:text-[13px] [&_h3]:font-medium [&_h3]:text-secondary-foreground first:mt-[18px]">
         <h3>图片</h3>
         {topic.image && (

@@ -1,3 +1,4 @@
+import { dockAction } from './dock'
 import { expect, test } from '@playwright/test'
 import { composeChinese } from './ime'
 
@@ -26,7 +27,7 @@ test('新增、编辑、折叠、撤销、保存与重新打开', async ({ page 
   await page.locator('.topic-title').filter({ hasText: '第一阶段' }).click()
   await page.keyboard.press('Delete')
   await expect(page.locator('.topic-title').getByText('第一阶段', { exact: true })).toHaveCount(0)
-  await page.getByRole('button', { name: '撤销', exact: true }).click()
+  await dockAction(page, '撤销')
   await expect(page.locator('.topic-title').getByText('第一阶段', { exact: true })).toBeVisible()
   const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
@@ -124,7 +125,7 @@ test('拖动分支更换父级、方向可撤销，帮助弹窗支持键盘关�
   await page.mouse.up()
   await page.getByRole('button', { name: '样式面板', exact: true }).click()
   await expect(page.getByRole('combobox', { name: '移动到父主题' })).toHaveText('核心体验')
-  await page.getByRole('button', { name: '撤销', exact: true }).click()
+  await dockAction(page, '撤销')
   await expect(page.getByRole('combobox', { name: '移动到父主题' })).toHaveText('产品规划')
   await page.getByRole('button', { name: '左侧', exact: true }).click()
   await expect(page.getByTestId('topic-vision')).toHaveClass(/side-left/)

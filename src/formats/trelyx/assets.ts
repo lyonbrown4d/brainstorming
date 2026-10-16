@@ -1,23 +1,25 @@
 import type { DocumentAsset, MindMapDocument, MindMapWorkbook } from '../../core'
 import { assetBytes, createAsset, imageDimensions } from '../../assets'
+import { AUDIO_MIME_TYPES } from '../../core/topic-content'
+import { referencedAssetIds } from '../../core/topic-content'
 import { onlyKeys, record } from './validation'
 
-export const ASSET_LIMITS = { entry: 8 * 1024 * 1024, total: 24 * 1024 * 1024 } as const
-
-function referencedAssets(document: MindMapDocument): Set<string> {
-  return new Set(
-    Object.values(document.topics).flatMap((topic) => [
-      ...(topic.image ? [topic.image.assetId] : []),
-      ...(topic.attachments ?? []),
-    ]),
+function samePortableMime(declared: string, detected: string): boolean {
+  // Earlier v1 files stored every non-raster attachment as opaque bytes, including audio.
+  return (
+    declared === detected ||
+    (declared === 'application/octet-stream' &&
+      (AUDIO_MIME_TYPES as readonly string[]).includes(detected))
   )
 }
+
+export const ASSET_LIMITS = { entry: 8 * 1024 * 1024, total: 24 * 1024 * 1024 } as const
 
 /** Verify actual image bytes, MIME and dimensions before accepting or saving content. */
 export function validateAssetContent(workbook: MindMapWorkbook): void {
   let size = 0
   for (const { document } of workbook.sheets) {
-    for (const id of referencedAssets(document)) {
+    for (const id of referencedAssetIds(document.topics)) {
       const asset = document.assets?.[id]
       if (!asset) throw new Error('Trelyx 主题引用的资源不存在')
       const bytes = assetBytes(asset)
@@ -25,7 +27,7 @@ export function validateAssetContent(workbook: MindMapWorkbook): void {
       size += bytes.length
       if (size > ASSET_LIMITS.total) throw new Error('Trelyx 资源合计超过 24 MiB 限制')
       const normalized = createAsset(bytes, asset.name, asset.id)
-      if (normalized.mimeType !== asset.mimeType || normalized.name !== asset.name)
+      if (!samePortableMime(asset.mimeType, normalized.mimeType) || normalized.name !== asset.name)
         throw new Error('Trelyx 资源类型或名称与实际内容不一致')
     }
     for (const topic of Object.values(document.topics)) {
@@ -45,7 +47,7 @@ export function encodeAssets(
   entries: Record<string, Uint8Array>,
 ): Record<string, Omit<DocumentAsset, 'data'> & { path: string }> | undefined {
   const metadata: Record<string, Omit<DocumentAsset, 'data'> & { path: string }> = {}
-  for (const id of referencedAssets(document)) {
+  for (const id of referencedAssetIds(document.topics)) {
     const asset = document.assets?.[id]
     if (!asset) throw new Error('Trelyx 主题引用的资源不存在')
     const path = `assets/${index}/${id}`
@@ -80,7 +82,12 @@ export function decodeAssets(
     if (bytes.length > ASSET_LIMITS.entry) throw new Error('Trelyx 单个资源超过 8 MiB 限制')
     budget.bytes += bytes.length
     if (budget.bytes > ASSET_LIMITS.total) throw new Error('Trelyx 资源合计超过 24 MiB 限制')
-    const asset = createAsset(bytes, metadata.name, id)
+    const detected = createAsset(bytes, metadata.name, id)
+    const asset =
+      metadata.mimeType === 'application/octet-stream' &&
+      samePortableMime(metadata.mimeType, detected.mimeType)
+        ? { ...detected, mimeType: metadata.mimeType }
+        : detected
     if (asset.name !== metadata.name || asset.mimeType !== metadata.mimeType)
       throw new Error('Trelyx 资源类型或名称与实际内容不一致')
     Object.defineProperty(result, id, { value: asset, enumerable: true })
@@ -91,7 +98,7 @@ export function decodeAssets(
 
 export function assertUsedAssets(workbook: MindMapWorkbook): void {
   for (const { document } of workbook.sheets) {
-    const referenced = referencedAssets(document)
+    const referenced = referencedAssetIds(document.topics)
     if (Object.keys(document.assets ?? {}).some((id) => !referenced.has(id)))
       throw new Error('Trelyx 包含未引用的资源')
   }

@@ -35,6 +35,7 @@ export const LongTitles: Story = {
 export const KeyboardEditing: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
     const originalTitle = canvas.getByRole('heading', { level: 1 }).textContent
     await userEvent.dblClick(
       canvas.getByTestId('topic-root').querySelector('.topic-title') ??
@@ -56,6 +57,7 @@ export const StylePanel: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
     await expect(canvas.getByRole('complementary', { name: '主题面板' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: '样式面板' })).toHaveAttribute(
       'aria-pressed',
@@ -74,6 +76,7 @@ export const OutlineView: Story = {
 export const KeyboardHelpDialog: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
     const page = within(canvasElement.ownerDocument.body)
     const trigger = canvas.getByRole('button', { name: '键盘快捷键' })
     await userEvent.click(trigger)
@@ -91,6 +94,7 @@ export const KeyboardHelpDialog: Story = {
 export const ToolbarHints: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
     const page = within(canvasElement.ownerDocument.body)
     await userEvent.hover(canvas.getByRole('button', { name: '添加子主题' }))
     await expect(await page.findByRole('tooltip')).toHaveTextContent('添加子主题 Tab')
@@ -102,6 +106,7 @@ export const ToolbarHints: Story = {
 export const FileMenu: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
     const page = within(canvasElement.ownerDocument.body)
     await userEvent.click(canvas.getByRole('button', { name: '文件菜单' }))
     await waitFor(() => expect(page.getByRole('menuitem', { name: '新建导图' })).toBeVisible())

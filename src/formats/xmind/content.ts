@@ -1,6 +1,6 @@
 import { DOMParser, type Node as XmlNode } from '@xmldom/xmldom'
-import type { DocumentAsset, Topic, TopicImage } from '../../core'
-import { createAsset, imageDimensions } from '../../assets'
+import { validateDocumentAsset, type DocumentAsset, type Topic, type TopicImage } from '../../core'
+import { createAsset, imageDimensions, safeAssetName } from '../../assets'
 import { ASSET_LIMITS } from '../trelyx/assets'
 import type { SourceRecord, Warnings } from './common'
 
@@ -115,7 +115,12 @@ export class EmbeddedContent {
     return result
   }
 
-  private resource(value: unknown, image: boolean): DocumentAsset | undefined {
+  resource(
+    value: unknown,
+    image: boolean,
+    name?: unknown,
+    mimeType?: unknown,
+  ): DocumentAsset | undefined {
     const kind = image ? '图片' : '附件或外部链接'
     const path = embeddedPath(value)
     const bytes = path ? this.entries.get(path) : undefined
@@ -124,11 +129,24 @@ export class EmbeddedContent {
       return undefined
     }
     try {
+      if (
+        (name !== undefined && typeof name !== 'string') ||
+        (mimeType !== undefined && typeof mimeType !== 'string')
+      )
+        throw new Error('资源名称或 MIME 类型无效')
       const existingId = this.paths.get(path)
       const existing = existingId ? this.assets[existingId] : undefined
-      const asset =
+      let asset =
         existing ??
         createAsset(bytes, path.split('/').at(-1) ?? '附件', `xmind-asset-${this.paths.size + 1}`)
+      if (name !== undefined || mimeType !== undefined) {
+        asset = {
+          ...asset,
+          ...(typeof name === 'string' ? { name: safeAssetName(name) } : {}),
+          ...(typeof mimeType === 'string' ? { mimeType } : {}),
+        }
+        validateDocumentAsset(asset)
+      }
       if (image) imageDimensions(asset)
       if (!existing) {
         if (
@@ -140,6 +158,7 @@ export class EmbeddedContent {
         this.paths.set(path, asset.id)
         this.budget.bytes += bytes.length
       }
+      this.assets[asset.id] = asset
       this.used.add(path)
       return asset
     } catch {

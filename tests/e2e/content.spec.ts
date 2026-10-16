@@ -1,3 +1,4 @@
+import { dockAction } from './dock'
 import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 import { decodeTrelyx } from '../../src/formats/trelyx'
@@ -66,7 +67,7 @@ test('备注中文编辑、图片和附件在多画布复制排序、删除撤�
   await page.getByRole('menuitem', { name: '删除画布', exact: true }).click()
   await page.getByRole('button', { name: '确认删除', exact: true }).click()
   await expect(page.getByRole('tab')).toHaveCount(1)
-  await page.getByRole('button', { name: '撤销', exact: true }).click()
+  await dockAction(page, '撤销')
   await expect(page.getByRole('tab')).toHaveCount(2)
   await page.getByRole('tab', { name: firstName, exact: true }).click()
   await expect(notes).toHaveText('中文备注\n第二行')

@@ -1,3 +1,4 @@
+import { validateWorkbookLinks } from './workbook-links'
 import { createDocument, documentData } from './document'
 import type { MindMapDocument, MindMapSheet, MindMapWorkbook } from './types'
 import { assertId, validateDocument } from './validation'
@@ -49,9 +50,11 @@ export function validateWorkbook(value: unknown): asserts value is MindMapWorkbo
   const sheets = own(value, 'sheets')
   if (!Array.isArray(sheets) || sheets.length === 0) throw new Error('工作簿至少需要一个画布')
   const ids = new Set<string>()
+  const validatedSheets: MindMapSheet[] = []
   let assetBytes = 0
   for (const sheet of sheets) {
     validateSheet(sheet)
+    validatedSheets.push(sheet)
     if (ids.has(sheet.id)) throw new Error(`画布 ${sheet.id} 已存在`)
     ids.add(sheet.id)
     for (const id of referencedAssetIds(sheet.document.topics)) {
@@ -60,6 +63,7 @@ export function validateWorkbook(value: unknown): asserts value is MindMapWorkbo
       if (assetBytes > MAX_DOCUMENT_ASSET_BYTES) throw new Error('工作簿资源总量超过 24 MiB')
     }
   }
+  validateWorkbookLinks(validatedSheets)
 }
 
 export function sheetData(sheet: MindMapSheet): MindMapSheet {

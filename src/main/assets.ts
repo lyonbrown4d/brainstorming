@@ -7,7 +7,7 @@ import { atomicWrite } from './files'
 
 export async function readSelectedAsset(
   path: string,
-  kind: 'image' | 'attachment',
+  kind: 'image' | 'attachment' | 'audio',
 ): Promise<DocumentAsset> {
   const handle = await open(path, 'r')
   try {
@@ -23,6 +23,8 @@ export async function readSelectedAsset(
     }
     const bytes = Buffer.concat(chunks)
     const asset = createAsset(bytes, basename(path))
+    if (kind === 'audio' && !asset.mimeType.startsWith('audio/'))
+      throw new Error('请选择支持的音频文件')
     if (kind === 'image') {
       imageDimensions(asset)
       if (nativeImage.createFromBuffer(bytes).isEmpty()) throw new Error('图片文件无法解码')
@@ -36,13 +38,20 @@ export async function readSelectedAsset(
 export function registerAssetIPC(trusted: (event: IpcMainInvokeEvent) => BrowserWindow): void {
   ipcMain.handle('asset:select', async (event, kind: unknown) => {
     const window = trusted(event)
-    if (kind !== 'image' && kind !== 'attachment') throw new Error('资源类型无效')
+    if (kind !== 'image' && kind !== 'attachment' && kind !== 'audio')
+      throw new Error('资源类型无效')
     const result = await dialog.showOpenDialog(window, {
-      title: kind === 'image' ? '添加主题图片' : '添加主题附件',
+      title: kind === 'image' ? '添加主题图片' : kind === 'audio' ? '添加音频备注' : '添加主题附件',
       properties: ['openFile'],
       ...(kind === 'image'
         ? { filters: [{ name: '图片', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }] }
-        : {}),
+        : kind === 'audio'
+          ? {
+              filters: [
+                { name: '音频', extensions: ['mp3', 'wav', 'ogg', 'webm', 'm4a', 'aac', 'flac'] },
+              ],
+            }
+          : {}),
     })
     const path = result.filePaths[0]
     return result.canceled || !path ? null : readSelectedAsset(path, kind)

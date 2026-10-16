@@ -1,9 +1,12 @@
 import { useEffect } from 'react'
 import { $getRoot, getNearestEditorFromDOMNode, REDO_COMMAND, UNDO_COMMAND } from 'lexical'
 import { applyCommand, serializeWorkbook } from '@core'
+import { $convertToMarkdownString } from '@lexical/markdown'
+import { richTransformers } from '../components/metadata/richTransformers'
+import { draftCommand } from '../state/editorDraft'
 import { isDirty, useEditor } from '../state/editor'
-import { newDocument, openDocument, saveDocument } from '../state/files'
-import { readBrowserRecovery, writeBrowserRecovery } from '../state/recovery'
+import { newDocument, openDocument, saveDocument, readRecoveryContents } from '../state/files'
+import { writeBrowserRecovery } from '../state/recovery'
 
 export function useFileLifecycle(): void {
   useEffect(() => {
@@ -28,21 +31,15 @@ export function useFileLifecycle(): void {
       bridge?.setDirty(isDirty(), !ready || Boolean(state.recovery))
       window.document.title = `${isDirty() ? '• ' : ''}${state.workbook.title} — Trelyx`
       clearTimeout(timer)
-      if (!ready || state.recovery) return
+      if (!ready || state.recovery || state.busy) return
       timer = setTimeout(() => {
         const current = useEditor.getState()
         let document = current.history.document
-        if (current.editingId && (current.editingSurface === 'notes' || current.draft.trim())) {
-          try {
-            document = applyCommand(
-              document,
-              current.editingSurface === 'notes'
-                ? { type: 'setTopicNotes', topicId: current.editingId, notes: current.draft }
-                : { type: 'renameTopic', topicId: current.editingId, title: current.draft.trim() },
-            )
-          } catch {
-            return
-          }
+        try {
+          const command = draftCommand(current)
+          if (command) document = applyCommand(document, command)
+        } catch {
+          return
         }
         const contents = serializeWorkbook({
           ...current.workbook,
@@ -60,7 +57,7 @@ export function useFileLifecycle(): void {
         })
       }, 700)
     }
-    const read = bridge ? bridge.readRecovery() : readBrowserRecovery()
+    const read = readRecoveryContents()
     void read
       .then((recovery) => {
         if (!alive) return
@@ -70,17 +67,24 @@ export function useFileLifecycle(): void {
         synchronize()
         openPending()
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!alive) return
         // Permit explicit OS opens while keeping a damaged recovery protected from writes.
         recoveryRead = true
-        useEditor.getState().setError('无法读取自动恢复记录。请先手动保存当前导图。')
+        useEditor
+          .getState()
+          .setError(
+            error instanceof Error ? error.message : '无法读取自动恢复记录。请先手动保存当前导图。',
+          )
         openPending()
       })
     const unsubscribe = useEditor.subscribe((state, previous) => {
+      if (previous.recovery !== null && state.recovery === null) ready = true
       if (
+        state.busy !== previous.busy ||
         state.workbook !== previous.workbook ||
         state.draft !== previous.draft ||
+        state.richDraft !== previous.richDraft ||
         state.editingId !== previous.editingId ||
         state.baseline !== previous.baseline ||
         state.recovery !== previous.recovery
@@ -101,7 +105,19 @@ export function useFileLifecycle(): void {
           editor.dispatchCommand(action === 'undo' ? UNDO_COMMAND : REDO_COMMAND, undefined)
           return
         }
-        state.setDraft(editor.read('latest', () => $getRoot().getTextContent()))
+        const content = editor.read('latest', () => ({
+          text: $getRoot().getTextContent(),
+          markdown: $convertToMarkdownString(richTransformers, undefined, true),
+        }))
+        if (state.editingSurface === 'rich-title')
+          state.setRichDraft(content.markdown, content.text)
+        else
+          state.setDraft(
+            state.editingSurface === 'notes' &&
+              state.history.document.topics[state.editingId]?.metadata?.notesFormat === 'markdown'
+              ? content.markdown
+              : content.text,
+          )
       }
       switch (action) {
         case 'new':
