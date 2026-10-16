@@ -4,9 +4,14 @@ import { desktopConfig } from './config'
 import { DocumentFiles } from './files'
 import { registerIPC } from './ipc'
 import { installMenu } from './menu'
+import { OpenFileRequests } from './openFiles'
 import { installWindowChrome, windowChromeOptions } from './windowChrome'
 
 app.setName('Trelyx')
+const openFiles = new OpenFileRequests()
+const primaryInstance = app.requestSingleInstanceLock()
+if (!primaryInstance) app.quit()
+openFiles.enqueueArguments(process.argv)
 let window: BrowserWindow | null = null
 let dirty = false
 let preserveRecovery = true
@@ -14,6 +19,26 @@ let closing = false
 let confirming = false
 let quitting = false
 let files: DocumentFiles
+let initialized = false
+
+function notifyOpenFile(): void {
+  if (!window && app.isReady() && initialized) createWindow()
+  if (window?.isMinimized()) window.restore()
+  window?.focus()
+  window?.webContents.send('document:open-file-ready')
+}
+
+app.on('open-file', (event, path) => {
+  event.preventDefault()
+  if (openFiles.enqueue(path)) notifyOpenFile()
+})
+app.on('second-instance', (_event, arguments_) => {
+  if (openFiles.enqueueArguments(arguments_)) notifyOpenFile()
+  else {
+    if (window?.isMinimized()) window.restore()
+    window?.focus()
+  }
+})
 
 function createWindow(): void {
   dirty = false
@@ -97,31 +122,35 @@ function createWindow(): void {
   })
 }
 
-void app
-  .whenReady()
-  .then(async () => {
-    files = new DocumentFiles(app.getPath('userData'))
-    await files.initialize()
-    registerIPC(
-      () => window,
-      files,
-      (value, preserve) => {
-        dirty = value
-        preserveRecovery = preserve
-        window?.setDocumentEdited(value)
-        window?.setTitle(`${value ? '● ' : ''}Trelyx`)
-      },
-    )
-    installMenu((action) => window?.webContents.send('menu:action', action))
-    createWindow()
-    app.on('activate', () => {
-      if (!window) createWindow()
+if (primaryInstance)
+  void app
+    .whenReady()
+    .then(async () => {
+      files = new DocumentFiles(app.getPath('userData'))
+      await files.initialize()
+      registerIPC(
+        () => window,
+        files,
+        (value, preserve) => {
+          dirty = value
+          preserveRecovery = preserve
+          window?.setDocumentEdited(value)
+          window?.setTitle(`${value ? '● ' : ''}Trelyx`)
+        },
+        () => openFiles.take(files),
+        () => openFiles.hasPending(),
+      )
+      installMenu((action) => window?.webContents.send('menu:action', action))
+      initialized = true
+      createWindow()
+      app.on('activate', () => {
+        if (!window) createWindow()
+      })
     })
-  })
-  .catch(() => {
-    dialog.showErrorBox('无法启动 Trelyx', '本地应用数据无法初始化，请检查存储空间与目录权限。')
-    app.quit()
-  })
+    .catch(() => {
+      dialog.showErrorBox('无法启动 Trelyx', '本地应用数据无法初始化，请检查存储空间与目录权限。')
+      app.quit()
+    })
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()

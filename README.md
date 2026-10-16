@@ -26,7 +26,7 @@ pnpm dev
 
 拖动分支到目标主题附近可更换父级，右侧面板支持上下排序和切换一级分支方向。修改通过命令记录，⌘/Ctrl+Z 撤销，Shift+⌘/Ctrl+Z 重做。
 
-使用 ⌘/Ctrl+S 保存，⌘/Ctrl+O 打开，⌘/Ctrl+N 新建。恢复提示需要主动选择；无效文件不会替换当前文档。
+使用 ⌘/Ctrl+S 保存，⌘/Ctrl+O 打开，⌘/Ctrl+N 新建。支持打开 `.trelyx` 原生文件和 `.xmind`；XMind 转为未保存文档，首次保存创建 `.trelyx`，源文件保持原样。导入报告列出样式调整和未导入内容。恢复提示需要主动选择；无效文件不会替换当前文档。
 
 桌面标题栏与文档工具栏合并，顶部空白可拖动窗口。macOS 保留原生红黄绿按钮；Windows/Linux 使用原生窗口按钮覆盖层。全屏与窗口失焦会同步调整标题栏。
 
@@ -51,6 +51,7 @@ pnpm moon run trelyx:package
 ## 目录与组件
 
 - `src/core`：主题树、命令、历史和版本化 JSON，独立于 UI 框架。
+- `src/formats`：原生 ZIP 容器、现代与旧版 XMind 导入及转换报告。
 - `src/layout`：基于 d3-hierarchy 的左右树布局。
 - `src/renderer/index.html`、`src/renderer/src`：React Flow 画布、Zustand 状态和 shadcn/ui 通用组件。
 - `src/main`：窗口、菜单、受信任 IPC、本地文件和恢复。
@@ -62,6 +63,8 @@ pnpm moon run trelyx:package
 
 ## 当前限制
 
-当前保存为 v2 多画布工作簿，旧 v1 单画布文件自动迁移。使用自有版本化 JSON，不兼容旧 Vetra 文档或 `.xmind`。标题为纯文本；暂不提供协作、附件、更多布局及图片/PDF 导出。通过应用内“打开”访问文件，尚未接入操作系统双击文件启动。当前 macOS 本地打包未配置正式签名与公证，不能据此视为可公开分发的正式安装包。
+原生格式为 ZIP + JSON，协议版本 1，支持多 Sheet、主题和基础样式；不读取此前的 JSON `.trelyx`、v1/v2 文件及旧恢复记录。XMind 支持现代 `content.json` 与旧版 `content.xml`，保留主题文本、层级、多画布和折叠，映射部分样式；游离主题等转为命名分支。图片、备注、附件、关联线等暂不支持，会在报告中提示。尚不支持 XMind 导出和无损往返。
+
+已配置桌面文件关联并接入启动参数、macOS 打开文件事件及第二实例请求；实际系统关联注册需要安装打包产物后验证。暂不提供协作、更多布局及图片/PDF 导出。当前 macOS 打包未配置正式签名与公证，不能据此视为可公开分发的正式安装包。文件协议见 [原生格式与 XMind 支持范围](docs/file-format.md)。
 
 Agent 共享约定位于 [AGENTS.md](AGENTS.md)，APM CLI 固定为 `.apm-version` 中的版本，`apm.yml` 显式面向 Codex。当前没有外部 Agent 依赖；可通过 `uvx --from apm-cli==0.33.0 apm install --frozen` 核对真实生成的锁文件。

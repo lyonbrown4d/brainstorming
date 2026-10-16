@@ -2,13 +2,16 @@ import { _electron as electron, expect, test } from '@playwright/test'
 import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { createDocument, serializeDocument } from '../../src/core'
+import { createDocument, createWorkbook } from '../../src/core'
+import { encodeTrelyx } from '../../src/formats/trelyx'
+import { decodeFile } from '../../src/formats'
+import { modernXmind } from '../fixtures/xmind/archive'
 
 test('生产 Electron 启动、sandbox preload 和恢复闭环', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'trelyx-desktop-'))
   await writeFile(
-    join(directory, 'recovery.trelyx'),
-    serializeDocument(createDocument('桌面恢复验证')),
+    join(directory, 'recovery-v1.trelyx'),
+    encodeTrelyx(createWorkbook(createDocument('桌面恢复验证'))),
   )
   const app = await electron.launch({ args: ['.', `--user-data-dir=${directory}`] })
   try {
@@ -60,7 +63,11 @@ test('生产 Electron 启动、sandbox preload 和恢复闭环', async () => {
     await page.getByRole('button', { name: '文件菜单', exact: true }).click()
     await page.getByRole('menuitem', { name: '保存导图', exact: true }).click()
     await expect
-      .poll(async () => readFile(savedPath, 'utf8').catch(() => ''))
+      .poll(async () =>
+        readFile(savedPath)
+          .then((bytes) => JSON.stringify(decodeFile(bytes, savedPath).workbook))
+          .catch(() => ''),
+      )
       .toContain('原生桌面编辑')
     await expect(page.locator('.save-status')).toContainText('已保存')
     await page.getByRole('button', { name: '文件菜单', exact: true }).click()
@@ -74,6 +81,48 @@ test('生产 Electron 启动、sandbox preload 和恢复闭环', async () => {
     expect(errors).toEqual([])
   } finally {
     // Terminate the test process rather than interact with the intentional native dirty-close prompt.
+    app.process().kill('SIGKILL')
+    await rm(directory, { recursive: true, force: true })
+  }
+})
+
+test('系统传入的文件在启动和 macOS 打开事件中使用相同打开流程', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'trelyx-file-open-'))
+  const firstPath = join(directory, 'first.trelyx')
+  const secondPath = join(directory, 'second.xmind')
+  const originalXmind = modernXmind()
+  await Promise.all([
+    writeFile(firstPath, encodeTrelyx(createWorkbook(createDocument('启动文件')))),
+    writeFile(secondPath, originalXmind),
+    writeFile(join(directory, 'recovery-v1.trelyx'), 'damaged recovery'),
+  ])
+  const app = await electron.launch({ args: ['.', `--user-data-dir=${directory}`, firstPath] })
+  try {
+    const page = await app.firstWindow()
+    await expect(page.getByTestId('topic-root')).toContainText('启动文件')
+    await app.evaluate(({ app }, path) => {
+      app.emit('open-file', { preventDefault: () => undefined }, path)
+    }, secondPath)
+    await expect(page.getByTestId('topic-root')).toContainText('中心主题')
+    await expect(page.locator('.save-status')).toContainText('未保存')
+    expect(await readFile(secondPath)).toEqual(Buffer.from(originalXmind))
+    await page.getByTestId('topic-root').dblclick()
+    await page.getByRole('textbox', { name: '编辑主题标题' }).fill('尚未保存')
+    await page.locator('.react-flow__pane').click({ position: { x: 20, y: 20 } })
+    const declined = page.waitForEvent('dialog')
+    await app.evaluate(({ app }, path) => {
+      app.emit('second-instance', {}, ['electron', path], '')
+    }, firstPath)
+    await (await declined).dismiss()
+    await expect(page.getByTestId('topic-root')).toContainText('尚未保存')
+    const accepted = page.waitForEvent('dialog')
+    await app.evaluate(({ app }, path) => {
+      app.emit('second-instance', {}, ['electron', path], '')
+    }, firstPath)
+    await (await accepted).accept()
+    await expect(page.getByTestId('topic-root')).toContainText('启动文件')
+    expect(await readFile(join(directory, 'recovery-v1.trelyx'), 'utf8')).toBe('damaged recovery')
+  } finally {
     app.process().kill('SIGKILL')
     await rm(directory, { recursive: true, force: true })
   }

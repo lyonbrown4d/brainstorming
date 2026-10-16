@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test'
-import { createFixtureDocument, serializeDocument } from '../../src/core'
+import { createFixtureDocument, createWorkbook } from '../../src/core'
+import { encodeTrelyx } from '../../src/formats/trelyx'
 
 for (const count of [100, 1_000, 5_000]) {
   test(`${count} 主题固定文档打开与交互采样`, async ({ page }, testInfo) => {
-    const contents = serializeDocument(createFixtureDocument(count))
+    const contents = encodeTrelyx(createWorkbook(createFixtureDocument(count)))
     const samples: number[] = []
     const mounted: number[] = []
     for (let sample = 0; sample < 3; sample += 1) {
@@ -16,7 +17,7 @@ for (const count of [100, 1_000, 5_000]) {
         await picker
       ).setFiles({
         name: `fixed-${count}.trelyx`,
-        mimeType: 'application/json',
+        mimeType: 'application/vnd.trelyx+zip',
         buffer: Buffer.from(contents),
       })
       await expect(page.getByTestId('topic-root')).toBeVisible()

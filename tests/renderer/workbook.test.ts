@@ -4,7 +4,7 @@ import {
   createDocument,
   createWorkbook,
   deserializeWorkbook,
-  serializeDocument,
+  serializeWorkbook,
 } from '../../src/core'
 import { isDirty, useEditor } from '../../src/renderer/src/state/editor'
 import { openDocument, saveDocument } from '../../src/renderer/src/state/files'
@@ -15,6 +15,9 @@ function desktop(overrides: Partial<DesktopAPI> = {}): DesktopAPI {
     platform: 'macos',
     getWindowState: vi.fn(() => Promise.resolve({ focused: true, fullScreen: false })),
     onWindowStateChanged: vi.fn(() => () => undefined),
+    hasOpenFile: () => Promise.resolve(false),
+    takeOpenFile: () => Promise.resolve(null),
+    onOpenFile: () => () => undefined,
     openDocument: vi.fn(() => Promise.resolve(null)),
     saveDocument: vi.fn(() => Promise.resolve('/workbook.trelyx')),
     readRecovery: vi.fn(() => Promise.resolve(null)),
@@ -208,14 +211,19 @@ describe('工作簿文件边界', () => {
     expect(isDirty()).toBe(false)
   })
 
-  it('打开旧 v1 文件升级为单页工作簿且保持干净，新保存使用 v2', async () => {
+  it('XMind 导入保持未保存，报告转换并使用新的原生文件路径保存', async () => {
     const legacy = createDocument('旧版中心', 'legacy')
     const persist = vi.fn<(request: SaveRequest) => Promise<string>>(() =>
       Promise.resolve('/legacy.trelyx'),
     )
     window.trelyx = desktop({
       openDocument: vi.fn(() =>
-        Promise.resolve({ path: '/legacy.trelyx', contents: serializeDocument(legacy) }),
+        Promise.resolve({
+          path: null,
+          sourcePath: '/source.xmind',
+          contents: serializeWorkbook(createWorkbook(legacy)),
+          warnings: ['1 个图片未导入'],
+        }),
       ),
       saveDocument: persist,
     })
@@ -225,9 +233,15 @@ describe('工作簿文件边界', () => {
       { id: 'legacy', name: '旧版中心', document: legacy },
     ])
     expect(useEditor.getState().activeSheetId).toBe('legacy')
-    expect(isDirty()).toBe(false)
+    expect(isDirty()).toBe(true)
+    expect(useEditor.getState().path).toBeNull()
+    expect(useEditor.getState().importReport).toEqual({
+      sourceName: 'source.xmind',
+      warnings: ['1 个图片未导入'],
+    })
     await saveDocument()
     const request = persist.mock.calls[0]?.[0]
+    expect(request?.path).toBeNull()
     expect(request && deserializeWorkbook(request.contents).version).toBe(2)
     expect(isDirty()).toBe(false)
   })

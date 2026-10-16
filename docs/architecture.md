@@ -21,6 +21,7 @@ src/
   shared/                # main、preload、renderer 共用契约
   core/                  # 纯 TypeScript 主题树、工作簿、命令、校验
   layout/                # 纯布局与文本尺寸估算
+  formats/               # ZIP、原生协议与 XMind 转换
 ```
 
 `@core`、`@layout`、`@shared`、`@renderer` 分别映射上述目录。core 不导入 DOM、React、Electron、renderer 或 React Flow；布局和界面均可依赖 core。应用不使用外部服务、数据库、账户或云同步。
@@ -37,18 +38,20 @@ src/
 
 Motion 管理侧栏进出和 Sheet 切换淡入；面板使用位移与透明度，避免逐帧改宽度触发 React Flow 测量循环。动效不记录到文档或历史中，减少动态效果设置也作用于缩放、适应视口和选区自动定位。
 
-## JSON 协议与迁移
+## 文档协议
 
-当前 `.trelyx` 文件是 `format: 'trelyx'`、`version: 2` 的工作簿，包含稳定的文档 ID、文档标题和有序 `sheets`。每个 Sheet 包含独立 ID、名称与 `document`；主题树沿用内部 v1 内容结构，样式为经校验的可选字段。文件名、画布名称和中心主题标题相互独立。
+原生 `.trelyx` 是 ZIP 容器，包含 `manifest.json` 和 `document.json`。容器协议标识为 `app.trelyx.document`、版本为 1。内容保存独立工作簿、画布、文档 ID、标题、主题树和样式；格式适配层负责与 core 模型转换。core 的版本化 JSON 仅用于内部传输和状态比较，不是磁盘协议。
 
-旧的顶层 v1 单画布文件和恢复记录会自动升级为一个 Sheet；下次保存写出 v2。导入验证版本、画布数量/唯一 ID/名称、主题唯一父节点、可达性、循环、样式和保留 ID。最后一个画布不能删除；画布复制产生独立 ID 和内容。
+不提供此前 JSON 文件或旧恢复记录的迁移。未来容器版本和未知原生内容明确拒绝，防止打开再保存导致静默丢失。活动画布、选择、历史、视口、面板、拖动状态和输入草稿不进入正式文件。
 
-导出只保留白名单协议字段，活动画布、选择、历史、视口、面板、拖动状态和输入草稿不进入正式文件。未来版本被明确拒绝，损坏文件不替换当前工作簿。Vetra 和 XMind 文档属于不同协议，不自动加载。
+`src/formats/xmind` 识别 ZIP 内的现代 `content.json` 和旧版 `content.xml`，转换为经过校验的工作簿。XMind 导入返回转换报告和无保存路径的文档，保存时创建原生文件；最近文件仍可记住源文件。ZIP/XML 复用成熟依赖，业务映射独立于 renderer 和 Electron。具体结构、边界及限制见 [文件格式](file-format.md)。
 
 ## 文件与恢复
 
 renderer 通过 `src/shared/contracts.ts` 的 DesktopAPI 调用 preload。主进程验证 IPC 来自当前窗口主框架，文件访问限于原生对话框选定位置、当前会话授权位置和持久化最近文件列表。renderer 不直接访问 Node 文件系统；contextIsolation 和 sandbox 保持开启，nodeIntegration 关闭。
 
-保存和恢复覆盖整份工作簿，而非当前 Sheet。复用 write-file-atomic，先写同目录临时文件并同步，然后重命名替换。读取限制 10 MB；另存为文件名独立清理并限制 UTF-8 字节长度。保存期间新增画布或继续输入，完成后仍保持未保存状态；等待打开文件期间若又有任何画布编辑，需要重新确认。
+保存和恢复覆盖整份工作簿，而非当前 Sheet。复用 write-file-atomic，先写同目录临时文件并同步，然后重命名替换。压缩输入限制 20 MiB，单条目解压后限制 10 MiB；另存为文件名独立清理并限制 UTF-8 字节长度。保存期间新增画布或继续输入，完成后仍保持未保存状态；等待打开文件期间若又有任何画布编辑，需要重新确认。
 
-恢复文件与最近文件位于 Electron userData，分别为 recovery.trelyx、recent-files.json。恢复写入串行；未处理上次记录时不以示例覆盖。自动恢复可提交当前输入草稿的副本，不额外增加撤销记录。原生关闭前检查整份工作簿的未保存更改。
+恢复文件与最近文件位于 Electron userData，分别为 recovery-v1.trelyx、recent-files.json。恢复写入串行；未处理上次记录时不以示例覆盖。自动恢复可提交当前输入草稿的副本，不额外增加撤销记录。原生关闭前检查整份工作簿的未保存更改。
+
+操作系统打开请求由 main 保存到一个待处理槽位，通过 preload 通知 renderer；renderer 在恢复记录处理完成后消费，并对未保存更改确认。启动参数、macOS open-file 与第二实例共用该流程，renderer 不能传入任意系统打开路径。

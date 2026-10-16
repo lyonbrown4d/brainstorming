@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
-import { applyCommand, createDocument, serializeDocument } from '../../src/core'
+import { applyCommand, createDocument, createWorkbook, serializeWorkbook } from '../../src/core'
 import { isDirty, useEditor } from '../../src/renderer/src/state/editor'
 import { newDocument, openDocument, saveDocument } from '../../src/renderer/src/state/files'
 import type { DesktopAPI, OpenedDocument, SaveRequest } from '../../src/shared/contracts'
@@ -11,6 +11,9 @@ function desktop(overrides: Partial<DesktopAPI> = {}): DesktopAPI {
     platform: 'macos',
     getWindowState: vi.fn(() => Promise.resolve({ focused: true, fullScreen: false })),
     onWindowStateChanged: vi.fn(() => () => undefined),
+    hasOpenFile: () => Promise.resolve(false),
+    takeOpenFile: () => Promise.resolve(null),
+    onOpenFile: () => () => undefined,
     openDocument: vi.fn(() => Promise.resolve(null)),
     saveDocument: vi.fn(() => Promise.resolve('/map.trelyx')),
     readRecovery: vi.fn(() => Promise.resolve(null)),
@@ -147,7 +150,10 @@ describe('读取期间的更改保护', () => {
     const before = useEditor.getState()
     const confirm = vi.fn(() => false)
     window.confirm = confirm
-    finish?.({ path: '/other.trelyx', contents: serializeDocument(createDocument('其他文件')) })
+    finish?.({
+      path: '/other.trelyx',
+      contents: serializeWorkbook(createWorkbook(createDocument('其他文件'))),
+    })
     await operation
     expect(confirm).toHaveBeenCalledOnce()
     expect(useEditor.getState().history).toBe(before.history)
@@ -171,7 +177,10 @@ describe('读取期间的更改保护', () => {
     const operation = openDocument()
     useEditor.getState().startEdit('root')
     useEditor.getState().setDraft('等待期间的编辑')
-    finish?.({ path: '/other.trelyx', contents: serializeDocument(createDocument('其他文件')) })
+    finish?.({
+      path: '/other.trelyx',
+      contents: serializeWorkbook(createWorkbook(createDocument('其他文件'))),
+    })
     await operation
     expect(confirm).toHaveBeenCalledOnce()
     expect(useEditor.getState().history.document.title).toBe('其他文件')
@@ -182,7 +191,7 @@ describe('读取期间的更改保护', () => {
       openDocument: vi.fn(() =>
         Promise.resolve({
           path: '/other.trelyx',
-          contents: serializeDocument(createDocument('其他文件')),
+          contents: serializeWorkbook(createWorkbook(createDocument('其他文件'))),
         }),
       ),
     })

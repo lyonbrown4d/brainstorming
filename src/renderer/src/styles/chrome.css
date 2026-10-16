@@ -56,7 +56,8 @@
   font-size: 11px;
 }
 .recovery-banner,
-.error-banner {
+.error-banner,
+.import-banner {
   padding: 10px 24px;
   font-size: 13px;
   display: flex;
@@ -70,7 +71,8 @@
   border-bottom: 1px solid #e4def5;
 }
 .recovery-banner span,
-.error-banner span {
+.error-banner span,
+.import-banner > span {
   flex: 1;
 }
 .recovery-banner button {
@@ -79,6 +81,19 @@
 .error-banner {
   background: #fff0ee;
   color: #a34840;
+}
+.import-banner {
+  background: var(--ui-accent);
+  color: var(--ui-accent-foreground);
+  border-bottom: 1px solid var(--ui-border);
+}
+.import-warning-list {
+  max-height: 50vh;
+  overflow-y: auto;
+  padding-left: 20px;
+  list-style: disc;
+  font-size: 13px;
+  line-height: 1.8;
 }
 @media (max-width: 1000px) {
   .toolbar {

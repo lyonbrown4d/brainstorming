@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<x:xmap-content xmlns:x="urn:xmind:xmap:xmlns:content:2.0" xmlns:svg="http://www.w3.org/2000/svg" version="2.0">
+  <x:sheet id="legacy-sheet">
+    <x:title>旧版画布</x:title>
+    <x:topic id="legacy-root" structure-class="org.xmind.ui.map.unbalanced" style-id="legacy-style">
+      <x:title svg:width="200"><![CDATA[中文旧版
+多行标题]]></x:title>
+      <x:children>
+        <x:topics type="attached">
+          <x:topic id="legacy-a" branch="folded"><x:title>甲 &amp; 乙</x:title>
+            <x:children><x:topics type="attached"><x:topic id="legacy-b"><x:title>后代</x:title></x:topic></x:topics></x:children>
+          </x:topic>
+          <x:topic id="legacy-c"><x:title>丙</x:title><x:notes><x:plain>备注</x:plain></x:notes></x:topic>
+        </x:topics>
+        <x:topics type="detached"><x:topic id="legacy-d"><x:title>旧版游离主题</x:title></x:topic></x:topics>
+      </x:children>
+    </x:topic>
+  </x:sheet>
+  <x:sheet id="legacy-sheet-two"><x:title>旧版第二页</x:title><x:topic id="other"><x:title>其他中心</x:title></x:topic></x:sheet>
+</x:xmap-content>

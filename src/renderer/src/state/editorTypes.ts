@@ -35,6 +35,7 @@ export interface EditorData extends StructureSnapshot {
   error: string | null
   busy: boolean
   recovery: string | null
+  importReport: { sourceName: string; warnings: readonly string[] } | null
   outlineOpen: boolean
   inspectorOpen: boolean
   views: Readonly<Record<string, SheetView>>

@@ -5,6 +5,7 @@ import { AnimatePresence, MotionConfig } from 'motion/react'
 import { AnimatedPanel } from './components/AnimatedPanel'
 import { Toolbar } from './components/Toolbar'
 import { KeyboardHelp } from './components/KeyboardHelp'
+import { ImportNotice } from './components/ImportNotice'
 import { Button } from './components/ui/button'
 import { TooltipProvider } from './components/ui/tooltip'
 import { Canvas, ZoomControls } from './components/Canvas'
@@ -81,6 +82,7 @@ export function App() {
                   </Button>
                 </div>
               )}
+              <ImportNotice />
               <ReactFlowProvider>
                 <div className="workspace-content">
                   <AnimatePresence initial={false}>

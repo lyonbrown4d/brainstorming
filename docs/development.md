@@ -51,7 +51,7 @@ preload 仅暴露平台、窗口焦点及全屏状态；读取状态仍校验当
 
 本地 macOS 预览未配置 Developer ID 签名或公证。CI 自动生成 macOS 预览 artifact，不自动发布正式版本。正式发布还需要签名、公证、应用图标和分发策略。当前 electron-builder 使用默认 Electron 图标。
 
-文件读取或恢复失败时，界面显示错误，保留当前内容。保存失败后脏状态保持；可另存到新位置重试。恢复文件损坏时，先备份 `userData/recovery.trelyx` 再排查，不直接覆盖原文件。
+文件读取或恢复失败时，界面显示错误，保留当前内容。保存失败后脏状态保持；可另存到新位置重试。恢复文件损坏时，先备份 `userData/recovery-v1.trelyx` 再排查，不直接覆盖原文件。
 
 运行时可选 `ELECTRON_RENDERER_URL` 仅供开发，通过 `src/main/config.ts` 校验为本机 loopback HTTP(S) 地址；生产始终加载打包资源。不要将凭据写入 `.env.example` 或文档。
 

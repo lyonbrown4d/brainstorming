@@ -2,8 +2,10 @@ import type { DesktopPlatform, WindowState } from './window'
 
 export type MenuAction = 'new' | 'open' | 'save' | 'saveAs' | 'undo' | 'redo'
 export interface OpenedDocument {
-  path: string
+  path: string | null
   contents: string
+  sourcePath?: string
+  warnings?: readonly string[]
 }
 export interface RecentFile {
   path: string
@@ -18,6 +20,9 @@ export interface DesktopAPI {
   readonly platform: DesktopPlatform
   getWindowState(): Promise<WindowState>
   onWindowStateChanged(callback: (state: WindowState) => void): () => void
+  hasOpenFile(): Promise<boolean>
+  takeOpenFile(): Promise<OpenedDocument | null>
+  onOpenFile(callback: () => void): () => void
   openDocument(): Promise<OpenedDocument | null>
   saveDocument(request: SaveRequest): Promise<string | null>
   readRecovery(): Promise<string | null>

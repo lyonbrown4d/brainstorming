@@ -26,7 +26,7 @@ vi.mock('electron', () => ({
 
 import { DocumentFiles } from '../../src/main/files'
 import { registerIPC } from '../../src/main/ipc'
-import { createDocument, serializeDocument } from '../../src/core'
+import { createDocument, createWorkbook, serializeWorkbook } from '../../src/core'
 
 function setup() {
   const frame = {}
@@ -39,7 +39,13 @@ function setup() {
   const event = { sender: webContents, senderFrame: frame } as unknown as IpcMainInvokeEvent
   const files = new DocumentFiles('/unused-test-storage')
   const setDirty = vi.fn()
-  registerIPC(() => window, files, setDirty)
+  registerIPC(
+    () => window,
+    files,
+    setDirty,
+    () => Promise.resolve(null),
+    () => false,
+  )
   return { event, files, setDirty }
 }
 
@@ -73,7 +79,7 @@ describe('桌面 IPC 信任与取消', () => {
       await invoke('document:save', event, {
         path: null,
         suggestedName: '新导图',
-        contents: serializeDocument(createDocument()),
+        contents: serializeWorkbook(createWorkbook(createDocument())),
       }),
     ).toBeNull()
     expect(open).not.toHaveBeenCalled()
@@ -96,7 +102,7 @@ describe('桌面保存与恢复边界', () => {
     const { event, files } = setup()
     const path = '/selected/existing.trelyx'
     const save = vi.spyOn(files, 'save').mockResolvedValue(path)
-    const contents = serializeDocument(createDocument('标题'.repeat(300)))
+    const contents = serializeWorkbook(createWorkbook(createDocument('标题'.repeat(300))))
     expect(
       await invoke('document:save', event, {
         path,
@@ -113,7 +119,7 @@ describe('桌面保存与恢复边界', () => {
     expect(
       await invoke('document:save', event, {
         path: null,
-        contents: serializeDocument(createDocument('长标题')),
+        contents: serializeWorkbook(createWorkbook(createDocument('长标题'))),
         suggestedName: '题😀/'.repeat(300),
       }),
     ).toBeNull()

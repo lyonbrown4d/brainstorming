@@ -14,6 +14,15 @@ const api: DesktopAPI = {
     ipcRenderer.on('window:state-changed', listener)
     return () => ipcRenderer.removeListener('window:state-changed', listener)
   },
+  hasOpenFile: () => ipcRenderer.invoke('document:has-open-file'),
+  takeOpenFile: () => ipcRenderer.invoke('document:take-open-file'),
+  onOpenFile: (callback) => {
+    const listener = () => {
+      callback()
+    }
+    ipcRenderer.on('document:open-file-ready', listener)
+    return () => ipcRenderer.removeListener('document:open-file-ready', listener)
+  },
   openDocument: () => ipcRenderer.invoke('document:open'),
   saveDocument: (request) => ipcRenderer.invoke('document:save', request),
   readRecovery: () => ipcRenderer.invoke('recovery:read'),

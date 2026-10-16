@@ -6,16 +6,19 @@ import {
   type IpcMainEvent,
 } from 'electron'
 import type { DocumentFiles } from './files'
-import { validateContents, validatePath } from './files'
-import type { SaveRequest } from '../shared/contracts'
+import { validateContents, validateSavePath } from './files'
+import type { OpenedDocument, SaveRequest } from '../shared/contracts'
 import { readWindowState } from './windowChrome'
 
-const filters = [{ name: 'Trelyx 思维导图', extensions: ['trelyx', 'json'] }]
+const openFilters = [{ name: '思维导图', extensions: ['trelyx', 'xmind'] }]
+const saveFilters = [{ name: 'Trelyx 思维导图', extensions: ['trelyx'] }]
 
 export function registerIPC(
   getWindow: () => BrowserWindow | null,
   files: DocumentFiles,
   setDirty: (dirty: boolean, preserveRecovery: boolean) => void,
+  takeOpenFile: () => Promise<OpenedDocument | null>,
+  hasOpenFile: () => boolean,
 ): void {
   function trusted(event: IpcMainInvokeEvent | IpcMainEvent): BrowserWindow {
     const window = getWindow()
@@ -28,9 +31,20 @@ export function registerIPC(
     return window
   }
   ipcMain.handle('window:state', (event) => readWindowState(trusted(event)))
+  ipcMain.handle('document:has-open-file', (event) => {
+    trusted(event)
+    return hasOpenFile()
+  })
+  ipcMain.handle('document:take-open-file', (event) => {
+    trusted(event)
+    return takeOpenFile()
+  })
   ipcMain.handle('document:open', async (event) => {
     const window = trusted(event)
-    const result = await dialog.showOpenDialog(window, { filters, properties: ['openFile'] })
+    const result = await dialog.showOpenDialog(window, {
+      filters: openFilters,
+      properties: ['openFile'],
+    })
     const path = result.filePaths[0]
     return result.canceled || !path ? null : files.openSelected(path)
   })
@@ -39,12 +53,12 @@ export function registerIPC(
     if (!input || typeof input !== 'object') throw new Error('保存请求无效')
     const request = input as Partial<SaveRequest>
     validateContents(request.contents)
-    if (request.path !== null) validatePath(request.path)
+    if (request.path !== null) validateSavePath(request.path)
     let path = request.path
     if (path === null) {
       if (typeof request.suggestedName !== 'string') throw new Error('文件名无效')
       const result = await dialog.showSaveDialog(window, {
-        filters,
+        filters: saveFilters,
         defaultPath: suggestedFilename(request.suggestedName),
       })
       if (result.canceled || !result.filePath) return null

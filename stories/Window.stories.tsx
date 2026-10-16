@@ -1,7 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import type { DesktopAPI } from '../src/shared/contracts'
-import { createDocument, serializeDocument, createExampleDocument } from '../src/core'
+import {
+  createDocument,
+  createWorkbook,
+  serializeWorkbook,
+  createExampleDocument,
+} from '../src/core'
 import { useEditor } from '../src/renderer/src/state/editor'
 import { Toolbar } from '../src/renderer/src/components/Toolbar'
 import { TooltipProvider } from '../src/renderer/src/components/ui/tooltip'
@@ -18,13 +23,19 @@ function installRecentBridge(getRecentFiles: DesktopAPI['getRecentFiles']) {
     getRecentFiles,
     getWindowState: () => Promise.resolve({ focused: true, fullScreen: false }),
     onWindowStateChanged: () => () => undefined,
+    hasOpenFile: () => Promise.resolve(false),
+    takeOpenFile: () => Promise.resolve(null),
+    onOpenFile: () => () => undefined,
     openDocument: () => Promise.resolve(null),
     saveDocument: () => Promise.resolve(null),
     readRecovery: () => Promise.resolve(null),
     writeRecovery: () => Promise.resolve(),
     setDirty: () => undefined,
     openRecent: (path) =>
-      Promise.resolve({ path, contents: serializeDocument(createDocument('最近规划')) }),
+      Promise.resolve({
+        path,
+        contents: serializeWorkbook(createWorkbook(createDocument('最近规划'))),
+      }),
     onMenuAction: () => () => undefined,
   }
   return () => {

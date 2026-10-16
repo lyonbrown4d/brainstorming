@@ -1,0 +1,52 @@
+[
+  {
+    "id": "sheet-one",
+    "title": "中文计划",
+    "relationships": [{ "id": "rel-one", "end1Id": "root", "end2Id": "first" }],
+    "rootTopic": {
+      "id": "root",
+      "title": "中心主题\n第二行",
+      "structureClass": "org.xmind.ui.logic.right",
+      "style": {
+        "id": "style-one",
+        "properties": {
+          "svg:fill": "#abcdef",
+          "fo:color": "#123456",
+          "fo:font-size": "20pt",
+          "fo:font-weight": "bold",
+          "fo:font-style": "italic",
+          "shape-class": "org.xmind.topicShape.ellipse",
+          "fo:font-family": "Example Font"
+        }
+      },
+      "children": {
+        "attached": [
+          {
+            "id": "first",
+            "title": "第一条",
+            "branch": "folded",
+            "notes": { "plain": { "content": "暂不支持的备注" } },
+            "markers": [{ "markerId": "priority-1" }, { "markerId": "task-start" }],
+            "children": { "attached": [{ "id": "nested", "title": "保留的后代" }] }
+          },
+          {
+            "id": "second",
+            "title": "Second\nline",
+            "image": { "src": "xap:resources/picture.png" }
+          }
+        ],
+        "detached": [
+          {
+            "id": "floating",
+            "title": "游离主题",
+            "position": { "x": 100, "y": 200 },
+            "children": { "attached": [{ "id": "floating-child", "title": "游离主题后代" }] }
+          }
+        ],
+        "summary": [{ "id": "summary", "title": "概要正文" }]
+      },
+      "summaries": [{ "id": "summary-range", "range": "(0,1)" }]
+    }
+  },
+  { "id": "sheet-two", "title": "第二页", "rootTopic": { "id": "root-two", "title": "另一个中心" } }
+]

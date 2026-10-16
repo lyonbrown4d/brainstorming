@@ -8,7 +8,7 @@ const meta = {
   component: App,
   parameters: { layout: 'fullscreen' },
   beforeEach: () => {
-    localStorage.removeItem('trelyx.recovery.v1')
+    localStorage.removeItem('trelyx.recovery.native-v1')
     useEditor.getState().replace(createExampleDocument())
     useEditor.setState({ recovery: null, outlineOpen: false, inspectorOpen: false })
   },

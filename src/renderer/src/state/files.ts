@@ -1,5 +1,5 @@
-import { createDocument, deserializeWorkbook } from '@core'
-import type { DesktopAPI } from '@shared/contracts'
+import { createDocument, deserializeWorkbook, serializeWorkbook } from '@core'
+import type { DesktopAPI, OpenedDocument } from '@shared/contracts'
 import { isDirty, useEditor } from './editor'
 import { suggestedFileName } from './fileName'
 import { serializedWorkbook } from './workbookState'
@@ -9,26 +9,38 @@ declare global {
     trelyx?: DesktopAPI
   }
 }
-export const RECOVERY_KEY = 'trelyx.recovery.v1'
+export const RECOVERY_KEY = 'trelyx.recovery.native-v1'
 
 function confirmDiscard(): boolean {
   useEditor.getState().commitDraft()
   return !isDirty() || window.confirm('当前导图有未保存的更改。放弃这些更改并继续？')
 }
-function browserOpen(): Promise<{ path: string; contents: string } | null> {
+function browserOpen(): Promise<OpenedDocument | null> {
   return new Promise((resolve, reject) => {
     const input = document.createElement('input')
     input.type = 'file'
-    input.accept = '.trelyx,application/json'
+    input.accept = '.trelyx,.xmind'
     input.onchange = () => {
       const file = input.files?.[0]
       if (!file) {
         resolve(null)
         return
       }
-      void file.text().then((contents) => {
-        resolve({ path: file.name, contents })
-      }, reject)
+      if (file.size > 20 * 1024 * 1024) {
+        reject(new Error('文件超过 20 MB，无法打开'))
+        return
+      }
+      void Promise.all([file.arrayBuffer(), import('../../../formats')])
+        .then(([buffer, { decodeFile }]) => {
+          const result = decodeFile(new Uint8Array(buffer), file.name)
+          resolve({
+            path: result.imported ? null : file.name,
+            sourcePath: file.name,
+            contents: serializeWorkbook(result.workbook),
+            warnings: result.warnings,
+          })
+        })
+        .catch(reject)
     }
     input.oncancel = () => {
       resolve(null)
@@ -43,14 +55,27 @@ export function newDocument(): void {
   if (useEditor.getState().busy || !confirmDiscard()) return
   useEditor.getState().replace(createDocument('新的想法'))
 }
-export async function openDocument(recentPath?: string): Promise<void> {
+export async function openDocument(recentPath?: string, pending = false): Promise<void> {
+  if (useEditor.getState().busy) return
+  if (pending) {
+    try {
+      if (!(await window.trelyx?.hasOpenFile())) return
+    } catch (error) {
+      showError(error)
+      return
+    }
+  }
   if (useEditor.getState().busy || !confirmDiscard()) return
   const openedFrom = useEditor.getState()
   useEditor.setState({ busy: true })
   try {
     const bridge = window.trelyx
     const result = bridge
-      ? await (recentPath ? bridge.openRecent(recentPath) : bridge.openDocument())
+      ? await (pending
+          ? bridge.takeOpenFile()
+          : recentPath
+            ? bridge.openRecent(recentPath)
+            : bridge.openDocument())
       : await browserOpen()
     if (!result) return
     const document = deserializeWorkbook(result.contents)
@@ -64,7 +89,15 @@ export async function openDocument(recentPath?: string): Promise<void> {
       !window.confirm('读取文件期间，当前导图又有了更改。放弃这些更改并打开文件？')
     )
       return
-    current.replace(document, result.path)
+    const imported = result.path === null
+    current.replace(document, result.path, imported)
+    if (imported)
+      useEditor.setState({
+        importReport: {
+          sourceName: result.sourcePath?.split(/[\\/]/u).at(-1) ?? 'XMind 文件',
+          warnings: result.warnings ?? [],
+        },
+      })
   } catch (error) {
     showError(error)
   } finally {
@@ -86,7 +119,11 @@ export async function saveDocument(saveAs = false): Promise<void> {
         suggestedName: suggestedFileName(workbook.title),
       })
     } else {
-      const url = URL.createObjectURL(new Blob([contents], { type: 'application/json' }))
+      const { encodeTrelyx } = await import('../../../formats/trelyx')
+      const bytes = encodeTrelyx(workbook)
+      const url = URL.createObjectURL(
+        new Blob([new Uint8Array(bytes).buffer], { type: 'application/vnd.trelyx+zip' }),
+      )
       const link = window.document.createElement('a')
       link.href = url
       link.download = suggestedFileName(workbook.title)

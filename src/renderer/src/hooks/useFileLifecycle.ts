@@ -8,8 +8,20 @@ export function useFileLifecycle(): void {
   useEffect(() => {
     let alive = true
     let ready = false
+    let recoveryRead = false
+    let pendingOpen = true
     let timer: ReturnType<typeof setTimeout> | undefined
     const bridge = window.trelyx
+    function openPending(): void {
+      const state = useEditor.getState()
+      if (!bridge || !recoveryRead || !pendingOpen || state.busy || state.recovery) return
+      pendingOpen = false
+      void openDocument(undefined, true)
+    }
+    const removeOpenFile = bridge?.onOpenFile(() => {
+      pendingOpen = true
+      openPending()
+    })
     function synchronize(): void {
       const state = useEditor.getState()
       bridge?.setDirty(isDirty(), !ready || Boolean(state.recovery))
@@ -54,10 +66,16 @@ export function useFileLifecycle(): void {
         if (!alive) return
         useEditor.setState({ recovery })
         ready = true
+        recoveryRead = true
         synchronize()
+        openPending()
       })
       .catch(() => {
+        if (!alive) return
+        // Permit explicit OS opens while keeping a damaged recovery protected from writes.
+        recoveryRead = true
         useEditor.getState().setError('无法读取自动恢复记录。请先手动保存当前导图。')
+        openPending()
       })
     const unsubscribe = useEditor.subscribe((state, previous) => {
       if (
@@ -68,6 +86,7 @@ export function useFileLifecycle(): void {
         state.recovery !== previous.recovery
       )
         synchronize()
+      if (state.busy !== previous.busy || state.recovery !== previous.recovery) openPending()
     })
     const removeMenu = bridge?.onMenuAction((action) => {
       const state = useEditor.getState()
@@ -115,6 +134,7 @@ export function useFileLifecycle(): void {
       clearTimeout(timer)
       unsubscribe()
       removeMenu?.()
+      removeOpenFile?.()
       window.removeEventListener('beforeunload', beforeUnload)
     }
   }, [])

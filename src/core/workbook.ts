@@ -1,4 +1,4 @@
-import { createDocument, deserializeDocument, documentData } from './document'
+import { createDocument, documentData } from './document'
 import type { MindMapDocument, MindMapSheet, MindMapWorkbook } from './types'
 import { assertId, validateDocument } from './validation'
 
@@ -99,8 +99,6 @@ export function deserializeWorkbook(json: string): MindMapWorkbook {
   } catch {
     throw new Error('文件不是有效的 JSON')
   }
-  if (isRecord(parsed) && own(parsed, 'version') === 1)
-    return createWorkbook(deserializeDocument(json))
   validateWorkbook(parsed)
   return workbookData(parsed)
 }

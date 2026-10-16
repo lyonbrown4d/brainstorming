@@ -9,6 +9,7 @@ Trelyx 是基于 React Flow + Electron 的本地优先桌面思维导图工具�
 ## 架构
 
 - `src/core`：纯 TypeScript 主题树、命令、历史、校验、版本化 JSON。
+- `src/formats`：原生 ZIP 容器协议、XMind 导入与转换报告；不将第三方文件字段写入 core。
 - `src/layout`：主题树到左右布局的纯计算，优先采用成熟布局库。
 - `src/main` / `src/preload` / `src/renderer/src`：Electron main、preload 与 React renderer，入口遵循 electron-vite 标准目录。
 - `src/shared`：主进程、preload 与 renderer 共用的白名单契约。
@@ -35,7 +36,8 @@ Trelyx 是基于 React Flow + Electron 的本地优先桌面思维导图工具�
 - 主题文本编辑复用 Lexical 官方 React 扩展；选区、输入法、纯文本粘贴和编辑内历史交给 Lexical，应用仅衔接导图命令。禁止通过逐字符重建编辑器或自写输入法状态机处理中文输入。
 - 新增 UI 优先使用 shadcn/ui + Radix 和成熟组件；主题样式与全局样式集中管理。通用能力优先选维护活跃的第三方库，仅为主题树业务规则、命令和必要集成编写自有逻辑。
 - ESLint 管质量，Prettier 管格式；Husky 提交前检查格式和类型。
-- 文件写入须避免截断原文件；处理取消、无效 JSON、保存失败和恢复失败。
+- 原生 `.trelyx` 使用 ZIP 容器协议 v1，不兼容旧 JSON 文件或恢复记录。XMind 仅导入，保存必须使用新的 `.trelyx` 路径，不能覆盖源文件。
+- 文件写入须避免截断原文件；处理取消、损坏 ZIP/JSON/XML、保存失败和恢复失败。
 - 测试覆盖主题树合法性、命令边界、撤销重做、序列化和恢复。
 - UI 通过 Playwright 验证新增、编辑、折叠、移动、保存和重新打开。
 - Storybook 提供主题和编辑器交互预览；性能使用固定 fixtures、多次采样。

@@ -52,7 +52,7 @@ describe('versioned workbook persistence', () => {
     ).not.toContain('activeSheetId')
   })
 
-  it('migrates v1 trees and retains every document detail', () => {
+  it('rejects legacy tree JSON and derives bounded sheet names for new workbooks', () => {
     const document = applyCommand(createDocument('旧导图', 'legacy-map'), {
       type: 'addTopic',
       parentId: 'root',
@@ -60,14 +60,7 @@ describe('versioned workbook persistence', () => {
       title: '原有分支',
       side: 'left',
     })
-    const workbook = deserializeWorkbook(serializeDocument(document))
-    expect(workbook).toEqual({
-      format: 'trelyx',
-      version: 2,
-      id: 'legacy-map',
-      title: '旧导图',
-      sheets: [{ id: 'legacy-map', name: '旧导图', document }],
-    })
+    expect(() => deserializeWorkbook(serializeDocument(document))).toThrow()
     expect(createWorkbook(createDocument('', 'untitled')).sheets[0]?.name).toBe('画布 1')
     const long = '长'.repeat(100)
     expect(createWorkbook(createDocument(long, 'long')).sheets[0]?.name).toHaveLength(80)

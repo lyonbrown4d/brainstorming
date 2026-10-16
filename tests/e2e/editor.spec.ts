@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { createDocument, serializeDocument } from '../../src/core'
+import { createDocument, createWorkbook, serializeWorkbook } from '../../src/core'
 import { composeChinese } from './ime'
 
 test.beforeEach(async ({ page }) => {
@@ -72,9 +72,12 @@ test('无效文件不替换当前文档，输入法 Enter 不创建主题', asyn
 
 test('恢复文档需要用户选择，刷新后可以恢复', async ({ page }) => {
   const document = createDocument('恢复的想法')
-  await page.evaluate((contents) => {
-    localStorage.setItem('trelyx.recovery.v1', contents)
-  }, serializeDocument(document))
+  await page.evaluate(
+    (contents) => {
+      localStorage.setItem('trelyx.recovery.native-v1', contents)
+    },
+    serializeWorkbook(createWorkbook(document)),
+  )
   await page.reload()
   await expect(page.getByRole('button', { name: /恢复/ })).toBeVisible()
   await expect(page.getByTestId('topic-root')).not.toContainText('恢复的想法')
