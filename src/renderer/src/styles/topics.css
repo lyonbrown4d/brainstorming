@@ -111,27 +111,6 @@
 .topic.is-editing::after {
   visibility: hidden;
 }
-.fold-button {
-  position: absolute;
-  top: calc(50% - 9px);
-  right: -11px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #fff;
-  color: var(--branch-color);
-  border: 1px solid #d9d3e9;
-  font-size: 9px;
-  padding: 0;
-  z-index: 2;
-}
-.side-left .fold-button {
-  right: auto;
-  left: -11px;
-}
-.topic-root .fold-button {
-  color: #8070c6;
-}
 .topic-leaf::after {
   content: '';
   position: absolute;

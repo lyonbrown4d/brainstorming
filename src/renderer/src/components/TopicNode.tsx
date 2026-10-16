@@ -1,7 +1,8 @@
 import { memo } from 'react'
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react'
 import type { Topic } from '@core'
+import type { LayoutDirection } from '@layout'
 import { useEditor } from '../state/editor'
 import { useTopicSelected } from '../state/selection'
 import { CanvasTopicTitle } from './metadata/CanvasTopicTitle'
@@ -19,6 +20,7 @@ export type TopicFlowNode = Node<
     color: string
     textColor?: string
     fontFamily?: string
+    direction?: LayoutDirection
   },
   'topic'
 >
@@ -30,10 +32,21 @@ export const TopicNode = memo(function TopicNode({ data, id }: NodeProps<TopicFl
   const editing = useEditor((state) => state.editingId === id)
   const editingSurface = useEditor((state) => state.editingSurface)
   const { topic, root, branch = false, color } = data
+  const direction = data.direction ?? topic.side
+  const side = direction === 'left' || direction === 'right' ? direction : topic.side
+  const FoldIcon = { left: ChevronLeft, right: ChevronRight, up: ChevronUp, down: ChevronDown }[
+    direction
+  ]
+  const foldPosition = {
+    left: 'top-[calc(50%-9px)] -left-[11px]',
+    right: 'top-[calc(50%-9px)] -right-[11px]',
+    up: 'left-[calc(50%-9px)] -top-[11px]',
+    down: 'left-[calc(50%-9px)] -bottom-[11px]',
+  }[direction]
   const style = topic.style
   return (
     <div
-      className={`topic nopan ${root ? 'topic-root' : branch ? 'topic-branch' : 'topic-leaf'} ${selected ? 'is-selected' : ''} ${editing && editingSurface === 'canvas' ? 'is-editing' : ''} ${dropTarget ? 'drop-target' : ''} side-${topic.side} ${topic.image || topic.notes || topic.attachments?.length || topic.metadata ? 'has-content flex flex-col items-center' : ''}`}
+      className={`topic nopan ${root ? 'topic-root' : branch ? 'topic-branch' : 'topic-leaf'} ${selected ? 'is-selected' : ''} ${editing && editingSurface === 'canvas' ? 'is-editing' : ''} ${dropTarget ? 'drop-target' : ''} side-${side} ${topic.image || topic.notes || topic.attachments?.length || topic.metadata ? 'has-content flex flex-col items-center' : ''}`}
       style={
         {
           '--branch-color': color,
@@ -97,7 +110,7 @@ export const TopicNode = memo(function TopicNode({ data, id }: NodeProps<TopicFl
           variant="ghost"
           size="icon"
           type="button"
-          className="fold-button nodrag"
+          className={`fold-button nodrag absolute z-[2] size-[18px] rounded-full border border-[#d9d3e9] bg-white p-0 text-[9px] ${root ? 'text-[#8070c6]' : 'text-[var(--branch-color)]'} ${foldPosition}`}
           aria-label={`${topic.collapsed ? '展开' : '折叠'} ${topic.title}`}
           onClick={(event) => {
             event.stopPropagation()
@@ -105,13 +118,7 @@ export const TopicNode = memo(function TopicNode({ data, id }: NodeProps<TopicFl
             useEditor.getState().command({ type: 'toggleCollapse', topicId: id })
           }}
         >
-          {topic.collapsed ? (
-            topic.children.length
-          ) : topic.side === 'left' ? (
-            <ChevronLeft size={10} className="size-2.5" />
-          ) : (
-            <ChevronRight size={10} className="size-2.5" />
-          )}
+          {topic.collapsed ? topic.children.length : <FoldIcon size={10} className="size-2.5" />}
         </Button>
       )}
     </div>

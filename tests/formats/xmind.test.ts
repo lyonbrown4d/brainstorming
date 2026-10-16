@@ -36,6 +36,7 @@ describe('XMind import', () => {
     expect(result.workbook.sheets.map(({ name }) => name)).toEqual(['中文计划', '第二页'])
     const document = result.workbook.sheets[0]?.document
     expect(document?.title).toBe('中心主题\n第二行')
+    expect(document?.settings?.layout).toBe('logic-right')
     expect(document?.topics.root?.children.slice(0, 2)).toEqual(['first', 'second'])
     expect(document?.topics.first).toMatchObject({
       title: '第一条',
@@ -54,7 +55,6 @@ describe('XMind import', () => {
     })
     expect(result.warnings).toEqual(
       expect.arrayContaining([
-        expect.stringContaining('布局'),
         expect.stringContaining('样式'),
         '未导入 XMind 图标（2 项）',
         '未导入 XMind 关联线（1 项）',

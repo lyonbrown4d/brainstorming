@@ -7,6 +7,7 @@ import { EmbeddedContent } from './content'
 import { validateBoundedWorkbook } from '../trelyx/validation'
 import { idAllocator, list, record, text, topicIds, Warnings, type SourceRecord } from './common'
 import { parseLegacy } from './legacy'
+import { importStructure } from './structures'
 import { importStyle } from './styles'
 import { standardMetadata } from './metadata'
 import { restoreDocumentExtension, restoreTopicExtension, trelyxExtension } from './extensions'
@@ -120,6 +121,7 @@ class WorkbookImporter {
     const rootTopic = record(source.rootTopic, '中心主题')
     const allocate = idAllocator(`xmind-topic-${index + 1}`, this.warnings, topicIds(rootTopic))
     const content = new EmbeddedContent(this.entries, this.used, this.budget, this.warnings)
+    const layout = importStructure(rootTopic.structureClass, this.warnings)
     const rootId = this.topic(rootTopic, topics, allocate, 0, 'right', content)
     const root = topics[rootId]
     if (!root) throw new Error('XMind 缺少中心主题')
@@ -135,6 +137,7 @@ class WorkbookImporter {
           title: root.title,
           rootId,
           topics,
+          ...(!extension && layout ? { settings: { layout } } : {}),
         },
         extension,
       ),
@@ -156,7 +159,7 @@ class WorkbookImporter {
     const metadata = standardMetadata(source, this.warnings)
     const extension = trelyxExtension(source, this.warnings)
     this.warnings.omitted(source, topicFields)
-    if (source.structureClass !== undefined) this.warnings.add('XMind 布局已转换为 Trelyx 左右布局')
+    const structure = depth > 0 ? importStructure(source.structureClass, this.warnings) : undefined
     if (source.branch !== undefined && source.branch !== 'folded' && source.branch !== 'expanded')
       this.warnings.add('不支持的 XMind 折叠状态已展开')
     const children = source.children === undefined ? {} : record(source.children, 'children')
@@ -204,6 +207,7 @@ class WorkbookImporter {
         children: childIds,
         collapsed: source.branch === 'folded',
         side,
+        ...(structure ? { structure } : {}),
         ...(style ? { style } : {}),
         ...(metadata ? { metadata } : {}),
         ...content.topic(metadata?.link ? { ...source, href: undefined } : source),

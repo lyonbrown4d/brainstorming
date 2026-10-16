@@ -9,10 +9,13 @@ export const alias = {
   '@shared': fileURLToPath(new URL('./src/shared', import.meta.url)),
   '@renderer': fileURLToPath(new URL('./src/renderer/src', import.meta.url)),
 }
+// Include the lazy 3D add-on up front so first use never triggers a full-page optimizer reload.
+export const rendererOptimizeDeps = { include: ['three', 'three/addons/loaders/SVGLoader.js'] }
 export default defineConfig({
   root: fileURLToPath(new URL('./src/renderer', import.meta.url)),
   base: './',
   plugins: [react(), tailwindcss()],
-  resolve: { alias },
+  resolve: { alias, dedupe: ['three'] },
+  optimizeDeps: rendererOptimizeDeps,
   build: { outDir: fileURLToPath(new URL('./out/renderer', import.meta.url)), emptyOutDir: true },
 })

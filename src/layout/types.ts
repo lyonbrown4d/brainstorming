@@ -10,16 +10,34 @@ export interface LayoutNode {
   readonly side: Side
   readonly direction?: LayoutDirection
 }
+export interface LayoutPoint {
+  readonly x: number
+  readonly y: number
+}
+export interface LayoutDecoration {
+  readonly id: string
+  readonly kind: 'brace' | 'spine' | 'cell' | 'grid-line'
+  readonly x: number
+  readonly y: number
+  readonly width: number
+  readonly height: number
+  readonly topicId?: string
+  readonly direction?: LayoutDirection
+}
 export interface LayoutEdge {
   readonly id: string
   readonly source: string
   readonly target: string
+  readonly routing?: 'straight' | 'orthogonal' | 'hidden'
+  /** Absolute points including endpoints, translated with mixed/floating components. */
+  readonly waypoints?: readonly LayoutPoint[]
   /** Incoming direction is per edge when a topic overrides its outgoing subtree structure. */
   readonly direction?: LayoutDirection
 }
 export interface MindMapLayout {
   readonly nodes: LayoutNode[]
   readonly edges: LayoutEdge[]
+  readonly decorations?: LayoutDecoration[]
 }
 export interface LayoutUnit {
   readonly id: string
@@ -44,6 +62,7 @@ export interface LocalPlacement {
 export interface LocalLayout {
   readonly placements: LocalPlacement[]
   readonly edges: LayoutEdge[]
+  readonly decorations?: LayoutDecoration[]
 }
 export interface LayoutBounds {
   readonly minX: number
@@ -51,7 +70,10 @@ export interface LayoutBounds {
   readonly maxX: number
   readonly maxY: number
 }
-export function layoutBounds(placements: readonly LocalPlacement[]): LayoutBounds {
+export function layoutBounds(
+  placements: readonly LocalPlacement[],
+  decorations: readonly LayoutDecoration[] = [],
+): LayoutBounds {
   let minX = Infinity
   let minY = Infinity
   let maxX = -Infinity
@@ -62,7 +84,13 @@ export function layoutBounds(placements: readonly LocalPlacement[]): LayoutBound
     minY = Math.min(minY, y - unit.height / 2)
     maxY = Math.max(maxY, y + unit.height / 2)
   }
-  return placements.length === 0
+  for (const decoration of decorations) {
+    minX = Math.min(minX, decoration.x)
+    maxX = Math.max(maxX, decoration.x + decoration.width)
+    minY = Math.min(minY, decoration.y)
+    maxY = Math.max(maxY, decoration.y + decoration.height)
+  }
+  return placements.length === 0 && decorations.length === 0
     ? { minX: 0, minY: 0, maxX: 0, maxY: 0 }
     : { minX, minY, maxX, maxY }
 }

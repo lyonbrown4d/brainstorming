@@ -1,6 +1,7 @@
 import { layoutDocument, type LayoutNode } from '@layout'
 import type { MindMapDocument } from '@core'
 import { topicAppearance } from '@shared/appearance'
+import { layoutEdgePath } from '@shared/layout-geometry'
 import { relationEdges } from '../annotations/projection'
 import type { TopicFlowNode } from '../TopicNode'
 
@@ -47,27 +48,47 @@ export function projectCanvas(document: MindMapDocument) {
           color: appearance.stroke,
           textColor: appearance.color,
           fontFamily: appearance.fontFamily,
+          ...(node.direction ? { direction: node.direction } : {}),
         },
         draggable: node.id !== document.rootId,
       },
     ]
   })
-  const edges = layout.edges.map((edge) => {
-    const source = byId.get(edge.source),
-      target = byId.get(edge.target)
-    return {
-      ...edge,
-      type: document.topics[edge.target]?.style?.lineStyle === 'straight' ? 'straight' : 'default',
-      ...(source && target
-        ? edgeHandles(source, target, edge.direction ?? document.topics[edge.target]?.side)
-        : {}),
-      style: {
-        stroke: topicAppearance(document, edge.target).stroke,
-        strokeWidth: topicAppearance(document, edge.target).lineWidth,
-      },
-      selectable: false,
-    }
-  })
+  const edges = layout.edges
+    .filter((edge) => edge.routing !== 'hidden')
+    .map((edge) => {
+      const source = byId.get(edge.source),
+        target = byId.get(edge.target)
+      return {
+        ...edge,
+        type:
+          edge.routing || edge.waypoints
+            ? 'structure'
+            : document.topics[edge.target]?.style?.lineStyle === 'straight'
+              ? 'straight'
+              : 'default',
+        ...(source && target && (edge.routing || edge.waypoints)
+          ? {
+              data: {
+                path: layoutEdgePath(
+                  edge,
+                  source,
+                  target,
+                  document.topics[edge.target]?.style?.lineStyle === 'straight',
+                ),
+              },
+            }
+          : {}),
+        ...(source && target
+          ? edgeHandles(source, target, edge.direction ?? document.topics[edge.target]?.side)
+          : {}),
+        style: {
+          stroke: topicAppearance(document, edge.target).stroke,
+          strokeWidth: topicAppearance(document, edge.target).lineWidth,
+        },
+        selectable: false,
+      }
+    })
   return {
     nodes,
     edges: [
@@ -79,5 +100,6 @@ export function projectCanvas(document: MindMapDocument) {
       }),
     ],
     layoutNodes: layout.nodes,
+    decorations: layout.decorations ?? [],
   }
 }

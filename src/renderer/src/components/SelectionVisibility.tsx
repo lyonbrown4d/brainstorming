@@ -3,6 +3,7 @@ import { useReducedMotion } from 'motion/react'
 import { useReactFlow, useStore } from '@xyflow/react'
 import { useEditor } from '../state/editor'
 import type { TopicFlowNode } from './TopicNode'
+import { documentStructureKey } from '@shared/layout-geometry'
 
 /** Keep keyboard navigation and newly created editors inside the visible canvas. */
 export function SelectionVisibility() {
@@ -12,13 +13,18 @@ export function SelectionVisibility() {
   const flow = useReactFlow<TopicFlowNode>()
   const width = useStore((state) => state.width)
   const height = useStore((state) => state.height)
-  const previous = useRef({ document, selectedId })
+  const structure = documentStructureKey(document)
+  const previous = useRef({ document, selectedId, structure })
   useEffect(() => {
     const prior = previous.current
-    previous.current = { document, selectedId }
+    previous.current = { document, selectedId, structure }
     // Mounting a sheet restores its viewport; only subsequent navigation should reveal topics.
     if (prior.document === document && prior.selectedId === selectedId) return
     const frame = requestAnimationFrame(() => {
+      if (prior.structure !== structure) {
+        void flow.fitView({ padding: 0.16, maxZoom: 1.2, duration: reduceMotion ? 0 : 220 })
+        return
+      }
       const node = flow.getNode(selectedId)
       if (!node || width === 0 || height === 0) return
       const viewport = flow.getViewport()
@@ -40,6 +46,6 @@ export function SelectionVisibility() {
     return () => {
       cancelAnimationFrame(frame)
     }
-  }, [document, selectedId, flow, width, height, reduceMotion])
+  }, [document, selectedId, structure, flow, width, height, reduceMotion])
   return null
 }

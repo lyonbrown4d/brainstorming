@@ -5,6 +5,7 @@ import { referencedAssetIds } from '../../core/topic-content'
 import { documentExtensionData } from '../../core/extension-data'
 import { validateBoundedWorkbook } from '../trelyx/validation'
 import { ARCHIVE_LIMITS } from '../archive'
+import { exportStructure } from '../xmind/structures'
 
 function jsonEntry(value: unknown): Uint8Array {
   const bytes = strToU8(JSON.stringify(value))
@@ -56,8 +57,12 @@ export function encodeXmind(workbook: MindMapWorkbook): Uint8Array {
       const audioAsset = topic.metadata?.audioAssetId
         ? sheet.document.assets?.[topic.metadata.audioAssetId]
         : undefined
+      const structure =
+        topic.structure ??
+        (id === sheet.document.rootId ? (sheet.document.settings?.layout ?? 'map') : undefined)
       return {
         id: topic.id,
+        ...(structure ? { structureClass: exportStructure(structure) } : {}),
         class: 'topic',
         title: topic.title,
         branch: topic.collapsed ? 'folded' : 'expanded',

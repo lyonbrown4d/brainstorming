@@ -2,6 +2,12 @@ import { getSubtreeIds } from '@core/tree'
 import type { MindMapDocument } from '@core'
 import { layoutDocument } from './index'
 import type { LayoutNode } from './index'
+import {
+  projectSpatialGeometry,
+  type SpatialDecoration,
+  type SpatialEdge,
+} from './spatial-geometry'
+export type { SpatialDecoration, SpatialEdge } from './spatial-geometry'
 
 export type SpatialPoint = readonly [number, number, number]
 
@@ -22,7 +28,8 @@ export interface SpatialBounds {
 
 export interface SpatialLayout {
   readonly nodes: SpatialNode[]
-  readonly edges: { readonly id: string; readonly source: string; readonly target: string }[]
+  readonly edges: SpatialEdge[]
+  readonly decorations: SpatialDecoration[]
   readonly bounds: SpatialBounds
 }
 
@@ -66,11 +73,14 @@ export function layoutSpatialDocument(document: MindMapDocument): SpatialLayout 
       id,
       side: topic.side,
       floating: floating.has(id),
-      z: floating.has(id)
-        ? 0.7 + Math.min(2, (floatingIndex.get(id) ?? 0) * 0.3)
-        : normalBranches.length < 2
-          ? 0.7
-          : ((normalIndex.get(id) ?? 0) / (normalBranches.length - 1) - 0.5) * 2.4,
+      z:
+        preservePlanar && !floating.has(id)
+          ? 0
+          : floating.has(id)
+            ? 0.7 + Math.min(2, (floatingIndex.get(id) ?? 0) * 0.3)
+            : normalBranches.length < 2
+              ? 0.7
+              : ((normalIndex.get(id) ?? 0) / (normalBranches.length - 1) - 0.5) * 2.4,
       minY: Infinity,
       maxY: -Infinity,
       offsetY: 0,
@@ -115,9 +125,19 @@ export function layoutSpatialDocument(document: MindMapDocument): SpatialLayout 
   }
   const nodes = planar.nodes.map((node): SpatialNode => {
     const { branchId, depth } = ancestry.get(node.id) ?? { branchId: root.id, depth: 0 }
-    return spatialNode(node, branchId, depth, groups.get(branchId))
+    return spatialNode(node, branchId, depth, groups.get(branchId), preservePlanar)
   })
-  return { nodes, edges: planar.edges, bounds: spatialBounds(nodes) }
+  const geometry = projectSpatialGeometry(
+    planar,
+    nodes,
+    root.id,
+    new Set(
+      Object.values(document.topics)
+        .filter((topic) => topic.style?.lineStyle === 'straight')
+        .map((topic) => topic.id),
+    ),
+  )
+  return { nodes, ...geometry, bounds: spatialBounds([...nodes, ...geometry.decorations]) }
 }
 
 function spatialNode(
@@ -125,9 +145,10 @@ function spatialNode(
   branchId: string,
   depth: number,
   group: BranchGroup | undefined,
+  preservePlanar: boolean,
 ): SpatialNode {
   // Descendants stay close to their main branch's plane, even for very deep trees.
-  const depthOffset = Math.min(0.36, Math.max(0, depth - 1) * 0.12)
+  const depthOffset = preservePlanar ? 0 : Math.min(0.36, Math.max(0, depth - 1) * 0.12)
   return {
     id: node.id,
     position:
@@ -157,7 +178,9 @@ export function spatialSubtreeIds(document: MindMapDocument, id: string): Set<st
 }
 
 /** Axis-aligned bounds include each card's width and height, with no camera padding. */
-export function spatialBounds(nodes: readonly SpatialNode[]): SpatialBounds {
+export function spatialBounds(
+  nodes: readonly Pick<SpatialNode, 'position' | 'width' | 'height'>[],
+): SpatialBounds {
   if (nodes.length === 0) return { min: [0, 0, 0], max: [0, 0, 0] }
   const min: [number, number, number] = [Infinity, Infinity, Infinity]
   const max: [number, number, number] = [-Infinity, -Infinity, -Infinity]

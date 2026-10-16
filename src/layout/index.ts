@@ -4,7 +4,14 @@ import { layoutStructuredDocument } from './structured'
 import type { MindMapLayout } from './types'
 
 export { measureTopic, measureTopicImage } from './measure'
-export type { LayoutNode, LayoutEdge, LayoutDirection, MindMapLayout } from './types'
+export type {
+  LayoutNode,
+  LayoutEdge,
+  LayoutDirection,
+  LayoutDecoration,
+  LayoutPoint,
+  MindMapLayout,
+} from './types'
 
 /** Top-left positions, with the center topic anchored at (0, 0). */
 export function layoutDocument(document: MindMapDocument): MindMapLayout {

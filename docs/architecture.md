@@ -1,6 +1,6 @@
 # 架构与文档格式
 
-Trelyx 是单 package 桌面应用。React Flow 负责画布交互，d3-hierarchy 与 Dagre 负责多结构布局，shadcn/ui 和 Radix 负责通用控件，dnd-kit 负责画布标签排序，Zustand 保存编辑状态，Electron 负责系统集成。
+Trelyx 是单 package 桌面应用。React Flow 负责画布交互，d3-hierarchy 负责树形与层级分区布局，shadcn/ui 和 Radix 负责通用控件，dnd-kit 负责画布标签排序，Zustand 保存编辑状态，Electron 负责系统集成。
 
 三维视图按需加载 Three.js、React Three Fiber 和 Drei。`layout/spatial.ts` 从同一主题树派生空间坐标，Drei 负责相机、圆角几何、连线和中文标签投影；不将 Three 类型写入 core；普通相机仅是会话状态，显式保存的演示步骤使用纯数值坐标。独立 Zustand 视图状态保存各 Sheet 的维度、聚焦和相机，打开文档时重置。标题原位编辑仍由现有 Lexical 扩展提交类型化改名命令；触控板适配仅将浏览器 wheel 意图转换为 CameraControls 的平移、缩放和旋转调用。
 
@@ -35,6 +35,10 @@ src/
 切换画布先提交当前草稿；各画布的缩放和平移只存于会话，不影响脏状态，不写入正式文件。左右大纲和样式面板独立开关。样式包括填充、文字颜色、字号、粗斜体、形状、线型与粗细，经过校验、参与撤销并随主题保存。
 
 主题树是内容来源；React Flow 节点与边是布局投影。一次拖拽结束才提交移动命令，中间坐标不进入历史。折叠后不投影后代，画布只挂载视口中的元素。文本估算包含字号、边框与留量，字体平台差异仍需在对应系统复核。
+
+`settings.layout` 指定 Sheet 默认结构，`topic.structure` 可覆盖分支；切换整页时以一个批命令设置默认结构并清除根覆盖。D3 tidy tree 处理分支排序与避让，partition 处理树形表格的层级单元格；矩阵按列、共享行高和单元格内的 D3 子树排列。业务适配输出纯几何的括号、骨架、单元格和显式连线路径，混合分支与游离主题整体平移这些几何信息。`shared/layout-geometry` 统一二维画布与 SVG 的路径，PNG/PDF/打印复用同一输出。
+
+三维投影将相同的结构几何转换为世界坐标，结构化组件保持同一平面，默认导图继续按分支展开深度。Three.js SVGLoader 采样括号与特殊连线路径，Drei Line 绘制线条，表格单元格使用位于卡片后方的透明平面；普通导图边保留 Bézier 渲染路径。完整结构边界参与相机取景，分支聚焦对无关几何淡化，不改变文件内容。
 
 主题编辑复用 Lexical 的 `LexicalExtensionComposer`、`PlainTextExtension`、`AutoFocusExtension` 和 `HistoryExtension`。仅选中主题、当前编辑主题和右侧名称区域挂载编辑器，未选主题保持普通文本。Lexical 管理 DOM、组合输入、选区、粘贴及编辑内撤销；渲染层集成只处理导图快捷键、草稿和提交。编辑期间不随每个字符重设 Lexical 状态，提交、取消或文档撤销后才同步主题树中的文本，避免旧 React Flow 投影覆盖新内容。文件保存纯文本标题及可移植的 Markdown 格式；局部标题与富文本备注使用 Lexical 官方 RichText/List/Link/Markdown 扩展。图片、附件与音频在各画布内以稳定资源 ID 引用。
 

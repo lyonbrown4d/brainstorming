@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Palette } from 'lucide-react'
-import type { DocumentSettings, LayoutKind, TopicStyle } from '@core'
+import type { DocumentSettings, TopicStyle } from '@core'
 import { useEditor } from '../../state/editor'
-import { selectedTopicIds, updateSelectedStyle } from '../../state/selection'
+import { updateSelectedStyle } from '../../state/selection'
 import { defaultTopicStyle } from '../../lib/topicAppearance'
 import { runAnnotationCommand } from '../annotations/commands'
 import { Button } from '../ui/button'
@@ -10,16 +10,6 @@ import { Input } from '../ui/input'
 import { FieldSelect } from '../FieldSelect'
 import { Popover } from 'radix-ui'
 
-export const layoutOptions: readonly { value: LayoutKind; label: string }[] = [
-  { value: 'map', label: '左右导图' },
-  { value: 'logic-right', label: '向右逻辑图' },
-  { value: 'logic-left', label: '向左逻辑图' },
-  { value: 'org-down', label: '向下组织图' },
-  { value: 'org-up', label: '向上组织图' },
-  { value: 'fishbone', label: '鱼骨图' },
-  { value: 'timeline', label: '时间线' },
-  { value: 'matrix', label: '矩阵' },
-]
 export function DocumentSettingsPanel() {
   const document = useEditor((state) => state.history.document)
   const selectedId = useEditor((state) => state.selectedId)
@@ -49,35 +39,10 @@ export function DocumentSettingsPanel() {
           <div className="mb-4 space-y-2">
             <h2 className="text-sm font-semibold">布局与主题</h2>
             <p className="text-xs text-muted-foreground">
-              布局、全局外观和分支结构保存于当前画布，可撤销。
+              配色、字体和全局外观保存于当前画布，可撤销。
             </p>
           </div>
           <div className="grid gap-3 text-sm">
-            <span>画布布局</span>
-            <FieldSelect
-              label="画布布局"
-              value={settings.layout ?? 'map'}
-              options={layoutOptions}
-              onChange={(layout) => {
-                update({ layout })
-              }}
-            />
-            <span>所选分支结构</span>
-            <FieldSelect
-              label="所选分支结构"
-              value={document.topics[selectedId]?.structure ?? 'inherit'}
-              options={[{ value: 'inherit', label: '跟随画布' }, ...layoutOptions]}
-              onChange={(value) => {
-                runAnnotationCommand({
-                  type: 'batch',
-                  commands: selectedTopicIds(useEditor.getState()).map((topicId) => ({
-                    type: 'setTopicStructure',
-                    topicId,
-                    ...(value === 'inherit' ? {} : { structure: value }),
-                  })),
-                })
-              }}
-            />
             <span>主题配色</span>
             <FieldSelect
               label="主题配色"

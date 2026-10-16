@@ -5,6 +5,8 @@ import { xmlText } from '../../../formats/interchange/xml'
 import { imageDimensions } from '../../../assets'
 import { annotationExtents, drawExportAnnotations, exportAnnotations } from './annotations'
 import { documentAppearance, topicAppearance } from '@shared/appearance'
+import { layoutEdgePath } from '@shared/layout-geometry'
+import { drawStructureGeometry, structureExtents } from './structures'
 
 export interface SheetSvg {
   svg: string
@@ -59,7 +61,7 @@ export function renderSheetSvg(document: MindMapDocument, includeCollapsed = fal
   const layout = layoutDocument(source)
   const appearance = documentAppearance(source)
   const annotations = exportAnnotations(source, layout.nodes)
-  const bounds = [...layout.nodes, ...annotationExtents(annotations)]
+  const bounds = [...layout.nodes, ...annotationExtents(annotations), ...structureExtents(layout)]
   const margin = 48
   const minX = Math.min(...bounds.map((node) => node.x)) - margin
   const minY = Math.min(...bounds.map((node) => node.y)) - margin
@@ -92,6 +94,7 @@ export function renderSheetSvg(document: MindMapDocument, includeCollapsed = fal
     fill: appearance.background,
   })
   drawExportAnnotations(xml, root, source, layout.nodes, annotations, 'underlay')
+  drawStructureGeometry(xml, root, source, layout)
   const positions = new Map(layout.nodes.map((node) => [node.id, node]))
   const branchIndices = new Map(
     source.topics[source.rootId]?.children.map((id, index) => [id, index]),
@@ -100,25 +103,9 @@ export function renderSheetSvg(document: MindMapDocument, includeCollapsed = fal
     const a = positions.get(edge.source)
     const b = positions.get(edge.target)
     const topic = source.topics[edge.target]
-    if (!a || !b || !topic) continue
-    const dx = b.x + b.width / 2 - a.x - a.width / 2
-    const dy = b.y + b.height / 2 - a.y - a.height / 2
-    const horizontal = edge.direction
-      ? ['left', 'right'].includes(edge.direction)
-      : Math.abs(dx) >= Math.abs(dy)
-    const left = edge.direction ? edge.direction === 'left' : dx < 0
-    const up = edge.direction ? edge.direction === 'up' : dy < 0
-    const x1 = a.x + (horizontal ? (left ? 0 : a.width) : a.width / 2)
-    const y1 = a.y + (horizontal ? a.height / 2 : up ? 0 : a.height)
-    const x2 = b.x + (horizontal ? (left ? b.width : 0) : b.width / 2)
-    const y2 = b.y + (horizontal ? b.height / 2 : up ? b.height : 0)
-    const curve = topic.style?.lineStyle !== 'straight'
+    if (!a || !b || !topic || edge.routing === 'hidden') continue
     element('path', {
-      d: curve
-        ? horizontal
-          ? `M ${x1} ${y1} C ${(x1 + x2) / 2} ${y1}, ${(x1 + x2) / 2} ${y2}, ${x2} ${y2}`
-          : `M ${x1} ${y1} C ${x1} ${(y1 + y2) / 2}, ${x2} ${(y1 + y2) / 2}, ${x2} ${y2}`
-        : `M ${x1} ${y1} L ${x2} ${y2}`,
+      d: layoutEdgePath(edge, a, b, topic.style?.lineStyle === 'straight'),
       fill: 'none',
       stroke: topicAppearance(source, topic.id).stroke,
       'stroke-width': topicAppearance(source, topic.id).lineWidth,

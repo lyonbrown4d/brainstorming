@@ -1,7 +1,7 @@
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'electron-vite'
-import { alias } from './vite.config.ts'
+import { alias, rendererOptimizeDeps } from './vite.config.ts'
 
 export default defineConfig({
   main: {
@@ -23,7 +23,8 @@ export default defineConfig({
   },
   renderer: {
     base: './',
-    resolve: { alias },
+    resolve: { alias, dedupe: ['three'] },
+    optimizeDeps: rendererOptimizeDeps,
     plugins: [react(), tailwindcss()],
     build: { minify: true },
   },

@@ -1,7 +1,10 @@
 import type { LayoutKind, MindMapDocument } from '@core'
 import { measureTopic } from './measure'
 import { mapLayout, requireUnit, treeLayout } from './tree-layout'
-import { matrixLayout, spineLayout } from './special-layouts'
+import { spineLayout } from './special-layouts'
+import { matrixLayout } from './matrix-layout'
+import { alignedTreeLayout, braceLayout } from './aligned-tree'
+import { tableLayout } from './table-layout'
 import {
   layoutBounds,
   type LayoutBounds,
@@ -70,10 +73,22 @@ function localLayout(plan: LayoutComponent, units: ReadonlyMap<string, LayoutUni
       return treeLayout(plan, units, 'down')
     case 'org-up':
       return treeLayout(plan, units, 'up')
+    case 'tree-down':
+      return alignedTreeLayout(plan, units, 'down')
+    case 'tree-up':
+      return alignedTreeLayout(plan, units, 'up')
+    case 'brace-right':
+      return braceLayout(plan, units, 'right')
+    case 'brace-left':
+      return braceLayout(plan, units, 'left')
+    case 'tree-table-right':
+      return tableLayout(plan, units, 'right')
+    case 'tree-table-down':
+      return tableLayout(plan, units, 'down')
     case 'fishbone':
-      return spineLayout(plan, units, true)
     case 'timeline':
-      return spineLayout(plan, units, false)
+    case 'timeline-vertical':
+      return spineLayout(plan, units, plan.kind)
     case 'matrix':
       return matrixLayout(plan, units)
   }
@@ -107,9 +122,13 @@ export function layoutStructuredDocument(document: MindMapDocument): MindMapLayo
       units.set(id, { id, topic, ...size, ...(componentId === undefined ? {} : { componentId }) })
     }
     const layout = localLayout(plan, units)
-    computed.set(plan.rootId, { layout, bounds: layoutBounds(layout.placements), units })
+    computed.set(plan.rootId, {
+      layout,
+      bounds: layoutBounds(layout.placements, layout.decorations),
+      units,
+    })
   }
-  const result: MindMapLayout = { nodes: [], edges: [] }
+  const result: MindMapLayout = { nodes: [], edges: [], decorations: [] }
   const main = computed.get(document.rootId)
   const pending: { id: string; x: number; y: number }[] = []
   for (const [index, id] of roots.entries()) {
@@ -154,7 +173,44 @@ export function layoutStructuredDocument(document: MindMapDocument): MindMapLayo
           side: direction === 'left' ? 'left' : direction === 'right' ? 'right' : unit.topic.side,
         })
     }
-    result.edges.push(...component.layout.edges)
+    result.edges.push(
+      ...component.layout.edges.map((edge) => ({
+        ...edge,
+        ...(edge.waypoints === undefined
+          ? {}
+          : {
+              waypoints: edge.waypoints.map((point) => ({
+                x: point.x + origin.x,
+                y: point.y + origin.y,
+              })),
+            }),
+      })),
+    )
+    result.decorations?.push(
+      ...(component.layout.decorations ?? []).map((decoration) => ({
+        ...decoration,
+        x: decoration.x + origin.x,
+        y: decoration.y + origin.y,
+      })),
+    )
+  }
+  // A mixed subtree is packed as one box, but explicit ribs must meet its editable root card.
+  const nodes = new Map(result.nodes.map((node) => [node.id, node]))
+  for (let index = 0; index < result.edges.length; index += 1) {
+    const edge = result.edges[index]
+    if (!edge?.waypoints?.length) continue
+    const target = nodes.get(edge.target)
+    if (!target) continue
+    const direction = edge.direction ?? 'right'
+    const endpoint = {
+      x:
+        target.x +
+        (direction === 'left' ? target.width : direction === 'right' ? 0 : target.width / 2),
+      y:
+        target.y +
+        (direction === 'up' ? target.height : direction === 'down' ? 0 : target.height / 2),
+    }
+    result.edges[index] = { ...edge, waypoints: [...edge.waypoints.slice(0, -1), endpoint] }
   }
   return result
 }

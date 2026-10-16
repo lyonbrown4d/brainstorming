@@ -46,6 +46,8 @@ example.trelyx
 
 主题 metadata 保存标签、图标、网页/内部主题链接、任务、公式、音频资源 ID、备注格式和可移植 Markdown 标题。富文本不持久化 Lexical 内部节点。Document 可保存 `settings`、`relations`、`groups`、`callouts`、`floatingIds`、`floatingPositions` 和 `presentation`。游离主题仍使用树的稳定 ID 和唯一父级规则，其根附件关系不渲染为连线；显式位置是文档数据。普通视口不持久化，主动保存的演示步骤可包含三维相机。
 
+`settings.layout` 和主题 `structure` 支持 `map`、`logic-right/left`、`org-down/up`、`tree-down/up`、`brace-right/left`、`fishbone`、`timeline`、`timeline-vertical`、`matrix`、`tree-table-right/down`。这些是各个独立枚举值，斜杠仅用于本文合并方向说明。协议仍为 ZIP v1，缺省结构使用导图；文件不保存派生节点坐标、括号路径或表格几何。旧版本 Trelyx 无法读取包含新增枚举值的文件。
+
 音频使用同一资源路径与预算。导入通过字节嗅探校验支持的音频类型，不能只凭扩展名认定类型。
 
 内部 core JSON 使用规范 base64 传输资源字节，仅用于 IPC、状态比较及浏览器恢复；磁盘 ZIP 使用原始二进制，不写 Lexical 内部状态或 React Flow 节点。
@@ -87,6 +89,8 @@ example.trelyx
 ## XMind 导出与大纲交换
 
 XMind 导出包含标准主题、基础样式、折叠、图片、备注、首个附件/安全链接和标签。Trelyx 专有元数据、多附件、音频、方向、混合结构、布局、注解、游离位置和演示步骤保存在 `org.trelyx.interchange` 扩展；Trelyx 重新导入时严格校验并恢复。其他应用可能忽略这些扩展，不承诺在 XMind 中呈现全部语义。第三方扩展不会被当成 Trelyx 内容执行。
+
+标准 `structureClass` 映射以 [XMind 官方 viewer 枚举](https://github.com/xmindltd/xmind-viewer/blob/master/src/common/constants/structures.ts) 为依据。现代 JSON 和旧 XML 可导入已映射的导图、左右逻辑图、上下组织图、横纵时间线及左侧鱼头鱼骨图；未知结构报告警告，保留主题树。导出这些类型时写入标准结构字段。树形图、括号图、矩阵和树形表格暂用已知的逻辑图或组织图作为标准字段的近似回退，精确类型保存在 Trelyx 扩展；在其他应用中打开可能呈现近似布局。Trelyx 自有扩展优先于标准字段。
 
 Markdown/OPML 导入先预览再替换当前工作簿。OPML 禁用 DTD 和自定义实体。Markdown、OPML、文本导出为大纲，会损失图像、复杂样式和部分元数据；界面在导出前说明。当前 Sheet 输出会移除指向未导出 Sheet 的内部链接。
 

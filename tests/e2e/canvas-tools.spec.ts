@@ -32,7 +32,7 @@ test('Dock hover、延迟收起、键盘聚焦和弹出面板保持展开', asyn
   // The nested portal must stay usable after the normal collapse delay.
   await page.waitForTimeout(600)
   await expect(handle).toHaveAttribute('aria-expanded', 'true')
-  await expect(page.getByRole('combobox', { name: '画布布局', exact: true })).toBeVisible()
+  await expect(page.getByRole('combobox', { name: '主题配色', exact: true })).toBeVisible()
   const panelBounds = await layout.boundingBox()
   const dockBounds = await handle.boundingBox()
   if (!panelBounds || !dockBounds) throw new Error('Dock 或布局面板未显示')
@@ -89,11 +89,11 @@ test('多选概要和标注原位编辑；布局面板即时作用于画布', as
     page.getByRole('button', { name: '标注：先验证核心假设', exact: true }),
   ).toBeVisible()
   await openDock(page)
-  await page.getByRole('button', { name: '布局与主题', exact: true }).click()
-  await page.getByRole('combobox', { name: '画布布局', exact: true }).click()
-  await page.getByRole('option', { name: '向下组织图', exact: true }).click()
-  await expect(page.getByRole('combobox', { name: '画布布局', exact: true })).toHaveText(
-    '向下组织图',
+  await page.getByRole('button', { name: '图形结构', exact: true }).click()
+  await page.getByRole('button', { name: '应用向下组织图', exact: true }).click()
+  await expect(page.getByRole('button', { name: '应用向下组织图', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
   )
   await expect(page.locator('[role=dialog][aria-modal=true]')).toHaveCount(0)
   await page.keyboard.press('Escape')

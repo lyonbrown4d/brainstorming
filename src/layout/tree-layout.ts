@@ -52,6 +52,7 @@ export function treeLayout(
         source: node.parent.data.id,
         target: node.data.id,
         direction,
+        ...(vertical ? { routing: 'orthogonal' as const } : {}),
       })
   })
   return result

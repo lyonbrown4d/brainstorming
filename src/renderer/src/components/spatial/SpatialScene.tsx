@@ -10,13 +10,16 @@ import {
   CameraControlsImpl,
 } from '@react-three/drei'
 import type { SpatialLayout } from '../../../../layout/spatial'
+import { spatialFramingNodes } from '../../../../layout/spatial-geometry'
 import { useSpatialCamera } from '../../hooks/useSpatialCamera'
 import { useSpatialGestures } from '../../hooks/useSpatialGestures'
 import { documentAppearance, topicAppearance } from '@shared/appearance'
+import { documentStructureKey } from '@shared/layout-geometry'
 import { useEditor } from '../../state/editor'
 import { useSelectedIds } from '../../state/selection'
 import { SpatialAnnotations } from '../annotations/SpatialAnnotations'
 import { SpatialConnections } from './SpatialConnections'
+import { SpatialStructureGeometry } from './SpatialStructureGeometry'
 import { SpatialTopic } from './SpatialTopic'
 import type { SpatialCameraActions, SpatialCameraState, SpatialCanvasProps } from './types'
 
@@ -58,11 +61,8 @@ export function SpatialScene({
   const controls = useRef<CameraControlsImpl | null>(null)
   const gl = useThree((state) => state.gl)
   const editing = useEditor((state) => state.editingSurface === 'spatial')
-  const framedNodes = useMemo(
-    () => (focusIds ? layout.nodes.filter((node) => focusIds.has(node.id)) : layout.nodes),
-    [focusIds, layout.nodes],
-  )
-  const structureKey = `${document.id}:${layout.nodes.map((node) => `${node.id}/${document.topics[node.id]?.side ?? ''}`).join(',')}:${layout.edges.map((edge) => `${edge.source}>${edge.target}`).join(',')}`
+  const framedNodes = useMemo(() => spatialFramingNodes(layout, focusIds), [focusIds, layout])
+  const structureKey = `${document.id}:${documentStructureKey(document)}:${layout.nodes.map((node) => `${node.id}/${document.topics[node.id]?.side ?? ''}`).join(',')}:${layout.edges.map((edge) => `${edge.source}>${edge.target}`).join(',')}`
   const { report, orient, smoothTime } = useSpatialCamera({
     controls,
     actions,
@@ -147,6 +147,11 @@ export function SpatialScene({
         fadeDistance={35}
         fadeStrength={2.4}
         infiniteGrid
+      />
+      <SpatialStructureGeometry
+        document={document}
+        decorations={layout.decorations}
+        focusIds={focusIds}
       />
       <SpatialConnections
         document={document}

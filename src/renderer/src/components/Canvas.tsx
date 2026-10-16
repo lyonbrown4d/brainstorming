@@ -22,8 +22,9 @@ import { PresentationPlayback } from './documents/PresentationControls'
 import { FloatingToolbar } from './FloatingToolbar'
 import { documentAppearance } from '@shared/appearance'
 import { projectCanvas } from './documents/projectCanvas'
+import { StructureEdge, StructureGeometry } from './documents/StructureGeometry'
 const nodeTypes = { topic: TopicNode }
-const edgeTypes = { relation: RelationEdge }
+const edgeTypes = { relation: RelationEdge, structure: StructureEdge }
 export { ZoomControls } from './ZoomControls'
 export function Canvas() {
   const flow = useReactFlow<TopicFlowNode>()
@@ -190,6 +191,7 @@ export function Canvas() {
         panOnScroll
         zoomOnDoubleClick={false}
       >
+        <StructureGeometry document={document} decorations={projection.decorations} />
         <CanvasAnnotations document={document} nodes={projection.layoutNodes} />
         <SelectionVisibility />
       </ReactFlow>

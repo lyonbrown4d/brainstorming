@@ -2,10 +2,11 @@ import { defineConfig } from 'vitest/config'
 import { playwright } from '@vitest/browser-playwright'
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
 import { resolve } from 'node:path'
-import { alias } from './vite.config.ts'
+import { alias, rendererOptimizeDeps } from './vite.config.ts'
 
 export default defineConfig({
-  resolve: { alias },
+  resolve: { alias, dedupe: ['three'] },
+  optimizeDeps: rendererOptimizeDeps,
   plugins: [storybookTest({ configDir: resolve('.storybook') })],
   test: {
     name: 'storybook',

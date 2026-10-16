@@ -6,9 +6,10 @@ import { decodeTrelyx } from '../../src/formats/trelyx'
 test('保存多布局、主题、游离位置和演示步骤，播放不修改保存内容', async ({ page }) => {
   await page.goto('/')
   await openDock(page)
+  await page.getByRole('button', { name: '图形结构', exact: true }).click()
+  await page.getByRole('button', { name: '应用向右逻辑图', exact: true }).click()
+  await page.keyboard.press('Escape')
   await page.getByRole('button', { name: '布局与主题', exact: true }).click()
-  await page.getByRole('combobox', { name: '画布布局', exact: true }).click()
-  await page.getByRole('option', { name: '向右逻辑图', exact: true }).click()
   await page.getByRole('combobox', { name: '主题配色', exact: true }).click()
   await page.getByRole('option', { name: '海洋', exact: true }).click()
   await page.keyboard.press('Escape')

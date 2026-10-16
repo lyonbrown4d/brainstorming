@@ -12,6 +12,7 @@ import { LinkAction } from './metadata/LinkAction'
 import { EditActions } from './EditActions'
 import { ImportTextDialog } from './ImportTextDialog'
 import { ExportDialog } from './ExportDialog'
+import { StructurePicker } from './documents/StructurePicker'
 import { DocumentSettingsPanel } from './documents/DocumentSettingsPanel'
 import { TemplateDialog } from './documents/TemplateDialog'
 import { OutlineEditor } from './documents/OutlineEditor'
@@ -108,6 +109,7 @@ export function FloatingToolbar() {
         <EditActions />
         <SelectionToolbar />
         <span className="toolbar-separator" />
+        <StructurePicker />
         <DocumentSettingsPanel />
         <TopicFilter />
         <TemplateDialog />

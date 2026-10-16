@@ -6,8 +6,15 @@ export const LAYOUT_KINDS = [
   'logic-left',
   'org-down',
   'org-up',
+  'tree-down',
+  'tree-up',
+  'brace-right',
+  'brace-left',
   'fishbone',
   'timeline',
+  'timeline-vertical',
+  'tree-table-right',
+  'tree-table-down',
   'matrix',
 ] as const
 export type LayoutKind = (typeof LAYOUT_KINDS)[number]
