@@ -10,7 +10,8 @@ Trelyx 是基于 React Flow + Electron 的本地优先桌面思维导图工具�
 
 - `src/core`：纯 TypeScript 主题树、命令、历史、校验、版本化 JSON。
 - `src/layout`：主题树到左右布局的纯计算，优先采用成熟布局库。
-- `electron` / `src/renderer`：Electron main/preload 与 React renderer。
+- `src/main` / `src/preload` / `src/renderer/src`：Electron main、preload 与 React renderer，入口遵循 electron-vite 标准目录。
+- `src/shared`：主进程、preload 与 renderer 共用的白名单契约。
 - Core 不依赖 React、DOM、Electron、React Flow 或其 Node/Edge 类型。
 - React Flow 节点/边是文档模型的视图投影，不是持久化协议。
 - 主题树维护稳定 ID、唯一父节点、有序子节点、禁止循环和不可达节点。

@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createDocument, serializeDocument } from '../../src/core'
-import { atomicWrite, DocumentFiles } from '../../electron/files'
+import { atomicWrite, DocumentFiles } from '../../src/main/files'
 
 let directory: string
 let files: DocumentFiles

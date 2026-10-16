@@ -24,8 +24,8 @@ vi.mock('electron', () => ({
   },
 }))
 
-import { DocumentFiles } from '../../electron/files'
-import { registerIPC } from '../../electron/ipc'
+import { DocumentFiles } from '../../src/main/files'
+import { registerIPC } from '../../src/main/ipc'
 import { createDocument, serializeDocument } from '../../src/core'
 
 function setup() {

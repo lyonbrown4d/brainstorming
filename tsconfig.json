@@ -18,17 +18,14 @@
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "baseUrl": ".",
-    "paths": { "@/*": ["src/*"], "@shared/*": ["shared/*"] },
+    "paths": {
+      "@core": ["src/core/index.ts"],
+      "@core/*": ["src/core/*"],
+      "@layout": ["src/layout/index.ts"],
+      "@shared/*": ["src/shared/*"],
+      "@renderer/*": ["src/renderer/src/*"]
+    },
     "types": ["node", "vite/client"]
   },
-  "include": [
-    "src",
-    "electron",
-    "shared",
-    "scripts",
-    "tests",
-    "stories",
-    ".storybook/**/*.ts",
-    "*.ts"
-  ]
+  "include": ["src", "tests", "stories", ".storybook/**/*.ts", "*.ts"]
 }

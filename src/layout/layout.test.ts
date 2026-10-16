@@ -4,7 +4,7 @@ import {
   createExampleDocument,
   createFixtureDocument,
   getVisibleTopicIds,
-} from '@/core'
+} from '@core'
 import { layoutDocument, measureTopic } from './index'
 import type { LayoutNode } from './index'
 

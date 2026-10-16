@@ -40,16 +40,19 @@ test('生产 Electron 启动、sandbox preload 和恢复闭环', async () => {
     await app.evaluate(({ dialog }, path) => {
       dialog.showSaveDialog = () => Promise.resolve({ canceled: false, filePath: path })
     }, savedPath)
-    await page.getByRole('button', { name: '保存导图', exact: true }).click()
+    await page.getByRole('button', { name: '文件菜单', exact: true }).click()
+    await page.getByRole('menuitem', { name: '保存导图', exact: true }).click()
     await expect
       .poll(async () => readFile(savedPath, 'utf8').catch(() => ''))
       .toContain('原生桌面编辑')
     await expect(page.locator('.save-status')).toContainText('已保存')
-    await page.getByRole('button', { name: '新建导图', exact: true }).click()
+    await page.getByRole('button', { name: '文件菜单', exact: true }).click()
+    await page.getByRole('menuitem', { name: '新建导图', exact: true }).click()
     await app.evaluate(({ dialog }, path) => {
       dialog.showOpenDialog = () => Promise.resolve({ canceled: false, filePaths: [path] })
     }, savedPath)
-    await page.getByRole('button', { name: '打开导图', exact: true }).click()
+    await page.getByRole('button', { name: '文件菜单', exact: true }).click()
+    await page.getByRole('menuitem', { name: '打开导图', exact: true }).click()
     await expect(page.getByTestId('topic-root')).toContainText('原生桌面编辑')
     expect(errors).toEqual([])
   } finally {

@@ -10,7 +10,8 @@ for (const count of [100, 1_000, 5_000]) {
       await page.goto('/')
       const picker = page.waitForEvent('filechooser')
       const started = performance.now()
-      await page.getByRole('button', { name: '打开导图', exact: true }).click()
+      await page.getByRole('button', { name: '文件菜单', exact: true }).click()
+      await page.getByRole('menuitem', { name: '打开导图', exact: true }).click()
       await (
         await picker
       ).setFiles({

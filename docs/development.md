@@ -1,6 +1,6 @@
 # 开发、验证与发布
 
-使用 Node.js 24/26、pnpm 10.12.1。单 package 依赖通过冻结锁文件安装。Vite 配置、Electron main/preload、共享 IPC 类型和测试均为 TypeScript。
+使用 Node.js 24/26、pnpm 10.12.1。单 package 依赖通过冻结锁文件安装。Moon 依赖范围为 `@moonrepo/cli: ^2.6.1`，锁文件固定实际安装版本；不维护自制任务包装脚本。Vite 配置、Electron main/preload、共享 IPC 类型和测试均为 TypeScript。
 
 ## 常用任务
 
@@ -17,13 +17,17 @@
 
 测试浏览器由项目固定的 Playwright 版本安装：`pnpm exec playwright install chromium`。Linux CI 使用 `--with-deps`。桌面测试在 macOS 图形会话运行；其它系统安装目标已配置，尚不能等同于已在对应系统验证。
 
+## 目录与入口
+
+项目遵循 [electron-vite 推荐目录](https://electron-vite.org/guide/dev#project-structure)：`src/main/index.ts`、`src/preload/index.ts`、`src/renderer/index.html` 与 `src/renderer/src`。electron-vite 自动发现入口，浏览器 Vite 预览同一 renderer 根目录；生产输出仍为 `out/main`、`out/preload`、`out/renderer`。preload 完整打包成 CommonJS，保留 sandbox。
+
 ## React Scan
 
 开发入口先初始化 React Scan，再加载 React 和应用，避免错过 DevTools 注入时机。`pnpm dev` / `pnpm dev:web` 默认显示扫描工具栏；可设置 `VITE_REACT_SCAN=false` 关闭。生产构建移除该分支，浏览器性能测试显式关闭扫描，避免工具开销污染样本。React Scan 用于定位问题，Playwright 固定采样用于可重复比较。
 
 ## 窗口标题栏
 
-`electron/windowChrome.ts` 管理原生窗口外观，macOS 使用 `hiddenInset`，Windows/Linux 使用 `titleBarOverlay`。窗口按钮、缩放、关闭与未保存确认沿用系统和既有 Electron 行为。`styles/window.css` 声明拖动区域，并为原生按钮预留空间；交互控件必须排除拖动区域。
+`src/main/windowChrome.ts` 管理原生窗口外观，macOS 使用 `hiddenInset`，Windows/Linux 使用 `titleBarOverlay`。窗口按钮、缩放、关闭与未保存确认沿用系统和既有 Electron 行为。`styles/window.css` 声明拖动区域，并为原生按钮预留空间；交互控件必须排除拖动区域。
 
 preload 仅暴露平台、窗口焦点及全屏状态；读取状态仍校验当前窗口和主框架。状态通知只用于界面布局。Storybook 提供 macOS、Windows/Linux、失焦和全屏预览，原生按钮仅在 Electron 中出现。`pnpm test:desktop` 验证真实窗口布局、全屏状态和工具栏操作；跨平台原生行为需在对应系统复核。
 
@@ -49,7 +53,7 @@ preload 仅暴露平台、窗口焦点及全屏状态；读取状态仍校验当
 
 文件读取或恢复失败时，界面显示错误，保留当前内容。保存失败后脏状态保持；可另存到新位置重试。恢复文件损坏时，先备份 `userData/recovery.trelyx` 再排查，不直接覆盖原文件。
 
-运行时可选 `ELECTRON_RENDERER_URL` 仅供开发，通过 `electron/config.ts` 校验为本机 loopback HTTP(S) 地址；生产始终加载打包资源。不要将凭据写入 `.env.example` 或文档。
+运行时可选 `ELECTRON_RENDERER_URL` 仅供开发，通过 `src/main/config.ts` 校验为本机 loopback HTTP(S) 地址；生产始终加载打包资源。不要将凭据写入 `.env.example` 或文档。
 
 ## Agent 配置
 

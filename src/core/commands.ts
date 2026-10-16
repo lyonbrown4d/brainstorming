@@ -1,6 +1,7 @@
 import { getParentId, getSubtreeIds, requireTopic } from './tree'
 import type { Command, MindMapDocument, Side, Topic } from './types'
 import { assertId, validateDocument } from './validation'
+import { normalizeTopicStyle, validateTopicStyle } from './topic-style'
 
 function insertionIndex(index: number | undefined, length: number): number {
   const result = index ?? length
@@ -106,6 +107,13 @@ export function applyCommand(document: MindMapDocument, command: Command): MindM
   if (command.type === 'addTopic') return add(document, command)
   const topic = requireTopic(document, command.topicId)
   switch (command.type) {
+    case 'setTopicStyle': {
+      validateTopicStyle(command.style)
+      const style = normalizeTopicStyle(command.style)
+      if (JSON.stringify(style) === JSON.stringify(normalizeTopicStyle(topic.style ?? {})))
+        return document
+      return { ...document, topics: { ...document.topics, [topic.id]: { ...topic, style } } }
+    }
     case 'renameTopic': {
       if (typeof command.title !== 'string') throw new Error('标题必须是文本')
       if (topic.title === command.title) return document

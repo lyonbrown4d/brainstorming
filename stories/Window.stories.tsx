@@ -1,16 +1,53 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
-import { Toolbar } from '../src/renderer/components/Toolbar'
-import { TooltipProvider } from '../src/renderer/components/ui/tooltip'
-import '../src/renderer/styles/ui.css'
-import '../src/renderer/styles/base.css'
-import '../src/renderer/styles/chrome.css'
-import '../src/renderer/styles/window.css'
+import type { DesktopAPI } from '../src/shared/contracts'
+import { createDocument, serializeDocument, createExampleDocument } from '../src/core'
+import { useEditor } from '../src/renderer/src/state/editor'
+import { Toolbar } from '../src/renderer/src/components/Toolbar'
+import { TooltipProvider } from '../src/renderer/src/components/ui/tooltip'
+import '../src/renderer/src/styles/ui.css'
+import '../src/renderer/src/styles/base.css'
+import '../src/renderer/src/styles/chrome.css'
+import '../src/renderer/src/styles/window.css'
+import '../src/renderer/src/styles/controls.css'
+
+function installRecentBridge(getRecentFiles: DesktopAPI['getRecentFiles']) {
+  const previous = window.trelyx
+  window.trelyx = {
+    platform: 'macos',
+    getRecentFiles,
+    getWindowState: () => Promise.resolve({ focused: true, fullScreen: false }),
+    onWindowStateChanged: () => () => undefined,
+    openDocument: () => Promise.resolve(null),
+    saveDocument: () => Promise.resolve(null),
+    readRecovery: () => Promise.resolve(null),
+    writeRecovery: () => Promise.resolve(),
+    setDirty: () => undefined,
+    openRecent: (path) =>
+      Promise.resolve({ path, contents: serializeDocument(createDocument('最近规划')) }),
+    onMenuAction: () => () => undefined,
+  }
+  return () => {
+    if (previous) window.trelyx = previous
+    else delete window.trelyx
+  }
+}
+
+async function openRecentMenu(canvasElement: HTMLElement) {
+  const page = within(canvasElement.ownerDocument.body)
+  await userEvent.click(within(canvasElement).getByRole('button', { name: '文件菜单' }))
+  await userEvent.hover(page.getByRole('menuitem', { name: '最近文件' }))
+  return page
+}
 
 const meta = {
   title: 'Trelyx/窗口标题栏',
   component: Toolbar,
   parameters: { layout: 'fullscreen' },
+  beforeEach: () => {
+    useEditor.getState().replace(createExampleDocument())
+    useEditor.setState({ recovery: null, outlineOpen: false, inspectorOpen: false })
+  },
   render: (_, { globals }) => (
     <TooltipProvider>
       <div
@@ -35,10 +72,53 @@ export const Fullscreen: Story = {
   globals: { platform: 'macos', fullscreen: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const button = canvas.getByRole('button', { name: '新建导图' })
+    const page = within(canvasElement.ownerDocument.body)
+    const button = canvas.getByRole('button', { name: '文件菜单' })
     button.focus()
     await expect(button).toHaveFocus()
     await userEvent.keyboard('{Enter}')
+    await userEvent.click(page.getByRole('menuitem', { name: '新建导图' }))
     await expect(canvas.getByRole('heading', { level: 1 })).toHaveTextContent('新的想法')
+  },
+}
+
+export const RecentFiles: Story = {
+  beforeEach: () =>
+    installRecentBridge(() =>
+      Promise.resolve([{ path: '/recent/产品规划.trelyx', name: '产品规划.trelyx' }]),
+    ),
+  play: async ({ canvasElement }) => {
+    const page = await openRecentMenu(canvasElement)
+    await userEvent.click(await page.findByRole('menuitem', { name: '产品规划.trelyx' }))
+    await expect(within(canvasElement).getByRole('heading', { level: 1 })).toHaveTextContent(
+      '最近规划.trelyx',
+    )
+    await expect(useEditor.getState().path).toBe('/recent/产品规划.trelyx')
+  },
+}
+export const RecentFilesEmpty: Story = {
+  beforeEach: () => installRecentBridge(() => Promise.resolve([])),
+  play: async ({ canvasElement }) => {
+    const page = await openRecentMenu(canvasElement)
+    await expect(await page.findByText('还没有最近打开的文件。')).toBeVisible()
+  },
+}
+export const RecentFilesUnavailable: Story = {
+  beforeEach: () => installRecentBridge(() => Promise.reject(new Error('读取失败'))),
+  play: async ({ canvasElement }) => {
+    const original = useEditor.getState().workbook
+    const page = await openRecentMenu(canvasElement)
+    await expect(await page.findByText('无法读取最近文件，请重新打开此菜单。')).toBeVisible()
+    await expect(useEditor.getState().workbook).toBe(original)
+  },
+}
+export const RecentFilesLoading: Story = {
+  beforeEach: () => installRecentBridge(() => new Promise<never>(() => undefined)),
+  play: async ({ canvasElement }) => {
+    const page = await openRecentMenu(canvasElement)
+    await expect(await page.findByRole('menuitem', { name: '正在读取…' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
   },
 }

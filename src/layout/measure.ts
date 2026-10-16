@@ -1,7 +1,12 @@
 /** Deterministic estimates shared by layout and renderer; no browser measurements enter the document. */
-export function measureTopic(title: string, isRoot = false): { width: number; height: number } {
-  const fontSize = isRoot ? 20 : 14
-  const padding = isRoot ? 48 : 36
+export function measureTopic(
+  title: string,
+  isRoot = false,
+  customFontSize?: number,
+): { width: number; height: number } {
+  const fontSize = customFontSize ?? (isRoot ? 24 : 16)
+  // Include the renderer's padding, borders, and a small font-metric tolerance.
+  const padding = isRoot ? 56 : 44
   const maxWidth = isRoot ? 280 : 240
   const maxTextWidth = maxWidth - padding
   let lineWidth = 0
@@ -25,6 +30,6 @@ export function measureTopic(title: string, isRoot = false): { width: number; he
   longestLine = Math.max(longestLine, lineWidth)
   return {
     width: Math.max(isRoot ? 180 : 112, Math.min(maxWidth, Math.ceil(longestLine + padding))),
-    height: Math.max(isRoot ? 64 : 44, lines * (isRoot ? 28 : 22) + (isRoot ? 28 : 20)),
+    height: Math.max(isRoot ? 64 : 44, lines * Math.ceil(fontSize * 1.5) + (isRoot ? 28 : 20)),
   }
 }

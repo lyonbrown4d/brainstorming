@@ -1,4 +1,5 @@
 import type { MindMapDocument, Topic } from './types'
+import { validateTopicStyle } from './topic-style'
 
 const forbiddenIds = new Set(['__proto__', 'prototype', 'constructor'])
 
@@ -33,6 +34,7 @@ function assertTopic(value: unknown, key: string): asserts value is Topic {
     throw new Error(`主题 ${key} 的属性无效`)
   }
   const children = own(value, 'children')
+  if (Object.hasOwn(value, 'style')) validateTopicStyle(value.style)
   if (!Array.isArray(children)) throw new Error(`主题 ${key} 的子主题列表无效`)
   for (const child of children) assertId(child)
 }

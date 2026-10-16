@@ -51,7 +51,7 @@ export default defineConfig(
         'error',
         {
           paths: ['react', 'react-dom', 'electron', '@xyflow/react', 'lexical'],
-          patterns: ['@lexical/*', '@/renderer/*', '@/layout/*'],
+          patterns: ['@lexical/*', '@renderer/*', '@layout'],
         },
       ],
       'no-restricted-globals': [

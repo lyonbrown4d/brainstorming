@@ -7,9 +7,10 @@ test.beforeEach(async ({ page }) => {
 
 test('新增、编辑、折叠、撤销、保存与重新打开', async ({ page }, testInfo) => {
   await expect(page.getByTestId('topic-root')).toBeVisible()
-  await expect(page.getByText('顺畅连接每个主题', { exact: true })).toBeVisible()
+  await expect(page.getByText('快捷记录灵感', { exact: true })).toBeVisible()
   await page.screenshot({ path: testInfo.outputPath('trelyx-v0.1.png') })
-  await page.getByRole('button', { name: '新建导图', exact: true }).click()
+  await page.getByRole('button', { name: '文件菜单', exact: true }).click()
+  await page.getByRole('menuitem', { name: '新建导图', exact: true }).click()
   await page.getByTestId('topic-root').click()
   await page.keyboard.press('Tab')
   const input = page.getByRole('textbox', { name: '编辑主题标题' })
@@ -28,13 +29,16 @@ test('新增、编辑、折叠、撤销、保存与重新打开', async ({ page 
   await page.getByRole('button', { name: '撤销', exact: true }).click()
   await expect(page.locator('.topic-title').getByText('第一阶段', { exact: true })).toBeVisible()
   const downloadPromise = page.waitForEvent('download')
-  await page.getByRole('button', { name: '保存导图', exact: true }).click()
+  await page.getByRole('button', { name: '文件菜单', exact: true }).click()
+  await page.getByRole('menuitem', { name: '保存导图', exact: true }).click()
   const download = await downloadPromise
   const path = await download.path()
   if (!path) throw new Error('保存未生成文件')
-  await page.getByRole('button', { name: '新建导图', exact: true }).click()
+  await page.getByRole('button', { name: '文件菜单', exact: true }).click()
+  await page.getByRole('menuitem', { name: '新建导图', exact: true }).click()
   const picker = page.waitForEvent('filechooser')
-  await page.getByRole('button', { name: '打开导图', exact: true }).click()
+  await page.getByRole('button', { name: '文件菜单', exact: true }).click()
+  await page.getByRole('menuitem', { name: '打开导图', exact: true }).click()
   await (await picker).setFiles(path)
   await expect(page.locator('.topic-title').getByText('项目计划', { exact: true })).toBeVisible()
   await expect(page.locator('.topic-title').getByText('第一阶段', { exact: true })).toBeVisible()
@@ -53,7 +57,8 @@ test('无效文件不替换当前文档，输入法 Enter 不创建主题', asyn
   await expect(title).toContainText('中文思维导图')
   page.on('dialog', (dialog) => dialog.accept())
   const picker = page.waitForEvent('filechooser')
-  await page.getByRole('button', { name: '打开导图', exact: true }).click()
+  await page.getByRole('button', { name: '文件菜单', exact: true }).click()
+  await page.getByRole('menuitem', { name: '打开导图', exact: true }).click()
   await (
     await picker
   ).setFiles({
@@ -87,6 +92,7 @@ test('拖动分支更换父级、方向可撤销，帮助弹窗支持键盘关�
   await page.mouse.down()
   await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 12 })
   await page.mouse.up()
+  await page.getByRole('button', { name: '样式面板', exact: true }).click()
   await expect(page.getByRole('combobox', { name: '移动到父主题' })).toHaveValue('experience')
   await page.getByRole('button', { name: '撤销', exact: true }).click()
   await expect(page.getByRole('combobox', { name: '移动到父主题' })).toHaveValue('root')

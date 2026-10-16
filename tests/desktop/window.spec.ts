@@ -14,7 +14,7 @@ test('自定义标题栏保留操作、窄窗布局与原生全屏状态', async
     await expect(shell).toHaveAttribute('data-platform', platform)
     const toolbar = page.locator('.toolbar')
     await expect(toolbar).toHaveCSS('-webkit-app-region', 'drag')
-    await expect(page.getByRole('button', { name: '新建导图', exact: true })).toHaveCSS(
+    await expect(page.getByRole('button', { name: '文件菜单', exact: true })).toHaveCSS(
       '-webkit-app-region',
       'no-drag',
     )
@@ -23,8 +23,8 @@ test('自定义标题栏保留操作、窄窗布局与原生全屏状态', async
     await app.evaluate(({ BrowserWindow }) => {
       BrowserWindow.getAllWindows()[0]?.setSize(800, 600)
     })
-    const save = page.getByRole('button', { name: '保存导图', exact: true })
-    await expect(save).toBeVisible()
+    const fileMenu = page.getByRole('button', { name: '文件菜单', exact: true })
+    await expect(fileMenu).toBeVisible()
     const layout = await toolbar.evaluate((element) => {
       const titleElement = element.querySelector('h1')
       const actionsElement = element.querySelector('.toolbar-actions')

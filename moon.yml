@@ -4,8 +4,6 @@ language: typescript
 fileGroups:
   source:
     - src/**/*
-    - electron/**/*
-    - shared/**/*
     - tests/**/*
     - stories/**/*
     - .storybook/**/*

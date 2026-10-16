@@ -1,4 +1,15 @@
-export type { Command, TopicCommand, HistoryState, MindMapDocument, Side, Topic } from './types'
+export type {
+  Command,
+  TopicCommand,
+  HistoryState,
+  MindMapDocument,
+  MindMapSheet,
+  MindMapWorkbook,
+  WorkbookCommand,
+  Side,
+  Topic,
+  TopicStyle,
+} from './types'
 export {
   createDocument,
   createExampleDocument,
@@ -10,3 +21,10 @@ export { createHistory, executeCommand, undo, redo } from './history'
 export { getParentId, getVisibleTopicIds } from './tree'
 export { validateDocument } from './validation'
 export { createFixtureDocument } from './fixtures'
+export {
+  createWorkbook,
+  deserializeWorkbook,
+  serializeWorkbook,
+  validateWorkbook,
+} from './workbook'
+export { applyWorkbookCommand } from './workbook-commands'

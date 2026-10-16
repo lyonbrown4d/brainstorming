@@ -1,6 +1,7 @@
 import { applyCommand } from './commands'
 import type { MindMapDocument, Side, Topic } from './types'
 import { assertId, validateDocument } from './validation'
+import { normalizeTopicStyle } from './topic-style'
 
 export function createDocument(
   title = '中心主题',
@@ -19,11 +20,11 @@ export function createDocument(
 }
 
 export function createExampleDocument(): MindMapDocument {
-  let document = createDocument('Trelyx 产品策略', 'trelyx-example')
+  let document = createDocument('产品规划', 'trelyx-example')
   const branches: readonly [string, string, Side, readonly string[]][] = [
-    ['vision', '产品愿景', 'left', ['让思考自由生长', '本地优先，安心创作']],
+    ['vision', '产品愿景', 'left', ['让思考自由生长', '本地优先']],
     ['users', '目标用户', 'left', ['独立创作者', '产品与设计团队']],
-    ['experience', '核心体验', 'right', ['快捷记录灵感', '清晰组织复杂想法', '顺畅连接每个主题']],
+    ['experience', '核心体验', 'right', ['快捷记录灵感', '清晰组织想法']],
     ['plan', '下一步计划', 'right', ['验证关键交互', '打磨桌面体验']],
   ]
   for (const [id, title, side, children] of branches) {
@@ -56,7 +57,7 @@ export function deserializeDocument(json: string): MindMapDocument {
   return documentData(parsed)
 }
 
-function documentData(document: MindMapDocument): MindMapDocument {
+export function documentData(document: MindMapDocument): MindMapDocument {
   const topics: Record<string, Topic> = {}
   for (const topic of Object.values(document.topics)) {
     topics[topic.id] = {
@@ -65,6 +66,7 @@ function documentData(document: MindMapDocument): MindMapDocument {
       children: [...topic.children],
       collapsed: topic.collapsed,
       side: topic.side,
+      ...(topic.style === undefined ? {} : { style: normalizeTopicStyle(topic.style) }),
     }
   }
   return {

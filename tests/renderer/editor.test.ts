@@ -1,10 +1,10 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 import { applyCommand, createDocument, serializeDocument } from '../../src/core'
-import { isDirty, useEditor } from '../../src/renderer/state/editor'
-import { newDocument, openDocument, saveDocument } from '../../src/renderer/state/files'
-import type { DesktopAPI, OpenedDocument, SaveRequest } from '../../shared/contracts'
-import { suggestedFileName } from '../../src/renderer/state/fileName'
-import { getNavigationTarget } from '../../src/renderer/state/keyboard'
+import { isDirty, useEditor } from '../../src/renderer/src/state/editor'
+import { newDocument, openDocument, saveDocument } from '../../src/renderer/src/state/files'
+import type { DesktopAPI, OpenedDocument, SaveRequest } from '../../src/shared/contracts'
+import { suggestedFileName } from '../../src/renderer/src/state/fileName'
+import { getNavigationTarget } from '../../src/renderer/src/state/keyboard'
 
 function desktop(overrides: Partial<DesktopAPI> = {}): DesktopAPI {
   return {
