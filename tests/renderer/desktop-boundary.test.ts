@@ -31,30 +31,30 @@ afterEach(() => {
 })
 
 describe('desktop capability boundary', () => {
-  it('requires the preload bridge and preserves the unsaved workbook on open/save failure', async () => {
-    expect(() => requireDesktopAPI()).toThrow('Electron')
+  it('requires initialized native capabilities and preserves the unsaved workbook on open/save failure', async () => {
+    expect(() => requireDesktopAPI()).toThrow('原生平台')
     useEditor.getState().command({ type: 'renameTopic', topicId: 'root', title: 'Unsaved' })
     const before = useEditor.getState()
     await openDocument()
     expect(useEditor.getState().workbook).toBe(before.workbook)
-    expect(useEditor.getState().error).toContain('Electron')
+    expect(useEditor.getState().error).toContain('原生平台')
     await saveDocument()
     expect(useEditor.getState().baseline).toBe(before.baseline)
     expect(useEditor.getState().path).toBe('/current.brainstorming')
     expect(useEditor.getState().busy).toBe(false)
-    expect(useEditor.getState().error).toContain('Electron')
+    expect(useEditor.getState().error).toContain('原生平台')
     expect(createElement).not.toHaveBeenCalled()
   })
 
   it('fails recovery, password and history operations explicitly without local storage substitutes', async () => {
     const baseline = useEditor.getState().baseline
-    await expect(readRecoveryContents()).rejects.toThrow('Electron')
-    await expect(changeFilePassword('native-password-123')).rejects.toThrow('Electron')
+    await expect(readRecoveryContents()).rejects.toThrow('原生平台')
+    await expect(changeFilePassword('native-password-123')).rejects.toThrow('原生平台')
     expect(useFileSecurityState.getState().encrypted).toBe(false)
     expect(useEditor.getState().baseline).toBe(baseline)
     expect(useEditor.getState().busy).toBe(false)
     await openHistoryDialog()
-    expect(useFileDialogs.getState().historyError).toContain('Electron')
+    expect(useFileDialogs.getState().historyError).toContain('原生平台')
     expect(useFileDialogs.getState().backups).toEqual([])
   })
 
@@ -62,9 +62,9 @@ describe('desktop capability boundary', () => {
     const history = useEditor.getState().history
     await importTopicAssets('root', 'attachment')
     expect(useEditor.getState().history).toBe(history)
-    expect(useEditor.getState().error).toContain('Electron')
+    expect(useEditor.getState().error).toContain('原生平台')
     await exportTopicAsset(asset)
-    expect(useEditor.getState().error).toContain('Electron')
+    expect(useEditor.getState().error).toContain('原生平台')
     expect(useEditor.getState().busy).toBe(false)
     expect(createElement).not.toHaveBeenCalled()
   })

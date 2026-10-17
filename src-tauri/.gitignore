@@ -1,0 +1,16 @@
+/target/
+/gen/android/.gradle/
+/gen/android/.kotlin/
+/gen/android/app/build/
+/gen/android/build/
+/gen/android/local.properties
+/gen/apple/build/
+/gen/apple/Pods/
+/gen/apple/.build/
+/gen/apple/*.xcodeproj/xcuserdata/
+
+/gen/apple/Frameworks/
+/gen/android/app/src/main/jniLibs/
+/tauri.native-vips.conf.json
+
+/gen/android/app/tauri.build.gradle.kts

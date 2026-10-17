@@ -1,4 +1,4 @@
-export type DesktopPlatform = 'macos' | 'windows' | 'linux'
+export type DesktopPlatform = 'macos' | 'windows' | 'linux' | 'ios' | 'android'
 
 export interface WindowState {
   focused: boolean
@@ -15,3 +15,6 @@ export const isWindowState = (value: unknown): value is WindowState => {
     typeof value.fullScreen === 'boolean'
   )
 }
+
+export const hasWindowControls = (platform: DesktopPlatform): boolean =>
+  platform !== 'ios' && platform !== 'android'

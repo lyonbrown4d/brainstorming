@@ -27,8 +27,19 @@ jobs:
       - run: pnpm ci-gate
       - run: pnpm build-storybook
       - run: pnpm test:storybook
+  rust-headless:
+    name: Rust (headless)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+      # No native-ui feature: SQLCipher/document/resource tests need no WebView or libvips.
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --locked --no-default-features
   desktop:
-    name: Desktop (macOS)
+    name: Tauri Desktop (macOS)
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,20 +48,40 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+      - run: brew install pkgconf vips
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - run: pnpm test:e2e
-      - run: pnpm test:perf
-      - run: pnpm package --dir
+      - name: Check native desktop code
+        run: pnpm exec moon run brainstorming:desktop-check
+      - name: Test native desktop services and libvips
+        run: pnpm exec moon run brainstorming:desktop-test
+      # Moon builds the isolated e2e-feature Tauri binary before starting WDIO.
+      - name: Build and test the real Tauri application
+        run: pnpm exec moon run brainstorming:e2e
+      - name: Prepare pinned macOS bundle libraries
+        run: pnpm native:vips --macos
+      - name: Build macOS app bundle
+        run: pnpm exec moon run brainstorming:package -- --bundles app
         env:
-          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-      - run: pnpm test:packaged
+          APPLE_SIGNING_IDENTITY: '-'
+      - name: Verify and archive app bundle
+        run: |
+          test -f src-tauri/target/release/bundle/macos/Brainstorming.app/Contents/MacOS/brainstorming
+          test -d src-tauri/target/release/bundle/macos/Brainstorming.app/Contents/Frameworks
+          codesign --verify --deep --strict src-tauri/target/release/bundle/macos/Brainstorming.app
+          mkdir -p artifacts
+          ditto -c -k --sequesterRsrc --keepParent src-tauri/target/release/bundle/macos/Brainstorming.app artifacts/Brainstorming-macos-preview.zip
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: brainstorming-macos-preview
           path: |
-            release/
-            playwright-report/
+            artifacts/Brainstorming-macos-preview.zip
+            logs/
             test-results/
-            test-results-desktop/
+            /private/tmp/brainstorming-native-failure-*

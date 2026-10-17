@@ -15,7 +15,7 @@
     ]
   },
   "inputs": {
-    "index": "./src/renderer/index.html",
-    "splash": "./src/renderer/splash.html"
+    "index": "./index.html",
+    "splash": "./splash.html"
   }
 }

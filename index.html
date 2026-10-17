@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+    <meta name="theme-color" content="#f7f7f5" />
+    <title>Brainstorming · 头脑风暴</title>
+    <link rel="stylesheet" href="/src/styles/ui.css" />
+  </head>
+  <body class="m-0 bg-muted">
+    <section
+      id="startup-screen"
+      aria-label="启动 Brainstorming"
+      aria-busy="true"
+      class="fixed inset-0 z-[100] grid place-items-center bg-muted font-sans text-foreground"
+    >
+      <div data-tauri-drag-region class="absolute inset-x-0 top-0 h-16" aria-hidden="true"></div>
+      <div class="flex flex-col items-center px-6 text-center">
+        <div class="mb-6 size-24" aria-hidden="true">
+          <img
+            src="/src/assets/brand/logo-light.png"
+            width="1254"
+            height="1254"
+            alt=""
+            draggable="false"
+            class="block size-full object-contain dark:hidden [@media(prefers-color-scheme:dark)]:[html:not([data-theme])_&]:hidden"
+          />
+          <img
+            src="/src/assets/brand/logo-dark.png"
+            width="1254"
+            height="1254"
+            alt=""
+            draggable="false"
+            class="hidden size-full object-contain dark:block [@media(prefers-color-scheme:dark)]:[html:not([data-theme])_&]:block"
+          />
+        </div>
+        <h1 class="text-3xl font-semibold tracking-tight">Brainstorming</h1>
+        <p class="mt-2 text-sm text-muted-foreground">头脑风暴</p>
+        <div
+          id="startup-indicator"
+          class="mt-10 flex gap-1.5 motion-safe:animate-pulse"
+          aria-hidden="true"
+        >
+          <span class="size-1.5 rounded-full bg-primary/40"></span>
+          <span class="size-1.5 rounded-full bg-primary/70"></span>
+          <span class="size-1.5 rounded-full bg-primary"></span>
+        </div>
+        <p id="startup-message" role="status" class="mt-4 text-sm text-muted-foreground">
+          正在准备工作空间…
+        </p>
+        <button
+          id="startup-retry"
+          type="button"
+          hidden
+          class="mt-5 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+        >
+          重新加载
+        </button>
+        <noscript>
+          <p class="mt-4 text-sm text-destructive">请启用 JavaScript 后重新打开 Brainstorming。</p>
+        </noscript>
+      </div>
+    </section>
+    <div id="root"></div>
+    <script type="module" src="/src/startup.ts"></script>
+  </body>
+</html>

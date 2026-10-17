@@ -103,6 +103,6 @@ describe('recent-file IPC query', () => {
       expect(observer.getCurrentResult().isError).toBe(true)
     })
     expect(observer.getCurrentResult().data).toBeUndefined()
-    expect(observer.getCurrentResult().error?.message).toContain('Electron')
+    expect(observer.getCurrentResult().error?.message).toContain('原生平台')
   })
 })

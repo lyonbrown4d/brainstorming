@@ -1,7 +1,6 @@
 import type { MindMapWorkbook } from '@core'
 import { assetBytes, createAsset, imageDimensions } from '@assets'
 import { AUDIO_MIME_TYPES, referencedAssetIds } from '@core/topic-content'
-import { storedMetadata } from '@main/document-db/types'
 
 /** Only inline imports carry bytes here; stored objects are checked by the native object store. */
 export const validateAssetContent = (workbook: MindMapWorkbook): void => {
@@ -9,7 +8,7 @@ export const validateAssetContent = (workbook: MindMapWorkbook): void => {
     for (const id of referencedAssetIds(document.topics)) {
       const asset = document.assets?.[id]
       if (!asset) throw new Error('Brainstorming 主题引用的资源不存在')
-      if (storedMetadata(asset)) continue
+      if (asset.storage) continue
       const normalized = createAsset(assetBytes(asset), asset.name, asset.id)
       const sameMime =
         asset.mimeType === normalized.mimeType ||
@@ -22,7 +21,7 @@ export const validateAssetContent = (workbook: MindMapWorkbook): void => {
       if (!topic.image) continue
       const asset = document.assets?.[topic.image.assetId]
       if (!asset) throw new Error('Brainstorming 图片资源不存在')
-      if (storedMetadata(asset)) continue
+      if (asset.storage) continue
       const dimensions = imageDimensions(asset)
       if (dimensions.width !== topic.image.width || dimensions.height !== topic.image.height)
         throw new Error('Brainstorming 图片尺寸与实际内容不一致')

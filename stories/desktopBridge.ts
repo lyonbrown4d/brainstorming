@@ -1,7 +1,7 @@
 import type { DesktopAPI } from '@shared/contracts'
 import { inactiveMCP } from '@tests/fixtures/mcp'
 
-/** Component preview adapter only; product entry always requires the real sandbox preload. */
+/** Component preview adapter only; product entry requires native Tauri initialization. */
 export const createStoryDesktop = (): DesktopAPI => {
   let clipboard = ''
   return {
@@ -18,7 +18,7 @@ export const createStoryDesktop = (): DesktopAPI => {
     onOpenFile: () => () => undefined,
     openDocument: () => Promise.resolve(null),
     saveDocument: () => Promise.resolve(null),
-    resourceOrigin: 'brainstorming-resource://storybook',
+    resourceOrigin: 'http://127.0.0.1:43123',
     importDroppedFiles: () => Promise.resolve({ documents: [], assets: [] }),
     generateLinkPreview: () => Promise.reject(new Error('Preview unavailable')),
     queueLinkPreviews: () => Promise.resolve(),

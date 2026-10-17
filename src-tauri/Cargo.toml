@@ -1,0 +1,86 @@
+[package]
+name = "brainstorming-native"
+version = "0.2.0"
+description = "Local-first cross-platform mind mapping"
+edition = "2024"
+rust-version = "1.95"
+license = "UNLICENSED"
+
+[[bin]]
+name = "brainstorming-native"
+path = "src/main.rs"
+required-features = ["native-ui"]
+
+[lib]
+name = "brainstorming_native"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[features]
+default = ["native-ui"]
+native-ui = ["dep:tauri", "dep:tauri-plugin-dialog", "dep:tauri-plugin-opener", "dep:tauri-plugin-clipboard-manager", "dep:tauri-plugin-fs", "dep:tauri-plugin-deep-link", "dep:tauri-plugin-os", "dep:tauri-plugin-brainstorming-native", "dep:tauri-plugin-single-instance", "dep:tauri-plugin-macos-fps"]
+e2e = ["native-ui", "dep:tauri-plugin-wdio", "dep:tauri-plugin-wdio-webdriver"]
+
+[build-dependencies]
+serde_json = "1.0.154"
+pkg-config = "0.3.34"
+tauri-build = { version = "2.7.3", features = [] }
+
+[dependencies]
+tauri = { version = "2.12.4", optional = true, features = [] }
+tauri-plugin-dialog = { version = "2.8.3", optional = true }
+tauri-plugin-opener = { version = "2.7.2", optional = true }
+tauri-plugin-clipboard-manager = { version = "2.5.0", optional = true }
+tauri-plugin-fs = { version = "2.7.1", optional = true }
+tauri-plugin-deep-link = { version = "2.6.2", optional = true }
+tauri-plugin-os = { version = "2.4.0", optional = true }
+tauri-plugin-brainstorming-native = { path = "plugins/brainstorming-native", optional = true }
+tauri-plugin-wdio = { version = "1.5.0", optional = true }
+tauri-plugin-wdio-webdriver = { version = "1.5.0", optional = true }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+thiserror = "2.0.21"
+tokio = { version = "1.53.3", features = ["rt-multi-thread", "sync", "time", "net", "fs", "io-util", "macros"] }
+tokio-util = { version = "0.7.20", features = ["io", "rt"] }
+futures-util = "0.3.34"
+rusqlite = { version = "0.40.2", features = ["bundled-sqlcipher-vendored-openssl", "limits", "blob", "backup", "fallible_uint"] }
+deadpool-sqlite = { version = "0.14.0", features = ["bundled-sqlcipher-vendored-openssl"] }
+sha2 = "0.11.1"
+hex = "0.4.3"
+uuid = { version = "1.28.0", features = ["v4", "serde"] }
+zeroize = { version = "1.9.1", features = ["derive"] }
+url = "2.5.8"
+reqwest = { version = "0.13.5", default-features = false, features = ["json", "rustls", "stream"] }
+axum = "0.8.9"
+subtle = "2.6.1"
+tempfile = "3.27.0"
+chrono = { version = "0.4.45", features = ["serde"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+infer = "0.22.0"
+imagesize = "0.15.0"
+mime_guess = "2.0.5"
+http-range = "0.1.5"
+lol_html = "3.0.1"
+scraper = "0.27.0"
+regex = "1.13.1"
+unicode-segmentation = "1.13.3"
+base64 = "0.23.1"
+rmcp = { version = "3.5.1", default-features = false, features = ["server", "transport-streamable-http-server"] }
+tower = { version = "0.5.3", features = ["util"] }
+
+[target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
+tauri-plugin-single-instance = { version = "2.5.4", optional = true }
+clipboard-rs = "0.3.5"
+keyring = { version = "4.2.0", features = ["v1"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+tauri-plugin-macos-fps = { version = "0.1.0", optional = true }
+
+[dev-dependencies]
+proptest = "1.12.0"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

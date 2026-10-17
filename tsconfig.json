@@ -26,10 +26,8 @@
       "@formats/*": ["./src/formats/*"],
       "@assets": ["./src/assets/index.ts"],
       "@assets/*": ["./src/assets/*"],
-      "@main/*": ["./src/main/*"],
-      "@preload/*": ["./src/preload/*"],
       "@shared/*": ["./src/shared/*"],
-      "@renderer/*": ["./src/renderer/src/*"],
+      "@renderer/*": ["./src/*"],
       "@tests/*": ["./tests/*"],
       "@stories/*": ["./stories/*"],
       "@project/*": ["./*"]
@@ -37,5 +35,13 @@
     "types": ["node", "vite/client"],
     "resolveJsonModule": true
   },
-  "include": ["src", "tests", "stories", ".storybook/**/*.ts", "*.ts"]
+  "include": [
+    "src",
+    "tests",
+    "stories",
+    ".storybook/**/*.ts",
+    "*.ts",
+    "scripts/**/*.ts",
+    "config/**/*.ts"
+  ]
 }

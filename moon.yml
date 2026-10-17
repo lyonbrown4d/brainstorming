@@ -4,10 +4,22 @@ language: typescript
 fileGroups:
   source:
     - src/**/*
+    - src-tauri/src/**/*
+    - src-tauri/tests/**/*
+    - src-tauri/plugins/**/*
+    - '!src-tauri/plugins/**/target/**'
+    - src-tauri/capabilities/**/*
+    - src-tauri/icons/**/*
+    - src-tauri/build.rs
+    - src-tauri/*.plist
+    - src-tauri/*.toml
+    - src-tauri/*.json
+    - src-tauri/Cargo.lock
     - tests/**/*
     - stories/**/*
     - .storybook/**/*
     - config/**/*
+    - scripts/**/*
     - .moon/*.yml
     - .github/workflows/*.yml
     - docs/**/*.md
@@ -33,22 +45,39 @@ tasks:
     command: pnpm build
     inputs: ['@group(source)']
     deps: [typecheck]
-    outputs: [out]
+    outputs: [dist]
   package:
     inputs: ['@group(source)']
     command: pnpm package
     deps: [build]
     options:
       cache: false
+  build-e2e:
+    inputs: ['@group(source)']
+    command: pnpm build:e2e
+    deps: [typecheck]
+    options:
+      cache: false
   e2e:
     inputs: ['@group(source)']
     command: pnpm test:e2e
+    deps: [build-e2e]
+    options:
+      cache: false
+  native-test:
+    inputs: ['@group(source)']
+    command: pnpm test:rust --locked
+    options:
+      cache: false
+  desktop-test:
+    inputs: ['@group(source)']
+    command: cargo test --manifest-path src-tauri/Cargo.toml --locked --all-targets --features e2e
     deps: [build]
     options:
       cache: false
-  performance:
+  desktop-check:
     inputs: ['@group(source)']
-    command: pnpm test:perf
+    command: cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets --features e2e -- -D warnings
     deps: [build]
     options:
       cache: false

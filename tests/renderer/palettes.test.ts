@@ -3,7 +3,7 @@ import { wcagContrast } from 'culori'
 import { applyCommand, createDocument, createWorkbook, validateDocumentSettings } from '@core'
 import { mapPalettes, paletteAppearance } from '@shared/palettes'
 import { topicAppearance } from '@shared/appearance'
-import { encodeBrainstorming, decodeBrainstorming } from '@formats/brainstorming'
+import { deserializeWorkbook, serializeWorkbook } from '@core'
 import { encodeXmind } from '@formats/interchange/xmind'
 import { importXmind } from '@formats/xmind'
 import { renderSheetSvg } from '@renderer/export/svg'
@@ -34,7 +34,7 @@ describe('独立导图配色', () => {
       }
     }
   })
-  it('配色按Sheet保存、一次撤销；原生与XMind扩展往返保留自定义颜色', async () => {
+  it('配色按Sheet保存、一次撤销；JSON 与 XMind 扩展往返保留自定义颜色', () => {
     useEditor.getState().replace(document)
     const firstId = useEditor.getState().activeSheetId
     useEditor.getState().addSheet()
@@ -60,9 +60,9 @@ describe('独立导图配色', () => {
     useEditor.getState().undo()
     expect(useEditor.getState().history.document).toEqual(original)
     const workbook = createWorkbook(styled)
-    expect(
-      (await decodeBrainstorming(await encodeBrainstorming(workbook))).sheets[0]?.document.settings,
-    ).toEqual(styled.settings)
+    expect(deserializeWorkbook(serializeWorkbook(workbook)).sheets[0]?.document.settings).toEqual(
+      styled.settings,
+    )
     expect(importXmind(encodeXmind(workbook)).workbook.sheets[0]?.document.settings).toEqual(
       styled.settings,
     )

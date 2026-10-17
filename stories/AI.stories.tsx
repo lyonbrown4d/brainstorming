@@ -4,6 +4,7 @@ import { createDocument } from '@core'
 import type { AIAPI, AISettings } from '@shared/ai'
 import { AIAssistant } from '@renderer/components/ai/AIAssistant'
 import { useEditor } from '@renderer/state/editor'
+import { installPlatformAPI } from '@renderer/lib/desktop'
 import '@renderer/styles/ui.css'
 
 const settings: AISettings = {
@@ -81,9 +82,7 @@ export const StalePreview: Story = {
 }
 export const BrowserRequiresDesktop: Story = {
   render: () => <AIAssistant defaultOpen onAddSheet={() => false} />,
-  beforeEach: () => {
-    delete window.brainstorming
-  },
+  beforeEach: () => installPlatformAPI(undefined),
   play: async ({ canvasElement }) => {
     const page = within(canvasElement.ownerDocument.body)
     await expect(await page.findByRole('status')).toHaveTextContent('需要 Brainstorming 桌面版')

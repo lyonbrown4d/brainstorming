@@ -15,3 +15,5 @@ apm_modules/
 *.tsbuildinfo
 *.log
 test-results-desktop/
+
+dist/

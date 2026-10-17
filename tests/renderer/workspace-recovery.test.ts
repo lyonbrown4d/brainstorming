@@ -77,7 +77,7 @@ describe('workspace recovery coordination', () => {
     const unlockDocument = vi.fn(() =>
       Promise.resolve({ ...record('beta'), sessionToken: 'beta-session' }),
     )
-    window.brainstorming = desktop({
+    desktop({
       readWorkspaceRecovery: reread,
       cancelUnlock,
       unlockDocument,

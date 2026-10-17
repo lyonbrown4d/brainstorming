@@ -96,9 +96,9 @@ describe('repository coding standards', () => {
 
   test('keeps downloaded shadcn and Dice UI sources excluded', async () => {
     const paths = [
-      'src/renderer/src/components/ui/button.tsx',
-      'src/renderer/src/hooks/use-ref-with-init.ts',
-      'src/renderer/src/hooks/use-value-as-ref.ts',
+      'src/components/ui/button.tsx',
+      'src/hooks/use-ref-with-init.ts',
+      'src/hooks/use-value-as-ref.ts',
     ]
     expect(await Promise.all(paths.map((path) => eslint.isPathIgnored(path)))).toEqual([
       true,

@@ -1,8 +1,16 @@
+import { afterEach } from 'vitest'
+import { installPlatformAPI } from '@renderer/lib/desktop'
 import type { DesktopAPI } from '@shared/contracts'
 import { inactiveMCP } from '@tests/fixtures/mcp'
 
+const uninstallations: (() => void)[] = []
+export const resetDesktopFixture = (): void => {
+  while (uninstallations.length > 0) uninstallations.pop()?.()
+}
+afterEach(resetDesktopFixture)
+
 export const desktop = (overrides: Partial<DesktopAPI> = {}): DesktopAPI => {
-  return {
+  const api: DesktopAPI = {
     platform: 'macos',
     getLanguage: () => Promise.resolve('zh-CN'),
     setLanguage: (language) => Promise.resolve(language),
@@ -25,7 +33,7 @@ export const desktop = (overrides: Partial<DesktopAPI> = {}): DesktopAPI => {
     onSystemThemeChanged: () => () => undefined,
     getWindowState: () => Promise.resolve({ focused: true, fullScreen: false }),
     onWindowStateChanged: () => () => undefined,
-    resourceOrigin: 'brainstorming-resource://storybook',
+    resourceOrigin: 'http://127.0.0.1:43123',
     importDroppedFiles: () => Promise.resolve({ documents: [], assets: [] }),
     generateLinkPreview: () => Promise.reject(new Error('Preview unavailable')),
     queueLinkPreviews: () => Promise.resolve(),
@@ -51,4 +59,6 @@ export const desktop = (overrides: Partial<DesktopAPI> = {}): DesktopAPI => {
     onMenuAction: () => () => undefined,
     ...overrides,
   }
+  uninstallations.push(installPlatformAPI(api))
+  return api
 }

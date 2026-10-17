@@ -11,7 +11,11 @@ export default defineConfig(
   {
     ignores: [
       'node_modules/**',
+      'dist/**',
       'out/**',
+      'test-results-desktop/**',
+      'src-tauri/target/**',
+      'src-tauri/gen/**',
       'release/**',
       'coverage/**',
       'storybook-static/**',
@@ -20,10 +24,10 @@ export default defineConfig(
       '.moon/cache/**',
       'apm_modules/**',
       // Third-party shadcn source is kept verbatim; business wrappers remain linted.
-      'src/renderer/src/components/ui/**',
+      'src/components/ui/**',
       // Dice UI Stepper helpers downloaded by shadcn; keep upstream source intact.
-      'src/renderer/src/hooks/use-value-as-ref.ts',
-      'src/renderer/src/hooks/use-ref-with-init.ts',
+      'src/hooks/use-value-as-ref.ts',
+      'src/hooks/use-ref-with-init.ts',
     ],
   },
   js.configs.recommended,
@@ -82,7 +86,7 @@ export default defineConfig(
       'no-restricted-imports': [
         'error',
         {
-          paths: ['react', 'react-dom', 'electron', '@xyflow/react', 'lexical'],
+          paths: ['react', 'react-dom', '@xyflow/react', 'lexical'],
           patterns: [
             { group: ['./**', '../**'], message: '项目内部导入和再导出统一使用 @ 别名。' },
             {
@@ -91,8 +95,7 @@ export default defineConfig(
                 '@renderer/*',
                 '@layout',
                 '@layout/*',
-                '@main/*',
-                '@preload/*',
+                '@tauri-apps/*',
                 '@formats',
                 '@formats/*',
                 '@assets',

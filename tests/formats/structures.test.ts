@@ -3,9 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { applyCommand, createDocument, createWorkbook } from '@core'
 import { LAYOUT_KINDS, type LayoutKind } from '@core/extensions'
 import { readArchive } from '@formats/archive'
-import { mutateNative } from '@tests/formats/content-native-fixture'
 import { encodeXmind } from '@formats/interchange/xmind'
-import { decodeBrainstorming, encodeBrainstorming } from '@formats/brainstorming'
+import { deserializeWorkbook, serializeWorkbook } from '@core'
 import { importXmind } from '@formats/xmind'
 
 const provider = 'org.brainstorming.interchange'
@@ -64,12 +63,12 @@ describe('diagram structure file compatibility', () => {
   })
   it.each(LAYOUT_KINDS)(
     'saves and reopens %s whole-sheet and branch structure without changing other sheets',
-    async (layout) => {
+    (layout) => {
       const original = book(layout)
       const second = createWorkbook(createDocument('第二页')).sheets[0]
       if (!second) throw new Error('Missing sheet')
       const workbook = { ...original, sheets: [...original.sheets, { ...second, id: 'second' }] }
-      expect(await decodeBrainstorming(await encodeBrainstorming(workbook))).toEqual(workbook)
+      expect(deserializeWorkbook(serializeWorkbook(workbook))).toEqual(workbook)
       const imported = importXmind(encodeXmind(workbook)).workbook
       expect(imported.sheets[0]?.document.settings?.layout).toBe(layout)
       expect(imported.sheets[0]?.document.topics.branch?.structure).toBe(layout)
@@ -185,21 +184,4 @@ describe('diagram structure file compatibility', () => {
       '不支持的 XMind 布局已使用继承或默认布局，主题内容已保留（2 项）',
     ])
   })
-
-  it.each(['settings', 'topic'])(
-    'rejects invalid native %s layout values when reopening',
-    async (target) => {
-      const bytes = await mutateNative(book('map'), (db) => {
-        if (target === 'settings')
-          db.exec(
-            `UPDATE sheets SET metadata = json_set(metadata,'$.settings.layout','tree-unsupported')`,
-          )
-        else
-          db.exec(
-            `UPDATE topics SET data = json_set(data,'$.structure','tree-unsupported') WHERE id = 'branch'`,
-          )
-      })
-      await expect(decodeBrainstorming(bytes)).rejects.toThrow()
-    },
-  )
 })

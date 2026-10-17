@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { inactiveMCP } from '@tests/fixtures/mcp'
+import { createStoryDesktop } from '@stories/desktopBridge'
+import { installPlatformAPI } from '@renderer/lib/desktop'
 import { expect, userEvent, within } from 'storybook/test'
 import { queryClient } from '@renderer/lib/queryClient'
 import type { DesktopAPI } from '@shared/contracts'
@@ -15,63 +16,18 @@ import '@renderer/styles/window.css'
 
 const installRecentBridge = (getRecentFiles: DesktopAPI['getRecentFiles']) => {
   queryClient.removeQueries({ queryKey: ['recent-files'] })
-  const previous = window.brainstorming
-  window.brainstorming = {
-    platform: 'macos',
-    getLanguage: () => Promise.resolve('zh-CN'),
-    setLanguage: (language) => Promise.resolve(language),
-    ...inactiveMCP,
-    unlockDocument: () => Promise.reject(new Error('没有待解锁文件')),
-    activateUnlockedDocument: () => Promise.resolve({ encrypted: false }),
-    cancelUnlock: () => Promise.resolve(),
-    getFileSecurity: () => Promise.resolve({ encrypted: false }),
-    setFilePassword: () => Promise.resolve({ encrypted: false }),
-    readLockedRecovery: () => Promise.resolve(null),
-    readWorkspaceRecovery: () => Promise.resolve([]),
-    writeWorkspaceRecovery: () => Promise.resolve(),
-    listDocumentBackups: () => Promise.resolve([]),
-    restoreDocumentBackup: () => Promise.reject(new Error('没有历史版本')),
-    getAISettings: () => Promise.reject(new Error('尚未配置 AI')),
-    saveAISettings: () => Promise.reject(new Error('尚未配置 AI')),
-    generateMindMap: () => Promise.reject(new Error('尚未配置 AI')),
-    cancelAIGeneration: () => Promise.resolve(),
+  const restore = installPlatformAPI({
+    ...createStoryDesktop(),
     getRecentFiles,
-    setAppearance: () => Promise.resolve(),
-    onSystemThemeChanged: () => () => undefined,
-    getWindowState: () => Promise.resolve({ focused: true, fullScreen: false }),
-    onWindowStateChanged: () => () => undefined,
-    resourceOrigin: 'brainstorming-resource://storybook',
-    importDroppedFiles: () => Promise.resolve({ documents: [], assets: [] }),
-    generateLinkPreview: () => Promise.reject(new Error('Preview unavailable')),
-    queueLinkPreviews: () => Promise.resolve(),
-    getLinkPreview: () => Promise.resolve(null),
-    onLinkPreview: () => () => undefined,
-    releaseDocument: () => Promise.resolve(),
-    selectAsset: () => Promise.resolve(null),
-    exportFile: () => Promise.resolve(null),
-    readTopicClipboard: () => Promise.resolve(''),
-    writeTopicClipboard: () => Promise.resolve(),
-    openExternal: () => Promise.resolve(),
-    exportAsset: () => Promise.resolve(false),
-    hasOpenFile: () => Promise.resolve(false),
-    takeOpenFile: () => Promise.resolve(null),
-    onOpenFile: () => () => undefined,
-    openDocument: () => Promise.resolve(null),
-    saveDocument: () => Promise.resolve(null),
-    readRecovery: () => Promise.resolve(null),
-    writeRecovery: () => Promise.resolve(),
-    setDirty: () => undefined,
     openRecent: (path) =>
       Promise.resolve({
         path,
         contents: serializeWorkbook(createWorkbook(createDocument('最近规划'))),
       }),
-    onMenuAction: () => () => undefined,
-  }
+  })
   return () => {
     queryClient.removeQueries({ queryKey: ['recent-files'] })
-    if (previous) window.brainstorming = previous
-    else delete window.brainstorming
+    restore()
   }
 }
 
@@ -93,7 +49,7 @@ const meta = {
   render: (_, { globals }) => (
     <TooltipProvider>
       <div
-        className="app-shell flex h-full w-full min-w-0 flex-col"
+        className="app-shell group/shell flex h-full w-full min-w-0 flex-col"
         data-platform={globals.platform === 'macos' ? 'macos' : 'windows'}
         data-focused={globals.focused !== false}
         data-fullscreen={globals.fullscreen === true}
@@ -106,7 +62,7 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-// Native caption buttons are drawn by Electron and appear only in the desktop app.
+// Native caption buttons are drawn by the native host and appear only in the desktop app.
 export const MacOS: Story = { globals: { platform: 'macos' } }
 export const WindowsLinux: Story = { globals: { platform: 'windows' } }
 export const Inactive: Story = { globals: { platform: 'macos', focused: false } }

@@ -79,9 +79,7 @@ describe('bounded resource interchange exports', () => {
     const prepared = await prepareExportResources(book, false)
     expect(prepared.sheets[0]?.document.assets?.video).toEqual(storedAttachment)
     expect(prepared.sheets[0]?.document.assets?.image?.data).toBe(bytes.toString('base64'))
-    expect(fetch).toHaveBeenCalledExactlyOnceWith(
-      `brainstorming-resource://storybook/object/${'c'.repeat(64)}`,
-    )
+    expect(fetch).toHaveBeenCalledExactlyOnceWith(`http://127.0.0.1:43123/object/${'c'.repeat(64)}`)
     expect(book.sheets[0]?.document.assets?.image?.storage?.byteLength).toBe(100 * 1024 ** 2)
   })
   it('ignores unused resource descriptors during XMind export', async () => {

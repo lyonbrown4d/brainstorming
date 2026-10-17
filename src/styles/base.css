@@ -1,0 +1,86 @@
+@layer base {
+  :root {
+    font-family:
+      Inter,
+      -apple-system,
+      BlinkMacSystemFont,
+      'PingFang SC',
+      'Microsoft YaHei',
+      sans-serif;
+    color: var(--ui-foreground);
+    background: var(--ui-secondary);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  html,
+  body,
+  #root {
+    width: 100%;
+    height: var(--app-height, 100dvh);
+    margin: 0;
+    overflow: hidden;
+  }
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    color: inherit;
+    cursor: pointer;
+    border: 0;
+    background: transparent;
+    transition:
+      background 140ms,
+      color 140ms;
+  }
+  button:hover {
+    background: var(--ui-accent);
+    color: var(--ui-accent-foreground);
+  }
+  button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  button:disabled:hover {
+    background: transparent;
+    color: inherit;
+  }
+  button:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid var(--ui-ring);
+    outline-offset: 3px;
+  }
+  button svg {
+    flex-shrink: 0;
+  }
+  kbd {
+    font-family: inherit;
+    font-size: 11px;
+    color: var(--ui-muted-foreground);
+    white-space: nowrap;
+  }
+  .muted {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition: none !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

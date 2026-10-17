@@ -3,7 +3,7 @@ import { strToU8, zipSync } from 'fflate'
 import { describe, expect, it } from 'vitest'
 import { validateWorkbook } from '@core'
 import { importXmind } from '@formats/xmind'
-import { decodeBrainstorming, encodeBrainstorming } from '@formats/brainstorming'
+import { deserializeWorkbook, serializeWorkbook } from '@core'
 
 const fixture = (name: string): Uint8Array =>
   readFileSync(new URL(`../fixtures/xmind/${name}`, import.meta.url))
@@ -12,7 +12,7 @@ const archive = (value: unknown): Uint8Array =>
 const sheet = (rootTopic: unknown): unknown[] => [{ id: 'sheet', title: 'Sheet', rootTopic }]
 
 describe('XMind import', () => {
-  it('imports an unmodified official XMind sample using modern content over warning-only XML', async () => {
+  it('imports an unmodified official XMind sample using modern content over warning-only XML', () => {
     const { workbook, warnings } = importXmind(fixture('official-viewer-test-1.xmind'))
     expect(workbook.sheets).toHaveLength(1)
     expect(workbook.sheets[0]?.name).toBe('Map 1')
@@ -25,7 +25,7 @@ describe('XMind import', () => {
       'Main Topic 3',
     ])
     expect(warnings).toEqual(expect.arrayContaining([expect.stringContaining('主题配色')]))
-    expect(await decodeBrainstorming(await encodeBrainstorming(workbook))).toEqual(workbook)
+    expect(deserializeWorkbook(serializeWorkbook(workbook))).toEqual(workbook)
   })
 
   it('preserves modern sheet order, titles, ordered subtrees, collapse and explicit styles', () => {

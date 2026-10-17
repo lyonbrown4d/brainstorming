@@ -1,4 +1,4 @@
-import { desktop } from '@tests/fixtures/desktop'
+import { desktop, resetDesktopFixture } from '@tests/fixtures/desktop'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { applyCommand, createDocument, createTopicClipboard } from '@core'
 import { useEditor } from '@renderer/state/editor'
@@ -82,6 +82,7 @@ describe('系统主题剪贴板', () => {
     expect(Object.keys(useEditor.getState().history.document.topics)).toEqual(['root'])
   })
   it('缺少桌面桥接时不使用浏览器剪贴板，也不删除选中的主题', async () => {
+    resetDesktopFixture()
     vi.stubGlobal('window', {})
     const browserRead = vi.fn(() => Promise.resolve(contents))
     const browserWrite = vi.fn(() => Promise.resolve())
@@ -89,7 +90,7 @@ describe('系统主题剪贴板', () => {
     const before = useEditor.getState().history
     await copySelectedTopics(true)
     expect(useEditor.getState().history).toBe(before)
-    expect(useEditor.getState().error).toContain('Electron')
+    expect(useEditor.getState().error).toContain('原生平台')
     await pasteSelectedTopics()
     expect(useEditor.getState().history).toBe(before)
     expect(browserRead).not.toHaveBeenCalled()

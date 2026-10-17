@@ -2,37 +2,37 @@
 
 ## 产品方向
 
-Brainstorming 是基于 React Flow + Electron 的本地优先桌面思维导图工具。
+Brainstorming 是基于 React Flow + Tauri 2 / Rust 的本地优先跨平台思维导图工具。
 本仓库已从 Vetra 虚拟化 Block Editor 转向思维导图；旧代码由 Git 历史保留。
 对外名称使用 Brainstorming（头脑风暴），仓库标识、文件名和本地目录统一使用 brainstorming，不保留旧品牌名称或路径。项目采用单 package，禁止重新引入 monorepo/workspace。
 
 ## 架构
 
 - `src/core`：纯 TypeScript 主题树、命令、历史、校验、版本化 JSON。
-- `src/formats`：原生 SQLite 的有界工具适配、XMind 与大纲转换及导入报告；生产原生文件由 `src/main/document-db` 按路径读写，不将第三方文件字段写入 core。
+- `src/formats`：XMind 与大纲转换及导入报告；原生 SQLite 由 Rust 读写，不将第三方文件字段写入 core。
 - `src/layout`：主题树到左右布局的纯计算，优先采用成熟布局库。
-- `src/main` / `src/preload` / `src/renderer/src`：Electron main、preload 与 React renderer，入口遵循 electron-vite 标准目录。
-- `src/shared`：主进程、preload 与 renderer 共用的白名单契约。
-- Core 不依赖 React、DOM、Electron、React Flow 或其 Node/Edge 类型。
+- `src-tauri/src`：Rust 原生服务；`src-tauri/plugins/brainstorming-native`：Swift / Kotlin 平台适配；`src`：共享 React 前端。
+- `src/shared`：前端平台 API 的白名单契约；Rust 在命令边界重新验证。
+- Core 不依赖 React、DOM、Tauri、React Flow 或其 Node/Edge 类型。
 - React Flow 节点/边是文档模型的视图投影，不是持久化协议。
 - 三维视图使用 Three.js、React Three Fiber 与 Drei；空间坐标由纯布局派生，相机、聚焦和视图模式按 Sheet 保存在会话状态，不写入文档或历史。二维与三维共用主题命令和 Lexical 编辑链路。
 - 主题树维护稳定 ID、唯一父节点、有序子节点、禁止循环和不可达节点。
 - 所有文档变更必须通过类型化命令；一次用户操作对应一次撤销。
 - 拖动中间位置、选区、测量缓存不写入文档历史；拖动结束提交移动命令。
-- 产品仅运行于 Electron，不维护独立浏览器入口或文件、密码、恢复的浏览器降级实现。Storybook 可使用类型明确的桌面 API mock 预览组件。
-- 主进程管理文件和系统能力，preload 只暴露类型明确的白名单 API。主进程在 `src/main/di` 使用 Inversify 显式模块组装服务，业务类通过构造参数接收依赖，不使用 service locator。
-- 本机语言、最近文件和恢复索引通过 Kysely + better-sqlite3 写入 `brainstorming-local.sqlite`；原生文档与恢复正文使用独立 SQLite 文件。两类数据库均使用静态注册的 Kysely 官方 Migrator；原生连接使用 Effect Pool，按规范路径与凭据摘要共享，借用期间不得关闭。密钥仅留在主进程内存。
-- 必须启用 contextIsolation 和 sandbox，关闭 nodeIntegration。
+- 产品运行于 Tauri，目标为 macOS、Windows、Linux、iOS、Android，不维护纯 Web 产品或浏览器文件、密码、恢复降级。Storybook 可注入类型明确的平台 API 预览组件。
+- Rust `AppState` 显式组合文档、恢复、资源、AI、MCP 服务，移动端系统能力使用 Tauri 插件；不保留 Node 后端。
+- SQLite 使用 rusqlite / SQLCipher，连接使用 Deadpool，迁移使用静态注册的显式 SQL。文档按规范路径共享连接池，借用期间不得关闭；密码只留在原生内存。
+- Tauri capabilities 仅授权应用窗口；远程页面没有原生命令权限。文件访问必须经系统选择器或会话授权，网页截图禁用脚本及外部子资源。
 
 ## 工具链
 
-保留 Vite / electron-vite、Moon 单项目任务图与 pnpm。package scripts 直接调用成熟 CLI，不维护通用 tasks.ts 包装；多任务依赖与缓存交给 Moon。main、preload、renderer、配置和脚本均为 TypeScript-first。Electron renderer 与 Storybook 启用正式 React Compiler，沿用 React 19 官方接入方式；不将其用于 core、main 或 preload。
+保留 Vite / Tauri CLI、Moon 单项目任务图与 pnpm。package scripts 直接调用成熟 CLI，不维护通用 tasks.ts 包装；多任务依赖与缓存交给 Moon。前端、配置和脚本使用 TypeScript，原生后端使用 Rust。React renderer 与 Storybook 启用正式 React Compiler，沿用 React 19 官方接入方式；不将其用于 core 或 Rust 后端。
 
 ## 实现与质量
 
 - pnpm 是唯一包管理器，提交 pnpm-lock.yaml。
 - TypeScript strict、noUncheckedIndexedAccess、exactOptionalPropertyTypes；禁止滥用 any。
-- 项目内部静态导入、类型导入、再导出和动态导入统一使用 `@` 路径别名，禁止 `./`、`../` 相对模块路径；第三方包和 Node 内置模块保留原包名。路径别名集中维护在 `tsconfig.json`，Electron renderer、Vitest 和 Storybook 通过 Vite 内置 `resolve.tsconfigPaths` 解析，Playwright 使用 TypeScript 路径映射。资源 URL、文件路径和工具的目录配置不属于模块导入。
+- 项目内部静态导入、类型导入、再导出和动态导入统一使用 `@` 路径别名，禁止 `./`、`../` 相对模块路径；第三方包和 Node 内置模块保留原包名。路径别名集中维护在 `tsconfig.json`，React renderer、Vitest 和 Storybook 通过 Vite 内置 `resolve.tsconfigPaths` 解析，Playwright 使用 TypeScript 路径映射。资源 URL、文件路径和工具的目录配置不属于模块导入。
 - 手写源码、测试、Storybook 和 TypeScript 配置单文件不得超过 300 行，包含空行与注释；按职责拆分，不压缩格式或删除有用注释规避检查。第三方下载源码与生成产物不纳入该限制。
 - 函数、React 组件、回调和普通方法统一使用箭头函数；命名函数用 `const`，构造函数及 getter/setter 保留语言语法。断言函数的变量必须显式标注函数类型；迁移时检查初始化顺序，不依赖函数声明提升。
 - 新增源码、测试、配置和脚本优先使用 TypeScript（`.ts` / `.tsx`），保持 strict 类型检查，不新增平行的 JavaScript 实现。
@@ -47,15 +47,15 @@ Brainstorming 是基于 React Flow + Electron 的本地优先桌面思维导图�
 - 新增、连线、外框、概要、标注、历史和编辑操作放在画布底部浮动 Dock，单行平铺并支持横向滚动，参数面板优先向上展开；平时收起为可发现的小入口，hover 或键盘聚焦时展开；连线、编辑及子面板操作期间保持可用。持续调整的主题格式、标记、任务、链接、注解样式和画布结构、配色、模板放在右侧属性栏，使用横向 shadcn Tabs 分组；演示播放和设置入口放在标题栏。关联线、外框、概要和标注优先直接在画布创建与原位编辑，不通过模态表单代替画布操作；文件、安全、AI 配置等需要独立确认的流程可使用对话框。
 - 多文档使用画布顶部浮动标签，与底部 Dock 一样在 hover 或键盘聚焦时展开，支持横向滚动，不占用标题栏或固定内容行；每份文档保留独立文件路径、脏状态、历史、Sheet 和二维/三维会话。底部 Sheet 标签只切换当前文档的画布。
 - 现有 UI 迭代时同步检查通用控件，优先替换为官方 shadcn 组件；缺少的组件通过固定版本的官方 CLI 下载，使用 pnpm，避免自行重写同类基础控件。
-- `src/renderer/src/components/ui` 中下载的 shadcn 组件保持官方实现，不直接修改其逻辑、结构、默认样式或 API。业务差异通过上层组合组件、公开 props、`className` 和集中主题变量实现；组合组件放在业务目录，不放入 `ui`。
+- `src/components/ui` 中下载的 shadcn 组件保持官方实现，不直接修改其逻辑、结构、默认样式或 API。业务差异通过上层组合组件、公开 props、`className` 和集中主题变量实现；组合组件放在业务目录，不放入 `ui`。
 - 业务视觉样式优先使用 Tailwind CSS utilities，通过组合组件的 `className` 表达布局、间距、字体、颜色和交互状态；不为新功能手写同类 CSS。已有界面被修改时同步迁移涉及的业务样式。CSS 文件仅保留集中主题变量、第三方集成及确实需要数据驱动的画布规则；动态主题颜色、尺寸通过类型明确的样式值或 CSS 变量传入。
 - 升级 shadcn 组件通过官方 CLI/注册表重新获取并审查差异，不能在原始组件上维护业务补丁。下载源码属于第三方组件，标明来源；源码行数拆分要求面向手写业务代码，不为行数拆散上游组件。
 - ESLint 管质量，Prettier 管格式；Husky 提交前检查格式和类型。
-- 原生 `.brainstorming` 使用 SQLite 协议 v1，不兼容旧 ZIP/JSON 文档、本机数据库或恢复记录。主题、顺序和资源引用存关系表；二进制按 SHA-256 去重，以 256 KiB 分块存储，不把大文件 base64 放进 renderer 状态。XMind 导入后保存必须使用新的 `.brainstorming` 路径，不能覆盖源文件；XMind 导出走独立副本流程。密码保护使用 SQLCipher，文件内版本与恢复不得降级为明文；密钥不写入文档或日志。
-- 大图片通过 Sharp 生成预览和瓦片，renderer 通过受限资源协议按范围读取；网页预览使用隔离 Electron 会话，自动按 URL 去重并串行排队，不能同时打开所有链接。主题图片仅通过显式命令变更。
+- 原生 `.brainstorming` 使用 SQLite 协议 v2，不兼容旧 ZIP/JSON 文档、本机数据库或恢复记录。主题、顺序和资源引用存关系表；二进制按 SHA-256 去重，以 256 KiB 分块存储，不把大文件 base64 放进 renderer 状态。XMind 导入后保存必须使用新的 `.brainstorming` 路径，不能覆盖源文件；XMind 导出走独立副本流程。密码保护使用 SQLCipher，文件内版本与恢复不得降级为明文；密钥不写入文档或日志。
+- 大图片通过 libvips 生成预览和瓦片，renderer 通过受限资源协议按范围读取；网页预览使用禁用脚本的隔离原生 WebView，自动按 URL 去重并串行排队，不能同时打开所有链接。主题图片仅通过显式命令变更。
 - 原生文件通过 SQLite 事务写入，不能先截断原文件；处理取消、损坏 SQLite/第三方 ZIP/JSON/XML、保存失败和恢复失败。
 - 测试覆盖主题树合法性、命令边界、撤销重做、序列化和恢复。
-- UI 通过 Playwright 启动真实 Electron 生产构建，验证新增、编辑、折叠、移动、保存和重新打开；性能采样也使用真实 Electron，不使用独立浏览器服务器。
+- UI 使用 WebdriverIO 官方 Tauri service 启动真实原生应用；WDIO 插件与文件选择器测试入口仅在 e2e feature、独立应用标识下启用。Storybook 保留 Playwright 浏览器组件测试。
 - Storybook 提供主题和编辑器交互预览；性能使用固定 fixtures、多次采样。
 - CI 至少执行 format:check、lint、typecheck、test、build、Storybook、E2E。
 

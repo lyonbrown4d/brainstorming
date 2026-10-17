@@ -1,0 +1,77 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Brainstorming",
+  "version": "0.2.0",
+  "identifier": "app.brainstorming.desktop",
+  "build": {
+    "beforeDevCommand": "pnpm frontend:dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Brainstorming",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 360,
+        "minHeight": 480,
+        "visible": false,
+        "decorations": false,
+        "backgroundColor": "#f7f7f5",
+        "dragDropEnabled": true
+      }
+    ],
+    "security": {
+      "csp": {
+        "default-src": "'self'",
+        "script-src": "'self'",
+        "style-src": "'self' 'unsafe-inline'",
+        "img-src": "'self' data: blob: http://127.0.0.1:*",
+        "media-src": "'self' blob: http://127.0.0.1:*",
+        "connect-src": "'self' ipc: http://ipc.localhost http://127.0.0.1:*",
+        "font-src": "'self' data:",
+        "object-src": "'none'",
+        "base-uri": "'none'"
+      },
+      "capabilities": ["editor"]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Productivity",
+    "shortDescription": "Local-first mind mapping",
+    "fileAssociations": [
+      {
+        "ext": ["brainstorming"],
+        "mimeType": "application/vnd.brainstorming",
+        "name": "Brainstorming Mind Map",
+        "role": "Editor",
+        "exportedType": {
+          "identifier": "app.brainstorming.document",
+          "conformsTo": ["public.data"]
+        }
+      }
+    ],
+    "iOS": {
+      "minimumSystemVersion": "16.4"
+    },
+    "android": {
+      "minSdkVersion": 26
+    },
+    "macOS": {
+      "minimumSystemVersion": "13.3"
+    },
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  },
+  "mainBinaryName": "brainstorming"
+}

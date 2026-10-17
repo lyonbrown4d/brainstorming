@@ -1,10 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import startupHtml from '@project/src/renderer/splash.html?raw'
+import startupHtml from '@project/splash.html?raw'
+import lightLogo from '@renderer/assets/brand/logo-light.png'
+import darkLogo from '@renderer/assets/brand/logo-dark.png'
 import startupStyles from '@renderer/styles/ui.css?inline'
 import { showStartupIssue } from '@renderer/startupStatus'
 
 // Preview the actual pre-React markup rather than maintaining a second React copy.
 const preview = startupHtml
+  .replaceAll('/src/assets/brand/logo-light.png', lightLogo)
+  .replaceAll('/src/assets/brand/logo-dark.png', darkLogo)
   .replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '')
   .replace(/<link\b[^>]*rel="stylesheet"[^>]*>/g, '')
   .replace('</head>', `<style>${startupStyles}</style></head>`)

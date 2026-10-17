@@ -1,7 +1,7 @@
 import { useDocumentTabs, switchDocumentTab } from '@renderer/state/documentTabs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDocument } from '@core'
-import { decodeBrainstorming, encodeBrainstorming } from '@formats/brainstorming'
+import { deserializeWorkbook, serializeWorkbook } from '@core'
 import {
   beginCreation,
   cancelCreation,
@@ -127,7 +127,7 @@ describe('full-page document and sheet creation', () => {
     )
   })
 
-  it('adds a Sheet in one undo with independent structure, preserving path, password and native reopen values', async () => {
+  it('adds a Sheet in one undo with independent structure, preserving path, password and workbook serialization', () => {
     useEditor.getState().command({ type: 'setDocumentSettings', settings: { layout: 'tree-up' } })
     const original = useEditor.getState().workbook
     useFileSecurityState.setState({ documentId: original.id, encrypted: true })
@@ -145,9 +145,7 @@ describe('full-page document and sheet creation', () => {
       documentId: original.id,
       encrypted: true,
     })
-    expect(await decodeBrainstorming(await encodeBrainstorming(state.workbook))).toEqual(
-      state.workbook,
-    )
+    expect(deserializeWorkbook(serializeWorkbook(state.workbook))).toEqual(state.workbook)
     state.undo()
     expect(useEditor.getState().workbook).toEqual(original)
     state.redo()

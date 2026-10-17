@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "ios": {
+    "version": "8.18.0",
+    "source": "https://github.com/TimOliver/vips-cocoa",
+    "license": "LGPL-2.1-or-later",
+    "cacheDirectory": "ios-8.18.0",
+    "url": "https://github.com/TimOliver/vips-cocoa/releases/download/v8.18.0/vips-dynamic-ios.zip",
+    "sha256": "7c61cfc7b21b4c3a01b22cfc874b3d7dac18b790c9b3c58fe2c467a4beae1e33"
+  },
+  "android": {
+    "version": "8.16.0",
+    "source": "https://github.com/fluttercandies/libvips_ffi",
+    "commit": "e9dbdd3372f209208a38c16addd3402b427a2e42",
+    "license": "LGPL-2.1-or-later",
+    "cacheDirectory": "android-e9dbdd3372f209208a38c16addd3402b427a2e42",
+    "files": [
+      {
+        "path": "arm64-v8a/libgio-2.0.so",
+        "size": 1581136,
+        "sha256": "3f70018b264b307f838f2c206f72d8920a14568731881bfa819cb9377b0a26f0",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/arm64-v8a/libgio-2.0.so"
+      },
+      {
+        "path": "arm64-v8a/libgirepository-2.0.so",
+        "size": 193944,
+        "sha256": "dc8f9a19197b29d32825a18ef7f6fde573464aa3c377ad23f33c3efaae373d54",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/arm64-v8a/libgirepository-2.0.so"
+      },
+      {
+        "path": "arm64-v8a/libglib-2.0.so",
+        "size": 1498736,
+        "sha256": "d1c9b1e492d19cec66c19f3a4097fe12ff1c0ad03f2e29e70f9f6bc8410da9ec",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/arm64-v8a/libglib-2.0.so"
+      },
+      {
+        "path": "arm64-v8a/libgmodule-2.0.so",
+        "size": 11552,
+        "sha256": "7b88ea820740448957aa47b221b9fb926652933e3b9be4f64e54119093579a81",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/arm64-v8a/libgmodule-2.0.so"
+      },
+      {
+        "path": "arm64-v8a/libgobject-2.0.so",
+        "size": 362456,
+        "sha256": "f3e3d01b8c91686b08147eaf3c3a259d8ccbc7cbbb564f42f3d2f05b277b8cb5",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/arm64-v8a/libgobject-2.0.so"
+      },
+      {
+        "path": "arm64-v8a/libgthread-2.0.so",
+        "size": 3912,
+        "sha256": "91f2147fa11ca0719ba51e6f995140d1544150a4a55aed529cab9e5e9fd494dd",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/arm64-v8a/libgthread-2.0.so"
+      },
+      {
+        "path": "arm64-v8a/libintl.so",
+        "size": 4976,
+        "sha256": "b257c10283679c5a21794a013f95a778907cf0a5e213daeb6b4eee652fae848e",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/arm64-v8a/libintl.so"
+      },
+      {
+        "path": "arm64-v8a/libvips.so",
+        "size": 4119720,
+        "sha256": "82c566606fd6fcea6b83803f93c3e4fc42677c4f81b13a5e4265da387bb67198",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/arm64-v8a/libvips.so"
+      },
+      {
+        "path": "arm64-v8a/libz.so",
+        "size": 97144,
+        "sha256": "d1a034409b2810475dfd07733d95e8dd7ca1d383f89e0b41d399964ac1648795",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/arm64-v8a/libz.so"
+      },
+      {
+        "path": "armeabi-v7a/libgio-2.0.so",
+        "size": 1315628,
+        "sha256": "09bc550279696b114d415c69bcc3655e6079783e1513de2fed86ed7f30715f5e",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/armeabi-v7a/libgio-2.0.so"
+      },
+      {
+        "path": "armeabi-v7a/libgirepository-2.0.so",
+        "size": 166720,
+        "sha256": "213f2bf6120a47ebacc166cdea190346b8aa849ce4e7015a0903d4b9cb94ec42",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/armeabi-v7a/libgirepository-2.0.so"
+      },
+      {
+        "path": "armeabi-v7a/libglib-2.0.so",
+        "size": 1366180,
+        "sha256": "0cf253184cd846c4d15b86d2df839a9f3194c6757e7b57fc533bceff41db7332",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/armeabi-v7a/libglib-2.0.so"
+      },
+      {
+        "path": "armeabi-v7a/libgmodule-2.0.so",
+        "size": 9516,
+        "sha256": "fd34d2b9b7e0082df82153a29bc162cc464d07c471be83e49fb26b07d5ce4ea2",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/armeabi-v7a/libgmodule-2.0.so"
+      },
+      {
+        "path": "armeabi-v7a/libgobject-2.0.so",
+        "size": 273976,
+        "sha256": "40b963cf88b2ae3839f0acedf82e8ce3052f8d9da81891a3177354e1a9c128d9",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/armeabi-v7a/libgobject-2.0.so"
+      },
+      {
+        "path": "armeabi-v7a/libgthread-2.0.so",
+        "size": 2720,
+        "sha256": "697a9e65fcfac03d91a2d99c01a3482c3671e26dc5ad3cf415c23c9de05bc66d",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/armeabi-v7a/libgthread-2.0.so"
+      },
+      {
+        "path": "armeabi-v7a/libintl.so",
+        "size": 3536,
+        "sha256": "dcd112520a173027ae7a85c725181b3cae21ebeeb2567dd7b9b1fcc90fe29a87",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/armeabi-v7a/libintl.so"
+      },
+      {
+        "path": "armeabi-v7a/libvips.so",
+        "size": 3161620,
+        "sha256": "9e5c97f39f85deb4de5ff026f1378f1fc5ee8ef5335ff7a0701ab5d62584c64a",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/armeabi-v7a/libvips.so"
+      },
+      {
+        "path": "armeabi-v7a/libz.so",
+        "size": 69360,
+        "sha256": "7a6a29374d89191c491a254d59969c535f82dc6afa0d22190e10e39ded8fc4e1",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/armeabi-v7a/libz.so"
+      },
+      {
+        "path": "x86_64/libgio-2.0.so",
+        "size": 1520800,
+        "sha256": "4d10404ba0783cd329f2bae2e7c33903529fc20f4c2f1704f141950b7838a847",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/x86_64/libgio-2.0.so"
+      },
+      {
+        "path": "x86_64/libgirepository-2.0.so",
+        "size": 194664,
+        "sha256": "c91331f6a0f7e3e6e01bd57cdf4ebe697e877fa289ca142fbcbf3387fe11b49c",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/x86_64/libgirepository-2.0.so"
+      },
+      {
+        "path": "x86_64/libglib-2.0.so",
+        "size": 1549888,
+        "sha256": "1ee1aaa54c033bf23183268bce732daf39c3a7eac5077f7a6a702a11936bae79",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/x86_64/libglib-2.0.so"
+      },
+      {
+        "path": "x86_64/libgmodule-2.0.so",
+        "size": 11672,
+        "sha256": "2c3a71d49602e14d098407878add988a14ac13e9366e74a55983d95107f14aa2",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/x86_64/libgmodule-2.0.so"
+      },
+      {
+        "path": "x86_64/libgobject-2.0.so",
+        "size": 317208,
+        "sha256": "e701e8e7e672d527c4bf1b2bb267cbe877f84bcdad1e87c1090ffae8c2c72728",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/x86_64/libgobject-2.0.so"
+      },
+      {
+        "path": "x86_64/libgthread-2.0.so",
+        "size": 3840,
+        "sha256": "b725e7f6b6419041118fd0a7dc134b704407fb07f03b92e674d78035187d6fcc",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/x86_64/libgthread-2.0.so"
+      },
+      {
+        "path": "x86_64/libintl.so",
+        "size": 4904,
+        "sha256": "4e078123b72a13767b1a2afd9babfc51c699244726dea28443b09442b945a669",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/x86_64/libintl.so"
+      },
+      {
+        "path": "x86_64/libvips.so",
+        "size": 4745688,
+        "sha256": "dfeccb64623ebc5e9ec3a80c0213591c337a31fa1c5fcac30f49b34ce65f8eb8",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/x86_64/libvips.so"
+      },
+      {
+        "path": "x86_64/libz.so",
+        "size": 100360,
+        "sha256": "a643d617e17e6667f604e4736d6adda9d6038180d880331361879aa58cb9beb1",
+        "url": "https://raw.githubusercontent.com/fluttercandies/libvips_ffi/e9dbdd3372f209208a38c16addd3402b427a2e42/packages/libvips_ffi/android/src/main/jniLibs/x86_64/libz.so"
+      }
+    ],
+    "ndkVersion": "28.2.13676358",
+    "cxxRuntimeSha256": {
+      "arm64-v8a": "ab4e6c71b96b851de45a8a9bd86369e7dbc2130a44b3b4520564be94847910f2",
+      "armeabi-v7a": "10ee48131d6742899619f7cfb3b8df150ad787d723c766a3fb80d4bb275711ff",
+      "x86_64": "e4cd73c8a3607269f3be58d15c21f78bff112e27f9398d6261e5f965668f8746"
+    }
+  }
+}

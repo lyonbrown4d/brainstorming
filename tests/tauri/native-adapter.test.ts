@@ -1,0 +1,141 @@
+import { describe, expect, it, vi } from 'vitest'
+import { createNativeAPI, type NativeInitialization } from '@renderer/lib/nativeAPI'
+import type { NativeDrop, NativeTransport } from '@renderer/lib/nativeTransport'
+import { createDocument, createWorkbook, deserializeWorkbook } from '@core'
+import { encodeXmind } from '@formats/interchange'
+
+const initial: NativeInitialization = {
+  platform: 'macos',
+  resourceOrigin: 'http://127.0.0.1:43123/',
+  language: 'en',
+  windowState: { focused: true, fullScreen: false },
+}
+const fixture = () => {
+  const events = new Map<string, (payload: unknown) => void>()
+  const calls: { method: string; args: Record<string, unknown> }[] = []
+  let drop: ((payload: NativeDrop | null) => void) | undefined
+  let result: unknown = null
+  const transport: NativeTransport = {
+    request: <T>(method: string, args: Record<string, unknown> = {}): Promise<T> => {
+      calls.push({ method, args })
+      return Promise.resolve(result as T)
+    },
+    listen: (event, callback) => {
+      events.set(event, callback)
+      return Promise.resolve(() => {
+        events.delete(event)
+      })
+    },
+    onDrop: (callback) => {
+      drop = callback
+      return Promise.resolve(() => {
+        drop = undefined
+      })
+    },
+  }
+  return {
+    transport,
+    events,
+    calls,
+    emitDrop: (next: NativeDrop | null) => drop?.(next),
+    setResult: (next: unknown) => {
+      result = next
+    },
+  }
+}
+
+describe('Tauri platform adapter', () => {
+  it('forwards system appearance unchanged and keeps manual modes explicit', async () => {
+    const native = fixture()
+    const { api, dispose } = await createNativeAPI(native.transport, initial)
+    for (const theme of ['system', 'light', 'dark'] as const) {
+      await api.setAppearance(theme)
+      expect(native.calls.at(-1)).toEqual({ method: 'setAppearance', args: { theme } })
+    }
+    dispose()
+  })
+  it('routes file operations with named arguments and serializes export bytes', async () => {
+    const native = fixture()
+    const { api, dispose } = await createNativeAPI(native.transport, initial)
+    native.setResult('/maps/export.pdf')
+    expect(
+      await api.exportFile({ format: 'pdf', suggestedName: 'map.pdf', bytes: Uint8Array.of(1, 2) }),
+    ).toBe('/maps/export.pdf')
+    expect(native.calls.at(-1)).toEqual({
+      method: 'exportFile',
+      args: { request: { format: 'pdf', suggestedName: 'map.pdf', bytes: [1, 2] } },
+    })
+    native.setResult({ documents: [], assets: [] })
+    await api.importDroppedPaths?.(['/maps/large.brainstorming'])
+    expect(native.calls.at(-1)).toEqual({
+      method: 'importDroppedFiles',
+      args: { paths: ['/maps/large.brainstorming'] },
+    })
+    expect(api.resourceOrigin).toBe('http://127.0.0.1:43123')
+    dispose()
+    expect(native.events.size).toBe(0)
+  })
+  it('validates events and stops delivering after unsubscription', async () => {
+    const native = fixture()
+    const { api } = await createNativeAPI(native.transport, initial)
+    const callback = vi.fn()
+    const unsubscribe = api.onMenuAction(callback)
+    native.events.get('native:menu-action')?.('save')
+    native.events.get('native:menu-action')?.('unsafe-command')
+    unsubscribe()
+    native.events.get('native:menu-action')?.('open')
+    expect(callback.mock.calls).toEqual([['save']])
+    const state = vi.fn()
+    api.onWindowStateChanged(state)
+    native.events.get('native:window-state')?.({ focused: 'yes', fullScreen: false })
+    native.events.get('native:window-state')?.({ focused: false, fullScreen: true })
+    expect(state.mock.calls).toEqual([[{ focused: false, fullScreen: true }]])
+    const dropped = vi.fn()
+    api.onNativeFileDrop?.(dropped)
+    native.emitDrop({ paths: ['/maps/map.brainstorming'], x: 20, y: 50 })
+    native.emitDrop(null)
+    expect(dropped.mock.calls).toEqual([[{ paths: ['/maps/map.brainstorming'], x: 20, y: 50 }]])
+  })
+  it('converts XMind to an unsaved native document and keeps import warnings', async () => {
+    const native = fixture()
+    const { api } = await createNativeAPI(native.transport, initial)
+    const bytes = encodeXmind(createWorkbook(createDocument('Imported root', 'source-map')))
+    native.setResult({
+      path: null,
+      sourcePath: '/maps/source.xmind',
+      contents: '',
+      importSource: { name: 'source.xmind', bytes: Array.from(bytes) },
+    })
+    const opened = await api.openDocument()
+    expect(opened?.path).toBeNull()
+    expect(opened?.sourcePath).toBe('/maps/source.xmind')
+    expect(deserializeWorkbook(opened?.contents ?? '').sheets[0]?.document.title).toBe(
+      'Imported root',
+    )
+    native.setResult({
+      path: null,
+      contents: '',
+      importSource: { name: 'broken.xmind', bytes: [0, 1] },
+    })
+    await expect(api.openDocument()).rejects.toThrow()
+  })
+  it('cleans up earlier listeners when a required native subscription fails', async () => {
+    const native = fixture()
+    const listen = native.transport.listen.bind(native.transport)
+    native.transport.listen = (event, callback) =>
+      event === 'native:window-state'
+        ? Promise.reject(new Error('event transport failed'))
+        : listen(event, callback)
+    await expect(createNativeAPI(native.transport, initial)).rejects.toThrow(
+      'event transport failed',
+    )
+    expect(native.events.size).toBe(0)
+  })
+  it('does not register desktop drag-and-drop on mobile', async () => {
+    const native = fixture()
+    const onDrop = vi.spyOn(native.transport, 'onDrop')
+    const { api } = await createNativeAPI(native.transport, { ...initial, platform: 'ios' })
+    expect(api.platform).toBe('ios')
+    expect(onDrop).not.toHaveBeenCalled()
+  })
+})

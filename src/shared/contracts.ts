@@ -1,4 +1,5 @@
 import type { LanguageAPI } from '@shared/language'
+import type { AppearanceMode } from '@shared/appAppearance'
 import type { DesktopPlatform, WindowState } from '@shared/window'
 import type { DocumentAsset } from '@core'
 import type { FileSecurityAPI } from '@shared/fileSecurity'
@@ -43,7 +44,18 @@ export interface SaveRequest {
   password?: string | null
 }
 export interface DesktopAPI extends FileSecurityAPI, AIAPI, MCPAPI, LanguageAPI {
+  minimizeWindow?(): Promise<void>
+  toggleMaximizeWindow?(): Promise<void>
+  closeWindow?(): Promise<void>
   readonly resourceOrigin: string
+  importDroppedPaths?(paths: readonly string[]): Promise<DroppedFilesResult>
+  onNativeFileDrop?(
+    callback: (drop: {
+      readonly paths: readonly string[]
+      readonly x: number
+      readonly y: number
+    }) => void,
+  ): () => void
   importDroppedFiles(files: readonly File[]): Promise<DroppedFilesResult>
   generateLinkPreview(url: string): Promise<DocumentAsset>
   queueLinkPreviews(urls: readonly string[]): Promise<void>
@@ -52,7 +64,7 @@ export interface DesktopAPI extends FileSecurityAPI, AIAPI, MCPAPI, LanguageAPI 
   releaseDocument(path: string): Promise<void>
   readonly platform: DesktopPlatform
   getWindowState(): Promise<WindowState>
-  setAppearance(theme: 'light' | 'dark'): Promise<void>
+  setAppearance(theme: AppearanceMode): Promise<void>
   onSystemThemeChanged(callback: () => void): () => void
   onWindowStateChanged(callback: (state: WindowState) => void): () => void
   hasOpenFile(): Promise<boolean>

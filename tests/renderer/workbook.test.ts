@@ -165,7 +165,7 @@ describe('工作簿文件边界', () => {
           finish = resolve
         }),
     )
-    window.brainstorming = desktop({ saveDocument: persist })
+    desktop({ saveDocument: persist })
     renameRoot('第一页已保存内容')
     useEditor.getState().switchSheet('second')
     useEditor.getState().startEdit('root')
@@ -189,7 +189,7 @@ describe('工作簿文件边界', () => {
     expect(titleOf(newId)).toBe('保存期间的新画布')
     expect(isDirty()).toBe(true)
     expect(useEditor.getState().path).toBe('/workbook.brainstorming')
-    window.brainstorming = desktop()
+    desktop()
     await saveDocument()
     expect(isDirty()).toBe(false)
   })
@@ -199,7 +199,7 @@ describe('工作簿文件边界', () => {
     const persist = vi.fn<(request: SaveRequest) => Promise<string>>(() =>
       Promise.resolve('/legacy.brainstorming'),
     )
-    window.brainstorming = desktop({
+    desktop({
       openDocument: vi.fn(() =>
         Promise.resolve({
           path: null,

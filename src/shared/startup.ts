@@ -14,10 +14,3 @@ export interface SplashAPI {
   onPhase(callback: (phase: StartupPhase) => void): () => void
   onLanguage(callback: (language: AppLanguage) => void): () => void
 }
-
-declare global {
-  interface Window {
-    readonly brainstormingStartup?: StartupAPI
-    readonly brainstormingSplash?: SplashAPI
-  }
-}

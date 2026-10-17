@@ -1,0 +1,34 @@
+{
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Brainstorming",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 900,
+        "minHeight": 600,
+        "visible": false,
+        "decorations": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "backgroundColor": "#f7f7f5",
+        "trafficLightPosition": {
+          "x": 20,
+          "y": 28
+        }
+      }
+    ]
+  },
+  "bundle": {
+    "macOS": {
+      "infoPlist": "Info.plist",
+      "entitlements": "Entitlements.plist"
+    }
+  },
+  "plugins": {
+    "macos-fps": {
+      "enabled": true
+    }
+  }
+}

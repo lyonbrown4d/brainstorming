@@ -1,6 +1,6 @@
 # MCP 连接
 
-Brainstorming 桌面版在 Electron 主进程内嵌 MCP Server，通过本机 Streamable HTTP 向外部客户端提供当前授权工作簿的读取和编辑草稿能力。服务默认关闭，不需要独立启动脚本，也不要求用户安装 Node.js。此功能与内置 AI 的模型服务配置相互独立。
+Brainstorming 桌面版在 Rust 原生服务内嵌 MCP Server，通过本机 Streamable HTTP 向外部客户端提供当前授权工作簿的读取和编辑草稿能力。服务默认关闭，不需要独立启动脚本，也不要求用户安装 Node.js。此功能与内置 AI 的模型服务配置相互独立。
 
 ## 启用与停止
 
