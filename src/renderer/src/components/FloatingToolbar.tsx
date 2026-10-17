@@ -1,37 +1,41 @@
 import { CopyPlus, PlusSquare, Redo2, Undo2 } from 'lucide-react'
-import { DockToolbar } from './DockToolbar'
-import { DockAction } from './DockAction'
-import { TopicFormatting } from './TopicFormatting'
-import { SelectionToolbar } from './SelectionToolbar'
-import { AIAssistant } from './ai/AIAssistant'
-import { FileSecurity } from './files/FileSecurity'
-import { HistoryDialog } from './files/HistoryDialog'
-import { TopicFilter } from './documents/TopicFilter'
-import { AnnotationActions, AnnotationModeHint } from './annotations/AnnotationActions'
-import { AnnotationStyleControls } from './annotations/AnnotationStyleControls'
-import { MarkerAction } from './metadata/MarkerAction'
-import { LinkAction } from './metadata/LinkAction'
-import { EditActions } from './EditActions'
-import { ImportTextDialog } from './ImportTextDialog'
-import { ExportDialog } from './ExportDialog'
-import { StructurePicker } from './documents/StructurePicker'
-import { DocumentSettingsPanel } from './documents/DocumentSettingsPanel'
-import { TemplateDialog } from './documents/TemplateDialog'
-import { OutlineEditor } from './documents/OutlineEditor'
-import { PresentationControls } from './documents/PresentationControls'
-import { FloatingActions } from './documents/FloatingActions'
-import { isDirty, useEditor } from '../state/editor'
-import { Separator } from './ui/separator'
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
+import { DockToolbar } from '@renderer/components/DockToolbar'
+import { DockAction } from '@renderer/components/DockAction'
+import { TopicFormatting } from '@renderer/components/TopicFormatting'
+import { SelectionToolbar } from '@renderer/components/SelectionToolbar'
+import { AIAssistant } from '@renderer/components/ai/AIAssistant'
+import { MCPDialog } from '@renderer/components/mcp/MCPDialog'
+import { FileSecurity } from '@renderer/components/files/FileSecurity'
+import { HistoryDialog } from '@renderer/components/files/HistoryDialog'
+import { TopicFilter } from '@renderer/components/documents/TopicFilter'
+import {
+  AnnotationActions,
+  AnnotationModeHint,
+} from '@renderer/components/annotations/AnnotationActions'
+import { AnnotationStyleControls } from '@renderer/components/annotations/AnnotationStyleControls'
+import { MarkerAction } from '@renderer/components/metadata/MarkerAction'
+import { LinkAction } from '@renderer/components/metadata/LinkAction'
+import { EditActions } from '@renderer/components/EditActions'
+import { ImportTextDialog } from '@renderer/components/ImportTextDialog'
+import { ExportDialog } from '@renderer/components/ExportDialog'
+import { StructurePicker } from '@renderer/components/documents/StructurePicker'
+import { DocumentSettingsPanel } from '@renderer/components/documents/DocumentSettingsPanel'
+import { TemplateDialog } from '@renderer/components/documents/TemplateDialog'
+import { OutlineEditor } from '@renderer/components/documents/OutlineEditor'
+import { PresentationControls } from '@renderer/components/documents/PresentationControls'
+import { FloatingActions } from '@renderer/components/documents/FloatingActions'
+import { isDirty, useEditor } from '@renderer/state/editor'
+import { Separator } from '@renderer/components/ui/separator'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@renderer/components/ui/tooltip'
 import type { ComponentProps, ReactNode } from 'react'
 
-function Action({
+const Action = ({
   label,
   hint,
   caption,
   children,
   ...props
-}: ComponentProps<typeof DockAction> & { label: string; hint: string; children: ReactNode }) {
+}: ComponentProps<typeof DockAction> & { label: string; hint: string; children: ReactNode }) => {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -44,7 +48,7 @@ function Action({
   )
 }
 
-function DockGroup({ children, label }: { children: ReactNode; label: string }) {
+const DockGroup = ({ children, label }: { children: ReactNode; label: string }) => {
   return (
     <div
       role="group"
@@ -56,7 +60,7 @@ function DockGroup({ children, label }: { children: ReactNode; label: string }) 
   )
 }
 
-export function FloatingToolbar() {
+export const FloatingToolbar = () => {
   const canUndo = useEditor(
     (state) =>
       state.history.past.length > 0 || state.structurePast.length > 0 || state.editingId !== null,
@@ -163,6 +167,7 @@ export function FloatingToolbar() {
           <FileSecurity />
           <HistoryDialog />
           <AIAssistant onAddSheet={(document) => useEditor.getState().addDocumentSheet(document)} />
+          <MCPDialog />
         </DockGroup>
       </div>
     </DockToolbar>

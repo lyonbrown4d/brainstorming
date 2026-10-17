@@ -5,25 +5,26 @@ import {
   type IpcMainInvokeEvent,
   type IpcMainEvent,
 } from 'electron'
-import type { DocumentFiles } from './files'
-import { validateContents, validateSavePath } from './files'
-import type { OpenedDocument, SaveRequest } from '../shared/contracts'
-import { readWindowState } from './windowChrome'
-import { registerAssetIPC } from './assets'
-import { registerEditingIPC } from './editing'
-import { registerAIIPC } from './ai'
+import type { DocumentFiles } from '@main/files'
+import { validateContents, validateSavePath } from '@main/files'
+import type { OpenedDocument, SaveRequest } from '@shared/contracts'
+import { readWindowState } from '@main/windowChrome'
+import { registerAssetIPC } from '@main/assets'
+import { registerEditingIPC } from '@main/editing'
+import { registerAIIPC } from '@main/ai'
+import { registerMCPIPC } from '@main/mcp'
 
 const openFilters = [{ name: '思维导图', extensions: ['trelyx', 'xmind'] }]
 const saveFilters = [{ name: 'Trelyx 思维导图', extensions: ['trelyx'] }]
 
-export function registerIPC(
+export const registerIPC = (
   getWindow: () => BrowserWindow | null,
   files: DocumentFiles,
   setDirty: (dirty: boolean, preserveRecovery: boolean) => void,
   takeOpenFile: () => Promise<OpenedDocument | null>,
   hasOpenFile: () => boolean,
-): void {
-  function trusted(event: IpcMainInvokeEvent | IpcMainEvent): BrowserWindow {
+): void => {
+  const trusted = (event: IpcMainInvokeEvent | IpcMainEvent): BrowserWindow => {
     const window = getWindow()
     if (
       event.sender !== window?.webContents ||
@@ -36,6 +37,7 @@ export function registerIPC(
   registerAssetIPC(trusted)
   registerEditingIPC(trusted)
   registerAIIPC(trusted)
+  registerMCPIPC(getWindow, trusted)
   ipcMain.handle('window:state', (event) => readWindowState(trusted(event)))
   ipcMain.handle('document:has-open-file', (event) => {
     trusted(event)
@@ -142,7 +144,7 @@ export function registerIPC(
   })
 }
 
-function suggestedFilename(suggestion: string): string {
+const suggestedFilename = (suggestion: string): string => {
   const extension = '.trelyx'
   const sanitized = Array.from(suggestion, (character) =>
     character.charCodeAt(0) < 32 || '<>:"/\\|?*'.includes(character) ? '_' : character,

@@ -1,18 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { inactiveMCP } from '@tests/fixtures/mcp'
 import {
   applyWorkbookCommand,
   createDocument,
   createWorkbook,
   deserializeWorkbook,
   serializeWorkbook,
-} from '../../src/core'
-import { isDirty, useEditor } from '../../src/renderer/src/state/editor'
-import { openDocument, saveDocument } from '../../src/renderer/src/state/files'
-import type { DesktopAPI, SaveRequest } from '../../src/shared/contracts'
+} from '@core'
+import { isDirty, useEditor } from '@renderer/state/editor'
+import { openDocument, saveDocument } from '@renderer/state/files'
+import type { DesktopAPI, SaveRequest } from '@shared/contracts'
 
-function desktop(overrides: Partial<DesktopAPI> = {}): DesktopAPI {
+const desktop = (overrides: Partial<DesktopAPI> = {}): DesktopAPI => {
   return {
     platform: 'macos',
+    ...inactiveMCP,
     unlockDocument: () => Promise.reject(new Error('没有待解锁文件')),
     activateUnlockedDocument: () => Promise.resolve({ encrypted: false }),
     cancelUnlock: () => Promise.resolve(),
@@ -48,11 +50,11 @@ function desktop(overrides: Partial<DesktopAPI> = {}): DesktopAPI {
   }
 }
 
-function renameRoot(title: string): void {
+const renameRoot = (title: string): void => {
   useEditor.getState().command({ type: 'renameTopic', topicId: 'root', title })
 }
 
-function titleOf(id: string): string | undefined {
+const titleOf = (id: string): string | undefined => {
   return useEditor.getState().workbook.sheets.find((sheet) => sheet.id === id)?.document.title
 }
 

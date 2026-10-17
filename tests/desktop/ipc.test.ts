@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
 }))
 vi.mock('../../src/main/ai', () => ({ registerAIIPC: vi.fn() }))
 vi.mock('electron', () => ({
+  app: { on: vi.fn() },
   dialog: { showOpenDialog: mocks.showOpenDialog, showSaveDialog: mocks.showSaveDialog },
   ipcMain: {
     handle: (channel: string, handler: (event: IpcMainInvokeEvent, input?: unknown) => unknown) =>
@@ -25,11 +26,11 @@ vi.mock('electron', () => ({
   },
 }))
 
-import { DocumentFiles } from '../../src/main/files'
-import { registerIPC } from '../../src/main/ipc'
-import { createDocument, createWorkbook, serializeWorkbook } from '../../src/core'
+import { DocumentFiles } from '@main/files'
+import { registerIPC } from '@main/ipc'
+import { createDocument, createWorkbook, serializeWorkbook } from '@core'
 
-function setup() {
+const setup = () => {
   const frame = {}
   const webContents = { mainFrame: frame }
   const window = {
@@ -50,7 +51,7 @@ function setup() {
   return { event, files, setDirty }
 }
 
-function invoke(channel: string, event: IpcMainInvokeEvent, input?: unknown) {
+const invoke = (channel: string, event: IpcMainInvokeEvent, input?: unknown) => {
   const handler = mocks.handlers.get(channel)
   if (!handler) throw new Error('Missing IPC handler')
   return Promise.resolve().then(() => handler(event, input))

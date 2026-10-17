@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { DesktopAPI, MenuAction } from '../shared/contracts'
-import { isWindowState } from '../shared/window'
-import type { StartupAPI } from '../shared/startup'
+import type { DesktopAPI, MenuAction } from '@shared/contracts'
+import { isWindowState } from '@shared/window'
+import type { StartupAPI } from '@shared/startup'
 
 const actions = new Set<MenuAction>([
   'new',
@@ -39,6 +39,32 @@ const api: DesktopAPI = {
   saveAISettings: (settings) => ipcRenderer.invoke('ai:settings:save', settings),
   generateMindMap: (request) => ipcRenderer.invoke('ai:generate', request),
   cancelAIGeneration: (requestId) => ipcRenderer.invoke('ai:cancel', requestId),
+  getMCPConnection: () => ipcRenderer.invoke('mcp:connection'),
+  startMCPServer: (input) => ipcRenderer.invoke('mcp:start', input),
+  stopMCPServer: () => ipcRenderer.invoke('mcp:stop'),
+  onMCPRequest: (callback) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      request: Parameters<typeof callback>[0],
+    ) => {
+      callback(request)
+    }
+    ipcRenderer.on('mcp:request', listener)
+    return () => ipcRenderer.removeListener('mcp:request', listener)
+  },
+  replyMCPRequest: (reply) => {
+    ipcRenderer.send('mcp:reply', reply)
+  },
+  onMCPConnectionChanged: (callback) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      connection: Parameters<typeof callback>[0],
+    ) => {
+      callback(connection)
+    }
+    ipcRenderer.on('mcp:connection-changed', listener)
+    return () => ipcRenderer.removeListener('mcp:connection-changed', listener)
+  },
   openDocument: () => ipcRenderer.invoke('document:open'),
   selectAsset: (kind) => ipcRenderer.invoke('asset:select', kind),
   exportAsset: (asset) => ipcRenderer.invoke('asset:export', asset),

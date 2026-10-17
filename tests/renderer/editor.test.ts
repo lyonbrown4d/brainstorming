@@ -1,14 +1,16 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
-import { applyCommand, createDocument, createWorkbook, serializeWorkbook } from '../../src/core'
-import { isDirty, useEditor } from '../../src/renderer/src/state/editor'
-import { newDocument, openDocument, saveDocument } from '../../src/renderer/src/state/files'
-import type { DesktopAPI, OpenedDocument, SaveRequest } from '../../src/shared/contracts'
-import { suggestedFileName } from '../../src/renderer/src/state/fileName'
-import { getNavigationTarget } from '../../src/renderer/src/state/keyboard'
+import { inactiveMCP } from '@tests/fixtures/mcp'
+import { applyCommand, createDocument, createWorkbook, serializeWorkbook } from '@core'
+import { isDirty, useEditor } from '@renderer/state/editor'
+import { newDocument, openDocument, saveDocument } from '@renderer/state/files'
+import type { DesktopAPI, OpenedDocument, SaveRequest } from '@shared/contracts'
+import { suggestedFileName } from '@renderer/state/fileName'
+import { getNavigationTarget } from '@renderer/state/keyboard'
 
-function desktop(overrides: Partial<DesktopAPI> = {}): DesktopAPI {
+const desktop = (overrides: Partial<DesktopAPI> = {}): DesktopAPI => {
   return {
     platform: 'macos',
+    ...inactiveMCP,
     unlockDocument: () => Promise.reject(new Error('没有待解锁文件')),
     activateUnlockedDocument: () => Promise.resolve({ encrypted: false }),
     cancelUnlock: () => Promise.resolve(),

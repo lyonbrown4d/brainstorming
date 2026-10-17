@@ -1,27 +1,24 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { inactiveMCP } from '@tests/fixtures/mcp'
 import { expect, userEvent, within } from 'storybook/test'
-import { queryClient } from '../src/renderer/src/lib/queryClient'
-import type { DesktopAPI } from '../src/shared/contracts'
-import {
-  createDocument,
-  createWorkbook,
-  serializeWorkbook,
-  createExampleDocument,
-} from '../src/core'
-import { useEditor } from '../src/renderer/src/state/editor'
-import { useWorkspace } from '../src/renderer/src/state/workspace'
-import { Toolbar } from '../src/renderer/src/components/Toolbar'
-import { TooltipProvider } from '../src/renderer/src/components/ui/tooltip'
-import '../src/renderer/src/styles/ui.css'
-import '../src/renderer/src/styles/base.css'
-import '../src/renderer/src/styles/chrome.css'
-import '../src/renderer/src/styles/window.css'
+import { queryClient } from '@renderer/lib/queryClient'
+import type { DesktopAPI } from '@shared/contracts'
+import { createDocument, createWorkbook, serializeWorkbook, createExampleDocument } from '@core'
+import { useEditor } from '@renderer/state/editor'
+import { useWorkspace } from '@renderer/state/workspace'
+import { Toolbar } from '@renderer/components/Toolbar'
+import { TooltipProvider } from '@renderer/components/ui/tooltip'
+import '@renderer/styles/ui.css'
+import '@renderer/styles/base.css'
+import '@renderer/styles/chrome.css'
+import '@renderer/styles/window.css'
 
-function installRecentBridge(getRecentFiles: DesktopAPI['getRecentFiles']) {
+const installRecentBridge = (getRecentFiles: DesktopAPI['getRecentFiles']) => {
   queryClient.removeQueries({ queryKey: ['recent-files'] })
   const previous = window.trelyx
   window.trelyx = {
     platform: 'macos',
+    ...inactiveMCP,
     unlockDocument: () => Promise.reject(new Error('没有待解锁文件')),
     activateUnlockedDocument: () => Promise.resolve({ encrypted: false }),
     cancelUnlock: () => Promise.resolve(),
@@ -65,7 +62,7 @@ function installRecentBridge(getRecentFiles: DesktopAPI['getRecentFiles']) {
   }
 }
 
-async function openRecentMenu(canvasElement: HTMLElement) {
+const openRecentMenu = async (canvasElement: HTMLElement) => {
   const page = within(canvasElement.ownerDocument.body)
   await userEvent.click(within(canvasElement).getByRole('button', { name: '文件菜单' }))
   await userEvent.hover(page.getByRole('menuitem', { name: '最近文件' }))

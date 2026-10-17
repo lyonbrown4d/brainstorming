@@ -1,8 +1,9 @@
-import type { DesktopPlatform, WindowState } from './window'
-import type { DocumentAsset } from '../core'
-import type { FileSecurityAPI } from './fileSecurity'
-import type { AIAPI } from './ai'
-import type { ExportRequest } from './exports'
+import type { DesktopPlatform, WindowState } from '@shared/window'
+import type { DocumentAsset } from '@core'
+import type { FileSecurityAPI } from '@shared/fileSecurity'
+import type { AIAPI } from '@shared/ai'
+import type { MCPAPI } from '@shared/mcp'
+import type { ExportRequest } from '@shared/exports'
 
 export type MenuAction =
   | 'new'
@@ -34,7 +35,7 @@ export interface SaveRequest {
   suggestedName: string
   password?: string | null
 }
-export interface DesktopAPI extends FileSecurityAPI, AIAPI {
+export interface DesktopAPI extends FileSecurityAPI, AIAPI, MCPAPI {
   readonly platform: DesktopPlatform
   getWindowState(): Promise<WindowState>
   onWindowStateChanged(callback: (state: WindowState) => void): () => void
