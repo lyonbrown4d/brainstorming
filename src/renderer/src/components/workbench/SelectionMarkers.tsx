@@ -1,12 +1,11 @@
 import { ChevronDown, Smile } from 'lucide-react'
-import type { Command } from '@core'
-import { useEditor } from '../../state/editor'
-import { selectedTopicIds } from '../../state/selection'
-import { MarkerPicker } from '../metadata/MarkerPicker'
-import { Button } from '../ui/button'
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
-
-function toggleSelectedMarker(marker: string): void {
+import type { Command, TopicMetadata } from '@core'
+import { useEditor } from '@renderer/state/editor'
+import { selectedTopicIds } from '@renderer/state/selection'
+import { MarkerPicker } from '@renderer/components/metadata/MarkerPicker'
+import { Button } from '@renderer/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@renderer/components/ui/popover'
+const toggleSelectedMarker = (marker: string): void => {
   const state = useEditor.getState()
   if (state.busy || marker.length > 64) return
   state.commitDraft()
@@ -40,8 +39,7 @@ function toggleSelectedMarker(marker: string): void {
   })
   if (commands.length) current.command({ type: 'batch', commands })
 }
-
-export function SelectionMarkers({ ids }: { ids: readonly string[] }) {
+export const SelectionMarkers = ({ ids }: { ids: readonly string[] }) => {
   const document = useEditor((state) => state.history.document)
   const busy = useEditor((state) => state.busy)
   const first = document.topics[ids[0] ?? '']?.metadata?.markers ?? []
@@ -69,9 +67,36 @@ export function SelectionMarkers({ ids }: { ids: readonly string[] }) {
               图标应用到全部 {ids.length} 个主题；再次点击共同图标可移除。
             </p>
           )}
-          <MarkerPicker selected={shared} onToggle={toggleSelectedMarker} />
+          <MarkerPicker
+            selected={shared}
+            onToggle={toggleSelectedMarker}
+            style={document.topics[ids[0] ?? '']?.metadata?.markerStyle}
+            onStyleChange={(style) => {
+              setSelectedMarkerStyle(style)
+            }}
+          />
         </PopoverContent>
       </Popover>
     </section>
   )
+}
+const setSelectedMarkerStyle = (style: NonNullable<TopicMetadata['markerStyle']>): void => {
+  const state = useEditor.getState()
+  if (state.busy) return
+  state.commitDraft()
+  const current = useEditor.getState()
+  if (current.editingId) return
+  const commands: Command[] = selectedTopicIds(current).flatMap((topicId) => {
+    const topic = current.history.document.topics[topicId]
+    return topic
+      ? [
+          {
+            type: 'setTopicMetadata' as const,
+            topicId,
+            metadata: { ...topic.metadata, markerStyle: style },
+          },
+        ]
+      : []
+  })
+  if (commands.length) current.command({ type: 'batch', commands })
 }

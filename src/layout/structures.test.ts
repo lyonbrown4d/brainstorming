@@ -8,10 +8,9 @@ import {
   type MindMapDocument,
   type Topic,
 } from '@core'
-import { layoutDocument, measureTopic, type LayoutNode } from './index'
-import { layoutSpatialDocument } from './spatial'
-
-function assertNoOverlap(nodes: readonly LayoutNode[]): void {
+import { layoutDocument, measureTopic, type LayoutNode } from '@layout'
+import { layoutSpatialDocument } from '@layout/spatial'
+const assertNoOverlap = (nodes: readonly LayoutNode[]): void => {
   const ordered = [...nodes].sort((a, b) => a.x - b.x)
   for (const [index, a] of ordered.entries()) {
     for (let next = index + 1; next < ordered.length; next += 1) {
@@ -21,7 +20,7 @@ function assertNoOverlap(nodes: readonly LayoutNode[]): void {
     }
   }
 }
-function wideFixture(count: number): MindMapDocument {
+const wideFixture = (count: number): MindMapDocument => {
   const document = createFixtureDocument(count)
   const topics: Record<string, Topic> = {}
   const children = Object.keys(document.topics).filter((id) => id !== document.rootId)
@@ -29,7 +28,7 @@ function wideFixture(count: number): MindMapDocument {
     topics[topic.id] = { ...topic, children: topic.id === document.rootId ? children : [] }
   return { ...document, topics }
 }
-function finite(document: MindMapDocument): void {
+const finite = (document: MindMapDocument): void => {
   const layout = layoutDocument(document)
   expect(new Set(layout.nodes.map(({ id }) => id))).toEqual(new Set(getVisibleTopicIds(document)))
   expect(
@@ -44,7 +43,6 @@ function finite(document: MindMapDocument): void {
   ).toBe(true)
   assertNoOverlap(layout.nodes)
 }
-
 describe('document and mixed subtree structures', () => {
   it.each(LAYOUT_KINDS)(
     'lays out %s deterministically without missing or overlapping topics',
@@ -62,7 +60,6 @@ describe('document and mixed subtree structures', () => {
       expect(JSON.stringify(document)).toBe(original)
     },
   )
-
   it('keeps logic and organization branches on their requested axis and gives spine layouts distinct ordered rows', () => {
     const document = createExampleDocument()
     for (const [kind, axis, sign] of [
@@ -93,7 +90,6 @@ describe('document and mixed subtree structures', () => {
       -1, 1, -1, 1,
     ])
   })
-
   it('composes nested mixed subtree boxes without invading sibling components and exposes per-edge incoming direction', () => {
     const document = applyCommand(createExampleDocument(), {
       type: 'batch',
@@ -119,7 +115,6 @@ describe('document and mixed subtree structures', () => {
     expect(layout.edges.find(({ target }) => target === 'mixed-leaf')?.direction).toBe('left')
     expect(layout.nodes.find(({ id }) => id === 'vision')?.direction).toBe('down')
   })
-
   it.each(['logic-right', 'matrix'] as const)(
     'handles an iterative 5,000-level %s tree',
     (layout) => {
@@ -131,7 +126,6 @@ describe('document and mixed subtree structures', () => {
       assertNoOverlap(result.nodes)
     },
   )
-
   it.each(['org-down', 'matrix'] as const)('handles a 5,000-topic wide %s tree', (layout) => {
     const document = { ...wideFixture(5000), settings: { layout } }
     const result = layoutDocument(document)
@@ -140,7 +134,6 @@ describe('document and mixed subtree structures', () => {
     expect(result.nodes.every(({ x, y }) => Number.isFinite(x) && Number.isFinite(y))).toBe(true)
     assertNoOverlap(result.nodes)
   })
-
   it('composes 1,500 alternating deep subtree overrides without a recursive layout stack', () => {
     const document = createFixtureDocument(1500, 'deep')
     const topics = Object.fromEntries(
@@ -155,8 +148,7 @@ describe('document and mixed subtree structures', () => {
     expect(result.nodes.every(({ x, y }) => Number.isFinite(x) && Number.isFinite(y))).toBe(true)
     assertNoOverlap(result.nodes)
   })
-
-  it('reserves a single metadata badge row while keeping image and notes dimensions compatible', () => {
+  it('reserves separate icon and metadata rows while keeping image and notes dimensions compatible', () => {
     const plain = measureTopic('Title')
     const metadata = {
       labels: ['A', 'B'],
@@ -164,7 +156,7 @@ describe('document and mixed subtree structures', () => {
       task: { done: false },
       equation: 'x^2',
     }
-    expect(measureTopic('Title', false, undefined, { metadata }).height).toBe(plain.height + 28)
+    expect(measureTopic('Title', false, undefined, { metadata }).height).toBe(plain.height + 68)
     expect(
       measureTopic('Title', false, undefined, {
         metadata: { richTitle: '**Title**', notesFormat: 'markdown' },
@@ -174,10 +166,9 @@ describe('document and mixed subtree structures', () => {
     const before = measureTopic('Title', false, undefined, { image, notes: 'Notes' })
     expect(
       measureTopic('Title', false, undefined, { image, notes: 'Notes', metadata }).height,
-    ).toBe(before.height + 28)
+    ).toBe(before.height + 68)
   })
 })
-
 describe('independent floating roots and spatial projection', () => {
   it('uses saved top-left floating positions, omits virtual root edges and keeps floating roots visible when the center collapses', () => {
     const source = createExampleDocument()
@@ -215,7 +206,6 @@ describe('independent floating roots and spatial projection', () => {
       'floating-child',
     ])
   })
-
   it.each(LAYOUT_KINDS)(
     'projects %s and independently positioned floating branches to finite spatial bounds',
     (layout) => {

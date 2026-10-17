@@ -1,10 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within, waitFor } from 'storybook/test'
-import { applyCommand, createExampleDocument } from '../src/core'
-import { App } from '../src/renderer/src/App'
-import { useEditor } from '../src/renderer/src/state/editor'
-import { clearBrowserRecovery } from '../src/renderer/src/state/recovery'
-
+import { applyCommand, createExampleDocument } from '@core'
+import { App } from '@renderer/App'
+import { useEditor } from '@renderer/state/editor'
+import { clearBrowserRecovery } from '@renderer/state/recovery'
 const meta = {
   title: 'Trelyx/注解与富文本',
   component: App,
@@ -76,5 +75,26 @@ export const AnnotationCrud: Story = {
     await expect(canvas.getByRole('button', { name: '标注：下次迭代验证' })).toBeVisible()
     useEditor.getState().undo()
     await waitFor(() => expect(canvas.getByRole('button', { name: '标注：标注' })).toBeVisible())
+  },
+}
+export const CanvasMarkerResize: Story = {
+  beforeEach: () => {
+    useEditor.getState().command({
+      type: 'setTopicMetadata',
+      topicId: 'root',
+      metadata: { markers: ['star', 'heart'], markerStyle: { position: 'left', size: 32 } },
+    })
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const root = within(canvas.getByTestId('topic-root'))
+    const handle = root.getByRole('button', { name: '从右侧缩放图标' })
+    await userEvent.click(handle)
+    await userEvent.keyboard('{ArrowRight}')
+    await waitFor(() =>
+      expect(useEditor.getState().history.document.topics.root?.metadata?.markerStyle?.size).toBe(
+        33,
+      ),
+    )
   },
 }

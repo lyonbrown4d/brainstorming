@@ -1,12 +1,11 @@
 import { Smile } from 'lucide-react'
-import { useEditor } from '../../state/editor'
-import { DockAction } from '../DockAction'
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
-import { MarkerPicker } from './MarkerPicker'
-import { TaskQuickControls } from './TaskQuickControls'
-import { toggleTopicMarker } from './commands'
-
-export function MarkerAction() {
+import { useEditor } from '@renderer/state/editor'
+import { DockAction } from '@renderer/components/DockAction'
+import { Popover, PopoverContent, PopoverTrigger } from '@renderer/components/ui/popover'
+import { MarkerPicker } from '@renderer/components/metadata/MarkerPicker'
+import { TaskQuickControls } from '@renderer/components/metadata/TaskQuickControls'
+import { setMetadataField, toggleTopicMarker } from '@renderer/components/metadata/commands'
+export const MarkerAction = () => {
   const topicId = useEditor((state) => state.selectedId)
   const metadata = useEditor((state) => state.history.document.topics[topicId]?.metadata)
   const busy = useEditor((state) => state.busy)
@@ -30,6 +29,10 @@ export function MarkerAction() {
       >
         <TaskQuickControls topicId={topicId} task={metadata?.task} />
         <MarkerPicker
+          style={metadata?.markerStyle}
+          onStyleChange={(style) => {
+            setMetadataField(topicId, 'markerStyle', style)
+          }}
           selected={metadata?.markers ?? []}
           onToggle={(marker) => {
             toggleTopicMarker(topicId, marker)

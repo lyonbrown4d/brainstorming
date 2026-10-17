@@ -1,13 +1,11 @@
 import { AudioLines, CheckCircle2, Circle, Link2, Sigma, Tag } from 'lucide-react'
 import type { TopicMetadata } from '@core'
-import { Button } from '../ui/button'
-import { openTopicLink } from './LinkPanel'
-import { MarkerIcon } from './MarkerIcon'
-
-export function TopicMetadataBadges({ metadata }: { metadata: TopicMetadata | undefined }) {
+import { Button } from '@renderer/components/ui/button'
+import { openTopicLink } from '@renderer/components/metadata/LinkPanel'
+export const TopicMetadataBadges = ({ metadata }: { metadata: TopicMetadata | undefined }) => {
   if (!metadata) return null
-  const { task, labels = [], markers = [], link, equation, audioAssetId } = metadata
-  if (!task && !labels.length && !markers.length && !link && !equation && !audioAssetId) return null
+  const { task, labels = [], link, equation, audioAssetId } = metadata
+  if (!task && !labels.length && !link && !equation && !audioAssetId) return null
   return (
     <div
       className="nodrag nopan flex h-6 max-w-full shrink-0 items-center justify-center gap-1 overflow-hidden px-2 text-[10px] opacity-85"
@@ -27,10 +25,6 @@ export function TopicMetadataBadges({ metadata }: { metadata: TopicMetadata | un
           {task.priority && <span>P{task.priority}</span>}
         </span>
       )}
-      {markers.slice(0, 4).map((marker) => (
-        <MarkerIcon key={marker} marker={marker} className="size-3 shrink-0" />
-      ))}
-      {markers.length > 4 && <span title={markers.join('、')}>+{markers.length - 4}</span>}
       {labels.length > 0 && (
         <span className="flex min-w-0 items-center gap-0.5" title={labels.join('、')}>
           <Tag className="size-3 shrink-0" />

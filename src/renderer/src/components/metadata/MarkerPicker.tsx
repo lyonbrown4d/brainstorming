@@ -1,30 +1,40 @@
 import { lazy, Suspense, useState } from 'react'
 import { X } from 'lucide-react'
 import { loadBrandMarkers } from '@shared/markerIcons'
-import { FieldSelect } from '../FieldSelect'
-import { Button } from '../ui/button'
-import { Input } from '../ui/input'
-import { ScrollArea } from '../ui/scroll-area'
-import { MarkerIcon } from './MarkerIcon'
-import { markerOptions } from './markers'
-
+import { FieldSelect } from '@renderer/components/FieldSelect'
+import { Button } from '@renderer/components/ui/button'
+import { Input } from '@renderer/components/ui/input'
+import { ScrollArea } from '@renderer/components/ui/scroll-area'
+import { MarkerIcon } from '@renderer/components/metadata/MarkerIcon'
+import { markerOptions } from '@renderer/components/metadata/markers'
+import { MarkerStyleControls } from '@renderer/components/metadata/MarkerStyleControls'
+import type { TopicMetadata } from '@core'
 const Brands = lazy(async () => {
   await loadBrandMarkers()
-  const module = await import('./BrandMarkerPicker')
+  const module = await import('@renderer/components/metadata/BrandMarkerPicker')
   return { default: module.BrandMarkerPicker }
 })
 export interface MarkerPickerChoices {
   readonly selected: readonly string[]
   readonly onToggle: (marker: string) => void
 }
-export function MarkerPicker({ selected, onToggle }: MarkerPickerChoices) {
+export const MarkerPicker = ({
+  selected,
+  onToggle,
+  style,
+  onStyleChange,
+}: MarkerPickerChoices & {
+  style?: TopicMetadata['markerStyle']
+  onStyleChange: (style: NonNullable<TopicMetadata['markerStyle']>) => void
+}) => {
   const [collection, setCollection] = useState<'common' | 'brands'>('common')
   const [query, setQuery] = useState('')
   const common = markerOptions.filter((option) =>
     `${option.title} ${option.value}`.toLowerCase().includes(query.toLowerCase()),
   )
   return (
-    <div className="space-y-3" aria-label="图标选择器">
+    <div className="space-y-3" role="group" aria-label="图标选择器">
+      <MarkerStyleControls style={style} onChange={onStyleChange} />
       <div className="flex gap-2">
         <FieldSelect
           label="图标库"
@@ -65,8 +75,8 @@ export function MarkerPicker({ selected, onToggle }: MarkerPickerChoices) {
           ))}
         </div>
       )}
-      <ScrollArea className="h-48">
-        {collection === 'common' ? (
+      {collection === 'common' ? (
+        <ScrollArea className="h-48">
           <div className="grid grid-cols-3 gap-1" role="group" aria-label="常用图标">
             {common.map(({ value, title, Icon }) => (
               <Button
@@ -89,18 +99,18 @@ export function MarkerPicker({ selected, onToggle }: MarkerPickerChoices) {
               <p className="col-span-3 py-4 text-xs text-muted-foreground">没有匹配的图标。</p>
             )}
           </div>
-        ) : (
-          <Suspense
-            fallback={
-              <p role="status" className="py-4 text-xs">
-                正在载入离线图标库…
-              </p>
-            }
-          >
-            <Brands key={query} query={query} selected={selected} onToggle={onToggle} />
-          </Suspense>
-        )}
-      </ScrollArea>
+        </ScrollArea>
+      ) : (
+        <Suspense
+          fallback={
+            <p role="status" className="py-4 text-xs">
+              正在载入离线图标库…
+            </p>
+          }
+        >
+          <Brands key={query} query={query} selected={selected} onToggle={onToggle} />
+        </Suspense>
+      )}
       <p className="text-xs text-muted-foreground">
         {selected.length}/32 个图标 · 品牌图标来自 Simple Icons
       </p>

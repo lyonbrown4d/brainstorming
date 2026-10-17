@@ -1,13 +1,18 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import type { TopicMetadata } from '@core'
-import { Button } from '../ui/button'
-import { Input } from '../ui/input'
-import { Badge } from '../ui/badge'
-import { setMetadataField, toggleTopicMarker } from './commands'
-import { MarkerPicker } from './MarkerPicker'
-
-export function LabelsPanel({ topicId, metadata }: { topicId: string; metadata: TopicMetadata }) {
+import { Button } from '@renderer/components/ui/button'
+import { Input } from '@renderer/components/ui/input'
+import { Badge } from '@renderer/components/ui/badge'
+import { setMetadataField, toggleTopicMarker } from '@renderer/components/metadata/commands'
+import { MarkerPicker } from '@renderer/components/metadata/MarkerPicker'
+export const LabelsPanel = ({
+  topicId,
+  metadata,
+}: {
+  topicId: string
+  metadata: TopicMetadata
+}) => {
   const [label, setLabel] = useState('')
   const labels = metadata.labels ?? []
   const currentMarkers = metadata.markers ?? []
@@ -68,6 +73,10 @@ export function LabelsPanel({ topicId, metadata }: { topicId: string; metadata: 
         ))}
       </div>
       <MarkerPicker
+        style={metadata.markerStyle}
+        onStyleChange={(style) => {
+          setMetadataField(topicId, 'markerStyle', style)
+        }}
         selected={currentMarkers}
         onToggle={(marker) => {
           toggleTopicMarker(topicId, marker)

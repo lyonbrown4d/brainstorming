@@ -1,15 +1,17 @@
 import { DOMImplementation, XMLSerializer, type Element } from '@xmldom/xmldom'
 import type { MindMapDocument, Topic } from '@core'
 import { layoutDocument, measureTopicImage } from '@layout'
-import { xmlText } from '../../../formats/interchange/xml'
-import { imageDimensions } from '../../../assets'
-import { annotationExtents, drawExportAnnotations, exportAnnotations } from './annotations'
+import { xmlText } from '@formats/interchange/xml'
+import { imageDimensions } from '@assets'
+import {
+  annotationExtents,
+  drawExportAnnotations,
+  exportAnnotations,
+} from '@renderer/export/annotations'
 import { documentAppearance, topicAppearance } from '@shared/appearance'
 import { layoutEdgePath } from '@shared/layout-geometry'
-import { brandMarkerIcon } from '@shared/markerIcons'
-import { drawMarkerIcons } from './markers'
-import { drawStructureGeometry, structureExtents } from './structures'
-
+import { drawMarkerIcons } from '@renderer/export/markers'
+import { drawStructureGeometry, structureExtents } from '@renderer/export/structures'
 export interface SheetSvg {
   svg: string
   width: number
@@ -18,9 +20,9 @@ export interface SheetSvg {
 export const EXPORT_LIMITS = {
   svgBytes: 40 * 1024 * 1024,
   dimension: 16384,
-  pixels: 40_000_000,
+  pixels: 40000000,
 } as const
-export function checkRasterSize(width: number, height: number): void {
+export const checkRasterSize = (width: number, height: number): void => {
   if (
     !Number.isFinite(width) ||
     !Number.isFinite(height) ||
@@ -34,7 +36,7 @@ export function checkRasterSize(width: number, height: number): void {
       '导图过大，图片单边最多 16384 像素、总计最多 4000 万像素；请导出 SVG 或降低图片倍率',
     )
 }
-function wrappedTitle(title: string, fontSize: number, maxWidth: number): string[] {
+const wrappedTitle = (title: string, fontSize: number, maxWidth: number): string[] => {
   const lines = ['']
   let width = 0
   for (const character of title) {
@@ -51,7 +53,7 @@ function wrappedTitle(title: string, fontSize: number, maxWidth: number): string
   return lines
 }
 /** Render the complete pure layout, including topics outside the viewport. */
-export function renderSheetSvg(document: MindMapDocument, includeCollapsed = false): SheetSvg {
+export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = false): SheetSvg => {
   const source = includeCollapsed
     ? {
         ...document,
@@ -148,13 +150,25 @@ export function renderSheetSvg(document: MindMapDocument, includeCollapsed = fal
         },
         group,
       )
+    const metadata = topic.metadata
+    const hasBadges = [
+      metadata?.task,
+      metadata?.labels?.length,
+      metadata?.link,
+      metadata?.equation,
+      metadata?.audioAssetId,
+    ].some(Boolean)
+    const bodyHeight =
+      node.height - (hasBadges ? 28 : 0) - (topic.notes || topic.attachments?.length ? 28 : 0)
+    const markerLayout = drawMarkerIcons(xml, group, metadata, node.width, bodyHeight, style.color)
+    const centerX = markerLayout.contentX + markerLayout.contentWidth / 2
     const lines = wrappedTitle(
       topic.title,
       style.fontSize,
       topic.id === source.rootId ? 280 - 56 : 240 - 44,
     )
     const lineHeight = Math.ceil(style.fontSize * 1.5)
-    let contentY = topic.id === source.rootId ? 14 : 10
+    let contentY = (topic.id === source.rootId ? 14 : 10) + markerLayout.contentY
     if (topic.image) {
       const asset = source.assets?.[topic.image.assetId]
       if (!asset) throw new Error('导出图片资源缺失')
@@ -163,7 +177,7 @@ export function renderSheetSvg(document: MindMapDocument, includeCollapsed = fal
       element(
         'image',
         {
-          x: (node.width - size.width) / 2,
+          x: centerX - size.width / 2,
           y: contentY,
           ...size,
           href: `data:${asset.mimeType};base64,${asset.data}`,
@@ -175,7 +189,7 @@ export function renderSheetSvg(document: MindMapDocument, includeCollapsed = fal
     const text = element(
       'text',
       {
-        x: node.width / 2,
+        x: centerX,
         y: contentY + style.fontSize,
         'text-anchor': 'middle',
         fill: style.color,
@@ -188,39 +202,22 @@ export function renderSheetSvg(document: MindMapDocument, includeCollapsed = fal
       group,
     )
     lines.forEach((line, index) =>
-      element('tspan', { x: node.width / 2, dy: index ? lineHeight : 0 }, text).appendChild(
+      element('tspan', { x: centerX, dy: index ? lineHeight : 0 }, text).appendChild(
         xml.createTextNode(xmlText(line || ' ')),
       ),
     )
-    const metadata = topic.metadata
-    const brandCount = metadata?.markers?.filter((marker) => brandMarkerIcon(marker)).length ?? 0
     const metadataText = [
       metadata?.task
         ? `${metadata.task.done ? '✓' : '○'} ${metadata.task.progress ?? 0}%${metadata.task.priority ? ` P${metadata.task.priority}` : ''}`
         : '',
       metadata?.labels?.join('、') ?? '',
-      metadata?.markers
-        ?.filter((marker) => !brandMarkerIcon(marker))
-        .map((marker) => marker.replace('simple-icons:', ''))
-        .join(' ') ?? '',
-      brandCount > 4 ? `+${brandCount - 4}` : '',
       metadata?.link ? '链接' : '',
       metadata?.equation ? '公式' : '',
       metadata?.audioAssetId ? '音频' : '',
     ]
       .filter(Boolean)
       .join(' · ')
-    const iconWidth = drawMarkerIcons(
-      xml,
-      group,
-      metadata?.markers ?? [],
-      node.width,
-      contentY + lines.length * lineHeight + 18,
-      style.color,
-      Boolean(metadataText),
-    )
-    const firstBadgeLine =
-      wrappedTitle(metadataText, 10, Math.max(12, node.width - 24 - iconWidth))[0] ?? ''
+    const firstBadgeLine = wrappedTitle(metadataText, 10, Math.max(12, node.width - 24))[0] ?? ''
     const badge =
       firstBadgeLine === metadataText
         ? metadataText
@@ -234,8 +231,8 @@ export function renderSheetSvg(document: MindMapDocument, includeCollapsed = fal
       element(
         'text',
         {
-          x: (node.width + iconWidth) / 2,
-          y: contentY + lines.length * lineHeight + 18,
+          x: node.width / 2,
+          y: bodyHeight + 18,
           'text-anchor': 'middle',
           fill: style.color,
           'font-family': appearance.fontFamily,

@@ -1,17 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { strToU8, zipSync } from 'fflate'
-import { applyCommand, createDocument, createWorkbook, serializeWorkbook } from '../../src/core'
-import type { MindMapWorkbook, Topic } from '../../src/core'
-import { readArchive } from '../../src/formats/archive'
-import { decodeTrelyx, encodeTrelyx } from '../../src/formats/trelyx'
-
+import { applyCommand, createDocument, createWorkbook, serializeWorkbook } from '@core'
+import type { MindMapWorkbook, Topic } from '@core'
+import { readArchive } from '@formats/archive'
+import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
 const manifest = {
   format: 'app.trelyx.document',
   version: 1,
   createdBy: { name: 'Trelyx', version: '0.1.0' },
 }
-
-function workbook(): MindMapWorkbook {
+const workbook = (): MindMapWorkbook => {
   let document = createDocument('中文中心 🌱', 'document-one')
   document = applyCommand(document, {
     type: 'addTopic',
@@ -35,6 +33,11 @@ function workbook(): MindMapWorkbook {
     },
   })
   document = applyCommand(document, { type: 'toggleCollapse', topicId: 'branch' })
+  document = applyCommand(document, {
+    type: 'setTopicMetadata',
+    topicId: 'branch',
+    metadata: { markers: ['star'], markerStyle: { size: 32, position: 'left' } },
+  })
   return {
     ...createWorkbook(document, '工作簿'),
     sheets: [
@@ -43,14 +46,12 @@ function workbook(): MindMapWorkbook {
     ],
   }
 }
-
-function replaceEntry(bytes: Uint8Array, name: string, value: unknown): Uint8Array {
+const replaceEntry = (bytes: Uint8Array, name: string, value: unknown): Uint8Array => {
   const entries = Object.fromEntries(readArchive(bytes))
   entries[name] = strToU8(JSON.stringify(value))
   return zipSync(entries)
 }
-
-function deepWorkbook(depth: number): MindMapWorkbook {
+const deepWorkbook = (depth: number): MindMapWorkbook => {
   const topics: Record<string, Topic> = {}
   for (let index = 0; index < depth; index++) {
     const id = `topic-${index}`
@@ -64,7 +65,6 @@ function deepWorkbook(depth: number): MindMapWorkbook {
   }
   return createWorkbook({ ...createDocument('主题', 'deep'), rootId: 'topic-0', topics })
 }
-
 describe('Trelyx native ZIP document', () => {
   it('roundtrips multiple sheets, independent document IDs, Unicode, ordering and all styles', () => {
     const original = workbook()
@@ -77,7 +77,6 @@ describe('Trelyx native ZIP document', () => {
     expect(content).toMatchObject({ id: original.id, title: '工作簿' })
     expect(JSON.stringify(content)).not.toMatch(/"(?:format|version)":/u)
   })
-
   it('rejects legacy JSON, future native versions and missing required content', () => {
     const bytes = encodeTrelyx(workbook())
     expect(() => decodeTrelyx(strToU8(serializeWorkbook(workbook())))).toThrow(/ZIP/u)
@@ -88,7 +87,6 @@ describe('Trelyx native ZIP document', () => {
       decodeTrelyx(zipSync({ 'manifest.json': strToU8(JSON.stringify(manifest)) })),
     ).toThrow(/document.json/u)
   })
-
   it('rejects unsupported attachments and unknown domain fields instead of dropping them', () => {
     const entries = Object.fromEntries(readArchive(encodeTrelyx(workbook())))
     expect(() =>
@@ -109,7 +107,6 @@ describe('Trelyx native ZIP document', () => {
       ),
     ).toThrow(/不支持的内容/u)
   })
-
   it('validates the decoded tree and rejects malformed UTF-8 JSON', () => {
     const entries = Object.fromEntries(readArchive(encodeTrelyx(workbook())))
     expect(() =>
@@ -121,7 +118,6 @@ describe('Trelyx native ZIP document', () => {
       decodeTrelyx(zipSync({ ...entries, 'document.json': new Uint8Array([0xff]) })),
     ).toThrow(/UTF-8 JSON/u)
   })
-
   it('accepts depth 128 and rejects depth 129 when saving and opening', () => {
     expect(decodeTrelyx(encodeTrelyx(deepWorkbook(128)))).toEqual(deepWorkbook(128))
     const tooDeep = deepWorkbook(129)
@@ -138,11 +134,10 @@ describe('Trelyx native ZIP document', () => {
       decodeTrelyx(replaceEntry(encodeTrelyx(workbook()), 'document.json', content)),
     ).toThrow(/128 层/u)
   })
-
   it('bounds topic count and serialized entry bytes', () => {
     const base = createDocument('主题', 'wide')
     const topics: Record<string, Topic> = { ...base.topics }
-    const children = Array.from({ length: 20_000 }, (_, index) => `topic-${index}`)
+    const children = Array.from({ length: 20000 }, (_, index) => `topic-${index}`)
     const root = base.topics.root
     if (!root) throw new Error('Test fixture is missing a root')
     topics.root = { ...root, children }

@@ -3,20 +3,21 @@ import {
   type TopicMetadata,
   type DocumentSettings,
   type LayoutKind,
-} from './extensions'
-import * as v from './extension-validation'
-import { assertId } from './validation'
-import { assertAssetId } from './topic-content'
-
-export function validateLayoutKind(value: unknown): asserts value is LayoutKind {
+} from '@core/extensions'
+import * as v from '@core/extension-validation'
+import { assertId } from '@core/validation'
+import { assertAssetId } from '@core/topic-content'
+export const validateLayoutKind: (value: unknown) => asserts value is LayoutKind = (
+  value: unknown,
+) => {
   v.oneOf(value, LAYOUT_KINDS)
 }
-function strings(value: unknown, maximum: number): void {
+const strings = (value: unknown, maximum: number): void => {
   const entries = v.list(value, maximum)
   for (const entry of entries) v.text(entry, 64)
   if (new Set(entries).size !== entries.length) throw new Error('标签或图标重复')
 }
-function validateLink(value: unknown): void {
+const validateLink = (value: unknown): void => {
   const link = v.record(value)
   if (link.kind === 'url') {
     v.record(value, ['kind', 'url'])
@@ -37,7 +38,7 @@ function validateLink(value: unknown): void {
     v.optional(link, 'sheetId', assertId)
   }
 }
-function validateTask(value: unknown): void {
+const validateTask = (value: unknown): void => {
   const task = v.record(value, [
     'done',
     'priority',
@@ -66,10 +67,13 @@ function validateTask(value: unknown): void {
     v.ids(entry, 128)
   })
 }
-export function validateTopicMetadata(value: unknown): asserts value is TopicMetadata {
+export const validateTopicMetadata: (value: unknown) => asserts value is TopicMetadata = (
+  value: unknown,
+) => {
   const metadata = v.record(value, [
     'labels',
     'markers',
+    'markerStyle',
     'link',
     'task',
     'equation',
@@ -83,20 +87,32 @@ export function validateTopicMetadata(value: unknown): asserts value is TopicMet
   v.optional(metadata, 'markers', (entry) => {
     strings(entry, 32)
   })
+  v.optional(metadata, 'markerStyle', (entry) => {
+    const style = v.record(entry, ['position', 'size'])
+    v.optional(style, 'position', (position) => {
+      v.oneOf(position, ['top', 'bottom', 'left', 'right'])
+    })
+    v.optional(style, 'size', (size) => {
+      v.number(size, 12, 48)
+      if (!Number.isInteger(size)) throw new Error('图标尺寸须为整数')
+    })
+  })
   v.optional(metadata, 'link', validateLink)
   v.optional(metadata, 'task', validateTask)
   v.optional(metadata, 'equation', (entry) => {
-    v.text(entry, 10_000, true)
+    v.text(entry, 10000, true)
   })
   v.optional(metadata, 'audioAssetId', assertAssetId)
   v.optional(metadata, 'notesFormat', (entry) => {
     v.oneOf(entry, ['plain', 'markdown'])
   })
   v.optional(metadata, 'richTitle', (entry) => {
-    v.text(entry, 100_000, true)
+    v.text(entry, 100000, true)
   })
 }
-export function validateDocumentSettings(value: unknown): asserts value is DocumentSettings {
+export const validateDocumentSettings: (value: unknown) => asserts value is DocumentSettings = (
+  value: unknown,
+) => {
   const settings = v.record(value, ['layout', 'theme', 'background', 'fontFamily', 'lineWidth'])
   v.optional(settings, 'layout', validateLayoutKind)
   v.optional(settings, 'theme', (entry) => {

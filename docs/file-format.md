@@ -44,7 +44,7 @@ example.trelyx
 
 资源元数据和字节必须一致，引用必须存在。写出仅保留被主题引用的资源；移除后的字节留在会话快照中供撤销，不写入正式文件。读取拒绝未知字段、未引用资源、缺失字节、错误路径和尺寸不符，避免静默丢失。预览图尚未提供。早期无资源的 ZIP v1 文件仍可读取；此前 JSON `.trelyx`、`.json` 和旧 JSON 恢复文件不迁移。
 
-主题 metadata 保存标签、图标、网页/内部主题链接、任务、公式、音频资源 ID、备注格式和可移植 Markdown 标题。富文本不持久化 Lexical 内部节点。Document 可保存 `settings`、`relations`、`groups`、`callouts`、`floatingIds`、`floatingPositions` 和 `presentation`。游离主题仍使用树的稳定 ID 和唯一父级规则，其根附件关系不渲染为连线；显式位置是文档数据。普通视口不持久化，主动保存的演示步骤可包含三维相机。
+主题 metadata 保存标签、图标、网页/内部主题链接、任务、公式、音频资源 ID、备注格式和可移植 Markdown 标题。可选 `markerStyle` 保存图标位置 `position`（`top`、`bottom`、`left`、`right`）和整数尺寸 `size`（12–48 px）。缺省为下方、16 px；拖动预览不进入文件。旧版 Trelyx 可能拒绝包含该新增字段的文件。富文本不持久化 Lexical 内部节点。Document 可保存 `settings`、`relations`、`groups`、`callouts`、`floatingIds`、`floatingPositions` 和 `presentation`。游离主题仍使用树的稳定 ID 和唯一父级规则，其根附件关系不渲染为连线；显式位置是文档数据。普通视口不持久化，主动保存的演示步骤可包含三维相机。
 
 `settings.layout` 和主题 `structure` 支持 `map`、`logic-right/left`、`org-down/up`、`tree-down/up`、`brace-right/left`、`fishbone`、`timeline`、`timeline-vertical`、`matrix`、`tree-table-right/down`。这些是各个独立枚举值，斜杠仅用于本文合并方向说明。协议仍为 ZIP v1，缺省结构使用导图；文件不保存派生节点坐标、括号路径或表格几何。旧版本 Trelyx 无法读取包含新增枚举值的文件。
 

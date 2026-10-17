@@ -1,9 +1,9 @@
 import { validateDocument, type MindMapDocument } from '@core'
-import { layoutMapDocument } from './map'
-import { layoutStructuredDocument } from './structured'
-import type { MindMapLayout } from './types'
-
-export { measureTopic, measureTopicImage } from './measure'
+import { layoutMapDocument } from '@layout/map'
+import { layoutStructuredDocument } from '@layout/structured'
+import type { MindMapLayout } from '@layout/types'
+export { measureTopic, measureTopicImage } from '@layout/measure'
+export { measureTopicMarkers } from '@layout/markers'
 export type {
   LayoutNode,
   LayoutEdge,
@@ -11,10 +11,9 @@ export type {
   LayoutDecoration,
   LayoutPoint,
   MindMapLayout,
-} from './types'
-
+} from '@layout/types'
 /** Top-left positions, with the center topic anchored at (0, 0). */
-export function layoutDocument(document: MindMapDocument): MindMapLayout {
+export const layoutDocument = (document: MindMapDocument): MindMapLayout => {
   validateDocument(document)
   const defaultMap =
     (document.settings?.layout ?? 'map') === 'map' &&

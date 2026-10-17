@@ -1,5 +1,4 @@
-import type { DocumentAsset, Side } from './types'
-
+import type { DocumentAsset, Side } from '@core/types'
 export const LAYOUT_KINDS = [
   'map',
   'logic-right',
@@ -19,8 +18,15 @@ export const LAYOUT_KINDS = [
 ] as const
 export type LayoutKind = (typeof LAYOUT_KINDS)[number]
 export type TopicLink =
-  | { readonly kind: 'url'; readonly url: string }
-  | { readonly kind: 'topic'; readonly topicId: string; readonly sheetId?: string }
+  | {
+      readonly kind: 'url'
+      readonly url: string
+    }
+  | {
+      readonly kind: 'topic'
+      readonly topicId: string
+      readonly sheetId?: string
+    }
 export interface TopicTask {
   readonly done: boolean
   readonly priority?: 1 | 2 | 3
@@ -33,6 +39,10 @@ export interface TopicTask {
 export interface TopicMetadata {
   readonly labels?: readonly string[]
   readonly markers?: readonly string[]
+  readonly markerStyle?: {
+    readonly position?: 'top' | 'bottom' | 'left' | 'right'
+    readonly size?: number
+  }
   readonly link?: TopicLink
   readonly task?: TopicTask
   readonly equation?: string
@@ -103,14 +113,39 @@ export type ExtensionCommand =
       readonly topicId: string
       readonly structure?: LayoutKind
     }
-  | { readonly type: 'setTopicAudio'; readonly topicId: string; readonly asset: DocumentAsset }
-  | { readonly type: 'setDocumentSettings'; readonly settings: DocumentSettings }
-  | { readonly type: 'upsertRelation'; readonly relation: Relation }
-  | { readonly type: 'removeRelation'; readonly relationId: string }
-  | { readonly type: 'upsertGroup'; readonly group: TopicGroup }
-  | { readonly type: 'removeGroup'; readonly groupId: string }
-  | { readonly type: 'upsertCallout'; readonly callout: TopicCallout }
-  | { readonly type: 'removeCallout'; readonly calloutId: string }
+  | {
+      readonly type: 'setTopicAudio'
+      readonly topicId: string
+      readonly asset: DocumentAsset
+    }
+  | {
+      readonly type: 'setDocumentSettings'
+      readonly settings: DocumentSettings
+    }
+  | {
+      readonly type: 'upsertRelation'
+      readonly relation: Relation
+    }
+  | {
+      readonly type: 'removeRelation'
+      readonly relationId: string
+    }
+  | {
+      readonly type: 'upsertGroup'
+      readonly group: TopicGroup
+    }
+  | {
+      readonly type: 'removeGroup'
+      readonly groupId: string
+    }
+  | {
+      readonly type: 'upsertCallout'
+      readonly callout: TopicCallout
+    }
+  | {
+      readonly type: 'removeCallout'
+      readonly calloutId: string
+    }
   | {
       readonly type: 'addFloatingTopic'
       readonly id: string
@@ -131,4 +166,7 @@ export type ExtensionCommand =
       readonly index?: number
       readonly side?: Side
     }
-  | { readonly type: 'setPresentation'; readonly steps: readonly PresentationStep[] }
+  | {
+      readonly type: 'setPresentation'
+      readonly steps: readonly PresentationStep[]
+    }

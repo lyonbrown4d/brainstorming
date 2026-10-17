@@ -1,18 +1,19 @@
-import { cn } from '../lib/utils'
+import { TopicMarkerLayout } from '@renderer/components/metadata/TopicMarkerLayout'
+import { cn } from '@renderer/lib/utils'
 import { memo } from 'react'
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react'
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react'
 import type { Topic } from '@core'
 import type { LayoutDirection } from '@layout'
-import { usePresentation } from '../state/presentation'
-import { useEditor } from '../state/editor'
-import { useTopicSelected } from '../state/selection'
-import { CanvasTopicTitle } from './metadata/CanvasTopicTitle'
-import { TopicTitleDisplay } from './metadata/TopicTitleDisplay'
-import { TopicMetadataBadges } from './metadata/TopicMetadataBadges'
-import { TopicImage } from './TopicImage'
-import { TopicContentIndicators } from './TopicContentIndicators'
-import { Button } from './ui/button'
+import { usePresentation } from '@renderer/state/presentation'
+import { useEditor } from '@renderer/state/editor'
+import { useTopicSelected } from '@renderer/state/selection'
+import { CanvasTopicTitle } from '@renderer/components/metadata/CanvasTopicTitle'
+import { TopicTitleDisplay } from '@renderer/components/metadata/TopicTitleDisplay'
+import { TopicMetadataBadges } from '@renderer/components/metadata/TopicMetadataBadges'
+import { TopicImage } from '@renderer/components/TopicImage'
+import { TopicContentIndicators } from '@renderer/components/TopicContentIndicators'
+import { Button } from '@renderer/components/ui/button'
 export type TopicFlowNode = Node<
   {
     topic: Topic
@@ -26,8 +27,7 @@ export type TopicFlowNode = Node<
   },
   'topic'
 >
-
-export const TopicNode = memo(function TopicNode({ data, id }: NodeProps<TopicFlowNode>) {
+export const TopicNode = memo(({ data, id }: NodeProps<TopicFlowNode>) => {
   const primary = useEditor((state) => state.selectedId === id)
   const selected = useTopicSelected(id)
   const dropTarget = useEditor((state) => state.dropTargetId === id)
@@ -54,7 +54,7 @@ export const TopicNode = memo(function TopicNode({ data, id }: NodeProps<TopicFl
   return (
     <div
       className={cn(
-        'topic nopan relative h-full w-full rounded-lg border-[1.5px] transition-[box-shadow,border-color] duration-150 select-none',
+        'topic nopan relative flex h-full w-full flex-col items-center rounded-lg border-[1.5px] transition-[box-shadow,border-color] duration-150 select-none',
         root
           ? 'topic-root rounded-[14px] bg-[#8070c6] text-white'
           : branch
@@ -69,7 +69,7 @@ export const TopicNode = memo(function TopicNode({ data, id }: NodeProps<TopicFl
         dropTarget &&
           'drop-target border-dashed border-[#72a98d] text-[#48775e] shadow-[0_0_0_5px_#90bba42e]',
         `side-${side}`,
-        hasContent && 'has-content flex flex-col items-center',
+        hasContent && 'has-content',
       )}
       style={
         {
@@ -100,37 +100,39 @@ export const TopicNode = memo(function TopicNode({ data, id }: NodeProps<TopicFl
           position={position}
         />
       ))}
-      {topic.image && (
-        <TopicImage
-          image={topic.image}
-          className="topic-embedded-image mx-auto mt-3 block shrink-0 rounded-[5px] object-contain"
-        />
-      )}
-      <div
-        className={`topic-title flex items-center justify-center px-[17px] py-2.5 text-center leading-normal [&>span]:break-words [&>span]:whitespace-pre-wrap ${hasContent ? 'h-auto w-full min-h-0 flex-1' : 'h-full'}`}
-        style={{
-          fontSize: style?.fontSize ?? (root ? 24 : 16),
-          fontWeight: (style?.bold ?? (root || branch)) ? 600 : 400,
-          fontStyle: style?.italic ? 'italic' : 'normal',
-        }}
-        onDoubleClick={() => {
-          if (usePresentation.getState().playing) return
-          useEditor
-            .getState()
-            .startEdit(
-              id,
-              undefined,
-              'canvas',
-              topic.title === '新主题' || topic.title === '游离主题' ? 'all' : 'end',
-            )
-        }}
-      >
-        {primary || editing ? (
-          <CanvasTopicTitle topic={topic} />
-        ) : (
-          <TopicTitleDisplay topic={topic} />
+      <TopicMarkerLayout topicId={topic.id} metadata={topic.metadata}>
+        {topic.image && (
+          <TopicImage
+            image={topic.image}
+            className="topic-embedded-image mx-auto mt-3 block shrink-0 rounded-[5px] object-contain"
+          />
         )}
-      </div>
+        <div
+          className={`topic-title flex items-center justify-center px-[17px] py-2.5 text-center leading-normal [&>span]:break-words [&>span]:whitespace-pre-wrap ${hasContent ? 'h-auto w-full min-h-0 flex-1' : 'h-full'}`}
+          style={{
+            fontSize: style?.fontSize ?? (root ? 24 : 16),
+            fontWeight: (style?.bold ?? (root || branch)) ? 600 : 400,
+            fontStyle: style?.italic ? 'italic' : 'normal',
+          }}
+          onDoubleClick={() => {
+            if (usePresentation.getState().playing) return
+            useEditor
+              .getState()
+              .startEdit(
+                id,
+                undefined,
+                'canvas',
+                topic.title === '新主题' || topic.title === '游离主题' ? 'all' : 'end',
+              )
+          }}
+        >
+          {primary || editing ? (
+            <CanvasTopicTitle topic={topic} />
+          ) : (
+            <TopicTitleDisplay topic={topic} />
+          )}
+        </div>
+      </TopicMarkerLayout>
       <TopicMetadataBadges metadata={topic.metadata} />
       <TopicContentIndicators
         topicId={id}
@@ -156,3 +158,5 @@ export const TopicNode = memo(function TopicNode({ data, id }: NodeProps<TopicFl
     </div>
   )
 })
+
+TopicNode.displayName = 'TopicNode'

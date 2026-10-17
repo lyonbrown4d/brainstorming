@@ -1,13 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createDocument } from '../../src/core'
-import { brandMarkerIcon, brandMarkerNames, prepareMarkerIcons } from '../../src/shared/markerIcons'
-import { renderSheetSvg } from '../../src/renderer/src/export/svg'
-import { useEditor } from '../../src/renderer/src/state/editor'
-import {
-  setMetadataField,
-  toggleTopicMarker,
-} from '../../src/renderer/src/components/metadata/commands'
-
+import { createDocument, validateTopicMetadata } from '@core'
+import { measureTopic } from '@layout'
+import { DOMParser } from '@xmldom/xmldom'
+import { brandMarkerIcon, brandMarkerNames, prepareMarkerIcons } from '@shared/markerIcons'
+import { renderSheetSvg } from '@renderer/export/svg'
+import { useEditor } from '@renderer/state/editor'
+import { setMetadataField, toggleTopicMarker } from '@renderer/components/metadata/commands'
 beforeEach(() => {
   useEditor.getState().replace(createDocument('图标测试'))
   vi.stubGlobal('window', { trelyx: undefined })
@@ -15,8 +13,51 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals()
 })
-
 describe('offline topic markers', () => {
+  it.each(['top', 'bottom', 'left', 'right'] as const)(
+    'reserves and exports enlarged icons on the %s without clipping',
+    (position) => {
+      const id = useEditor.getState().selectedId
+      setMetadataField(id, 'markers', ['star', 'flag', 'heart', 'smile', 'idea'])
+      const original = useEditor.getState().history.document
+      setMetadataField(id, 'markerStyle', { size: 48, position })
+      const document = useEditor.getState().history.document
+      const topic = document.topics[id]
+      const dimensions = measureTopic(topic?.title ?? '', true, undefined, topic)
+      const svg = new DOMParser().parseFromString(renderSheetSvg(document).svg, 'image/svg+xml')
+      const icons = Array.from(svg.getElementsByTagName('svg')).filter((element) =>
+        element.hasAttribute('data-marker'),
+      )
+      expect(icons).toHaveLength(4)
+      for (const icon of icons) {
+        expect(icon.getAttribute('width')).toBe('48')
+        expect(icon.getAttribute('height')).toBe('48')
+        const x = Number(icon.getAttribute('x'))
+        const y = Number(icon.getAttribute('y'))
+        expect(x).toBeGreaterThanOrEqual(0)
+        expect(y).toBeGreaterThanOrEqual(0)
+        expect(x + 48).toBeLessThanOrEqual(dimensions.width)
+        expect(y + 48).toBeLessThanOrEqual(dimensions.height)
+      }
+      useEditor.getState().undo()
+      expect(useEditor.getState().history.document).toEqual(original)
+      useEditor.getState().redo()
+      expect(useEditor.getState().history.document).toEqual(document)
+    },
+  )
+  it('rejects invalid sizes and positions before changing the document', () => {
+    for (const size of [11, 49, 16.5, NaN])
+      expect(() => {
+        validateTopicMetadata({ markerStyle: { size } })
+      }).toThrow()
+    expect(() => {
+      validateTopicMetadata({ markerStyle: { position: 'center' } })
+    }).toThrow()
+    const id = useEditor.getState().selectedId
+    const before = useEditor.getState().history.document
+    expect(setMetadataField(id, 'markerStyle', { size: 49 })).toBe(false)
+    expect(useEditor.getState().history.document).toBe(before)
+  })
   it('loads bundled brand vectors and safely rejects unknown identifiers without a network lookup', async () => {
     const fetch = vi.fn(() => Promise.reject(new Error('Offline')))
     vi.stubGlobal('fetch', fetch)
@@ -68,7 +109,6 @@ describe('offline topic markers', () => {
     expect(withOverflow).toContain('+1')
     expect(withOverflow).toContain('simple-icons:vite')
   })
-
   it('toggles one marker per undo while preserving labels and advanced task fields', () => {
     const id = useEditor.getState().selectedId
     setMetadataField(id, 'labels', ['计划'])
@@ -82,7 +122,6 @@ describe('offline topic markers', () => {
     useEditor.getState().undo()
     expect(useEditor.getState().history.document.topics[id]?.metadata).toEqual(before)
   })
-
   it('rejects a 33rd or oversized marker without mutation and still permits removal', () => {
     const id = useEditor.getState().selectedId
     const markers = Array.from({ length: 32 }, (_, index) => `marker-${index}`)

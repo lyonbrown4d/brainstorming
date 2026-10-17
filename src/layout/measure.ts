@@ -1,21 +1,28 @@
 import type { Topic, TopicImage } from '@core'
-
+import { measureTopicMarkers } from '@layout/markers'
 /** Fit raster images without upscaling; shared with the renderer to reserve the same bounds. */
-export function measureTopicImage(image: TopicImage): { width: number; height: number } {
+export const measureTopicImage = (
+  image: TopicImage,
+): {
+  width: number
+  height: number
+} => {
   const scale = Math.min(1, 200 / image.width, 140 / image.height)
   return {
     width: Math.max(1, Math.round(image.width * scale)),
     height: Math.max(1, Math.round(image.height * scale)),
   }
 }
-
 /** Deterministic estimates shared by layout and renderer; no browser measurements enter the document. */
-export function measureTopic(
+export const measureTopic = (
   title: string,
   isRoot = false,
   customFontSize?: number,
   content?: Pick<Topic, 'image' | 'notes' | 'attachments' | 'metadata'>,
-): { width: number; height: number } {
+): {
+  width: number
+  height: number
+} => {
   const fontSize = customFontSize ?? (isRoot ? 24 : 16)
   // Include the renderer's padding, borders, and a small font-metric tolerance.
   const padding = isRoot ? 56 : 44
@@ -42,10 +49,11 @@ export function measureTopic(
   longestLine = Math.max(longestLine, lineWidth)
   const image = content?.image ? measureTopicImage(content.image) : undefined
   const metadata = content?.metadata
+  const markers = measureTopicMarkers(metadata)
+  const verticalPadding = markers.extraHeight ? 12 : 0
   const badgesHeight =
     metadata &&
     (metadata.labels?.length ||
-      metadata.markers?.length ||
       metadata.link ||
       metadata.task ||
       metadata.equation ||
@@ -54,14 +62,20 @@ export function measureTopic(
       : 0
   const detailsHeight = content?.notes || content?.attachments?.length ? 28 : 0
   return {
-    width: Math.max(
-      isRoot ? 180 : 112,
-      Math.min(maxWidth, Math.ceil(longestLine + padding)),
-      image ? image.width + padding : 0,
-    ),
+    width:
+      Math.max(
+        (isRoot ? 180 : 112) + verticalPadding,
+        Math.min(maxWidth + verticalPadding, Math.ceil(longestLine + padding + verticalPadding)),
+        image ? image.width + padding + verticalPadding : 0,
+        markers.extraHeight ? markers.width + 24 : 0,
+      ) + markers.extraWidth,
     height:
-      Math.max(isRoot ? 64 : 44, lines * Math.ceil(fontSize * 1.5) + (isRoot ? 28 : 20)) +
-      (image ? image.height + 12 : 0) +
+      Math.max(
+        Math.max(isRoot ? 64 : 44, lines * Math.ceil(fontSize * 1.5) + (isRoot ? 28 : 20)) +
+          (image ? image.height + 12 : 0),
+        markers.height + 20,
+      ) +
+      markers.extraHeight +
       detailsHeight +
       badgesHeight,
   }
