@@ -50,10 +50,17 @@ describe('native document autosave', () => {
       }),
     ).toEqual(selection)
     await browser.execute(() => {
-      document.activeElement?.dispatchEvent(
-        new CompositionEvent('compositionend', {
+      const active = document.activeElement
+      // This synthetic composition added no text. WebKit finishes composition
+      // through beforeinput; compositionend alone leaves Lexical composing.
+      active?.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: '' }))
+      active?.dispatchEvent(
+        new InputEvent('beforeinput', {
           bubbles: true,
-          data: '中文未提交草稿',
+          cancelable: true,
+          inputType: 'insertFromComposition',
+          data: '',
+          isComposing: false,
         }),
       )
     })

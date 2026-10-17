@@ -62,6 +62,13 @@ export const reloadNativePage = async (): Promise<void> => {
   })
   await expect(browser.$('#startup-screen')).not.toExist()
   await browser.tauri.switchWindow('main')
+  await native('startupReady')
+  await browser.waitUntil(
+    async () =>
+      (await native<{ focused: boolean }>('getWindowState')).focused &&
+      (await browser.execute(() => document.visibilityState === 'visible' && document.hasFocus())),
+    { timeoutMsg: 'The native editor did not become visible and focused after reload' },
+  )
 }
 export const home = async (): Promise<void> => {
   await browser.tauri.switchWindow('main')
@@ -80,6 +87,7 @@ export const create = async (title: string): Promise<void> => {
   await named('文档名称').setValue(title)
   await named('创建文档').click()
   await rootHasText(title)
+  await expect(root()).toBeDisplayed()
 }
 export const fileAction = async (action: string): Promise<void> => {
   await named('文件菜单').click()

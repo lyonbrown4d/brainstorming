@@ -35,6 +35,22 @@ export const config: WebdriverIO.Config = {
   afterTest: async (_test, _context, { passed }) => {
     if (passed) return
     const name = _test.title.replace(/[^a-zA-Z0-9]+/g, '-').slice(0, 100)
+    const state = await browser.execute(() => ({
+      visibility: document.visibilityState,
+      focused: document.hasFocus(),
+      reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+      panels: [...document.querySelectorAll('aside[aria-label], [aria-label="当前画布"]')].map(
+        (element) => ({
+          label: element.getAttribute('aria-label'),
+          style: element.getAttribute('style'),
+          parentStyle: element.parentElement?.getAttribute('style'),
+        }),
+      ),
+    }))
+    await writeFile(
+      `/private/tmp/brainstorming-native-failure-${name}.json`,
+      JSON.stringify(state, null, 2),
+    )
     await browser.saveScreenshot(`/private/tmp/brainstorming-native-failure-${name}.png`)
     await writeFile(
       `/private/tmp/brainstorming-native-failure-${name}.html`,
