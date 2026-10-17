@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test'
 
 /** Allow cold Vite compilation; enter the example only after the public home is ready. */
-export async function enterExampleIfHome(page: Page): Promise<void> {
+export const enterExampleIfHome = async (page: Page): Promise<void> => {
   const example = page.getByRole('button', { name: '探索示例', exact: true })
   await expect
     .poll(
@@ -15,13 +15,14 @@ export async function enterExampleIfHome(page: Page): Promise<void> {
   await expect(page.getByTestId('topic-root')).toBeVisible()
 }
 
-export async function openExample(page: Page): Promise<void> {
+export const openExample = async (page: Page): Promise<void> => {
   await page.goto('/')
   await enterExampleIfHome(page)
 }
 
 /** Preserve the explicit blank-document fixture name used by existing editing workflows. */
-export async function completeDocumentCreation(page: Page, title = '新的想法'): Promise<void> {
+export const completeDocumentCreation = async (page: Page, title = '新的想法'): Promise<void> => {
+  await page.getByRole('button', { name: '下一步', exact: true }).click()
   await page.getByRole('textbox', { name: '文档名称', exact: true }).fill(title)
   await page.getByRole('button', { name: '创建文档', exact: true }).click()
   await expect(page.getByTestId('topic-root')).toContainText(title)

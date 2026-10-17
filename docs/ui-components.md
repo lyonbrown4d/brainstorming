@@ -7,7 +7,9 @@
 业务组合放在 `src/renderer/src/components`：
 
 - `CanvasOverlay` 用 Tailwind 布局及类型明确的动态 inset，把 Dock、缩略图和视角按钮限定在侧栏之间；侧栏覆盖动画不会重建或连续调整画布尺寸。
-- `ToolbarFileMenu` 组合 DropdownMenu，`ViewModeSwitch` 组合 ToggleGroup；`DockAction` 组合 Button，提供图标和短标签。
+- `ToolbarFileMenu` 和 `SheetActionMenu` 组合官方 DropdownMenu，统一分组、分隔线、禁用项及删除操作的 destructive 变体；菜单键盘导航、选择后关闭及 Escape 焦点恢复由 Radix 管理。`SheetTabItem` 只组合标签、拖动把手和画布菜单。`ViewModeSwitch` 组合 ToggleGroup；`DockAction` 组合 Button，提供图标和短标签。
+- 动作列表使用 DropdownMenu；结构图库、颜色选择及包含参数和提交按钮的“接入分支”表单继续使用 Popover。
+- 创建引导的 Stepper 来自 [Dice UI 的 Radix 注册表](https://diceui.com/docs/components/radix/stepper)，通过 `pnpm dlx shadcn@4.21.5 add @diceui/stepper` 获取。`ui/stepper.tsx` 及 `hooks/use-value-as-ref.ts`、`hooks/use-ref-with-init.ts` 保持下载实现，业务在 `CreationHeader` 组合；样式只通过公开 props 和 Tailwind className 调整。步骤、草稿和返回状态不写入文档。
 - `FieldSelect` 组合 Select，统一业务选项、可访问名称和值校验。
 - `DialogContent` 组合官方 DialogContent、DialogClose 和 Button，通过公开的 `showCloseButton` 属性配置中文关闭按钮。
 - `MarkerAction` 组合官方 Popover、FieldSelect 和 ScrollArea；优先级与进度即时应用，Simple Icons 通过 Iconify offline 和随包图标数据呈现，不请求外部图标服务。

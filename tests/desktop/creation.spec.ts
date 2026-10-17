@@ -1,9 +1,9 @@
-import { mainWindow } from './windows'
+import { mainWindow } from '@tests/desktop/windows'
 import { _electron as electron, expect, test } from '@playwright/test'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { decodeTrelyx } from '../../src/formats/trelyx'
+import { decodeTrelyx } from '@formats/trelyx'
 
 test('桌面首页创建并保存后，新建独立画布沿用原文件路径，最近文件可从首页重新打开', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'trelyx-create-desktop-'))
@@ -13,8 +13,9 @@ test('桌面首页创建并保存后，新建独立画布沿用原文件路径�
     const page = await mainWindow(app)
     await expect(page.getByRole('button', { name: '探索示例', exact: true })).toBeVisible()
     await expect(page.getByTestId('topic-root')).toHaveCount(0)
-    await page.getByRole('textbox', { name: '文档名称', exact: true }).fill('桌面设计')
     await page.getByRole('button', { name: '选择向右括号图', exact: true }).click()
+    await page.getByRole('button', { name: '下一步', exact: true }).click()
+    await page.getByRole('textbox', { name: '文档名称', exact: true }).fill('桌面设计')
     await page.getByRole('button', { name: '创建文档', exact: true }).click()
     await expect(page.getByTestId('topic-root')).toContainText('桌面设计')
     await app.evaluate(({ dialog }, savePath) => {
@@ -34,8 +35,9 @@ test('桌面首页创建并保存后，新建独立画布沿用原文件路径�
       dialog.showSaveDialog = () => Promise.resolve({ canceled: true, filePath: '' })
     })
     await page.getByRole('button', { name: '新建画布', exact: true }).click()
-    await page.getByRole('textbox', { name: '画布名称', exact: true }).fill('时间安排')
     await page.getByRole('button', { name: '选择垂直时间线', exact: true }).click()
+    await page.getByRole('button', { name: '下一步', exact: true }).click()
+    await page.getByRole('textbox', { name: '画布名称', exact: true }).fill('时间安排')
     await page.getByRole('button', { name: '创建画布', exact: true }).click()
     await expect(page.getByRole('tab')).toHaveCount(2)
     await page.keyboard.press('ControlOrMeta+s')

@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { createDocument } from '../src/core'
-import { SheetTabs } from '../src/renderer/src/components/SheetTabs'
-import { useEditor } from '../src/renderer/src/state/editor'
-import '../src/renderer/src/styles/ui.css'
+import { expect, userEvent, within } from 'storybook/test'
+import { createDocument } from '@core'
+import { SheetTabs } from '@renderer/components/SheetTabs'
+import { useEditor } from '@renderer/state/editor'
+import '@renderer/styles/ui.css'
 
 const meta = {
   title: 'Trelyx/画布标签',
@@ -30,6 +31,39 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 export const Default: Story = {}
+export const ActionMenu: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const page = within(canvasElement.ownerDocument.body)
+    await userEvent.click(canvas.getByRole('button', { name: '画布菜单 产品总览' }))
+    const menu = within(await page.findByRole('menu'))
+    await expect(menu.getByRole('menuitem', { name: '向左移动' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
+    await expect(menu.getByRole('menuitem', { name: '向右移动' })).not.toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
+    await expect(menu.getByRole('menuitem', { name: '删除画布' })).not.toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
+  },
+}
+export const Busy: Story = {
+  beforeEach: () => {
+    useEditor.setState({ busy: true })
+  },
+  afterEach: () => {
+    useEditor.setState({ busy: false })
+  },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByRole('button', { name: '画布菜单 产品总览' }),
+    ).toBeDisabled()
+  },
+}
 export const ManySheets: Story = {
   beforeEach: () => {
     for (let index = 0; index < 12; index++) {

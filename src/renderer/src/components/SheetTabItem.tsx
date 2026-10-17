@@ -1,16 +1,13 @@
-import { DropdownMenu, Tabs } from 'radix-ui'
+import { Tabs } from 'radix-ui'
 import { useEffect, useRef } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import { ChevronDown, GripVertical } from 'lucide-react'
+import { GripVertical } from 'lucide-react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useEditor } from '../state/editor'
-import { cn } from '../lib/utils'
-import type { SheetDialogAction } from './SheetDialog'
-import { Button } from './ui/button'
-
-const menuItemClass =
-  'cursor-default rounded-md px-2.5 py-2 text-xs outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-40'
+import { useEditor } from '@renderer/state/editor'
+import type { SheetDialogAction } from '@renderer/components/SheetDialog'
+import { Button } from '@renderer/components/ui/button'
+import { SheetActionMenu } from '@renderer/components/SheetActionMenu'
 
 interface SheetTabItemProps {
   sheet: { id: string; name: string }
@@ -20,7 +17,7 @@ interface SheetTabItemProps {
   onDialog: (action: SheetDialogAction) => void
 }
 
-export function SheetTabItem({ sheet, index, count, busy, onDialog }: SheetTabItemProps) {
+export const SheetTabItem = ({ sheet, index, count, busy, onDialog }: SheetTabItemProps) => {
   const active = useEditor((state) => state.activeSheetId === sheet.id)
   const reducedMotion = useReducedMotion()
   const trigger = useRef<HTMLButtonElement>(null)
@@ -71,73 +68,7 @@ export function SheetTabItem({ sheet, index, count, busy, onDialog }: SheetTabIt
       >
         {sheet.name}
       </Tabs.Trigger>
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="sheet-menu-trigger h-7 w-6 shrink-0 rounded-md p-0 text-inherit"
-            aria-label={`画布菜单 ${sheet.name}`}
-            disabled={busy}
-          >
-            <ChevronDown className="size-3.5" />
-          </Button>
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Portal>
-          <DropdownMenu.Content
-            className="sheet-menu z-60 min-w-38 rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-lg"
-            side="top"
-            align="start"
-            sideOffset={8}
-          >
-            <DropdownMenu.Item
-              className={menuItemClass}
-              onSelect={() => {
-                onDialog({ kind: 'rename', ...sheet })
-              }}
-            >
-              重命名画布
-            </DropdownMenu.Item>
-            <DropdownMenu.Item
-              className={menuItemClass}
-              onSelect={() => {
-                useEditor.getState().duplicateSheet(sheet.id)
-              }}
-            >
-              复制画布
-            </DropdownMenu.Item>
-            <DropdownMenu.Separator className="mx-1 my-1 h-px bg-border" />
-            <DropdownMenu.Item
-              className={menuItemClass}
-              disabled={index === 0}
-              onSelect={() => {
-                useEditor.getState().moveSheet(sheet.id, index - 1)
-              }}
-            >
-              向左移动
-            </DropdownMenu.Item>
-            <DropdownMenu.Item
-              className={menuItemClass}
-              disabled={index === count - 1}
-              onSelect={() => {
-                useEditor.getState().moveSheet(sheet.id, index + 1)
-              }}
-            >
-              向右移动
-            </DropdownMenu.Item>
-            <DropdownMenu.Separator className="mx-1 my-1 h-px bg-border" />
-            <DropdownMenu.Item
-              className={cn(menuItemClass, 'sheet-menu-danger text-destructive')}
-              disabled={count <= 1}
-              onSelect={() => {
-                onDialog({ kind: 'delete', ...sheet })
-              }}
-            >
-              删除画布
-            </DropdownMenu.Item>
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Root>
+      <SheetActionMenu sheet={sheet} index={index} count={count} busy={busy} onDialog={onDialog} />
       {active && (
         <motion.span
           layoutId="active-sheet-underline"

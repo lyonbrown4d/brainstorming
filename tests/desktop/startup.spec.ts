@@ -2,8 +2,8 @@ import { _electron as electron, expect, test } from '@playwright/test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { mainWindow } from './windows'
-import { startupServer } from './startup-server'
+import { mainWindow } from '@tests/desktop/windows'
+import { startupServer } from '@tests/desktop/startup-server'
 
 test('独立原生启动窗口先显示，编辑器失败后重试，首帧就绪才显示主窗并销毁启动窗', async () => {
   const testInfo = test.info()
@@ -41,7 +41,7 @@ test('独立原生启动窗口先显示，编辑器失败后重试，首帧就�
     expect(await windows()).toContainEqual({ splash: false, visible: false })
     await splash.getByRole('button', { name: '重新加载', exact: true }).click()
     const page = await mainWindow(app)
-    await expect(page.getByRole('button', { name: '创建文档', exact: true })).toBeEnabled()
+    await expect(page.getByRole('button', { name: '下一步', exact: true })).toBeEnabled()
     await expect.poll(windows).toEqual([{ splash: false, visible: true }])
     await expect(page.locator('#startup-screen')).toHaveCount(0)
   } finally {

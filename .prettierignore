@@ -11,3 +11,6 @@ apm_modules
 test-results-desktop
 # Preserve downloaded shadcn source; format business compositions separately.
 src/renderer/src/components/ui
+# Dice UI Stepper helpers downloaded by the shadcn CLI; preserve upstream source.
+src/renderer/src/hooks/use-value-as-ref.ts
+src/renderer/src/hooks/use-ref-with-init.ts

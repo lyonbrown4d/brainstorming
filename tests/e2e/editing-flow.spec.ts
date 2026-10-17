@@ -1,15 +1,16 @@
 import { expect, test } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
-import { decodeTrelyx } from '../../src/formats/trelyx'
-import { openExample } from './workspace'
-import { dockAction } from './dock'
-import { composeChinese } from './ime'
+import { decodeTrelyx } from '@formats/trelyx'
+import { openExample } from '@tests/e2e/workspace'
+import { dockAction } from '@tests/e2e/dock'
+import { composeChinese } from '@tests/e2e/ime'
 
 for (const mode of ['2d', '3d'] as const) {
   test(`${mode} Tab / Enter 连续创建后自动聚焦并替换占位文字，保存保留主题层级`, async ({
     page,
   }) => {
     await page.goto('/')
+    await page.getByRole('button', { name: '下一步', exact: true }).click()
     await page.getByRole('button', { name: '创建文档', exact: true }).click()
     if (mode === '3d') {
       await page.getByRole('button', { name: '三维视图', exact: true }).click()

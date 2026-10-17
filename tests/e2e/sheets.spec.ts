@@ -1,14 +1,14 @@
-import { completeDocumentCreation, openExample } from './workspace'
-import { dockAction, openDock } from './dock'
+import { completeDocumentCreation, openExample } from '@tests/e2e/workspace'
+import { dockAction, openDock } from '@tests/e2e/dock'
 import { expect, test, type Page } from '@playwright/test'
 
-async function fileAction(page: Page, name: string) {
+const fileAction = async (page: Page, name: string) => {
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name, exact: true }).click()
   if (name === '新建导图') await completeDocumentCreation(page)
 }
 
-async function renameSheet(page: Page, current: string, name: string) {
+const renameSheet = async (page: Page, current: string, name: string) => {
   await page.getByRole('button', { name: `画布菜单 ${current}`, exact: true }).click()
   await page.getByRole('menuitem', { name: '重命名画布', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: '重命名画布', exact: true })
@@ -17,7 +17,7 @@ async function renameSheet(page: Page, current: string, name: string) {
   await expect(page.getByRole('tab', { name, exact: true })).toBeVisible()
 }
 
-async function renameTopic(page: Page, title: string) {
+const renameTopic = async (page: Page, title: string) => {
   await page.getByTestId('topic-root').dblclick()
   await page.getByRole('textbox', { name: '编辑主题标题', exact: true }).fill(title)
   await page.locator('.react-flow__pane').click({ position: { x: 20, y: 20 } })
@@ -26,6 +26,44 @@ async function renameTopic(page: Page, title: string) {
 test.beforeEach(async ({ page }) => {
   page.on('dialog', (dialog) => dialog.accept())
   await openExample(page)
+})
+
+test('文件与画布菜单支持键盘导航、禁用项跳过、选择关闭和 Escape 焦点恢复', async ({
+  page,
+}, testInfo) => {
+  const fileTrigger = page.getByRole('button', { name: '文件菜单', exact: true })
+  await fileTrigger.focus()
+  await page.keyboard.press('ArrowDown')
+  await expect(page.getByRole('menuitem', { name: '新建导图', exact: true })).toBeFocused()
+  await page.keyboard.press('ArrowDown')
+  await expect(page.getByRole('menuitem', { name: '打开导图', exact: true })).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('menu')).toHaveCount(0)
+  await expect(fileTrigger).toBeFocused()
+
+  await fileAction(page, '新建导图')
+  const sheetName = await page.getByRole('tab', { selected: true }).innerText()
+  const sheetTrigger = page.getByRole('button', { name: `画布菜单 ${sheetName}`, exact: true })
+  await sheetTrigger.focus()
+  await page.keyboard.press('ArrowDown')
+  await expect(page.getByRole('menuitem', { name: '重命名画布', exact: true })).toBeFocused()
+  await expect(page.getByRole('menuitem', { name: '向左移动', exact: true })).toBeDisabled()
+  await expect(page.getByRole('menuitem', { name: '向右移动', exact: true })).toBeDisabled()
+  await expect(page.getByRole('menuitem', { name: '删除画布', exact: true })).toBeDisabled()
+  await page.screenshot({ path: testInfo.outputPath('sheet-action-menu.png') })
+  await page.keyboard.press('End')
+  await expect(page.getByRole('menuitem', { name: '复制画布', exact: true })).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(sheetTrigger).toBeFocused()
+  await page.keyboard.press('ArrowDown')
+  await expect(page.getByRole('menuitem', { name: '重命名画布', exact: true })).toBeFocused()
+  await page.keyboard.press('ArrowDown')
+  await expect(page.getByRole('menuitem', { name: '复制画布', exact: true })).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('menu')).toHaveCount(0)
+  await expect(page.getByRole('tab')).toHaveCount(2)
+  await dockAction(page, '撤销')
+  await expect(page.getByRole('tab')).toHaveCount(1)
 })
 
 test('多个画布保留独立内容与撤销，并在同一文件保存后重新打开', async ({ page }) => {
@@ -45,6 +83,7 @@ test('多个画布保留独立内容与撤销，并在同一文件保存后重�
   await page.getByRole('button', { name: '关闭大纲', exact: true }).click()
   await expect(stylePanel).toBeVisible()
   await page.getByRole('button', { name: '新建画布', exact: true }).click()
+  await page.getByRole('button', { name: '下一步', exact: true }).click()
   await page.getByRole('button', { name: '创建画布', exact: true }).click()
   const secondName = await page.getByRole('tab', { selected: true }).innerText()
   await renameSheet(page, secondName, '用户研究')

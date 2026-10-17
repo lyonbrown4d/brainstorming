@@ -1,7 +1,6 @@
 .topic-context-toolbar,
 .control-menu,
-.formatting-popover,
-.sheet-menu {
+.formatting-popover {
   animation: surface-enter 120ms ease-out;
 }
 .sheet-tab-item,

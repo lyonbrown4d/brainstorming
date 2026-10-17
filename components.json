@@ -16,5 +16,8 @@
     "ui": "@renderer/components/ui",
     "lib": "@renderer/lib",
     "hooks": "@renderer/hooks"
+  },
+  "registries": {
+    "@diceui": "https://diceui.com/r/{style}/{name}.json"
   }
 }

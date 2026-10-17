@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { useSearch } from './searchState'
+import { useSearch } from '@renderer/state/searchState'
 
 export type WorkspaceScreen = 'home' | 'editor' | 'create-document' | 'create-sheet'
 interface WorkspaceState {
@@ -7,6 +7,7 @@ interface WorkspaceState {
   readonly hasDocument: boolean
   readonly returnScreen: 'home' | 'editor'
   readonly creationWorkbookId: string | null
+  readonly creationStep: 1 | 2
 }
 
 export const useWorkspace = create<WorkspaceState>(() => ({
@@ -14,9 +15,10 @@ export const useWorkspace = create<WorkspaceState>(() => ({
   hasDocument: false,
   returnScreen: 'home',
   creationWorkbookId: null,
+  creationStep: 1,
 }))
 
-export function enterWorkspaceEditor(): void {
+export const enterWorkspaceEditor = (): void => {
   useSearch.setState({ open: false })
   useWorkspace.setState({ screen: 'editor', hasDocument: true, creationWorkbookId: null })
 }

@@ -1,17 +1,17 @@
 import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
-import { decodeTrelyx } from '../../src/formats/trelyx'
-import { dockAction } from './dock'
-import { openExample } from './workspace'
+import { decodeTrelyx } from '@formats/trelyx'
+import { dockAction } from '@tests/e2e/dock'
+import { openExample } from '@tests/e2e/workspace'
 
-async function save(page: Page) {
+const save = async (page: Page) => {
   const download = page.waitForEvent('download')
   await page.keyboard.press('ControlOrMeta+s')
   const path = await (await download).path()
   if (!path) throw new Error('保存没有生成文件')
   return decodeTrelyx(await readFile(path))
 }
-async function recoveryContents(page: Page): Promise<unknown> {
+const recoveryContents = async (page: Page): Promise<unknown> => {
   return page.evaluate(async () => {
     if (!(await indexedDB.databases()).some((database) => database.name === 'trelyx')) return null
     return new Promise<unknown>((resolve, reject) => {
@@ -51,14 +51,32 @@ test('启动首页不加载或自动保存示例，模板与指定结构创建�
   // Wait beyond the real 700 ms recovery debounce to detect an unwanted startup write.
   await page.waitForTimeout(1000)
   expect(await recoveryContents(page)).toBeNull()
+  await expect(page.getByRole('button', { name: /^选择/ })).toHaveCount(15)
+  await expect(page.getByRole('button', { name: '空白导图', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: '创建文档', exact: true })).toHaveCount(0)
   await page.screenshot({ path: testInfo.outputPath('trelyx-home.png') })
-  await page.getByRole('button', { name: '选择向右括号图', exact: true }).click()
+  const structure = page.getByRole('button', { name: '选择向右括号图', exact: true })
+  await structure.focus()
+  await page.keyboard.press('Enter')
+  await expect(structure).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('textbox', { name: '文档名称', exact: true })).toHaveCount(0)
+  await expect(page.getByTestId('topic-root')).toHaveCount(0)
+  await page.getByRole('button', { name: '下一步', exact: true }).click()
+  await expect(page.getByRole('button', { name: /^选择.*模板$/ })).toHaveCount(4)
+  await expect(page.getByRole('button', { name: '空白导图', exact: true })).toHaveCount(0)
   await page.getByRole('button', { name: '选择项目计划模板', exact: true }).click()
+  await page.getByRole('textbox', { name: '文档名称', exact: true }).fill('发布准备')
+  await page.getByRole('button', { name: '上一步', exact: true }).click()
   await expect(page.getByRole('button', { name: '选择向右括号图', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
   )
-  await page.getByRole('textbox', { name: '文档名称', exact: true }).fill('发布准备')
+  await page.getByRole('button', { name: '下一步', exact: true }).click()
+  await expect(page.getByRole('textbox', { name: '文档名称', exact: true })).toHaveValue('发布准备')
+  await expect(page.getByRole('button', { name: '选择项目计划模板', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
   await page.screenshot({ path: testInfo.outputPath('trelyx-creation-guide.png') })
   await page.getByRole('button', { name: '创建文档', exact: true }).click()
   await expect(page.getByTestId('topic-root')).toContainText('发布准备')
@@ -73,16 +91,18 @@ test('启动首页不加载或自动保存示例，模板与指定结构创建�
 
 test('新建画布保留原文档内容，独立结构和种子内容可以整次撤销', async ({ page }) => {
   await page.goto('/')
-  await page.getByRole('textbox', { name: '文档名称', exact: true }).fill('产品设计')
   await page.getByRole('button', { name: '选择向下树形图', exact: true }).click()
+  await page.getByRole('button', { name: '下一步', exact: true }).click()
+  await page.getByRole('textbox', { name: '文档名称', exact: true }).fill('产品设计')
   await page.getByRole('button', { name: '选择头脑风暴模板', exact: true }).click()
   await page.getByRole('button', { name: '创建文档', exact: true }).click()
   await expect(page.getByTestId('topic-root')).toContainText('产品设计')
   const before = await save(page)
   await page.getByRole('button', { name: '新建画布', exact: true }).click()
   await expect(page.getByRole('heading', { name: '新建画布', exact: true })).toBeVisible()
-  await page.getByRole('textbox', { name: '画布名称', exact: true }).fill('交付排期')
   await page.getByRole('button', { name: '选择垂直时间线', exact: true }).click()
+  await page.getByRole('button', { name: '下一步', exact: true }).click()
+  await page.getByRole('textbox', { name: '画布名称', exact: true }).fill('交付排期')
   await page.getByRole('button', { name: '创建画布', exact: true }).click()
   await expect(page.getByRole('tab')).toHaveCount(2)
   await expect(page.getByTestId('topic-root')).toContainText('交付排期')
@@ -120,6 +140,7 @@ test('打开引导页和返回首页保留未保存编辑，拒绝放弃后仍�
   await page.getByRole('button', { name: '返回画布', exact: true }).click()
   await expect(page.getByTestId('topic-root')).toContainText('保留未保存的内容')
   await page.keyboard.press('ControlOrMeta+n')
+  await page.getByRole('button', { name: '下一步', exact: true }).click()
   await page.getByRole('textbox', { name: '文档名称', exact: true }).fill('不应替换的文档')
   await page.getByRole('button', { name: '创建文档', exact: true }).click()
   expect(dialogs).toHaveLength(1)
@@ -152,6 +173,7 @@ test('首页打开损坏文件或取消选择仍保留首页', async ({ page }) 
 
 test('创建名称支持中文组词，候选确认不会提前创建文档', async ({ page }) => {
   await page.goto('/')
+  await page.getByRole('button', { name: '下一步', exact: true }).click()
   const name = page.getByRole('textbox', { name: '文档名称', exact: true })
   await name.focus()
   const session = await page.context().newCDPSession(page)

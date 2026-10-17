@@ -1,5 +1,6 @@
 import type { LayoutKind } from '@core'
-import type { TemplateId } from '../documents/templates'
+import type { TemplateId } from '@renderer/components/documents/templates'
+import type { ReactNode } from 'react'
 
 export interface CreationRequest {
   readonly title: string
@@ -16,4 +17,8 @@ export interface CreationGalleryProps {
   readonly onExample?: () => void
   readonly busy?: boolean
   readonly error?: string | null
+  readonly step?: 1 | 2
+  readonly onStepChange?: (step: 1 | 2) => void
+  readonly sidebar?: ReactNode
+  readonly showHeader?: boolean
 }

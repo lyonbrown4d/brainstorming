@@ -1,19 +1,22 @@
 import { useId, useRef, useState } from 'react'
-import { ArrowLeft, ArrowUpRight, FolderOpen, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpen } from 'lucide-react'
 import type { LayoutKind } from '@core'
-import { Button } from '../ui/button'
-import { Input } from '../ui/input'
-import { Label } from '../ui/label'
-import { StructurePreview } from '../documents/StructurePreview'
-import { structureOptions } from '../documents/structureOptions'
-import { templateOptions } from '../documents/templates'
-import { StructureChoices } from './StructureChoices'
-import { TemplateChoices } from './TemplateChoices'
-import { isCompositionKey } from '../../state/keyboard'
-import type { CreationGalleryProps, CreationRequest } from './types'
-export type { CreationGalleryProps, CreationRequest } from './types'
+import { Button } from '@renderer/components/ui/button'
+import { Input } from '@renderer/components/ui/input'
+import { Label } from '@renderer/components/ui/label'
+import { StructurePreview } from '@renderer/components/documents/StructurePreview'
+import { structureOptions } from '@renderer/components/documents/structureOptions'
+import { templateOptions } from '@renderer/components/documents/templates'
+import { StructureChoices } from '@renderer/components/creation/StructureChoices'
+import { TemplateChoices } from '@renderer/components/creation/TemplateChoices'
+import { CreationHeader } from '@renderer/components/creation/CreationHeader'
+import { isCompositionKey } from '@renderer/state/keyboard'
+import { useCreationStepFocus } from '@renderer/hooks/useCreationStepFocus'
+import { cn } from '@renderer/lib/utils'
+import type { CreationGalleryProps, CreationRequest } from '@renderer/components/creation/types'
+export type { CreationGalleryProps, CreationRequest } from '@renderer/components/creation/types'
 
-export function CreationGallery({
+export const CreationGallery = ({
   mode,
   onCreate,
   onCancel,
@@ -22,142 +25,184 @@ export function CreationGallery({
   onExample,
   busy = false,
   error,
-}: CreationGalleryProps) {
+  step: controlledStep,
+  onStepChange,
+  sidebar,
+  showHeader = true,
+}: CreationGalleryProps) => {
   const nameId = useId()
+  const [localStep, setLocalStep] = useState<1 | 2>(1)
+  const step = controlledStep ?? localStep
   const [title, setTitle] = useState('')
   const [layout, setLayout] = useState<LayoutKind>('map')
   const [template, setTemplate] = useState<CreationRequest['template']>('blank')
   const [accepted, setAccepted] = useState(false)
   const submitting = useRef(false)
+  const { headingRef, scrollRef } = useCreationStepFocus(step)
   const noun = mode === 'document' ? '文档' : '画布'
   const disabled = busy || accepted
   const selectedLabel = structureOptions.find((option) => option.value === layout)?.label ?? layout
-  const templateLabel =
-    template === 'blank'
-      ? '空白导图'
-      : templateOptions.find((option) => option.id === template)?.title
   const resolvedTitle =
-    title.trim() ||
-    (template === 'blank'
+    template === 'blank'
       ? mode === 'document'
         ? '新的想法'
         : '新画布'
-      : (templateLabel ?? '新的想法'))
+      : (templateOptions.find((option) => option.id === template)?.title ?? '新的想法')
+  const changeStep = (next: 1 | 2) => {
+    if (disabled) return
+    setLocalStep(next)
+    onStepChange?.(next)
+  }
   return (
     <section
       aria-label={`新建${noun}`}
-      className="h-full min-h-0 overflow-y-auto bg-muted/25 text-foreground"
+      className="flex h-full min-h-0 flex-1 flex-col bg-secondary/25 text-foreground"
     >
-      <div className="mx-auto max-w-7xl px-5 py-6 sm:px-8 sm:py-8">
-        <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            {onCancel && (
-              <Button type="button" variant="ghost" disabled={disabled} onClick={onCancel}>
-                <ArrowLeft className="size-4" />
-                {cancelLabel}
-              </Button>
+      {showHeader && (
+        <CreationHeader
+          step={step}
+          busy={disabled}
+          cancelLabel={cancelLabel}
+          {...(onCancel ? { onCancel } : {})}
+          {...(onOpen ? { onOpen } : {})}
+        />
+      )}
+      <form
+        className="flex min-h-0 flex-1 flex-col"
+        onSubmit={(event) => {
+          event.preventDefault()
+          if (step !== 2 || disabled || submitting.current) return
+          submitting.current = true
+          try {
+            if (onCreate({ title, layout, template })) setAccepted(true)
+          } finally {
+            submitting.current = false
+          }
+        }}
+      >
+        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+          <div
+            className={cn(
+              'mx-auto grid w-full max-w-[1600px] gap-8 px-5 py-8 sm:px-12',
+              sidebar && 'lg:grid-cols-[minmax(0,1fr)_22rem]',
             )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {onExample && (
-              <Button type="button" variant="ghost" disabled={disabled} onClick={onExample}>
-                <Sparkles className="size-4" />
+          >
+            <div className="min-w-0">
+              <h1
+                ref={headingRef}
+                tabIndex={-1}
+                className="mb-5 text-[28px] leading-9 font-semibold tracking-tight outline-none"
+              >
+                新建{noun}
+              </h1>
+              {step === 1 ? (
+                <StructureChoices value={layout} onChange={setLayout} disabled={disabled} />
+              ) : (
+                <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_14rem]">
+                  <div className="flex flex-col gap-8">
+                    <div className="flex flex-col gap-3">
+                      <Label htmlFor={nameId}>{noun}名称</Label>
+                      <Input
+                        id={nameId}
+                        value={title}
+                        maxLength={80}
+                        disabled={disabled}
+                        placeholder={resolvedTitle}
+                        className="h-11 bg-background"
+                        autoComplete="off"
+                        onChange={(event) => {
+                          setTitle(event.target.value)
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' && isCompositionKey(event.nativeEvent))
+                            event.preventDefault()
+                        }}
+                      />
+                    </div>
+                    <section aria-label="内容模板" className="flex flex-col gap-3">
+                      <h2 className="text-sm font-medium">内容模板</h2>
+                      <TemplateChoices
+                        value={template}
+                        onChange={setTemplate}
+                        disabled={disabled}
+                      />
+                    </section>
+                  </div>
+                  <div className="flex flex-col items-center justify-center gap-5 rounded-lg bg-primary/5 p-6 text-sm text-primary [&_svg]:h-28">
+                    <StructurePreview kind={layout} />
+                    <span>{selectedLabel}</span>
+                  </div>
+                </div>
+              )}
+              {error && (
+                <p className="mt-5 text-sm text-destructive" role="alert">
+                  {error}
+                </p>
+              )}
+            </div>
+            {sidebar}
+            {!sidebar && onExample && (
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={disabled}
+                className="w-fit"
+                onClick={onExample}
+              >
+                <BookOpen data-icon="inline-start" />
                 探索示例
               </Button>
             )}
-            {onOpen && (
-              <Button type="button" variant="outline" disabled={disabled} onClick={onOpen}>
-                <FolderOpen className="size-4" />
-                打开本地文件
+          </div>
+        </div>
+        <footer className="flex min-h-20 shrink-0 items-center justify-between gap-4 border-t border-border bg-background px-5 py-3 sm:px-12">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="hidden h-12 w-24 shrink-0 rounded-md bg-primary/5 px-3 py-1 sm:block [&_svg]:h-full">
+              <StructurePreview kind={layout} />
+            </div>
+            <span className="truncate text-sm font-medium">{selectedLabel}</span>
+          </div>
+          <div className="flex shrink-0 items-center gap-3">
+            {step === 2 && (
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={disabled}
+                onClick={() => {
+                  changeStep(1)
+                }}
+              >
+                <ArrowLeft data-icon="inline-start" />
+                上一步
+              </Button>
+            )}
+            {step === 1 ? (
+              <Button
+                key="next"
+                type="button"
+                disabled={disabled}
+                className="h-11 min-w-32 sm:min-w-56"
+                onClick={() => {
+                  changeStep(2)
+                }}
+              >
+                下一步
+                <ArrowRight data-icon="inline-end" />
+              </Button>
+            ) : (
+              <Button
+                key="create"
+                type="submit"
+                disabled={disabled}
+                className="h-11 min-w-32 sm:min-w-56"
+              >
+                {busy ? '正在创建…' : `创建${noun}`}
+                <ArrowRight data-icon="inline-end" />
               </Button>
             )}
           </div>
-        </header>
-        <div className="mb-7 max-w-2xl space-y-2">
-          <p className="text-xs font-semibold tracking-widest text-primary">
-            {mode === 'document' ? '开始一份新的思考' : '在当前文档中继续思考'}
-          </p>
-          <h1 className="text-3xl font-semibold tracking-tight">新建{noun}</h1>
-          <p className="text-sm leading-6 text-muted-foreground">
-            {mode === 'document'
-              ? '选择适合内容的图形结构，从空白或模板开始。'
-              : '每张画布拥有独立的导图内容、图形结构和撤销历史。'}
-          </p>
-        </div>
-        <form
-          className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]"
-          onSubmit={(event) => {
-            event.preventDefault()
-            if (disabled || submitting.current) return
-            submitting.current = true
-            try {
-              if (onCreate({ title, layout, template })) setAccepted(true)
-            } finally {
-              submitting.current = false
-            }
-          }}
-        >
-          <div className="min-w-0 space-y-7">
-            <section className="space-y-3" aria-labelledby={`${nameId}-structure`}>
-              <div className="flex items-baseline justify-between gap-2">
-                <h2 id={`${nameId}-structure`} className="text-base font-semibold">
-                  图形结构
-                </h2>
-                <span className="text-xs text-muted-foreground">创建后仍可切换</span>
-              </div>
-              <StructureChoices value={layout} onChange={setLayout} disabled={disabled} />
-            </section>
-            <section className="space-y-3" aria-labelledby={`${nameId}-template`}>
-              <h2 id={`${nameId}-template`} className="text-base font-semibold">
-                初始内容
-              </h2>
-              <p className="text-xs leading-5 text-muted-foreground">
-                模板提供可编辑的主题内容，保留上方选择的图形结构。
-              </p>
-              <TemplateChoices value={template} onChange={setTemplate} disabled={disabled} />
-            </section>
-          </div>
-          <aside
-            className="space-y-5 rounded-2xl border border-border bg-background p-5 shadow-xs lg:sticky lg:top-5"
-            aria-label="创建预览"
-          >
-            <div className="rounded-xl bg-primary/5 px-4 py-6 [&_svg]:h-24">
-              <StructurePreview kind={layout} />
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium">{selectedLabel}</p>
-              <p className="text-xs text-muted-foreground">{templateLabel}</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={nameId}>{noun}名称</Label>
-              <Input
-                id={nameId}
-                value={title}
-                maxLength={80}
-                disabled={disabled}
-                placeholder={resolvedTitle}
-                onChange={(event) => {
-                  setTitle(event.target.value)
-                }}
-                autoComplete="off"
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' && isCompositionKey(event.nativeEvent))
-                    event.preventDefault()
-                }}
-              />
-            </div>
-            {error && (
-              <p className="text-sm text-destructive" role="alert">
-                {error}
-              </p>
-            )}
-            <Button type="submit" disabled={disabled} className="w-full">
-              {busy ? '正在创建…' : `创建${noun}`}
-              <ArrowUpRight className="size-4" />
-            </Button>
-          </aside>
-        </form>
-      </div>
+        </footer>
+      </form>
     </section>
   )
 }

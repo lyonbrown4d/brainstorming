@@ -1,20 +1,20 @@
 import { applyCommand, createDocument, validateDocument, type MindMapDocument } from '@core'
-import type { CreationRequest } from '../components/creation/CreationGallery'
-import { createTemplate } from '../components/documents/templates'
-import { confirmDiscard } from './documentDiscard'
-import { addDocumentSheet, useEditor } from './editor'
-import { exampleWorkbook } from './example'
-import { resetBrowserPassword } from './password'
-import { useSearch } from './searchState'
-import { enterWorkspaceEditor, useWorkspace } from './workspace'
+import type { CreationRequest } from '@renderer/components/creation/CreationGallery'
+import { createTemplate } from '@renderer/components/documents/templates'
+import { confirmDiscard } from '@renderer/state/documentDiscard'
+import { addDocumentSheet, useEditor } from '@renderer/state/editor'
+import { exampleWorkbook } from '@renderer/state/example'
+import { resetBrowserPassword } from '@renderer/state/password'
+import { useSearch } from '@renderer/state/searchState'
+import { enterWorkspaceEditor, useWorkspace } from '@renderer/state/workspace'
 
-function commitReady(): boolean {
+const commitReady = (): boolean => {
   if (useEditor.getState().busy) return false
   useEditor.getState().commitDraft()
   return !useEditor.getState().editingId
 }
 
-export function beginCreation(mode: 'document' | 'sheet'): boolean {
+export const beginCreation = (mode: 'document' | 'sheet'): boolean => {
   if (!commitReady()) return false
   const workspace = useWorkspace.getState()
   if (mode === 'sheet' && !workspace.hasDocument) return false
@@ -24,26 +24,27 @@ export function beginCreation(mode: 'document' | 'sheet'): boolean {
     screen: mode === 'document' ? 'create-document' : 'create-sheet',
     returnScreen: workspace.hasDocument ? 'editor' : 'home',
     creationWorkbookId: mode === 'sheet' ? useEditor.getState().workbook.id : null,
+    creationStep: 1,
   })
   return true
 }
 
-export function cancelCreation(): void {
+export const cancelCreation = (): void => {
   const { screen, returnScreen } = useWorkspace.getState()
   if (useEditor.getState().busy || !['create-document', 'create-sheet'].includes(screen)) return
   useWorkspace.setState({ screen: returnScreen, creationWorkbookId: null })
   useEditor.getState().setError(null)
 }
 
-export function showWorkspaceHome(): boolean {
+export const showWorkspaceHome = (): boolean => {
   if (!commitReady()) return false
   useSearch.setState({ open: false })
-  useWorkspace.setState({ screen: 'home', creationWorkbookId: null })
+  useWorkspace.setState({ screen: 'home', creationWorkbookId: null, creationStep: 1 })
   useEditor.getState().setError(null)
   return true
 }
 
-function initialDocument(request: CreationRequest, sheet: boolean): MindMapDocument {
+const initialDocument = (request: CreationRequest, sheet: boolean): MindMapDocument => {
   const base =
     request.template === 'blank'
       ? createDocument(sheet ? '新画布' : '新的想法', crypto.randomUUID())
@@ -59,7 +60,7 @@ function initialDocument(request: CreationRequest, sheet: boolean): MindMapDocum
   return document
 }
 
-export function createFromRequest(request: CreationRequest): boolean {
+export const createFromRequest = (request: CreationRequest): boolean => {
   const workspace = useWorkspace.getState()
   if (!['create-document', 'create-sheet'].includes(workspace.screen) || !commitReady())
     return false
@@ -88,7 +89,7 @@ export function createFromRequest(request: CreationRequest): boolean {
   }
 }
 
-export function exploreExample(): boolean {
+export const exploreExample = (): boolean => {
   if (!commitReady()) return false
   if (useWorkspace.getState().hasDocument && !confirmDiscard()) return false
   resetBrowserPassword()

@@ -1,9 +1,9 @@
 import { ChevronDown, Download, FilePlus2, FolderOpen, History, Save } from 'lucide-react'
 import { useState } from 'react'
-import { useRecentFiles } from '../hooks/useRecentFiles'
-import { useEditor } from '../state/editor'
-import { newDocument, openDocument, saveDocument } from '../state/files'
-import { Button } from './ui/button'
+import { useRecentFiles } from '@renderer/hooks/useRecentFiles'
+import { useEditor } from '@renderer/state/editor'
+import { newDocument, openDocument, saveDocument } from '@renderer/state/files'
+import { Button } from '@renderer/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,15 +17,15 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from './ui/dropdown-menu'
+} from '@renderer/components/ui/dropdown-menu'
 
-function RecentFilesMenu() {
+const RecentFilesMenu = () => {
   const [open, setOpen] = useState(false)
   const recent = useRecentFiles(open)
   const busy = useEditor((state) => state.busy)
   return (
     <DropdownMenuSub onOpenChange={setOpen}>
-      <DropdownMenuSubTrigger aria-label="最近文件">
+      <DropdownMenuSubTrigger aria-label="最近文件" disabled={busy}>
         <History />
         最近文件
       </DropdownMenuSubTrigger>
@@ -68,7 +68,7 @@ function RecentFilesMenu() {
   )
 }
 
-export function ToolbarFileMenu() {
+export const ToolbarFileMenu = () => {
   const title = useEditor((state) => state.workbook.title)
   const busy = useEditor((state) => state.busy)
   const filename = title.endsWith('.trelyx') ? title : `${title}.trelyx`
@@ -86,14 +86,18 @@ export function ToolbarFileMenu() {
           <ChevronDown data-icon="inline-end" className="shrink-0 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="start" sideOffset={10}>
+      <DropdownMenuContent className="w-56" align="start" sideOffset={10} aria-label="文件操作">
         <DropdownMenuGroup>
           <DropdownMenuLabel>文件</DropdownMenuLabel>
-          <DropdownMenuItem aria-label="新建导图" onSelect={newDocument}>
+          <DropdownMenuItem disabled={busy} aria-label="新建导图" onSelect={newDocument}>
             <FilePlus2 />
             新建导图<DropdownMenuShortcut>⌘N</DropdownMenuShortcut>
           </DropdownMenuItem>
-          <DropdownMenuItem aria-label="打开导图" onSelect={() => void openDocument()}>
+          <DropdownMenuItem
+            disabled={busy}
+            aria-label="打开导图"
+            onSelect={() => void openDocument()}
+          >
             <FolderOpen />
             打开导图<DropdownMenuShortcut>⌘O</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -101,11 +105,19 @@ export function ToolbarFileMenu() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem aria-label="保存导图" onSelect={() => void saveDocument()}>
+          <DropdownMenuItem
+            disabled={busy}
+            aria-label="保存导图"
+            onSelect={() => void saveDocument()}
+          >
             <Save />
             保存导图<DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
           </DropdownMenuItem>
-          <DropdownMenuItem aria-label="另存为" onSelect={() => void saveDocument(true)}>
+          <DropdownMenuItem
+            disabled={busy}
+            aria-label="另存为"
+            onSelect={() => void saveDocument(true)}
+          >
             <Download />
             另存为<DropdownMenuShortcut>⇧⌘S</DropdownMenuShortcut>
           </DropdownMenuItem>
