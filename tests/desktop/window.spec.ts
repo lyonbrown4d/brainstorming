@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 test('自定义标题栏保留操作、窄窗布局与原生全屏状态', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'trelyx-window-'))
+  const directory = await mkdtemp(join(tmpdir(), 'brainstorming-window-'))
   await seedChinese(directory)
   const app = await electron.launch({
     colorScheme: null,
@@ -106,7 +106,7 @@ test('自定义标题栏保留操作、窄窗布局与原生全屏状态', async
       window?.focus()
     })
     await expect(shell).toHaveAttribute('data-focused', 'true')
-    await page.screenshot({ path: '/tmp/trelyx-custom-titlebar.png' })
+    await page.screenshot({ path: '/tmp/brainstorming-custom-titlebar.png' })
   } finally {
     app.process().kill('SIGKILL')
     await rm(directory, { recursive: true, force: true })

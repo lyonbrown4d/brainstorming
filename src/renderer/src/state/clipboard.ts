@@ -10,7 +10,7 @@ import {
 import { useEditor } from '@renderer/state/editor'
 import { selectedTopicIds, setSelectedTopics } from '@renderer/state/selection'
 
-export const TOPIC_CLIPBOARD_PREFIX = 'Trelyx topics v1\n'
+export const TOPIC_CLIPBOARD_PREFIX = 'Brainstorming topics v1\n'
 const MAX_CLIPBOARD_BYTES = 56 * 1024 * 1024
 const MAX_TOPIC_BYTES = 10 * 1024 * 1024
 let pending = false
@@ -19,7 +19,7 @@ export const parseTopicClipboard = (contents: string): TopicClipboard => {
   if (new TextEncoder().encode(contents).byteLength > MAX_CLIPBOARD_BYTES)
     throw new Error(translate('clipboardContentIsTooLarge'))
   if (!contents.startsWith(TOPIC_CLIPBOARD_PREFIX))
-    throw new Error(translate('noTrelyxTopicsInTheClipboardCopy'))
+    throw new Error(translate('noBrainstormingTopicsInTheClipboardCopy'))
   const value: unknown = JSON.parse(contents.slice(TOPIC_CLIPBOARD_PREFIX.length))
   validateTopicClipboard(value)
   if (
@@ -119,8 +119,8 @@ const pastePayload = async (
     annotationIds,
   }
   const document = applyCommand(before.history.document, command)
-  const { encodeTrelyx } = await import('@formats/trelyx')
-  encodeTrelyx({
+  const { encodeBrainstorming } = await import('@formats/brainstorming')
+  encodeBrainstorming({
     ...before.workbook,
     sheets: before.workbook.sheets.map((sheet) =>
       sheet.id === before.activeSheetId ? { ...sheet, document } : sheet,

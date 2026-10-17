@@ -31,14 +31,16 @@ export const PaletteChooser = ({
         <Button
           key={palette.id}
           ref={
-            !settings.customPalette && (settings.theme ?? 'trelyx') === palette.id
+            !settings.customPalette && (settings.theme ?? 'brainstorming') === palette.id
               ? selected
               : undefined
           }
           type="button"
           variant="outline"
           aria-label={translate('useValue0Colors', { value0: translateLabel(palette.name) })}
-          aria-pressed={!settings.customPalette && (settings.theme ?? 'trelyx') === palette.id}
+          aria-pressed={
+            !settings.customPalette && (settings.theme ?? 'brainstorming') === palette.id
+          }
           className="relative h-auto min-w-0 flex-col gap-0 overflow-hidden rounded-lg border-border p-0 shadow-none hover:bg-accent aria-pressed:border-primary aria-pressed:ring-1 aria-pressed:ring-primary"
           onClick={() => {
             onSelect(palette.id)
@@ -46,7 +48,7 @@ export const PaletteChooser = ({
         >
           <PalettePreview palette={palette} />
           <span className="py-1.5 text-xs font-normal">{translateLabel(palette.name)}</span>
-          {!settings.customPalette && (settings.theme ?? 'trelyx') === palette.id && (
+          {!settings.customPalette && (settings.theme ?? 'brainstorming') === palette.id && (
             <span className="absolute top-1 right-1 rounded-full bg-primary p-0.5 text-primary-foreground">
               <Check className="size-3" />
             </span>

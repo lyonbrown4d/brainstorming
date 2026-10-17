@@ -22,7 +22,7 @@ export const validateTopicClipboard: (value: unknown) => asserts value is TopicC
 ): asserts value is TopicClipboard => {
   if (
     !isRecord(value) ||
-    value.format !== 'trelyx.topics' ||
+    value.format !== 'brainstorming.topics' ||
     value.version !== 1 ||
     !Array.isArray(value.roots) ||
     value.roots.length === 0 ||
@@ -50,7 +50,7 @@ export const validateTopicClipboard: (value: unknown) => asserts value is TopicC
     side: 'right',
   }
   validateDocument({
-    format: 'trelyx',
+    format: 'brainstorming',
     version: 1,
     id: rootId,
     title: '',
@@ -84,7 +84,7 @@ export const createTopicClipboard = (
   }
   const snapshot = documentData({ ...document, topics, assets })
   return {
-    format: 'trelyx.topics',
+    format: 'brainstorming.topics',
     version: 1,
     roots,
     topics: snapshot.topics,

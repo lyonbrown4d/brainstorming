@@ -2,7 +2,7 @@ import { prepareNativeSave, prepareNativeOpen } from '@tests/electron/native-fil
 import { expect, test, type Locator, type Page } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
 import { applyCommand, createDocument, createWorkbook } from '@core'
-import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
+import { decodeBrainstorming, encodeBrainstorming } from '@formats/brainstorming'
 import { dockAction } from '@tests/e2e/dock'
 import { openExample } from '@tests/e2e/workspace'
 import { reloadWindow } from '@tests/electron/session'
@@ -28,7 +28,7 @@ const save = async (page: Page) => {
   await page.keyboard.press('ControlOrMeta+s')
   const path = await pending.path()
   if (!path) throw new Error('没有生成保存文件')
-  const document = decodeTrelyx(await readFile(path)).sheets[0]?.document
+  const document = decodeBrainstorming(await readFile(path)).sheets[0]?.document
   if (!document) throw new Error('保存文件缺少画布')
   return { path, document }
 }
@@ -193,7 +193,7 @@ test('三维拖动分支包含子主题，Escape 撤回预览且不产生文档�
 })
 
 test('三维拖动在 pointercancel 和持键切换画布后取消，不污染任何 Sheet', async ({ page }) => {
-  const baseline = decodeTrelyx(await readFile((await save(page)).path))
+  const baseline = decodeBrainstorming(await readFile((await save(page)).path))
   const ids = ['vision', ...leaves]
   await title(page, 'vision').click()
   const originals = await Promise.all(ids.map((id) => bounds(card(page, id))))
@@ -220,7 +220,7 @@ test('三维拖动在 pointercancel 和持键切换画布后取消，不污染�
   ).toHaveAttribute('aria-selected', 'true')
   await page.mouse.up()
   await expect(page.locator('[data-spatial-selection]')).toHaveCount(0)
-  const saved = decodeTrelyx(await readFile((await save(page)).path))
+  const saved = decodeBrainstorming(await readFile((await save(page)).path))
   expect(saved.sheets).toEqual(baseline.sheets)
   await page
     .getByRole('tablist', { name: '文档画布', exact: true })
@@ -247,9 +247,9 @@ test('三维游离组选区同步平移，只保存二维坐标并可在二维�
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name: '打开导图', exact: true }).click()
   const selectedPath = await chooser.selectFile({
-    name: 'spatial-floating.trelyx',
+    name: 'spatial-floating.brainstorming',
     mimeType: 'application/octet-stream',
-    buffer: Buffer.from(encodeTrelyx(createWorkbook(document))),
+    buffer: Buffer.from(encodeBrainstorming(createWorkbook(document))),
   })
   if (!selectedPath) throw new Error('未选择真实游离主题文件')
   await expect(page.locator('.save-status')).toHaveAttribute('title', selectedPath)

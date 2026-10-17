@@ -1,6 +1,6 @@
-appId: app.trelyx.desktop
-productName: Trelyx
-copyright: Copyright © 2026 Trelyx contributors
+appId: app.brainstorming.desktop
+productName: Brainstorming
+copyright: Copyright © 2026 Brainstorming contributors
 directories:
   output: release
 files:
@@ -8,9 +8,9 @@ files:
   - package.json
 asar: true
 fileAssociations:
-  - ext: trelyx
-    name: Trelyx 思维导图
-    mimeType: application/vnd.trelyx+zip
+  - ext: brainstorming
+    name: Brainstorming 思维导图
+    mimeType: application/vnd.brainstorming+zip
     role: Editor
   - ext: xmind
     name: XMind 思维导图

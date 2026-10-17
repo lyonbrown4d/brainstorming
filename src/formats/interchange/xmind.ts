@@ -3,7 +3,7 @@ import { assetBytes, safeAssetName } from '@assets'
 import type { MindMapWorkbook, Topic, TopicStyle } from '@core'
 import { referencedAssetIds } from '@core/topic-content'
 import { documentExtensionData } from '@core/extension-data'
-import { validateBoundedWorkbook } from '@formats/trelyx/validation'
+import { validateBoundedWorkbook } from '@formats/brainstorming/validation'
 import { ARCHIVE_LIMITS } from '@formats/archive'
 import { exportStructure } from '@formats/xmind/structures'
 
@@ -24,7 +24,7 @@ const properties = (style: TopicStyle = {}): Record<string, string | number> => 
     ...(style.shape ? { 'shape-class': `org.xmind.topicShape.${shapes[style.shape]}` } : {}),
   }
 }
-/** Modern XMind ZIP; Trelyx-only metadata is isolated in a namespaced extension. */
+/** Modern XMind ZIP; Brainstorming-only metadata is isolated in a namespaced extension. */
 export const encodeXmind = (workbook: MindMapWorkbook): Uint8Array => {
   validateBoundedWorkbook(workbook)
   const archive: Zippable = {}
@@ -88,7 +88,7 @@ export const encodeXmind = (workbook: MindMapWorkbook): Uint8Array => {
         ...(topic.metadata?.labels ? { labels: topic.metadata.labels } : {}),
         extensions: [
           {
-            provider: 'org.trelyx.interchange',
+            provider: 'org.brainstorming.interchange',
             content: {
               side: topic.side,
               ...(topic.metadata ? { metadata: topic.metadata } : {}),
@@ -127,7 +127,7 @@ export const encodeXmind = (workbook: MindMapWorkbook): Uint8Array => {
       rootTopic: visit(sheet.document.rootId),
       extensions: [
         {
-          provider: 'org.trelyx.interchange',
+          provider: 'org.brainstorming.interchange',
           content: {
             ...documentExtensionData(sheet.document),
             workbook: { id: workbook.id, title: workbook.title },
@@ -138,7 +138,7 @@ export const encodeXmind = (workbook: MindMapWorkbook): Uint8Array => {
   })
   archive['content.json'] = jsonEntry(sheets)
   archive['metadata.json'] = jsonEntry({
-    creator: { name: 'Trelyx', version: '0.1.0' },
+    creator: { name: 'Brainstorming', version: '0.1.0' },
     activeSheetId: workbook.sheets[0]?.id,
   })
   archive['manifest.json'] = jsonEntry({

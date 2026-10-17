@@ -77,7 +77,7 @@ export class MCPService {
       const connection = await this.starting
       if (owner.unloaded || window.isDestroyed() || frame !== window.webContents.mainFrame) {
         await this.stop()
-        throw new Error('Trelyx 窗口已关闭或重新加载')
+        throw new Error('Brainstorming 窗口已关闭或重新加载')
       }
       window.webContents.send('mcp:connection-changed', connection)
       return connection

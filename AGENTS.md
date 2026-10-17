@@ -1,10 +1,10 @@
-# AGENTS.md — Trelyx 开发约定
+# AGENTS.md — Brainstorming 开发约定
 
 ## 产品方向
 
-Trelyx 是基于 React Flow + Electron 的本地优先桌面思维导图工具。
+Brainstorming 是基于 React Flow + Electron 的本地优先桌面思维导图工具。
 本仓库已从 Vetra 虚拟化 Block Editor 转向思维导图；旧代码由 Git 历史保留。
-对外名称使用 Trelyx。项目采用单 package，禁止重新引入 monorepo/workspace。
+对外名称使用 Brainstorming（头脑风暴），仓库标识、文件名和本地目录统一使用 brainstorming，不保留旧品牌名称或路径。项目采用单 package，禁止重新引入 monorepo/workspace。
 
 ## 架构
 
@@ -51,7 +51,7 @@ Trelyx 是基于 React Flow + Electron 的本地优先桌面思维导图工具�
 - 业务视觉样式优先使用 Tailwind CSS utilities，通过组合组件的 `className` 表达布局、间距、字体、颜色和交互状态；不为新功能手写同类 CSS。已有界面被修改时同步迁移涉及的业务样式。CSS 文件仅保留集中主题变量、第三方集成及确实需要数据驱动的画布规则；动态主题颜色、尺寸通过类型明确的样式值或 CSS 变量传入。
 - 升级 shadcn 组件通过官方 CLI/注册表重新获取并审查差异，不能在原始组件上维护业务补丁。下载源码属于第三方组件，标明来源；源码行数拆分要求面向手写业务代码，不为行数拆散上游组件。
 - ESLint 管质量，Prettier 管格式；Husky 提交前检查格式和类型。
-- 原生 `.trelyx` 使用 ZIP 容器协议 v1，不兼容旧 JSON 文件或恢复记录。XMind 导入后保存必须使用新的 `.trelyx` 路径，不能覆盖源文件；XMind 导出走独立副本流程。密码保护使用成熟 AES ZIP 库，恢复与历史不得降级为明文；密钥不写入文档或日志。
+- 原生 `.brainstorming` 使用 ZIP 容器协议 v1，不兼容旧 JSON 文件或恢复记录。XMind 导入后保存必须使用新的 `.brainstorming` 路径，不能覆盖源文件；XMind 导出走独立副本流程。密码保护使用成熟 AES ZIP 库，恢复与历史不得降级为明文；密钥不写入文档或日志。
 - 文件写入须避免截断原文件；处理取消、损坏 ZIP/JSON/XML、保存失败和恢复失败。
 - 测试覆盖主题树合法性、命令边界、撤销重做、序列化和恢复。
 - UI 通过 Playwright 启动真实 Electron 生产构建，验证新增、编辑、折叠、移动、保存和重新打开；性能采样也使用真实 Electron，不使用独立浏览器服务器。

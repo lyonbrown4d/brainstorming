@@ -50,7 +50,7 @@ beforeEach(() => {
   useEditor.setState({ busy: false })
   setSelectedTopics(['a'])
   vi.stubGlobal('window', {
-    trelyx: desktop({
+    brainstorming: desktop({
       writeTopicClipboard: writeClipboard,
       readTopicClipboard: readClipboard,
     }),
@@ -128,11 +128,11 @@ describe('系统主题剪贴板', () => {
     expect(useEditor.getState().history.document.topics.root?.children).toHaveLength(2)
   })
   it('拒绝普通文本与损坏结构，粘贴失败保留当前历史', async () => {
-    expect(() => parseTopicClipboard('普通文本')).toThrow('Trelyx')
+    expect(() => parseTopicClipboard('普通文本')).toThrow('Brainstorming')
     const before = useEditor.getState().history
     contents =
       TOPIC_CLIPBOARD_PREFIX +
-      JSON.stringify({ format: 'trelyx.topics', version: 1, roots: ['missing'], topics: {} })
+      JSON.stringify({ format: 'brainstorming.topics', version: 1, roots: ['missing'], topics: {} })
     await pasteSelectedTopics()
     expect(useEditor.getState().history).toBe(before)
     expect(useEditor.getState().error).toBeTruthy()

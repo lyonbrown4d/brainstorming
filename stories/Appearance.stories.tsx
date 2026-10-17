@@ -9,10 +9,10 @@ import { AppAppearance } from '@renderer/components/appearance/AppAppearance'
 import { mapPalettes } from '@shared/palettes'
 
 const meta = {
-  title: 'Trelyx/外观与配色',
+  title: 'Brainstorming/外观与配色',
   component: PaletteChooser,
   parameters: { layout: 'centered' },
-  args: { settings: { theme: 'trelyx' }, onSelect: fn() },
+  args: { settings: { theme: 'brainstorming' }, onSelect: fn() },
   decorators: [
     (Story) => (
       <div className="w-[408px] rounded-xl bg-background p-4 text-foreground">

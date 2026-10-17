@@ -54,8 +54,9 @@ const assertTopic: (value: unknown, key: string) => asserts value is Topic = (
 export const validateDocument: (value: unknown) => asserts value is MindMapDocument = (
   value: unknown,
 ): asserts value is MindMapDocument => {
-  if (!isRecord(value) || own(value, 'format') !== 'trelyx') throw new Error('文件不是 Trelyx 文档')
-  if (own(value, 'version') !== 1) throw new Error('不支持此 Trelyx 文档版本')
+  if (!isRecord(value) || own(value, 'format') !== 'brainstorming')
+    throw new Error('文件不是 Brainstorming 文档')
+  if (own(value, 'version') !== 1) throw new Error('不支持此 Brainstorming 文档版本')
   if (
     typeof own(value, 'id') !== 'string' ||
     String(value.id).trim().length === 0 ||

@@ -14,9 +14,9 @@ export const persistRecordedAudio = async (
 ): Promise<boolean> => {
   if (!blob.size || blob.size > 8 * 1024 * 1024)
     throw new Error(translate('recordingIsEmptyOrExceeds8Mib'))
-  const [{ createAsset }, { encodeTrelyx }, buffer] = await Promise.all([
+  const [{ createAsset }, { encodeBrainstorming }, buffer] = await Promise.all([
     import('@assets'),
-    import('@formats/trelyx'),
+    import('@formats/brainstorming'),
     blob.arrayBuffer(),
   ])
   const current = useEditor.getState()
@@ -45,7 +45,7 @@ export const persistRecordedAudio = async (
     throw new Error(translate('unrecognizedRecordingFormatYouCanImportA'))
   const command = { type: 'setTopicAudio' as const, topicId: target.topicId, asset }
   const candidate = applyCommand(current.history.document, command)
-  encodeTrelyx({
+  encodeBrainstorming({
     ...current.workbook,
     sheets: current.workbook.sheets.map((sheet) =>
       sheet.id === target.sheetId ? { ...sheet, document: candidate } : sheet,

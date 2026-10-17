@@ -11,10 +11,10 @@ import { dockAction, openDock } from '@tests/e2e/dock'
 
 const dataSchema = z.object({ structuredContent: z.record(z.string(), z.unknown()) })
 test('内嵌 MCP：显式授权、真实客户端读取、草稿确认、一次撤销和停止连接', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'trelyx-mcp-desktop-'))
+  const directory = await mkdtemp(join(tmpdir(), 'brainstorming-mcp-desktop-'))
   await seedChinese(directory)
   let app: ElectronApplication | undefined
-  const client = new Client({ name: 'trelyx-desktop-test', version: '1.0.0' })
+  const client = new Client({ name: 'brainstorming-desktop-test', version: '1.0.0' })
   try {
     app = await electron.launch({ colorScheme: null, args: ['.', `--user-data-dir=${directory}`] })
     const page = await mainWindow(app)
@@ -24,7 +24,7 @@ test('内嵌 MCP：显式授权、真实客户端读取、草稿确认、一次�
       errors.push(error.message)
     })
     const originalTitle = await page.getByTestId('topic-root').textContent()
-    expect(await page.evaluate(() => window.trelyx?.getMCPConnection())).toBeNull()
+    expect(await page.evaluate(() => window.brainstorming?.getMCPConnection())).toBeNull()
     await openDock(page)
     await page.getByRole('button', { name: 'MCP 连接', exact: true }).click()
     const dialog = page.getByRole('dialog', { name: 'MCP 连接' })
@@ -32,7 +32,7 @@ test('内嵌 MCP：显式授权、真实客户端读取、草稿确认、一次�
     await dialog.getByRole('checkbox', { name: '允许提交编辑草稿，由我确认后应用' }).check()
     await dialog.getByRole('button', { name: '启用本机 MCP 服务' }).click()
     await expect(dialog.getByText(/MCP 已启用/)).toBeVisible()
-    const connection = await page.evaluate(() => window.trelyx?.getMCPConnection())
+    const connection = await page.evaluate(() => window.brainstorming?.getMCPConnection())
     if (!connection) throw new Error('MCP did not start')
     await client.connect(
       new StreamableHTTPClientTransport(new URL(connection.endpoint), {
@@ -115,7 +115,7 @@ test('内嵌 MCP：显式授权、真实客户端读取、草稿确认、一次�
     await page.getByRole('button', { name: 'MCP 连接', exact: true }).click()
     await dialog.getByRole('button', { name: '停止 MCP 服务' }).click()
     await expect(dialog.getByRole('button', { name: '启用本机 MCP 服务' })).toBeVisible()
-    expect(await page.evaluate(() => window.trelyx?.getMCPConnection())).toBeNull()
+    expect(await page.evaluate(() => window.brainstorming?.getMCPConnection())).toBeNull()
     await expect(fetch(connection.endpoint)).rejects.toThrow()
     expect(errors).toEqual([])
   } finally {

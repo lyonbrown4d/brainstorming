@@ -1,6 +1,6 @@
 import type { MindMapSheet, MindMapWorkbook, Topic } from '@core'
 import { truncateSheetName } from '@core/workbook'
-import { validateBoundedWorkbook } from '@formats/trelyx/validation'
+import { validateBoundedWorkbook } from '@formats/brainstorming/validation'
 
 export interface OutlineTopic {
   title: string
@@ -42,7 +42,7 @@ export const outlineWorkbook = (sheets: readonly OutlineSheet[]): MindMapWorkboo
       id,
       name: truncateSheetName(sheet.name).trim() || '导入大纲',
       document: {
-        format: 'trelyx',
+        format: 'brainstorming',
         version: 1,
         id,
         title: sheet.root.title,
@@ -52,7 +52,7 @@ export const outlineWorkbook = (sheets: readonly OutlineSheet[]): MindMapWorkboo
     }
   }
   const workbook: MindMapWorkbook = {
-    format: 'trelyx',
+    format: 'brainstorming',
     version: 2,
     id: crypto.randomUUID(),
     title: sheets[0]?.name ?? '导入大纲',

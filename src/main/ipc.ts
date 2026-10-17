@@ -7,8 +7,8 @@ import type { IPCRegistry } from '@main/application/ipcRegistry'
 import type { WindowSession } from '@main/application/session'
 import type { OpenFileRequests } from '@main/openFiles'
 
-const openFilters = [{ name: '思维导图', extensions: ['trelyx', 'xmind'] }]
-const saveFilters = [{ name: 'Trelyx 思维导图', extensions: ['trelyx'] }]
+const openFilters = [{ name: '思维导图', extensions: ['brainstorming', 'xmind'] }]
+const saveFilters = [{ name: 'Brainstorming 思维导图', extensions: ['brainstorming'] }]
 
 export const registerIPC = (
   ipc: IPCRegistry,
@@ -141,7 +141,7 @@ export const registerIPC = (
 }
 
 const suggestedFilename = (suggestion: string): string => {
-  const extension = '.trelyx'
+  const extension = '.brainstorming'
   const sanitized = Array.from(suggestion, (character) =>
     character.charCodeAt(0) < 32 || '<>:"/\\|?*'.includes(character) ? '_' : character,
   )

@@ -3,14 +3,14 @@ import { mkdir, readdir, lstat, unlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { DocumentBackup } from '@shared/fileSecurity'
 import { validateSecurityDocumentId } from '@shared/fileSecurity'
-import { encryptTrelyx } from '@formats/encrypted'
-import { decodeTrelyx } from '@formats/trelyx'
+import { encryptBrainstorming } from '@formats/encrypted'
+import { decodeBrainstorming } from '@formats/brainstorming'
 import { atomicWrite } from '@main/file-security/write'
 import { readDocumentBytes } from '@main/file-security/read'
 
 const folderPattern = /^[a-f0-9]{32}$/u
-const filePattern = /^\d{13}-[a-f0-9-]{36}-[ep]\.trelyx$/u
-const idPattern = /^[a-f0-9]{32}\/\d{13}-[a-f0-9-]{36}-[ep]\.trelyx$/u
+const filePattern = /^\d{13}-[a-f0-9-]{36}-[ep]\.brainstorming$/u
+const idPattern = /^[a-f0-9]{32}\/\d{13}-[a-f0-9-]{36}-[ep]\.brainstorming$/u
 const isMissing = (error: unknown): boolean => {
   return error instanceof Error && 'code' in error && error.code === 'ENOENT'
 }
@@ -40,7 +40,7 @@ export class DocumentBackups {
     const folder = folderFor(documentId)
     const directory = join(this.directory, folder)
     await this.secureDirectory(directory)
-    const name = `${Date.now()}-${randomUUID()}-${encrypted ? 'e' : 'p'}.trelyx`
+    const name = `${Date.now()}-${randomUUID()}-${encrypted ? 'e' : 'p'}.brainstorming`
     await writeFile(join(directory, name), bytes, { flag: 'wx', mode: 0o600 })
     const all: DocumentBackup[] = []
     for (const entry of await readdir(this.directory)) {
@@ -58,10 +58,10 @@ export class DocumentBackups {
       for (const backup of await this.list(documentId)) {
         if (backup.encrypted) continue
         const path = join(this.directory, backup.id)
-        const workbook = decodeTrelyx(await this.read(backup.id))
+        const workbook = decodeBrainstorming(await this.read(backup.id))
         if (workbook.id !== documentId) throw new Error('版本文件与文档不一致')
-        const protectedPath = path.replace(/-p\.trelyx$/u, '-e.trelyx')
-        await atomicWrite(protectedPath, await encryptTrelyx(workbook, password, 'existing'))
+        const protectedPath = path.replace(/-p\.brainstorming$/u, '-e.brainstorming')
+        await atomicWrite(protectedPath, await encryptBrainstorming(workbook, password, 'existing'))
         await unlink(path)
       }
     })
@@ -84,7 +84,7 @@ export class DocumentBackups {
             id: `${folder}/${name}`,
             createdAt: Number(name.slice(0, 13)),
             size: stat.size,
-            encrypted: name.endsWith('-e.trelyx'),
+            encrypted: name.endsWith('-e.brainstorming'),
           })
       }
     } catch (error) {

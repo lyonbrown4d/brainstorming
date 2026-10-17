@@ -17,8 +17,8 @@ export const importTopicAssets = async (
   try {
     const asset = await requireDesktopAPI().selectAsset(kind)
     if (!asset) return
-    const [{ encodeTrelyx }, { imageDimensions }] = await Promise.all([
-      import('@formats/trelyx'),
+    const [{ encodeBrainstorming }, { imageDimensions }] = await Promise.all([
+      import('@formats/brainstorming'),
       import('@assets'),
     ])
     const current = useEditor.getState()
@@ -36,7 +36,7 @@ export const importTopicAssets = async (
           : { type: 'addTopicAttachment' as const, topicId, asset }
     const candidate = applyCommand(current.history.document, command)
     // A successful insert must remain representable by the native writer.
-    encodeTrelyx({
+    encodeBrainstorming({
       ...current.workbook,
       sheets: current.workbook.sheets.map((sheet) =>
         sheet.id === sheetId ? { ...sheet, document: candidate } : sheet,

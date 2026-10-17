@@ -5,7 +5,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createDocument, createWorkbook, type MindMapWorkbook } from '@core'
-import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
+import { decodeBrainstorming, encodeBrainstorming } from '@formats/brainstorming'
 import { mainWindow } from '@tests/desktop/windows'
 import { seedChinese } from '@tests/electron/preferences'
 
@@ -26,7 +26,7 @@ const openPath = async (app: ElectronApplication, page: Page, path: string): Pro
   await page.getByRole('menuitem', { name: '打开导图', exact: true }).click()
 }
 const diskWorkbook = async (path: string): Promise<MindMapWorkbook> =>
-  decodeTrelyx(await readFile(path))
+  decodeBrainstorming(await readFile(path))
 
 const fixtures = async (directory: string) => {
   const first = createWorkbook(createDocument('甲内容', 'document-a'), '导图甲')
@@ -37,20 +37,20 @@ const fixtures = async (directory: string) => {
       { id: 'sheet-a2', name: '甲第二页', document: createDocument('甲第二页', 'document-a2') },
     ],
   }
-  const firstPath = join(directory, 'alpha.trelyx')
-  const secondPath = join(directory, 'beta.trelyx')
+  const firstPath = join(directory, 'alpha.brainstorming')
+  const secondPath = join(directory, 'beta.brainstorming')
   await Promise.all([
-    writeFile(firstPath, encodeTrelyx(workbook)),
+    writeFile(firstPath, encodeBrainstorming(workbook)),
     writeFile(
       secondPath,
-      encodeTrelyx(createWorkbook(createDocument('乙内容', 'document-b'), '导图乙')),
+      encodeBrainstorming(createWorkbook(createDocument('乙内容', 'document-b'), '导图乙')),
     ),
   ])
   return { firstPath, secondPath }
 }
 
 test('两份原生文件保留独立 Sheet、撤销与保存路径，同路径复用，关闭只影响目标导图', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'trelyx-document-tabs-'))
+  const directory = await mkdtemp(join(tmpdir(), 'brainstorming-document-tabs-'))
   await seedChinese(directory)
   const { firstPath, secondPath } = await fixtures(directory)
   const app = await _electron.launch({
@@ -102,7 +102,7 @@ test('两份原生文件保留独立 Sheet、撤销与保存路径，同路径�
       .poll(async () => (await diskWorkbook(secondPath)).sheets[0]?.document.title)
       .toBe('乙修改')
     expect((await diskWorkbook(firstPath)).sheets[0]?.document.title).toBe('甲修改')
-    const copyPath = join(directory, 'alpha-copy.trelyx')
+    const copyPath = join(directory, 'alpha-copy.brainstorming')
     await writeFile(copyPath, await readFile(firstPath))
     await openPath(app, page, copyPath)
     await expect((await documentTabs(page)).getByRole('tab')).toHaveCount(2)
@@ -136,7 +136,7 @@ test('两份原生文件保留独立 Sheet、撤销与保存路径，同路径�
 })
 
 test('重启后显式恢复上次打开的两份导图，各自内容与 Sheet 保留且不覆盖原文件', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'trelyx-document-recovery-'))
+  const directory = await mkdtemp(join(tmpdir(), 'brainstorming-document-recovery-'))
   await seedChinese(directory)
   const { firstPath, secondPath } = await fixtures(directory)
   let app = await _electron.launch({

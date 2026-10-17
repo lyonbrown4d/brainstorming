@@ -18,6 +18,6 @@ export class WindowSession {
     this.dirty = dirty
     this.preserveRecovery = preserveRecovery
     this.window?.setDocumentEdited(dirty)
-    this.window?.setTitle(`${dirty ? '● ' : ''}Trelyx`)
+    this.window?.setTitle(`${dirty ? '● ' : ''}Brainstorming`)
   }
 }

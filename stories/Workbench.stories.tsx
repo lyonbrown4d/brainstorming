@@ -8,7 +8,7 @@ import { useSpatialView } from '@renderer/state/spatial'
 import { openTopicProperties } from '@stories/properties'
 
 const meta = {
-  title: 'Trelyx/结构工作台',
+  title: 'Brainstorming/结构工作台',
   component: App,
   parameters: { layout: 'fullscreen' },
   beforeEach: () => {

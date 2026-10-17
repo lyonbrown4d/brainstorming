@@ -1,7 +1,7 @@
 import { useDocumentTabs, switchDocumentTab } from '@renderer/state/documentTabs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDocument } from '@core'
-import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
+import { decodeBrainstorming, encodeBrainstorming } from '@formats/brainstorming'
 import {
   beginCreation,
   cancelCreation,
@@ -21,7 +21,7 @@ beforeEach(() => {
   useDocumentTabs.setState({ tabs: [], activeId: null, recovery: [] })
   discardPrompt.mockReset().mockReturnValue(true)
   vi.stubGlobal('window', { confirm: discardPrompt })
-  useEditor.getState().replace(createDocument('已有导图'), '/existing.trelyx')
+  useEditor.getState().replace(createDocument('已有导图'), '/existing.brainstorming')
   useEditor.setState({ busy: false })
   enterWorkspaceEditor()
   resetFileSecurityState()
@@ -60,7 +60,7 @@ describe('full-page document and sheet creation', () => {
     cancelCreation()
     expect(useWorkspace.getState().screen).toBe('editor')
     expect(useEditor.getState().workbook).toBe(current.workbook)
-    expect(useEditor.getState().path).toBe('/existing.trelyx')
+    expect(useEditor.getState().path).toBe('/existing.brainstorming')
     expect(isDirty()).toBe(true)
   })
 
@@ -90,7 +90,7 @@ describe('full-page document and sheet creation', () => {
     if (!original) throw new Error('Original document tab was lost')
     switchDocumentTab(original.id)
     expect(useEditor.getState().workbook).toBe(before)
-    expect(useEditor.getState().path).toBe('/existing.trelyx')
+    expect(useEditor.getState().path).toBe('/existing.brainstorming')
     expect(isDirty()).toBe(true)
   })
 
@@ -140,12 +140,12 @@ describe('full-page document and sheet creation', () => {
     ])
     expect(state.history.past).toHaveLength(0)
     expect(state.structurePast).toHaveLength(1)
-    expect(state.path).toBe('/existing.trelyx')
+    expect(state.path).toBe('/existing.brainstorming')
     expect(useFileSecurityState.getState()).toMatchObject({
       documentId: original.id,
       encrypted: true,
     })
-    expect(decodeTrelyx(encodeTrelyx(state.workbook))).toEqual(state.workbook)
+    expect(decodeBrainstorming(encodeBrainstorming(state.workbook))).toEqual(state.workbook)
     state.undo()
     expect(useEditor.getState().workbook).toEqual(original)
     state.redo()

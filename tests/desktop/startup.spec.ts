@@ -10,7 +10,7 @@ import { storageOperation } from '@tests/electron/storage'
 for (const language of ['zh-CN', 'en'] as const) {
   test(`独立原生启动窗口使用 ${language}，失败后重试，首帧就绪才显示主窗并销毁启动窗`, async () => {
     const testInfo = test.info()
-    const directory = await mkdtemp(join(tmpdir(), 'trelyx-splash-'))
+    const directory = await mkdtemp(join(tmpdir(), 'brainstorming-splash-'))
     await seedChinese(directory)
     await storageOperation('language:set', directory, language)
     const server = await startupServer()
@@ -24,7 +24,7 @@ for (const language of ['zh-CN', 'en'] as const) {
       const english = language === 'en'
       await expect(
         splash.getByRole('region', {
-          name: english ? 'Starting Trelyx' : '启动 Trelyx',
+          name: english ? 'Starting Brainstorming' : '启动 Brainstorming',
           exact: true,
         }),
       ).toBeVisible()
@@ -34,7 +34,7 @@ for (const language of ['zh-CN', 'en'] as const) {
       )
       await expect(
         splash.getByRole('button', {
-          name: english ? 'Quit Trelyx' : '退出 Trelyx',
+          name: english ? 'Quit Brainstorming' : '退出 Brainstorming',
           exact: true,
         }),
       ).toBeEnabled()
@@ -52,12 +52,12 @@ for (const language of ['zh-CN', 'en'] as const) {
           { splash: false, visible: false },
         ]),
       )
-      expect(await splash.evaluate(() => typeof window.trelyx)).toBe('undefined')
+      expect(await splash.evaluate(() => typeof window.brainstorming)).toBe('undefined')
       // The splash never receives the document renderer's ready capability.
-      expect(await splash.evaluate(() => typeof window.trelyxStartup)).toBe('undefined')
-      await splash.evaluate(() => window.trelyxSplash?.mounted())
+      expect(await splash.evaluate(() => typeof window.brainstormingStartup)).toBe('undefined')
+      await splash.evaluate(() => window.brainstormingSplash?.mounted())
       expect(await windows()).toContainEqual({ splash: false, visible: false })
-      await splash.screenshot({ path: testInfo.outputPath('trelyx-native-splash.png') })
+      await splash.screenshot({ path: testInfo.outputPath('brainstorming-native-splash.png') })
       server.release()
       await expect(splash.getByRole('alert')).toContainText(
         english ? 'The interface could not load' : '界面加载失败',
@@ -81,7 +81,7 @@ for (const language of ['zh-CN', 'en'] as const) {
 }
 
 test('启动期间退出会关闭隐藏主窗口并结束进程', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'trelyx-splash-quit-'))
+  const directory = await mkdtemp(join(tmpdir(), 'brainstorming-splash-quit-'))
   await seedChinese(directory)
   const server = await startupServer()
   const app = await electron.launch({
@@ -94,7 +94,7 @@ test('启动期间退出会关闭隐藏主窗口并结束进程', async () => {
     const splash = await app.firstWindow()
     await server.editorRequested
     const closed = app.waitForEvent('close')
-    await splash.getByRole('button', { name: '退出 Trelyx', exact: true }).click()
+    await splash.getByRole('button', { name: '退出 Brainstorming', exact: true }).click()
     await closed
     await expect.poll(() => child.exitCode).toBe(0)
   } finally {

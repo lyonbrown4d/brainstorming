@@ -13,7 +13,7 @@ for (const failFirst of [false, true]) {
       : '原生慢启动展示进度与减少动态效果，准备完成后进入首页',
     async () => {
       const testInfo = test.info()
-      const directory = await mkdtemp(join(tmpdir(), 'trelyx-startup-ui-'))
+      const directory = await mkdtemp(join(tmpdir(), 'brainstorming-startup-ui-'))
       await seedChinese(directory)
       const server = await startupServer({ failFirst })
       const app = await _electron.launch({
@@ -25,9 +25,11 @@ for (const failFirst of [false, true]) {
         const splash = await app.firstWindow()
         await splash.emulateMedia({ reducedMotion: 'reduce' })
         await server.editorRequested
-        const region = splash.getByRole('region', { name: '启动 Trelyx', exact: true })
+        const region = splash.getByRole('region', { name: '启动 Brainstorming', exact: true })
         await expect(region).toBeVisible()
-        await expect(region.getByRole('heading', { name: 'Trelyx', exact: true })).toBeVisible()
+        await expect(
+          region.getByRole('heading', { name: 'Brainstorming', exact: true }),
+        ).toBeVisible()
         await expect(splash.locator('#startup-indicator')).toHaveCSS('animation-name', 'none')
         await expect
           .poll(() =>

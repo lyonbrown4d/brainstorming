@@ -7,7 +7,7 @@ import { openCanvasProperties, openTopicProperties } from '@stories/properties'
 import { defaultTopicFilters, useTopicFilters } from '@renderer/components/documents/filterTopics'
 
 const meta = {
-  title: 'Trelyx/布局模板与演示',
+  title: 'Brainstorming/布局模板与演示',
   component: App,
   parameters: { layout: 'fullscreen' },
   beforeEach: () => {

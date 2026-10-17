@@ -15,7 +15,7 @@ const openDatabase = (directory: string) => {
   return database
 }
 const temporaryDirectory = async () => {
-  const directory = await mkdtemp(path.join(tmpdir(), 'trelyx-language-'))
+  const directory = await mkdtemp(path.join(tmpdir(), 'brainstorming-language-'))
   directories.push(directory)
   return directory
 }

@@ -17,7 +17,7 @@ export interface SplashAPI {
 
 declare global {
   interface Window {
-    readonly trelyxStartup?: StartupAPI
-    readonly trelyxSplash?: SplashAPI
+    readonly brainstormingStartup?: StartupAPI
+    readonly brainstormingSplash?: SplashAPI
   }
 }

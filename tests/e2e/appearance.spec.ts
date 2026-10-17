@@ -5,7 +5,7 @@ import { resizeWindow } from '@tests/electron/session'
 import { reloadWindow } from '@tests/electron/session'
 import { expect, test, type Page } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
-import { decodeTrelyx } from '@formats/trelyx'
+import { decodeBrainstorming } from '@formats/brainstorming'
 import { openExample } from '@tests/e2e/workspace'
 import { dockAction } from '@tests/e2e/dock'
 
@@ -24,7 +24,7 @@ const saveWorkbook = async (page: Page) => {
   await page.keyboard.press('ControlOrMeta+s')
   const path = await ready.path()
   if (!path) throw new Error('未生成原生文件')
-  return { workbook: decodeTrelyx(await readFile(path)), path }
+  return { workbook: decodeBrainstorming(await readFile(path)), path }
 }
 
 test('外观默认跟随系统、自动更新、显式选择不被覆盖，重载持久保留选择', async ({ page }) => {
@@ -45,7 +45,7 @@ test('外观默认跟随系统、自动更新、显式选择不被覆盖，重�
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
   await setSystemTheme(page, 'light')
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
-  expect(await page.evaluate(() => localStorage.getItem('trelyx-appearance'))).toBe('system')
+  expect(await page.evaluate(() => localStorage.getItem('brainstorming-appearance'))).toBe('system')
   await expect(page.getByTestId('topic-root')).toHaveCount(0)
   expect(errors).toEqual([])
 })
@@ -73,7 +73,7 @@ test('二维三维导图配色与应用外观独立，切换只撤销导图且�
   await palette(page, '海洋')
   const saved = await saveWorkbook(page)
   expect(saved.workbook.sheets[0]?.document.settings?.theme).toBe('ocean')
-  expect(JSON.stringify(saved.workbook)).not.toContain('trelyx-appearance')
+  expect(JSON.stringify(saved.workbook)).not.toContain('brainstorming-appearance')
   await dockAction(page, '撤销')
   const nightFile = await saveWorkbook(page)
   expect(nightFile.workbook.sheets[0]?.document.settings?.theme).toBe('night')
@@ -117,7 +117,7 @@ test('浅深色画布属性与窄窗可滚动访问，设置不遮挡 Sheet', as
   await resizeWindow(page, { width: 1440, height: 1024 })
   await openExample(page)
   for (const [mode, scheme] of [
-    ['浅色', 'Trelyx'],
+    ['浅色', 'Brainstorming'],
     ['深色', '夜航'],
   ] as const) {
     await appearance(page, mode)

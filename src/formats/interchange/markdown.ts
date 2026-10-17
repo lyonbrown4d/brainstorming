@@ -1,6 +1,6 @@
 import { fromMarkdown } from 'mdast-util-from-markdown'
 import type { MindMapWorkbook } from '@core'
-import { validateBoundedWorkbook } from '@formats/trelyx/validation'
+import { validateBoundedWorkbook } from '@formats/brainstorming/validation'
 import {
   assertTextSize,
   outlineWorkbook,

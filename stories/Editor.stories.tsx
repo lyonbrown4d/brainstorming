@@ -5,7 +5,7 @@ import { App } from '@renderer/App'
 import { useEditor } from '@renderer/state/editor'
 import { openTopicProperties } from '@stories/properties'
 const meta = {
-  title: 'Trelyx/思维导图',
+  title: 'Brainstorming/思维导图',
   component: App,
   parameters: { layout: 'fullscreen' },
   beforeEach: () => {

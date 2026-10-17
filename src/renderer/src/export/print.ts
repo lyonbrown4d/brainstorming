@@ -12,7 +12,7 @@ export const printSheet = async (
   const source = renderSheetSvg(document, includeCollapsed)
   const url = URL.createObjectURL(new Blob([source.svg], { type: 'image/svg+xml;charset=utf-8' }))
   const frame = window.document.createElement('iframe')
-  frame.title = translate('trelyxFullMapPrint')
+  frame.title = translate('brainstormingFullMapPrint')
   frame.setAttribute('aria-hidden', 'true')
   frame.setAttribute('sandbox', 'allow-same-origin allow-modals')
   frame.tabIndex = -1

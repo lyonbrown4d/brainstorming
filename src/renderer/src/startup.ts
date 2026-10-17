@@ -10,9 +10,9 @@ const slowStart = window.setTimeout(() => {
 
 void import('@renderer/main')
   .catch((error: unknown) => {
-    console.error('Trelyx 界面初始化失败。', error)
+    console.error('Brainstorming 界面初始化失败。', error)
     showStartupIssue(document, '界面加载失败，请重新加载后重试。', true)
-    window.trelyxStartup?.failed()
+    window.brainstormingStartup?.failed()
   })
   .finally(() => {
     window.clearTimeout(slowStart)

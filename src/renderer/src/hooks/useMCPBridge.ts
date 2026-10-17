@@ -20,7 +20,9 @@ export const useMCPBridge = (): void => {
           id: request.id,
           ok: false,
           error:
-            cause instanceof Error ? cause.message.slice(0, 300) : translate('trelyxRequestFailed'),
+            cause instanceof Error
+              ? cause.message.slice(0, 300)
+              : translate('brainstormingRequestFailed'),
         })
       }
     })

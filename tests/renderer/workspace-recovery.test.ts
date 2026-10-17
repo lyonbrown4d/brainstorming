@@ -19,7 +19,7 @@ const record = (id: string): OpenedDocument => ({
 })
 
 beforeEach(() => {
-  vi.stubGlobal('window', { trelyx: desktop(), confirm: vi.fn(() => true) })
+  vi.stubGlobal('window', { brainstorming: desktop(), confirm: vi.fn(() => true) })
   useEditor.setState(useEditor.getInitialState(), true)
   useWorkspace.setState(useWorkspace.getInitialState(), true)
   useDocumentTabs.setState({ tabs: [], activeId: null, recovery: [] })
@@ -33,11 +33,11 @@ afterEach(() => {
 
 describe('workspace recovery coordination', () => {
   it('serializes every workbook with the active draft, excluding paths and sessions without mutating history', () => {
-    openDocumentTab(workbook('alpha'), '/private/alpha.trelyx')
+    openDocumentTab(workbook('alpha'), '/private/alpha.brainstorming')
     useEditor
       .getState()
       .command({ type: 'setTopicNotes', topicId: 'root', notes: 'Saved Alpha notes' })
-    openDocumentTab(workbook('beta'), '/private/beta.trelyx')
+    openDocumentTab(workbook('beta'), '/private/beta.brainstorming')
     useEditor.setState({ views: { beta: { x: 19, y: 23, zoom: 2 } } })
     useEditor.getState().startEdit('root', undefined, 'notes')
     useEditor.getState().setDraft('Uncommitted Beta notes')
@@ -77,7 +77,7 @@ describe('workspace recovery coordination', () => {
     const unlockDocument = vi.fn(() =>
       Promise.resolve({ ...record('beta'), sessionToken: 'beta-session' }),
     )
-    window.trelyx = desktop({
+    window.brainstorming = desktop({
       readWorkspaceRecovery: reread,
       cancelUnlock,
       unlockDocument,

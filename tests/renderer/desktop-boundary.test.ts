@@ -22,7 +22,7 @@ beforeEach(() => {
   createElement.mockReset()
   vi.stubGlobal('window', { confirm: () => true })
   vi.stubGlobal('document', { createElement })
-  useEditor.getState().replace(createDocument('Current', 'current'), '/current.trelyx')
+  useEditor.getState().replace(createDocument('Current', 'current'), '/current.brainstorming')
   useEditor.setState({ busy: false, recovery: null })
   resetFileSecurityState()
 })
@@ -40,7 +40,7 @@ describe('desktop capability boundary', () => {
     expect(useEditor.getState().error).toContain('Electron')
     await saveDocument()
     expect(useEditor.getState().baseline).toBe(before.baseline)
-    expect(useEditor.getState().path).toBe('/current.trelyx')
+    expect(useEditor.getState().path).toBe('/current.brainstorming')
     expect(useEditor.getState().busy).toBe(false)
     expect(useEditor.getState().error).toContain('Electron')
     expect(createElement).not.toHaveBeenCalled()
@@ -72,7 +72,7 @@ describe('desktop capability boundary', () => {
   it('uses the native picker and exporter while keeping cancellation and failure out of history', async () => {
     const selectAsset = vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(asset)
     const exportAsset = vi.fn(() => Promise.resolve(true))
-    vi.stubGlobal('window', { trelyx: desktop({ selectAsset, exportAsset }) })
+    vi.stubGlobal('window', { brainstorming: desktop({ selectAsset, exportAsset }) })
     const history = useEditor.getState().history
     await importTopicAssets('root', 'attachment')
     expect(useEditor.getState().history).toBe(history)

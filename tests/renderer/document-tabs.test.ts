@@ -35,7 +35,7 @@ const activeId = (): string => {
 
 beforeEach(() => {
   confirmDiscard.mockReset().mockReturnValue(true)
-  vi.stubGlobal('window', { trelyx: desktop(), confirm: confirmDiscard })
+  vi.stubGlobal('window', { brainstorming: desktop(), confirm: confirmDiscard })
   useEditor.setState(useEditor.getInitialState(), true)
   useWorkspace.setState(useWorkspace.getInitialState(), true)
   useDocumentTabs.setState({ tabs: [], activeId: null, recovery: [] })
@@ -48,7 +48,7 @@ afterEach(() => {
 
 describe('document tab sessions', () => {
   it('commits a draft to its original sheet and restores independent paths, histories and views', () => {
-    openDocumentTab(alpha(), '/alpha.trelyx')
+    openDocumentTab(alpha(), '/alpha.brainstorming')
     const firstId = activeId()
     rename('Alpha first edited')
     useEditor.getState().switchSheet('alpha-second')
@@ -56,7 +56,7 @@ describe('document tab sessions', () => {
     useEditor.getState().setDraft('Alpha second draft')
     useEditor.setState({ views: { 'alpha-second': { x: 31, y: 42, zoom: 1.5 } } })
     useSpatialView.getState().setMode('alpha-second', '3d')
-    expect(openDocumentTab(beta(), '/beta.trelyx')).toBe(true)
+    expect(openDocumentTab(beta(), '/beta.brainstorming')).toBe(true)
     const secondId = activeId()
     expect(useEditor.getState().draft).toBe('')
     expect(useEditor.getState().views).toEqual({})
@@ -65,7 +65,7 @@ describe('document tab sessions', () => {
     useEditor.getState().undo()
     expect(useEditor.getState().history.document.title).toBe('Beta')
     expect(switchDocumentTab(firstId)).toBe(true)
-    expect(useEditor.getState().path).toBe('/alpha.trelyx')
+    expect(useEditor.getState().path).toBe('/alpha.brainstorming')
     expect(useEditor.getState().activeSheetId).toBe('alpha-second')
     expect(useEditor.getState().history.document.title).toBe('Alpha second draft')
     expect(useEditor.getState().history.past).toHaveLength(1)
@@ -79,7 +79,7 @@ describe('document tab sessions', () => {
     useEditor.getState().undo()
     expect(useEditor.getState().history.document.title).toBe('Alpha first')
     switchDocumentTab(secondId)
-    expect(useEditor.getState().path).toBe('/beta.trelyx')
+    expect(useEditor.getState().path).toBe('/beta.brainstorming')
     expect(useEditor.getState().activeSheetId).toBe('beta')
     useEditor.getState().redo()
     expect(useEditor.getState().history.document.title).toBe('Beta edited')
@@ -87,10 +87,10 @@ describe('document tab sessions', () => {
   })
 
   it('keeps a background dirty tab on cancel, closes only that tab on confirmation, and returns home after the last close', () => {
-    openDocumentTab(alpha(), '/alpha.trelyx')
+    openDocumentTab(alpha(), '/alpha.brainstorming')
     const firstId = activeId()
     rename('Unsaved Alpha')
-    openDocumentTab(beta(), '/beta.trelyx')
+    openDocumentTab(beta(), '/beta.brainstorming')
     const secondId = activeId()
     const current = useEditor.getState().workbook
     expect(anyDocumentDirty()).toBe(true)
@@ -102,7 +102,7 @@ describe('document tab sessions', () => {
     expect(useDocumentTabs.getState().tabs[0]?.editor.history.document.title).toBe('Unsaved Alpha')
     expect(closeDocumentTab(firstId)).toBe(true)
     expect(useDocumentTabs.getState().tabs.map((tab) => tab.id)).toEqual([secondId])
-    expect(useEditor.getState().path).toBe('/beta.trelyx')
+    expect(useEditor.getState().path).toBe('/beta.brainstorming')
     expect(anyDocumentDirty()).toBe(false)
     expect(closeDocumentTab(secondId)).toBe(true)
     expect(useDocumentTabs.getState().tabs).toEqual([])
@@ -113,18 +113,21 @@ describe('document tab sessions', () => {
 
   it('reuses the existing path or workbook identity without replacing unsaved content or its undo history', () => {
     const source = alpha()
-    openDocumentTab(source, '/alpha.trelyx')
+    openDocumentTab(source, '/alpha.brainstorming')
     const firstId = activeId()
     rename('Keep this draft')
     const history = useEditor.getState().history
-    openDocumentTab(beta(), '/beta.trelyx')
-    expect(openDocumentTab(source, '/alpha-copy.trelyx')).toBe(true)
+    openDocumentTab(beta(), '/beta.brainstorming')
+    expect(openDocumentTab(source, '/alpha-copy.brainstorming')).toBe(true)
     expect(activeId()).toBe(firstId)
-    expect(useEditor.getState().path).toBe('/alpha.trelyx')
+    expect(useEditor.getState().path).toBe('/alpha.brainstorming')
     expect(useEditor.getState().history).toBe(history)
     expect(useEditor.getState().history.document.title).toBe('Keep this draft')
     expect(
-      openDocumentTab(createWorkbook(createDocument('Other identity', 'other')), '/alpha.trelyx'),
+      openDocumentTab(
+        createWorkbook(createDocument('Other identity', 'other')),
+        '/alpha.brainstorming',
+      ),
     ).toBe(true)
     expect(activeId()).toBe(firstId)
     expect(useDocumentTabs.getState().tabs).toHaveLength(2)

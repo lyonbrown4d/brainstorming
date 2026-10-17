@@ -45,7 +45,7 @@ afterEach(async () => {
   )
 })
 const setup = () => {
-  const directory = mkdtempSync(join(tmpdir(), 'trelyx-ipc-'))
+  const directory = mkdtempSync(join(tmpdir(), 'brainstorming-ipc-'))
   directories.push(directory)
   const frame = {}
   const webContents = { mainFrame: frame }
@@ -125,7 +125,7 @@ describe('桌面 IPC 信任与取消', () => {
 describe('桌面保存与恢复边界', () => {
   it('已有保存路径不依赖未使用的超长文件名建议', async () => {
     const { event, files } = setup()
-    const path = '/selected/existing.trelyx'
+    const path = '/selected/existing.brainstorming'
     const save = vi.spyOn(files, 'save').mockResolvedValue(path)
     const contents = serializeWorkbook(createWorkbook(createDocument('标题'.repeat(300))))
     expect(
@@ -151,7 +151,7 @@ describe('桌面保存与恢复边界', () => {
     const call = mocks.showSaveDialog.mock.lastCall as unknown[] | undefined
     const options = call?.[1] as { defaultPath: string }
     expect(Buffer.byteLength(options.defaultPath)).toBeLessThanOrEqual(200)
-    expect(options.defaultPath.endsWith('.trelyx')).toBe(true)
+    expect(options.defaultPath.endsWith('.brainstorming')).toBe(true)
     expect(options.defaultPath).not.toContain('/')
     expect(options.defaultPath).not.toContain('�')
   })

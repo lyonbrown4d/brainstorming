@@ -11,7 +11,7 @@ export const AppearanceProvider = ({ children }: { children: ReactNode }) => (
     storageKey={APPEARANCE_STORAGE_KEY}
     enableSystem
     enableColorScheme
-    scriptProps={{ type: 'application/x-trelyx-theme' }}
+    scriptProps={{ type: 'application/x-brainstorming-theme' }}
     disableTransitionOnChange
   >
     <NativeAppearanceSync />

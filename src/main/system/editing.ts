@@ -10,7 +10,7 @@ import { exportFormats, type ExportRequest } from '@shared/exports'
 import { atomicWrite } from '@main/file-security/write'
 import { assertText, assertTopics } from '@main/system/clipboardValidation'
 
-const CLIPBOARD_TYPE = 'web application/vnd.trelyx.topics+json'
+const CLIPBOARD_TYPE = 'web application/vnd.brainstorming.topics+json'
 const CLIPBOARD_LIMIT = 56 * 1024 * 1024
 
 export interface EditingPorts {

@@ -1,6 +1,6 @@
 import { validateTopicClipboard } from '@core'
 
-const PREFIX = 'Trelyx topics v1\n'
+const PREFIX = 'Brainstorming topics v1\n'
 const CLIPBOARD_LIMIT = 56 * 1024 * 1024
 
 export const assertText: (value: unknown, limit: number) => asserts value is string = (

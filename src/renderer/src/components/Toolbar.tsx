@@ -30,7 +30,7 @@ export const Toolbar = () => {
           onClick={showWorkspaceHome}
         >
           <Network data-icon="inline-start" className="text-primary" strokeWidth={1.7} />
-          <span className="hidden min-[1100px]:inline">Trelyx</span>
+          <span className="hidden min-[1100px]:inline">Brainstorming</span>
         </Button>
         <Separator
           orientation="vertical"

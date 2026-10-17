@@ -1,6 +1,6 @@
 # XMind import fixtures
 
-The JSON/XML sources are small, original fixtures written for Trelyx. Tests package their source
+The JSON/XML sources are small, original fixtures written for Brainstorming. Tests package their source
 JSON/XML with `fflate`, producing ordinary XMind ZIP containers. The separate official binary sample is
 licensed and attributed below.
 

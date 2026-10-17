@@ -2,9 +2,9 @@ import { type MindMapSheet, type MindMapWorkbook, type Side, type Topic } from '
 import { truncateSheetName } from '@core/workbook'
 import { readArchive } from '@formats/archive'
 import type { ImportedWorkbook } from '@formats/types'
-import { encodeTrelyx } from '@formats/trelyx'
+import { encodeBrainstorming } from '@formats/brainstorming'
 import { EmbeddedContent } from '@formats/xmind/content'
-import { validateBoundedWorkbook } from '@formats/trelyx/validation'
+import { validateBoundedWorkbook } from '@formats/brainstorming/validation'
 import {
   idAllocator,
   list,
@@ -21,7 +21,7 @@ import { standardMetadata } from '@formats/xmind/metadata'
 import {
   restoreDocumentExtension,
   restoreTopicExtension,
-  trelyxExtension,
+  brainstormingExtension,
 } from '@formats/xmind/extensions'
 
 const topicFields = new Set([
@@ -75,7 +75,7 @@ export const importXmind = (bytes: Uint8Array): ImportedWorkbook => {
   const imported = sheets.map((sheet, index) => convert.sheet(record(sheet, '画布'), index))
   const identity = convert.identity
   const workbook: MindMapWorkbook = {
-    format: 'trelyx',
+    format: 'brainstorming',
     version: 2,
     id: identity?.id ?? 'xmind-import',
     title: identity?.title ?? imported[0]?.name ?? 'XMind',
@@ -90,7 +90,7 @@ export const importXmind = (bytes: Uint8Array): ImportedWorkbook => {
       warnings.add('未导入 XMind 未引用或不支持的内嵌资源')
   }
   validateBoundedWorkbook(workbook)
-  encodeTrelyx(workbook)
+  encodeBrainstorming(workbook)
   return { workbook, warnings: warnings.values() }
 }
 
@@ -115,17 +115,18 @@ class WorkbookImporter {
     const name = truncateSheetName(originalName).trim()
       ? truncateSheetName(originalName)
       : `画布 ${index + 1}`
-    if (name !== originalName) this.warnings.add('画布名称已调整为 Trelyx 支持的长度或默认名称')
-    const extension = trelyxExtension(source, this.warnings, 'sheet')
+    if (name !== originalName)
+      this.warnings.add('画布名称已调整为 Brainstorming 支持的长度或默认名称')
+    const extension = brainstormingExtension(source, this.warnings, 'sheet')
     if (extension?.workbook !== undefined) {
-      const identity = record(extension.workbook, 'Trelyx workbook')
+      const identity = record(extension.workbook, 'Brainstorming workbook')
       if (typeof identity.id !== 'string' || typeof identity.title !== 'string')
-        throw new Error('XMind Trelyx 工作簿信息无效')
+        throw new Error('XMind Brainstorming 工作簿信息无效')
       if (
         this.identity &&
         (this.identity.id !== identity.id || this.identity.title !== identity.title)
       )
-        throw new Error('XMind Trelyx 工作簿信息不一致')
+        throw new Error('XMind Brainstorming 工作簿信息不一致')
       this.identity = { id: identity.id, title: identity.title }
     }
     const id = this.sheetId(source.id)
@@ -143,7 +144,7 @@ class WorkbookImporter {
       document: restoreDocumentExtension(
         {
           ...(Object.keys(content.assets).length ? { assets: content.assets } : {}),
-          format: 'trelyx',
+          format: 'brainstorming',
           version: 1,
           id,
           title: root.title,
@@ -169,7 +170,7 @@ class WorkbookImporter {
     const title = text(source.title, '主题标题')
     const style = importStyle(source.style, this.warnings)
     const metadata = standardMetadata(source, this.warnings)
-    const extension = trelyxExtension(source, this.warnings)
+    const extension = brainstormingExtension(source, this.warnings)
     this.warnings.omitted(source, topicFields)
     const structure = depth > 0 ? importStructure(source.structureClass, this.warnings) : undefined
     if (source.branch !== undefined && source.branch !== 'folded' && source.branch !== 'expanded')

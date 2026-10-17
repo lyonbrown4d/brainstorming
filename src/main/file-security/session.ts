@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { serializeWorkbook } from '@core'
-import { decryptTrelyx } from '@formats/encrypted'
+import { decryptBrainstorming } from '@formats/encrypted'
 import type { OpenedDocument } from '@shared/contracts'
 import { validateFilePassword, validateSecurityDocumentId } from '@shared/fileSecurity'
 
@@ -74,7 +74,7 @@ export class FileSecuritySession {
   unlock = async (token: unknown, password: unknown): Promise<OpenedDocument> => {
     const pending = this.requirePending(token)
     validateFilePassword(password, false)
-    const workbook = await decryptTrelyx(pending.bytes, password)
+    const workbook = await decryptBrainstorming(pending.bytes, password)
     this.requirePending(token)
     if (pending.documentId !== undefined && workbook.id !== pending.documentId)
       throw new Error('恢复工作簿与索引不一致')

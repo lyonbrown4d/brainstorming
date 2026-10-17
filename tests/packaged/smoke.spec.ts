@@ -3,13 +3,13 @@ import { mkdtemp, readFile, realpath, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import type { ChildProcess } from 'node:child_process'
-import { decodeTrelyx } from '@formats/trelyx'
+import { decodeBrainstorming } from '@formats/brainstorming'
 import { mainWindow } from '@tests/desktop/windows'
 import { completeDocumentCreation } from '@tests/e2e/workspace'
 import { seedChinese } from '@tests/electron/preferences'
 
 test('打包应用使用隔离 SQLite 启动、新建并原生保存 ZIP，正常退出且无模块加载错误', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'trelyx-packaged-'))
+  const directory = await mkdtemp(join(tmpdir(), 'brainstorming-packaged-'))
   let app: ElectronApplication | undefined
   let child: ChildProcess | undefined
   try {
@@ -21,7 +21,7 @@ test('打包应用使用隔离 SQLite 启动、新建并原生保存 ZIP，正�
     )
     delete environment.ELECTRON_RENDERER_URL
     app = await _electron.launch({
-      executablePath: resolve('release/mac-arm64/Trelyx.app/Contents/MacOS/Trelyx'),
+      executablePath: resolve('release/mac-arm64/Brainstorming.app/Contents/MacOS/Brainstorming'),
       args: [`--user-data-dir=${directory}`],
       colorScheme: null,
       env: environment,
@@ -35,9 +35,11 @@ test('打包应用使用隔离 SQLite 启动、新建并原生保存 ZIP，正�
     })
     const launched = await app.evaluate(({ app }) => ({
       packaged: app.isPackaged,
+      name: app.getName(),
       directory: app.getPath('userData'),
     }))
     expect(launched.packaged).toBe(true)
+    expect(launched.name).toBe('Brainstorming')
     expect(await realpath(launched.directory)).toBe(await realpath(directory))
     const page = await mainWindow(app)
     const errors: string[] = []
@@ -46,8 +48,11 @@ test('打包应用使用隔离 SQLite 启动、新建并原生保存 ZIP，正�
     })
     expect(page.url()).toContain('app.asar/out/renderer/index.html')
     await expect(page.getByRole('button', { name: '探索示例', exact: true })).toBeVisible()
+    await expect(page.getByText('Brainstorming', { exact: true })).toBeVisible()
+    await page.screenshot({ path: test.info().outputPath('brand-home.png') })
     await completeDocumentCreation(page, '打包应用原生保存')
-    const filePath = join(directory, 'packaged-save.trelyx')
+    await page.screenshot({ path: test.info().outputPath('brand-editor.png') })
+    const filePath = join(directory, 'packaged-save.brainstorming')
     await app.evaluate(({ dialog }, path) => {
       dialog.showSaveDialog = () => Promise.resolve({ canceled: false, filePath: path })
     }, filePath)
@@ -55,12 +60,12 @@ test('打包应用使用隔离 SQLite 启动、新建并原生保存 ZIP，正�
     await expect
       .poll(() =>
         readFile(filePath)
-          .then((bytes) => decodeTrelyx(bytes).sheets[0]?.document.title)
+          .then((bytes) => decodeBrainstorming(bytes).sheets[0]?.document.title)
           .catch(() => ''),
       )
       .toBe('打包应用原生保存')
     await expect(page.locator('.save-status')).toContainText('已保存')
-    expect((await stat(join(directory, 'trelyx.sqlite'))).size).toBeGreaterThan(0)
+    expect((await stat(join(directory, 'brainstorming.sqlite'))).size).toBeGreaterThan(0)
     expect(errors).toEqual([])
     await app.close()
     await expect.poll(() => launchedProcess.exitCode).toBe(0)

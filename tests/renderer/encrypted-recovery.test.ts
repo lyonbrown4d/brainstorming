@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDocument, createWorkbook, serializeWorkbook } from '@core'
-import { isEncryptedTrelyx } from '@formats/encrypted'
+import { isEncryptedBrainstorming } from '@formats/encrypted'
 import type { DocumentFiles } from '@main/files'
 import { documentFiles, closeDocumentFiles, recoveryArchive } from '@tests/fixtures/files'
 import { desktop } from '@tests/fixtures/desktop'
@@ -28,7 +28,7 @@ let files: DocumentFiles
 const bindFiles = (service: DocumentFiles): void => {
   vi.stubGlobal('window', {
     confirm: () => true,
-    trelyx: desktop({
+    brainstorming: desktop({
       readLockedRecovery: service.readLockedRecovery,
       writeRecovery: service.writeRecovery,
       setFilePassword: service.setFilePassword,
@@ -42,7 +42,7 @@ const bindFiles = (service: DocumentFiles): void => {
   })
 }
 beforeEach(async () => {
-  directory = await mkdtemp(join(tmpdir(), 'trelyx-renderer-recovery-'))
+  directory = await mkdtemp(join(tmpdir(), 'brainstorming-renderer-recovery-'))
   files = documentFiles(directory)
   await files.initialize()
   useEditor.getState().replace(workbook)
@@ -69,7 +69,7 @@ describe('native encrypted recovery boundary', () => {
     await files.writeRecovery(contents)
     await changeFilePassword(password)
     const encrypted = await recoveryArchive(directory, files)
-    expect(await isEncryptedTrelyx(encrypted)).toBe(true)
+    expect(await isEncryptedBrainstorming(encrypted)).toBe(true)
     expect(encrypted.includes(Buffer.from('Native protected draft'))).toBe(false)
     expect(encrypted.includes(Buffer.from(password))).toBe(false)
     const restarted = documentFiles(directory)
@@ -96,7 +96,7 @@ describe('native encrypted recovery boundary', () => {
     expect(isDirty()).toBe(true)
     expect(restarted.getFileSecurity(workbook.id)).toEqual({ encrypted: true })
     await restarted.writeRecovery(contents)
-    expect(await isEncryptedTrelyx(await recoveryArchive(directory, files))).toBe(true)
+    expect(await isEncryptedBrainstorming(await recoveryArchive(directory, files))).toBe(true)
   })
 
   it('preserves native ciphertext and the current document when recovery unlocking is canceled', async () => {

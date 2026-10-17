@@ -6,7 +6,7 @@ import { useEditor } from '@renderer/state/editor'
 import { useSpatialView } from '@renderer/state/spatial'
 
 const meta = {
-  title: 'Trelyx/空间视图',
+  title: 'Brainstorming/空间视图',
   component: App,
   parameters: { layout: 'fullscreen' },
   beforeEach: () => {

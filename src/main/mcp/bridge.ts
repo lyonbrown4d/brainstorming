@@ -19,8 +19,8 @@ export class MCPRendererBridge {
   request = async (action: MCPAction, signal: AbortSignal): Promise<Record<string, unknown>> => {
     const window = this.getWindow()
     const connection = this.getConnection()
-    if (!window || window.isDestroyed() || !connection) throw new Error('Trelyx 共享已停止')
-    if (this.pending.size >= 4) throw new Error('Trelyx 请求繁忙，请稍后重试')
+    if (!window || window.isDestroyed() || !connection) throw new Error('Brainstorming 共享已停止')
+    if (this.pending.size >= 4) throw new Error('Brainstorming 请求繁忙，请稍后重试')
     signal.throwIfAborted()
     const id = randomUUID()
     return new Promise((resolve, reject) => {
@@ -32,10 +32,10 @@ export class MCPRendererBridge {
         else resolve(data ?? {})
       }
       const abort = (): void => {
-        finish(undefined, new Error('Trelyx 请求已取消'))
+        finish(undefined, new Error('Brainstorming 请求已取消'))
       }
       const timer = setTimeout(() => {
-        finish(undefined, new Error('Trelyx 编辑器响应超时'))
+        finish(undefined, new Error('Brainstorming 编辑器响应超时'))
       }, MCP_LIMITS.timeout)
       signal.addEventListener('abort', abort, { once: true })
       this.pending.set(id, {
@@ -81,6 +81,7 @@ export class MCPRendererBridge {
   }
 
   cancel = (): void => {
-    for (const pending of this.pending.values()) pending.reject(new Error('Trelyx 共享已停止'))
+    for (const pending of this.pending.values())
+      pending.reject(new Error('Brainstorming 共享已停止'))
   }
 }

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { createDocument, createWorkbook, type DocumentAsset, type Topic } from '@core'
 import { createAsset } from '@assets'
 import { readArchive } from '@formats/archive'
-import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
+import { decodeBrainstorming, encodeBrainstorming } from '@formats/brainstorming'
 
 describe('native asset budgets', () => {
   it('bounds aggregate resources across sheets on save and open', () => {
@@ -21,9 +21,9 @@ describe('native asset budgets', () => {
     const sheet = workbook.sheets[0]
     if (!sheet) throw new Error('Missing fixture sheet')
     expect(() =>
-      encodeTrelyx({ ...workbook, sheets: [sheet, { ...sheet, id: 'sheet-two' }] }),
+      encodeBrainstorming({ ...workbook, sheets: [sheet, { ...sheet, id: 'sheet-two' }] }),
     ).toThrow(/24 MiB/)
-    const entries = Object.fromEntries(readArchive(encodeTrelyx(workbook)))
+    const entries = Object.fromEntries(readArchive(encodeBrainstorming(workbook)))
     const content = JSON.parse(new TextDecoder().decode(entries['document.json'])) as {
       sheets: { id: string; document: { assets: Record<string, { path: string }> } }[]
     }
@@ -45,7 +45,7 @@ describe('native asset budgets', () => {
     entries['document.json'] = strToU8(JSON.stringify(content))
     entries['assets/1/large-a'] = new Uint8Array(7 * 1024 * 1024)
     entries['assets/1/large-b'] = new Uint8Array(7 * 1024 * 1024)
-    expect(() => decodeTrelyx(zipSync(entries))).toThrow(/24 MiB/)
+    expect(() => decodeBrainstorming(zipSync(entries))).toThrow(/24 MiB/)
   })
 
   it('rejects a native write with more archive entries than the reader accepts', () => {
@@ -65,6 +65,6 @@ describe('native asset budgets', () => {
         assets[assetId] = createAsset(new Uint8Array(), 'empty.bin', assetId)
       topics[id] = { id, title: id, side: 'right', children: [], collapsed: false, attachments }
     }
-    expect(() => encodeTrelyx(createWorkbook({ ...base, topics, assets }))).toThrow(/512/)
+    expect(() => encodeBrainstorming(createWorkbook({ ...base, topics, assets }))).toThrow(/512/)
   })
 })

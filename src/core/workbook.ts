@@ -48,9 +48,9 @@ export const validateSheet: (value: unknown) => asserts value is MindMapSheet = 
 export const validateWorkbook: (value: unknown) => asserts value is MindMapWorkbook = (
   value: unknown,
 ): asserts value is MindMapWorkbook => {
-  if (!isRecord(value) || own(value, 'format') !== 'trelyx')
-    throw new Error('文件不是 Trelyx 工作簿')
-  if (own(value, 'version') !== 2) throw new Error('不支持此 Trelyx 工作簿版本')
+  if (!isRecord(value) || own(value, 'format') !== 'brainstorming')
+    throw new Error('文件不是 Brainstorming 工作簿')
+  if (own(value, 'version') !== 2) throw new Error('不支持此 Brainstorming 工作簿版本')
   assertId(own(value, 'id'))
   if (typeof own(value, 'title') !== 'string') throw new Error('工作簿标题必须是文本')
   const sheets = own(value, 'sheets')
@@ -78,7 +78,7 @@ export const sheetData = (sheet: MindMapSheet): MindMapSheet => {
 
 const workbookData = (workbook: MindMapWorkbook): MindMapWorkbook => {
   return {
-    format: 'trelyx',
+    format: 'brainstorming',
     version: 2,
     id: workbook.id,
     title: workbook.title,
@@ -94,7 +94,7 @@ export const createWorkbook = (
   const truncatedTitle = truncateSheetName(document.title)
   const name = truncatedTitle.trim().length > 0 ? truncatedTitle : '画布 1'
   const workbook: MindMapWorkbook = {
-    format: 'trelyx',
+    format: 'brainstorming',
     version: 2,
     id: document.id,
     title,

@@ -123,7 +123,7 @@ export const validateDocumentSettings: (value: unknown) => asserts value is Docu
   ])
   v.optional(settings, 'layout', validateLayoutKind)
   v.optional(settings, 'theme', (entry) => {
-    v.oneOf(entry, ['trelyx', 'ocean', 'forest', 'sunset', 'mono', 'dawn', 'paper', 'night'])
+    v.oneOf(entry, ['brainstorming', 'ocean', 'forest', 'sunset', 'mono', 'dawn', 'paper', 'night'])
   })
   v.optional(settings, 'customPalette', (entry) => {
     const palette = v.record(entry, ['name', 'root', 'branches', 'background'])

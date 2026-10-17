@@ -1,17 +1,19 @@
-# Trelyx 原生格式与格式转换
+# Brainstorming 原生格式与格式转换
+
+此次更名统一使用 `.brainstorming` 和 `app.brainstorming.document`，不接受旧格式文件或旧格式标识，不提供自动迁移。仅修改旧文件后缀不能转换其内容。
 
 ## 工作簿与多画布
 
-一个 `.trelyx` 文件是一份工作簿，包含有序的 `sheets`，不是只保存当前画布。工作簿、Sheet、文档、主题和资源分别使用稳定 ID。文件标题、画布名称和中心主题标题相互独立。
+一个 `.brainstorming` 文件是一份工作簿，包含有序的 `sheets`，不是只保存当前画布。工作簿、Sheet、文档、主题和资源分别使用稳定 ID。文件标题、画布名称和中心主题标题相互独立。
 
 每个 Sheet 保存自己的主题树、样式、备注和资源引用。相同资源 ID 或同名附件在不同 Sheet 中隔离。复制画布保留全部内容，之后可独立编辑；删除后撤销恢复原内容。选择、活动画布、视口、撤销历史和输入草稿不进入正式文件，重新打开默认选择第一张画布。
 
 ## 原生容器
 
-扩展名为 `.trelyx`，MIME 为 `application/vnd.trelyx+zip`。容器使用 ZIP，必需条目为 UTF-8 编码的 `manifest.json` 和 `document.json`；图片及附件按需嵌入：
+扩展名为 `.brainstorming`，MIME 为 `application/vnd.brainstorming+zip`。容器使用 ZIP，必需条目为 UTF-8 编码的 `manifest.json` 和 `document.json`；图片及附件按需嵌入：
 
 ```text
-example.trelyx
+example.brainstorming
 ├── manifest.json
 ├── document.json
 └── assets/
@@ -20,7 +22,7 @@ example.trelyx
     └── 1/photo-id
 ```
 
-清单的 `format` 为 `app.trelyx.document`、`version` 为 `1`，`createdBy` 记录应用名称和版本。协议版本与应用版本分别维护。
+清单的 `format` 为 `app.brainstorming.document`、`version` 为 `1`，`createdBy` 记录应用名称和版本。协议版本与应用版本分别维护。
 
 `document.json` 包含以下字段：
 
@@ -42,13 +44,13 @@ example.trelyx
 
 包内资源路径为 `assets/<sheet-index>/<asset-id>`，与原始磁盘路径无关。画布排序后重新生成路径，ID 和引用不变。同一页多个引用只写一份资源；复制页在对应分组保存资源。工作簿全部资源合计受统一大小限制。
 
-资源元数据和字节必须一致，引用必须存在。写出仅保留被主题引用的资源；移除后的字节留在会话快照中供撤销，不写入正式文件。读取拒绝未知字段、未引用资源、缺失字节、错误路径和尺寸不符，避免静默丢失。预览图尚未提供。早期无资源的 ZIP v1 文件仍可读取；此前 JSON `.trelyx`、`.json` 和旧 JSON 恢复文件不迁移。
+资源元数据和字节必须一致，引用必须存在。写出仅保留被主题引用的资源；移除后的字节留在会话快照中供撤销，不写入正式文件。读取拒绝未知字段、未引用资源、缺失字节、错误路径和尺寸不符，避免静默丢失。预览图尚未提供。早期无资源的 ZIP v1 文件仍可读取；此前 JSON `.brainstorming`、`.json` 和旧 JSON 恢复文件不迁移。
 
-主题 metadata 保存标签、图标、网页/内部主题链接、任务、公式、音频资源 ID、备注格式和可移植 Markdown 标题。可选 `markerStyle` 保存图标位置 `position`（`top`、`bottom`、`left`、`right`）和整数尺寸 `size`（12–48 px）。缺省为下方、16 px；拖动预览不进入文件。旧版 Trelyx 可能拒绝包含该新增字段的文件。富文本不持久化 Lexical 内部节点。Document 可保存 `settings`、`relations`、`groups`、`callouts`、`floatingIds`、`floatingPositions` 和 `presentation`。游离主题仍使用树的稳定 ID 和唯一父级规则，其根附件关系不渲染为连线；显式位置是文档数据。普通视口不持久化，主动保存的演示步骤可包含三维相机。
+主题 metadata 保存标签、图标、网页/内部主题链接、任务、公式、音频资源 ID、备注格式和可移植 Markdown 标题。可选 `markerStyle` 保存图标位置 `position`（`top`、`bottom`、`left`、`right`）和整数尺寸 `size`（12–48 px）。缺省为下方、16 px；拖动预览不进入文件。旧版 Brainstorming 可能拒绝包含该新增字段的文件。富文本不持久化 Lexical 内部节点。Document 可保存 `settings`、`relations`、`groups`、`callouts`、`floatingIds`、`floatingPositions` 和 `presentation`。游离主题仍使用树的稳定 ID 和唯一父级规则，其根附件关系不渲染为连线；显式位置是文档数据。普通视口不持久化，主动保存的演示步骤可包含三维相机。
 
-`settings.layout` 和主题 `structure` 支持 `map`、`logic-right/left`、`org-down/up`、`tree-down/up`、`brace-right/left`、`fishbone`、`timeline`、`timeline-vertical`、`matrix`、`tree-table-right/down`。这些是各个独立枚举值，斜杠仅用于本文合并方向说明。协议仍为 ZIP v1，缺省结构使用导图；文件不保存派生节点坐标、括号路径或表格几何。旧版本 Trelyx 无法读取包含新增枚举值的文件。
+`settings.layout` 和主题 `structure` 支持 `map`、`logic-right/left`、`org-down/up`、`tree-down/up`、`brace-right/left`、`fishbone`、`timeline`、`timeline-vertical`、`matrix`、`tree-table-right/down`。这些是各个独立枚举值，斜杠仅用于本文合并方向说明。协议仍为 ZIP v1，缺省结构使用导图；文件不保存派生节点坐标、括号路径或表格几何。旧版本 Brainstorming 无法读取包含新增枚举值的文件。
 
-`settings.theme` 支持 `trelyx`、`ocean`、`forest`、`sunset`、`mono`、`dawn`、`paper`、`night`。可选 `customPalette` 保存 `name`（最多 40 字符）、`root`、恰好 5 个 `branches` 颜色和 `background`；颜色均为六位十六进制值。文字与浅填充从这些数据计算，不保存视图缓存。旧版 Trelyx 可能拒绝新增预设或字段；XMind 通过 Trelyx 命名空间扩展保留这些设置，不保证外部 XMind 使用相同配色。应用的浅色、深色或系统偏好仅保存在本机，不写入工作簿。
+`settings.theme` 支持 `brainstorming`、`ocean`、`forest`、`sunset`、`mono`、`dawn`、`paper`、`night`。可选 `customPalette` 保存 `name`（最多 40 字符）、`root`、恰好 5 个 `branches` 颜色和 `background`；颜色均为六位十六进制值。文字与浅填充从这些数据计算，不保存视图缓存。旧版 Brainstorming 可能拒绝新增预设或字段；XMind 通过 Brainstorming 命名空间扩展保留这些设置，不保证外部 XMind 使用相同配色。应用的浅色、深色或系统偏好仅保存在本机，不写入工作簿。
 
 音频使用同一资源路径与预算。导入通过字节嗅探校验支持的音频类型，不能只凭扩展名认定类型。
 
@@ -58,7 +60,7 @@ example.trelyx
 
 存在 `content.json` 时使用现代格式，否则读取旧版 `content.xml`，配合 `styles.xml` 解析样式引用。现代内容损坏时不回退到可能过期的 XML。
 
-导入生成可编辑、未保存的 Trelyx 工作簿；首次保存选择 `.trelyx` 文件，主进程不允许向 `.xmind` 路径保存。最近文件保留源文件入口，重新打开会重新导入。
+导入生成可编辑、未保存的 Brainstorming 工作簿；首次保存选择 `.brainstorming` 文件，主进程不允许向 `.xmind` 路径保存。最近文件保留源文件入口，重新打开会重新导入。
 
 | 内容                             | 当前支持                                           |
 | -------------------------------- | -------------------------------------------------- |
@@ -71,7 +73,7 @@ example.trelyx
 | 游离、概要等附加主题             | 转为命名分支，提示原位置或语义变化                 |
 | 标签和安全网页链接               | 保留；导入不会访问链接                             |
 | 第三方关联线、概要关系、图标等   | 未映射内容在导入报告中聚合提示                     |
-| XMind 导出                       | 现代 ZIP；额外字段放入 Trelyx 命名空间扩展         |
+| XMind 导出                       | 现代 ZIP；额外字段放入 Brainstorming 命名空间扩展  |
 
 不请求网络或任意本地路径，不执行备注中的 HTML。缺失、重复和保留名称的 ID 会重新生成；损坏、缺失、超限和不支持的内嵌资源会跳过并提示。不承诺视觉完全一致或无损往返。
 
@@ -84,16 +86,16 @@ example.trelyx
 - 工作簿最多 128 个画布、20000 个主题；中心主题计为第一层，最多 128 层。
 - XML 拒绝 DOCTYPE 和自定义实体，预定义转义正常读取。
 - 完整解析校验通过后才打开文档标签。读取期间新增修改需要再次确认，保存失败保留未保存状态。
-- 工作区恢复正文存于 `userData/recovery-v2` 的独立 `.trelyx` ZIP，包含各文档全部 Sheet 与资源；`userData/trelyx.sqlite` 仅保存界面语言、最近文件和恢复索引，不保存文档正文。一次恢复最多 32 份文档，总字节预算为 128 MiB。先原子写入新 ZIP，再通过 SQLite 事务替换索引，提交后清理旧 ZIP；失败保留此前可达记录。
+- 工作区恢复正文存于 `userData/recovery-v2` 的独立 `.brainstorming` ZIP，包含各文档全部 Sheet 与资源；`userData/brainstorming.sqlite` 仅保存界面语言、最近文件和恢复索引，不保存文档正文。一次恢复最多 32 份文档，总字节预算为 128 MiB。先原子写入新 ZIP，再通过 SQLite 事务替换索引，提交后清理旧 ZIP；失败保留此前可达记录。
 - 恢复按文档标签打开未保存副本，不恢复正式文件路径。损坏记录不覆盖原文件；旧 JSON 存储和旧恢复记录不迁移。恢复索引版本 2 不改变原生 ZIP 容器协议 v1。
 
 测试包含现代/旧版 XMind、官方 MIT 样例、内嵌图片与二进制附件，以及多 Sheet 的内容编辑、复制、排序、删除撤销和原生保存重开。实际系统文件关联注册仍需安装打包产物后按平台检查。
 
 ## XMind 导出与大纲交换
 
-XMind 导出包含标准主题、基础样式、折叠、图片、备注、首个附件/安全链接和标签。Trelyx 专有元数据、多附件、音频、方向、混合结构、布局、注解、游离位置和演示步骤保存在 `org.trelyx.interchange` 扩展；Trelyx 重新导入时严格校验并恢复。其他应用可能忽略这些扩展，不承诺在 XMind 中呈现全部语义。第三方扩展不会被当成 Trelyx 内容执行。
+XMind 导出包含标准主题、基础样式、折叠、图片、备注、首个附件/安全链接和标签。Brainstorming 专有元数据、多附件、音频、方向、混合结构、布局、注解、游离位置和演示步骤保存在 `org.brainstorming.interchange` 扩展；Brainstorming 重新导入时严格校验并恢复。其他应用可能忽略这些扩展，不承诺在 XMind 中呈现全部语义。第三方扩展不会被当成 Brainstorming 内容执行。
 
-标准 `structureClass` 映射以 [XMind 官方 viewer 枚举](https://github.com/xmindltd/xmind-viewer/blob/master/src/common/constants/structures.ts) 为依据。现代 JSON 和旧 XML 可导入已映射的导图、左右逻辑图、上下组织图、横纵时间线及左侧鱼头鱼骨图；未知结构报告警告，保留主题树。导出这些类型时写入标准结构字段。树形图、括号图、矩阵和树形表格暂用已知的逻辑图或组织图作为标准字段的近似回退，精确类型保存在 Trelyx 扩展；在其他应用中打开可能呈现近似布局。Trelyx 自有扩展优先于标准字段。
+标准 `structureClass` 映射以 [XMind 官方 viewer 枚举](https://github.com/xmindltd/xmind-viewer/blob/master/src/common/constants/structures.ts) 为依据。现代 JSON 和旧 XML 可导入已映射的导图、左右逻辑图、上下组织图、横纵时间线及左侧鱼头鱼骨图；未知结构报告警告，保留主题树。导出这些类型时写入标准结构字段。树形图、括号图、矩阵和树形表格暂用已知的逻辑图或组织图作为标准字段的近似回退，精确类型保存在 Brainstorming 扩展；在其他应用中打开可能呈现近似布局。Brainstorming 自有扩展优先于标准字段。
 
 Markdown/OPML 导入先预览再替换当前工作簿。OPML 禁用 DTD 和自定义实体。Markdown、OPML、文本导出为大纲，会损失图像、复杂样式和部分元数据；界面在导出前说明。当前 Sheet 输出会移除指向未导出 Sheet 的内部链接。
 

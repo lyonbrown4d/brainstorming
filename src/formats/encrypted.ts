@@ -10,7 +10,7 @@ import { zipSync } from 'fflate'
 import type { MindMapWorkbook } from '@core'
 import { validateFilePassword } from '@shared/fileSecurity'
 import { ARCHIVE_LIMITS, readArchive } from '@formats/archive'
-import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
+import { decodeBrainstorming, encodeBrainstorming } from '@formats/brainstorming'
 
 class BoundedZipInput extends Uint8ArrayReader {
   override createReadable = (options?: CreateReadableOptions): ReadableStream<Uint8Array> => {
@@ -60,7 +60,7 @@ const validateEntry = (entry: Entry, names: Set<string>, budget: { size: number 
   budget.size += entry.uncompressedSize
   if (budget.size > ARCHIVE_LIMITS.expanded) throw new Error('加密 ZIP 解压大小超过限制')
   if (entry.encrypted && (entry.zipCrypto || entry.extraFieldAES?.strength !== 3))
-    throw new Error('仅支持 AES-256 加密的 Trelyx 文件')
+    throw new Error('仅支持 AES-256 加密的 Brainstorming 文件')
 }
 const entriesOf = async (zip: ReturnType<typeof reader>): Promise<Entry[]> => {
   const names = new Set<string>()
@@ -71,10 +71,10 @@ const entriesOf = async (zip: ReturnType<typeof reader>): Promise<Entry[]> => {
     result.push(entry)
   }
   if (!names.has('manifest.json') || !names.has('document.json'))
-    throw new Error('缺少 Trelyx 原生文档内容')
+    throw new Error('缺少 Brainstorming 原生文档内容')
   return result
 }
-export const isEncryptedTrelyx = async (bytes: Uint8Array): Promise<boolean> => {
+export const isEncryptedBrainstorming = async (bytes: Uint8Array): Promise<boolean> => {
   const zip = reader(bytes)
   try {
     return (await entriesOf(zip)).some((entry) => entry.encrypted)
@@ -82,7 +82,7 @@ export const isEncryptedTrelyx = async (bytes: Uint8Array): Promise<boolean> => 
     await zip.close()
   }
 }
-export const encryptTrelyx = async (
+export const encryptBrainstorming = async (
   workbook: MindMapWorkbook,
   password: string,
   passwordPolicy: 'new' | 'existing' = 'new',
@@ -96,13 +96,13 @@ export const encryptTrelyx = async (
     dataDescriptor: false,
     bufferedWrite: true,
   })
-  for (const [name, bytes] of readArchive(encodeTrelyx(workbook)))
+  for (const [name, bytes] of readArchive(encodeBrainstorming(workbook)))
     await zip.add(name, new Uint8ArrayReader(bytes))
   const result = await zip.close()
   if (result.length > ARCHIVE_LIMITS.compressed) throw new Error('加密文件超过 32 MiB')
   return result
 }
-export const decryptTrelyx = async (
+export const decryptBrainstorming = async (
   bytes: Uint8Array,
   password: string,
 ): Promise<MindMapWorkbook> => {
@@ -111,7 +111,7 @@ export const decryptTrelyx = async (
   try {
     const entries = await entriesOf(zip)
     if (entries.some((entry) => !entry.directory && !entry.encrypted))
-      throw new Error('加密 Trelyx 文件含有未保护的条目')
+      throw new Error('加密 Brainstorming 文件含有未保护的条目')
     const output = Object.create(null) as Record<string, Uint8Array>
     let total = 0
     for (const entry of entries) {
@@ -147,7 +147,7 @@ export const decryptTrelyx = async (
       }
       output[entry.filename] = data
     }
-    return decodeTrelyx(zipSync(output, { level: 6 }))
+    return decodeBrainstorming(zipSync(output, { level: 6 }))
   } catch {
     throw new Error('密码错误或加密文件损坏，请重试')
   } finally {

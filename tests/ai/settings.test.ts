@@ -7,7 +7,7 @@ import { validateEndpoint, validateRequest } from '@main/ai/validation'
 
 const directories: string[] = []
 const directory = async (): Promise<string> => {
-  const path = await mkdtemp(join(tmpdir(), 'trelyx-ai-'))
+  const path = await mkdtemp(join(tmpdir(), 'brainstorming-ai-'))
   directories.push(path)
   return path
 }

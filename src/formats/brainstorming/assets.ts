@@ -2,7 +2,7 @@ import type { DocumentAsset, MindMapDocument, MindMapWorkbook } from '@core'
 import { assetBytes, createAsset, imageDimensions } from '@assets'
 import { AUDIO_MIME_TYPES } from '@core/topic-content'
 import { referencedAssetIds } from '@core/topic-content'
-import { onlyKeys, record } from '@formats/trelyx/validation'
+import { onlyKeys, record } from '@formats/brainstorming/validation'
 
 const samePortableMime = (declared: string, detected: string): boolean => {
   // Earlier v1 files stored every non-raster attachment as opaque bytes, including audio.
@@ -21,22 +21,23 @@ export const validateAssetContent = (workbook: MindMapWorkbook): void => {
   for (const { document } of workbook.sheets) {
     for (const id of referencedAssetIds(document.topics)) {
       const asset = document.assets?.[id]
-      if (!asset) throw new Error('Trelyx 主题引用的资源不存在')
+      if (!asset) throw new Error('Brainstorming 主题引用的资源不存在')
       const bytes = assetBytes(asset)
-      if (bytes.length > ASSET_LIMITS.entry) throw new Error('Trelyx 单个资源超过 8 MiB 限制')
+      if (bytes.length > ASSET_LIMITS.entry)
+        throw new Error('Brainstorming 单个资源超过 8 MiB 限制')
       size += bytes.length
-      if (size > ASSET_LIMITS.total) throw new Error('Trelyx 资源合计超过 24 MiB 限制')
+      if (size > ASSET_LIMITS.total) throw new Error('Brainstorming 资源合计超过 24 MiB 限制')
       const normalized = createAsset(bytes, asset.name, asset.id)
       if (!samePortableMime(asset.mimeType, normalized.mimeType) || normalized.name !== asset.name)
-        throw new Error('Trelyx 资源类型或名称与实际内容不一致')
+        throw new Error('Brainstorming 资源类型或名称与实际内容不一致')
     }
     for (const topic of Object.values(document.topics)) {
       if (!topic.image) continue
       const asset = document.assets?.[topic.image.assetId]
-      if (!asset) throw new Error('Trelyx 图片资源不存在')
+      if (!asset) throw new Error('Brainstorming 图片资源不存在')
       const dimensions = imageDimensions(asset)
       if (dimensions.width !== topic.image.width || dimensions.height !== topic.image.height)
-        throw new Error('Trelyx 图片尺寸与实际内容不一致')
+        throw new Error('Brainstorming 图片尺寸与实际内容不一致')
     }
   }
 }
@@ -49,7 +50,7 @@ export const encodeAssets = (
   const metadata: Record<string, Omit<DocumentAsset, 'data'> & { path: string }> = {}
   for (const id of referencedAssetIds(document.topics)) {
     const asset = document.assets?.[id]
-    if (!asset) throw new Error('Trelyx 主题引用的资源不存在')
+    if (!asset) throw new Error('Brainstorming 主题引用的资源不存在')
     const path = `assets/${index}/${id}`
     entries[path] = assetBytes(asset)
     metadata[id] = { id, name: asset.name, mimeType: asset.mimeType, path }
@@ -76,12 +77,12 @@ export const decodeAssets = (
       typeof metadata.name !== 'string' ||
       typeof metadata.mimeType !== 'string'
     )
-      throw new Error('Trelyx 资源元数据或路径无效')
+      throw new Error('Brainstorming 资源元数据或路径无效')
     const bytes = entries.get(path)
-    if (!bytes) throw new Error('Trelyx 资源文件缺失')
-    if (bytes.length > ASSET_LIMITS.entry) throw new Error('Trelyx 单个资源超过 8 MiB 限制')
+    if (!bytes) throw new Error('Brainstorming 资源文件缺失')
+    if (bytes.length > ASSET_LIMITS.entry) throw new Error('Brainstorming 单个资源超过 8 MiB 限制')
     budget.bytes += bytes.length
-    if (budget.bytes > ASSET_LIMITS.total) throw new Error('Trelyx 资源合计超过 24 MiB 限制')
+    if (budget.bytes > ASSET_LIMITS.total) throw new Error('Brainstorming 资源合计超过 24 MiB 限制')
     const detected = createAsset(bytes, metadata.name, id)
     const asset =
       metadata.mimeType === 'application/octet-stream' &&
@@ -89,7 +90,7 @@ export const decodeAssets = (
         ? { ...detected, mimeType: metadata.mimeType }
         : detected
     if (asset.name !== metadata.name || asset.mimeType !== metadata.mimeType)
-      throw new Error('Trelyx 资源类型或名称与实际内容不一致')
+      throw new Error('Brainstorming 资源类型或名称与实际内容不一致')
     Object.defineProperty(result, id, { value: asset, enumerable: true })
     used.add(path)
   }
@@ -100,6 +101,6 @@ export const assertUsedAssets = (workbook: MindMapWorkbook): void => {
   for (const { document } of workbook.sheets) {
     const referenced = referencedAssetIds(document.topics)
     if (Object.keys(document.assets ?? {}).some((id) => !referenced.has(id)))
-      throw new Error('Trelyx 包含未引用的资源')
+      throw new Error('Brainstorming 包含未引用的资源')
   }
 }

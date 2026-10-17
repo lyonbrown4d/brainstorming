@@ -12,7 +12,7 @@ import {
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { decryptTrelyx, isEncryptedTrelyx } from '@formats/encrypted'
+import { decryptBrainstorming, isEncryptedBrainstorming } from '@formats/encrypted'
 import { openDock } from '@tests/e2e/dock'
 
 const password = 'desktop-security-test'
@@ -35,7 +35,9 @@ const editTitle = async (page: Page, text: string): Promise<void> => {
 }
 const diskTitle = async (path: string): Promise<string> => {
   try {
-    return (await decryptTrelyx(await readFile(path), password)).sheets[0]?.document.title ?? ''
+    return (
+      (await decryptBrainstorming(await readFile(path), password)).sheets[0]?.document.title ?? ''
+    )
   } catch {
     return ''
   }
@@ -44,7 +46,7 @@ const recoveryTitle = async (directory: string): Promise<string> => {
   const bytes = await nativeRecoveryBytes(directory)
   if (!bytes) return ''
   try {
-    return (await decryptTrelyx(bytes, password)).sheets[0]?.document.title ?? ''
+    return (await decryptBrainstorming(bytes, password)).sheets[0]?.document.title ?? ''
   } catch {
     return ''
   }
@@ -72,11 +74,11 @@ const unlock = async (page: Page, title: string, wrong = false): Promise<void> =
 }
 
 test('真实 Electron 密码文件、加密历史、重启解锁与恢复记录形成闭环', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'trelyx-security-desktop-'))
+  const directory = await mkdtemp(join(tmpdir(), 'brainstorming-security-desktop-'))
   const profile = join(directory, 'profile')
   await seedChinese(profile)
   await seedChinese(join(directory, 'new-profile'))
-  const savedPath = join(directory, 'protected.trelyx')
+  const savedPath = join(directory, 'protected.brainstorming')
   let app: ElectronApplication | null = null
   try {
     app = await electron.launch({ colorScheme: null, args: ['.', `--user-data-dir=${profile}`] })
@@ -99,7 +101,7 @@ test('真实 Electron 密码文件、加密历史、重启解锁与恢复记录�
     }, savedPath)
     await fileAction(page, '保存导图')
     await expect.poll(() => diskTitle(savedPath)).toBe('第一份机密内容')
-    expect(await isEncryptedTrelyx(await readFile(savedPath))).toBe(true)
+    expect(await isEncryptedBrainstorming(await readFile(savedPath))).toBe(true)
     await expect.poll(() => recoveryTitle(profile)).toBe('第一份机密内容')
     expect(
       ((await nativeRecoveryBytes(profile)) ?? Buffer.alloc(0)).includes(Buffer.from(password)),
@@ -140,7 +142,7 @@ test('真实 Electron 密码文件、加密历史、重启解锁与恢复记录�
     await expect(page.getByTestId('topic-root')).toContainText('第二份机密内容')
     const capabilities = await page.evaluate(() => ({
       node: 'require' in window,
-      unlock: typeof window.trelyx?.unlockDocument,
+      unlock: typeof window.brainstorming?.unlockDocument,
     }))
     expect(capabilities).toEqual({ node: false, unlock: 'function' })
     await stop(app)
@@ -154,9 +156,9 @@ test('真实 Electron 密码文件、加密历史、重启解锁与恢复记录�
     await page.getByRole('button', { name: '恢复上次打开的 1 份导图', exact: true }).click()
     await unlock(page, '解锁自动恢复记录', true)
     await expect(page.getByTestId('topic-root')).toContainText('第一份机密内容')
-    expect(await isEncryptedTrelyx((await nativeRecoveryBytes(profile)) ?? Buffer.alloc(0))).toBe(
-      true,
-    )
+    expect(
+      await isEncryptedBrainstorming((await nativeRecoveryBytes(profile)) ?? Buffer.alloc(0)),
+    ).toBe(true)
     expect(await diskTitle(savedPath)).toBe('第二份机密内容')
   } finally {
     if (app) await stop(app)

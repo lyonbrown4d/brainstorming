@@ -27,8 +27,8 @@ export const RichTextEditor = ({
 
   const [extension] = useState(() =>
     defineExtension({
-      name: `trelyx/rich-${title ? 'title' : 'notes'}-${topicId}`,
-      namespace: `trelyx/rich-${title ? 'title' : 'notes'}-${topicId}`,
+      name: `brainstorming/rich-${title ? 'title' : 'notes'}-${topicId}`,
+      namespace: `brainstorming/rich-${title ? 'title' : 'notes'}-${topicId}`,
       dependencies: [RichTextExtension, HistoryExtension, ListExtension, LinkExtension],
       theme: {
         text: {

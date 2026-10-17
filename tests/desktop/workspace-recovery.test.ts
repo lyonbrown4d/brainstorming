@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { randomUUID } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDocument, createWorkbook, serializeWorkbook } from '@core'
-import { decryptTrelyx, isEncryptedTrelyx } from '@formats/encrypted'
+import { decryptBrainstorming, isEncryptedBrainstorming } from '@formats/encrypted'
 import type { DocumentFiles } from '@main/files'
 import { documentFiles, closeDocumentFiles, recoveryIndexFor } from '@tests/fixtures/files'
 import type { RecoveryEntry } from '@main/workspace-recovery/repository'
@@ -19,7 +19,7 @@ let files: DocumentFiles
 const entries = () => recoveryIndexFor(files).read()
 const archive = (file: string) => readFile(join(directory, 'recovery-v2', file))
 beforeEach(async () => {
-  directory = await mkdtemp(join(tmpdir(), 'trelyx-workspace-'))
+  directory = await mkdtemp(join(tmpdir(), 'brainstorming-workspace-'))
   files = documentFiles(directory)
   await files.initialize()
 })
@@ -35,8 +35,8 @@ describe('native workspace recovery', () => {
     await files.writeWorkspaceRecovery(contents)
     const stored = await entries()
     expect(stored.map(({ documentId }) => documentId)).toEqual([first.id, second.id, third.id])
-    expect(await isEncryptedTrelyx(await archive(stored[0]?.fileName ?? ''))).toBe(true)
-    expect(await isEncryptedTrelyx(await archive(stored[1]?.fileName ?? ''))).toBe(true)
+    expect(await isEncryptedBrainstorming(await archive(stored[0]?.fileName ?? ''))).toBe(true)
+    expect(await isEncryptedBrainstorming(await archive(stored[1]?.fileName ?? ''))).toBe(true)
     const restarted = documentFiles(directory)
     await restarted.initialize()
     await expect(restarted.writeWorkspaceRecovery(contents)).rejects.toThrow('不能写入明文')
@@ -55,10 +55,12 @@ describe('native workspace recovery', () => {
     expect(restarted.getFileSecurity(second.id)).toEqual({ encrypted: true })
     await restarted.writeWorkspaceRecovery(contents)
     const current = await entries()
-    expect(await decryptTrelyx(await archive(current[0]?.fileName ?? ''), passwordA)).toEqual(first)
-    expect(await decryptTrelyx(await archive(current[1]?.fileName ?? ''), passwordB)).toEqual(
-      second,
-    )
+    expect(
+      await decryptBrainstorming(await archive(current[0]?.fileName ?? ''), passwordA),
+    ).toEqual(first)
+    expect(
+      await decryptBrainstorming(await archive(current[1]?.fileName ?? ''), passwordB),
+    ).toEqual(second)
     expect(JSON.stringify(await entries())).not.toContain('password')
   })
 
@@ -66,23 +68,28 @@ describe('native workspace recovery', () => {
     await files.writeWorkspaceRecovery(contents)
     const before = await entries()
     const originalFile = before[0]?.fileName ?? ''
-    const orphan = originalFile.replace(/\.[a-f0-9-]{36}\.trelyx$/u, `.${randomUUID()}.trelyx`)
+    const orphan = originalFile.replace(
+      /\.[a-f0-9-]{36}\.brainstorming$/u,
+      `.${randomUUID()}.brainstorming`,
+    )
     await writeFile(join(directory, 'recovery-v2', orphan), await archive(originalFile))
-    const path = files.authorizeSelected(join(directory, 'first.trelyx'))
+    const path = files.authorizeSelected(join(directory, 'first.brainstorming'))
     await files.save(path, contents[0])
     await files.setFilePassword(second.id, passwordB)
     await files.setFilePassword(first.id, passwordA)
-    expect(await isEncryptedTrelyx(await archive(originalFile))).toBe(true)
+    expect(await isEncryptedBrainstorming(await archive(originalFile))).toBe(true)
     expect(await readdir(join(directory, 'recovery-v2'))).not.toContain(orphan)
     expect((await files.listDocumentBackups(first.id)).every(({ encrypted }) => encrypted)).toBe(
       true,
     )
     await files.setFilePassword(first.id, 'replacement-password')
-    expect(await decryptTrelyx(await archive(originalFile), 'replacement-password')).toEqual(first)
+    expect(await decryptBrainstorming(await archive(originalFile), 'replacement-password')).toEqual(
+      first,
+    )
     await files.setFilePassword(first.id, null)
-    expect(await isEncryptedTrelyx(await archive(originalFile))).toBe(false)
+    expect(await isEncryptedBrainstorming(await archive(originalFile))).toBe(false)
     expect(files.getFileSecurity(second.id)).toEqual({ encrypted: true })
-    expect(await isEncryptedTrelyx(await archive(before[1]?.fileName ?? ''))).toBe(true)
+    expect(await isEncryptedBrainstorming(await archive(before[1]?.fileName ?? ''))).toBe(true)
   })
 
   it('preserves the entire previous workspace when index transaction fails, then removes closed documents after success', async () => {
@@ -134,7 +141,7 @@ describe('native workspace recovery', () => {
     await files.writeWorkspaceRecovery(contents)
     const before = await entries()
     const invalid = [
-      { documentId: first.id, fileName: '../../outside.trelyx', protocolVersion: 2 },
+      { documentId: first.id, fileName: '../../outside.brainstorming', protocolVersion: 2 },
     ] as unknown as readonly RecoveryEntry[]
     vi.spyOn(recoveryIndexFor(files), 'read').mockResolvedValueOnce(invalid)
     await expect(files.readWorkspaceRecovery()).rejects.toThrow('索引损坏')

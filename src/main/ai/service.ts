@@ -25,7 +25,7 @@ export const sdkGenerate = async (
   transport: typeof fetch = fetch,
 ): Promise<AIResult> => {
   const provider = createOpenAICompatible({
-    name: 'trelyx',
+    name: 'brainstorming',
     baseURL: input.settings.baseURL,
     ...(input.settings.apiKey ? { apiKey: input.settings.apiKey } : {}),
     supportsStructuredOutputs: input.settings.structuredOutputs,

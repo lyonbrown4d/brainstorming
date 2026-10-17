@@ -10,7 +10,7 @@ describe('SQLite metadata lifecycle and schema', () => {
     const directory = await storageDirectory()
     const database = openDatabase(path.join(directory, 'nested'))
     await database.preferences.setLanguage('en')
-    const connection = new Database(path.join(directory, 'nested', 'trelyx.sqlite'))
+    const connection = new Database(path.join(directory, 'nested', 'brainstorming.sqlite'))
     try {
       expect(connection.pragma('journal_mode', { simple: true })).toBe('wal')
       expect(connection.pragma('user_version', { simple: true })).toBe(1)
@@ -30,9 +30,9 @@ describe('SQLite metadata lifecycle and schema', () => {
       const insert = connection.prepare('INSERT INTO workspace_recovery VALUES (?, ?, ?, ?)')
       insert.run(0, entry.documentId, entry.fileName, 2)
       expect(() => insert.run(1, 'two', entry.fileName, 2)).toThrow()
-      expect(() => insert.run(32, 'three', 'three.trelyx', 2)).toThrow()
-      expect(() => insert.run(1, 'three', 'three.trelyx', 1)).toThrow()
-      insert.run(1, 'three', '../outside.trelyx', 2)
+      expect(() => insert.run(32, 'three', 'three.brainstorming', 2)).toThrow()
+      expect(() => insert.run(1, 'three', 'three.brainstorming', 1)).toThrow()
+      insert.run(1, 'three', '../outside.brainstorming', 2)
       await expect(database.recoveryIndex.read()).rejects.toThrow('工作区恢复索引损坏')
     } finally {
       connection.close()
@@ -41,7 +41,7 @@ describe('SQLite metadata lifecycle and schema', () => {
 
   it('rejects unknown schema versions and leaves their data intact', async () => {
     const directory = await storageDirectory()
-    const file = path.join(directory, 'trelyx.sqlite')
+    const file = path.join(directory, 'brainstorming.sqlite')
     const existing = new Database(file)
     existing.exec("CREATE TABLE future_data (value TEXT); INSERT INTO future_data VALUES ('kept')")
     existing.pragma('user_version = 42')
@@ -59,7 +59,7 @@ describe('SQLite metadata lifecycle and schema', () => {
 
   it('rejects an unversioned nonempty database and damaged bytes without overwriting either', async () => {
     const directory = await storageDirectory()
-    const file = path.join(directory, 'trelyx.sqlite')
+    const file = path.join(directory, 'brainstorming.sqlite')
     const existing = new Database(file)
     existing.exec('CREATE TABLE unknown_data (value TEXT)')
     existing.close()

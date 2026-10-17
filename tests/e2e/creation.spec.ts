@@ -4,7 +4,7 @@ import { prepareNativeSave, prepareNativeOpen } from '@tests/electron/native-fil
 import { reloadWindow } from '@tests/electron/session'
 import { expect, test, type Page } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
-import { decodeTrelyx } from '@formats/trelyx'
+import { decodeBrainstorming } from '@formats/brainstorming'
 import { dockAction } from '@tests/e2e/dock'
 import { openExample } from '@tests/e2e/workspace'
 
@@ -13,7 +13,7 @@ const save = async (page: Page) => {
   await page.keyboard.press('ControlOrMeta+s')
   const path = await download.path()
   if (!path) throw new Error('保存没有生成文件')
-  return decodeTrelyx(await readFile(path))
+  return decodeBrainstorming(await readFile(path))
 }
 const recoveryContents = async (page: Page) => recoveryBytes(page)
 
@@ -28,7 +28,7 @@ test('启动首页不加载或自动保存示例，模板与指定结构创建�
   await expect(page.getByRole('button', { name: /^选择/ })).toHaveCount(15)
   await expect(page.getByRole('button', { name: '空白导图', exact: true })).toHaveCount(0)
   await expect(page.getByRole('button', { name: '创建文档', exact: true })).toHaveCount(0)
-  await page.screenshot({ path: testInfo.outputPath('trelyx-home.png') })
+  await page.screenshot({ path: testInfo.outputPath('brainstorming-home.png') })
   const structure = page.getByRole('button', { name: '选择向右括号图', exact: true })
   await structure.focus()
   await page.keyboard.press('Enter')
@@ -51,7 +51,7 @@ test('启动首页不加载或自动保存示例，模板与指定结构创建�
     'aria-pressed',
     'true',
   )
-  await page.screenshot({ path: testInfo.outputPath('trelyx-creation-guide.png') })
+  await page.screenshot({ path: testInfo.outputPath('brainstorming-creation-guide.png') })
   await page.getByRole('button', { name: '创建文档', exact: true }).click()
   await expect(page.getByTestId('topic-root')).toContainText('发布准备')
   await expect(
@@ -140,7 +140,7 @@ test('首页打开损坏文件或取消选择仍保留首页', async ({ page }) 
   const invalid = await prepareNativeOpen(page)
   await open.click()
   await invalid.selectFile({
-    name: '损坏.trelyx',
+    name: '损坏.brainstorming',
     mimeType: 'application/zip',
     buffer: Buffer.from('broken'),
   })

@@ -12,7 +12,7 @@ export const createDocument = (
   assertId(id)
   if (typeof title !== 'string') throw new Error('标题必须是文本')
   return {
-    format: 'trelyx',
+    format: 'brainstorming',
     version: 1,
     id,
     title,
@@ -22,7 +22,7 @@ export const createDocument = (
 }
 
 export const createExampleDocument = (): MindMapDocument => {
-  let document = createDocument('产品规划', 'trelyx-example')
+  let document = createDocument('产品规划', 'brainstorming-example')
   const branches: readonly [string, string, Side, readonly string[]][] = [
     ['vision', '产品愿景', 'left', ['让思考自由生长', '本地优先']],
     ['users', '目标用户', 'left', ['独立创作者', '产品与设计团队']],
@@ -88,7 +88,7 @@ export const documentData = (
   }
   const assets = documentAssetsData(document, preserveUnusedAssets)
   return {
-    format: 'trelyx',
+    format: 'brainstorming',
     version: 1,
     id: document.id,
     title: document.title,

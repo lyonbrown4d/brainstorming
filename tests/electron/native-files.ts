@@ -12,11 +12,11 @@ export const prepareNativeOpen = async (page: Page) => {
   const { app, directory } = nativeSession(page)
   await app.evaluate(({ dialog }) => {
     const state = globalThis as typeof globalThis & {
-      trelyxOpenSelection?: (result: Electron.OpenDialogReturnValue) => void
+      brainstormingOpenSelection?: (result: Electron.OpenDialogReturnValue) => void
     }
     dialog.showOpenDialog = () =>
       new Promise((resolve) => {
-        state.trelyxOpenSelection = resolve
+        state.brainstormingOpenSelection = resolve
       })
   })
   return {
@@ -29,13 +29,15 @@ export const prepareNativeOpen = async (page: Page) => {
         path = join(folder, basename(input.name))
         await writeFile(path, input.buffer)
       }
-      await expect.poll(() => app.evaluate(() => 'trelyxOpenSelection' in globalThis)).toBe(true)
+      await expect
+        .poll(() => app.evaluate(() => 'brainstormingOpenSelection' in globalThis))
+        .toBe(true)
       await app.evaluate((_, selected) => {
         const state = globalThis as typeof globalThis & {
-          trelyxOpenSelection?: (result: Electron.OpenDialogReturnValue) => void
+          brainstormingOpenSelection?: (result: Electron.OpenDialogReturnValue) => void
         }
-        const resolve = state.trelyxOpenSelection
-        delete state.trelyxOpenSelection
+        const resolve = state.brainstormingOpenSelection
+        delete state.brainstormingOpenSelection
         resolve?.({ canceled: !selected, filePaths: selected ? [selected] : [] })
       }, path ?? null)
       return path ?? null
@@ -57,15 +59,15 @@ export const prepareNativeSave = async (page: Page) => {
         .catch(() => null)
     : null
   await app.evaluate(({ dialog }, outputDirectory) => {
-    const state = globalThis as typeof globalThis & { trelyxSavedPath?: string }
-    delete state.trelyxSavedPath
+    const state = globalThis as typeof globalThis & { brainstormingSavedPath?: string }
+    delete state.brainstormingSavedPath
     dialog.showSaveDialog = (
       ...args: [Electron.SaveDialogOptions] | [Electron.BaseWindow, Electron.SaveDialogOptions]
     ) => {
       const options = args.length === 2 ? args[1] : args[0]
-      const name = options.defaultPath?.split(/[\\/]/u).at(-1) ?? 'document.trelyx'
+      const name = options.defaultPath?.split(/[\\/]/u).at(-1) ?? 'document.brainstorming'
       const path = `${outputDirectory}/${name}`
-      state.trelyxSavedPath = path
+      state.brainstormingSavedPath = path
       return Promise.resolve({ canceled: false, filePath: path })
     }
   }, folder)
@@ -75,7 +77,9 @@ export const prepareNativeSave = async (page: Page) => {
       await expect
         .poll(async () => {
           const selected = await app.evaluate(
-            () => (globalThis as typeof globalThis & { trelyxSavedPath?: string }).trelyxSavedPath,
+            () =>
+              (globalThis as typeof globalThis & { brainstormingSavedPath?: string })
+                .brainstormingSavedPath,
           )
           const path = selected ?? existingPath
           if (!path) return false

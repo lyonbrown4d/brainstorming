@@ -17,9 +17,9 @@ export const showStartupIssue = (document: Document, message: string, failed: bo
 
 export const dismissStartupScreen = (document: Document): void => {
   const screen = document.getElementById('startup-screen')
-  if (document.defaultView?.trelyxStartup) {
+  if (document.defaultView?.brainstormingStartup) {
     screen?.remove()
-    document.defaultView.trelyxStartup.ready()
+    document.defaultView.brainstormingStartup.ready()
     return
   }
   if (!screen) return

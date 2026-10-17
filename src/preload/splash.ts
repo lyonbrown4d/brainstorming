@@ -27,4 +27,4 @@ const api: SplashAPI = {
     return () => ipcRenderer.removeListener('startup:language', listener)
   },
 }
-contextBridge.exposeInMainWorld('trelyxSplash', api)
+contextBridge.exposeInMainWorld('brainstormingSplash', api)

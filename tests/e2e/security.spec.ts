@@ -5,7 +5,7 @@ import { reloadWindow } from '@tests/electron/session'
 import { completeDocumentCreation, openExample } from '@tests/e2e/workspace'
 import { expect, test, type Page } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
-import { isEncryptedTrelyx, decryptTrelyx } from '@formats/encrypted'
+import { isEncryptedBrainstorming, decryptBrainstorming } from '@formats/encrypted'
 import { openDock } from '@tests/e2e/dock'
 
 const password = 'native-test-password'
@@ -21,7 +21,7 @@ const openFile = async (page: Page, path: string): Promise<void> => {
 }
 const recoveryEncrypted = async (page: Page): Promise<boolean> => {
   const bytes = await recoveryBytes(page)
-  return bytes ? isEncryptedTrelyx(bytes) : false
+  return bytes ? isEncryptedBrainstorming(bytes) : false
 }
 
 test('密码保护从 Dock 弹出后保持可用，保存/恢复加密，并支持取消和错密码后重新打开', async ({
@@ -47,8 +47,8 @@ test('密码保护从 Dock 弹出后保持可用，保存/恢复加密，并支�
   const path = await saving.path()
   if (!path) throw new Error('Missing encrypted native file')
   const bytes = await readFile(path)
-  expect(await isEncryptedTrelyx(bytes)).toBe(true)
-  expect((await decryptTrelyx(bytes, password)).sheets[0]?.document.title).toBe('保密导图')
+  expect(await isEncryptedBrainstorming(bytes)).toBe(true)
+  expect((await decryptBrainstorming(bytes, password)).sheets[0]?.document.title).toBe('保密导图')
   await expect.poll(() => recoveryEncrypted(page)).toBe(true)
   await fileAction(page, '新建导图')
   await expect(page.getByTestId('topic-root')).toContainText('新的想法')

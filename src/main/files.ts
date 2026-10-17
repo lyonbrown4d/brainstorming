@@ -6,8 +6,8 @@ import { mkdir } from 'node:fs/promises'
 import { basename, extname, resolve } from 'node:path'
 import { deserializeWorkbook, serializeWorkbook } from '@core'
 import { decodeFile } from '@formats'
-import { encodeTrelyx } from '@formats/trelyx'
-import { encryptTrelyx, isEncryptedTrelyx } from '@formats/encrypted'
+import { encodeBrainstorming } from '@formats/brainstorming'
+import { encryptBrainstorming, isEncryptedBrainstorming } from '@formats/encrypted'
 import type { FileSecuritySession } from '@main/file-security/session'
 import type { DocumentBackups } from '@main/file-security/backups'
 import { readDocumentBytes } from '@main/file-security/read'
@@ -45,13 +45,13 @@ const validatePath: (value: unknown, extensions: readonly string[]) => asserts v
 export const validateOpenPath: (value: unknown) => asserts value is string = (
   value: unknown,
 ): asserts value is string => {
-  validatePath(value, ['.trelyx', '.xmind'])
+  validatePath(value, ['.brainstorming', '.xmind'])
 }
 
 export const validateSavePath: (value: unknown) => asserts value is string = (
   value: unknown,
 ): asserts value is string => {
-  validatePath(value, ['.trelyx'])
+  validatePath(value, ['.brainstorming'])
 }
 
 const decodeDocument = (
@@ -102,7 +102,10 @@ export class DocumentFiles {
     validateOpenPath(path)
     const absolute = resolve(path)
     const bytes = await readDocumentBytes(absolute)
-    if (extname(absolute).toLowerCase() === '.trelyx' && (await isEncryptedTrelyx(bytes)))
+    if (
+      extname(absolute).toLowerCase() === '.brainstorming' &&
+      (await isEncryptedBrainstorming(bytes))
+    )
       return this.security.lock(bytes, absolute, true)
     const document = decodeDocument(bytes, absolute)
     if (document.path !== null) this.authorizedPaths.add(absolute)
@@ -131,7 +134,9 @@ export class DocumentFiles {
     if (password !== undefined && password !== null) validateFilePassword(password)
     const key = password === undefined ? this.security.passwordFor(workbook.id) : password
     const bytes =
-      key === null ? encodeTrelyx(workbook) : await encryptTrelyx(workbook, key, 'existing')
+      key === null
+        ? encodeBrainstorming(workbook)
+        : await encryptBrainstorming(workbook, key, 'existing')
     await atomicWrite(path, bytes)
     await this.configurePassword(workbook.id, key, password === undefined)
     await this.backups.write(workbook.id, bytes, key !== null)
@@ -225,12 +230,12 @@ export class DocumentFiles {
   }
   restoreDocumentBackup = async (id: unknown): Promise<OpenedDocument> => {
     const bytes = await this.backups.read(id)
-    const encrypted = await isEncryptedTrelyx(bytes)
-    if (typeof id !== 'string' || id.endsWith('-e.trelyx') !== encrypted)
+    const encrypted = await isEncryptedBrainstorming(bytes)
+    if (typeof id !== 'string' || id.endsWith('-e.brainstorming') !== encrypted)
       throw new Error('版本文件加密状态与记录不一致')
     return encrypted
       ? this.security.lock(bytes, null)
-      : decodeDocument(bytes, 'backup.trelyx', null)
+      : decodeDocument(bytes, 'backup.brainstorming', null)
   }
 
   private remember = async (path: string): Promise<void> => {

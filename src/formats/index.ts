@@ -1,8 +1,8 @@
-import { decodeTrelyx } from '@formats/trelyx'
+import { decodeBrainstorming } from '@formats/brainstorming'
 import { importXmind } from '@formats/xmind'
 import type { DecodedFile } from '@formats/types'
 
-export { encodeTrelyx, decodeTrelyx } from '@formats/trelyx'
+export { encodeBrainstorming, decodeBrainstorming } from '@formats/brainstorming'
 export type { DecodedFile, ImportedWorkbook } from '@formats/types'
 
 export const decodeFile = (bytes: Uint8Array, filename: string): DecodedFile => {
@@ -14,5 +14,5 @@ export const decodeFile = (bytes: Uint8Array, filename: string): DecodedFile => 
     const result = importXmind(bytes)
     return { ...result, imported: true }
   }
-  return { workbook: decodeTrelyx(bytes), warnings: [], imported: false }
+  return { workbook: decodeBrainstorming(bytes), warnings: [], imported: false }
 }

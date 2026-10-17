@@ -6,7 +6,7 @@ import { splashText } from '@renderer/splashI18n'
 
 initializeAppearance()
 
-const bridge = window.trelyxSplash
+const bridge = window.brainstormingSplash
 const retry = document.getElementById('startup-retry')
 const quit = document.getElementById('startup-quit')
 let language: AppLanguage = languageFromLocale(navigator.language)

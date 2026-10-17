@@ -42,7 +42,7 @@ export const TopicEditor = ({
   // Lexical owns composition and selection. Never replace its state on each keystroke.
   const [extension] = useState(() =>
     defineExtension({
-      name: `trelyx/topic-${surface}-${id}`,
+      name: `brainstorming/topic-${surface}-${id}`,
       namespace: `topic-${surface}-${id}`,
       dependencies: [
         PlainTextExtension,

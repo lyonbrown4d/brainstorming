@@ -19,7 +19,7 @@ const setup = () => {
   const bridge = {
     openDocument: vi.fn(() =>
       Promise.resolve({
-        path: '/protected.trelyx',
+        path: '/protected.brainstorming',
         contents: '',
         lockedToken: 'token',
         encrypted: true,
@@ -27,7 +27,7 @@ const setup = () => {
     ),
     unlockDocument: vi.fn(() =>
       Promise.resolve({
-        path: '/protected.trelyx',
+        path: '/protected.brainstorming',
         contents,
         sessionToken: 'token',
         encrypted: true,
@@ -43,7 +43,7 @@ const setup = () => {
     saveDocument: vi.fn(),
   }
   const confirm = vi.fn(() => true)
-  vi.stubGlobal('window', { trelyx: desktop(bridge), confirm })
+  vi.stubGlobal('window', { brainstorming: desktop(bridge), confirm })
   return { bridge, confirm }
 }
 beforeEach(() => {
@@ -157,10 +157,10 @@ describe('renderer protected-file acceptance', () => {
 
   it('restores a history snapshot dirty in memory and waits for an explicit save to touch the current file', async () => {
     const { bridge } = setup()
-    useEditor.setState({ path: '/current.trelyx' })
+    useEditor.setState({ path: '/current.brainstorming' })
     await restoreBackup('generated-backup-id')
     expect(useEditor.getState().workbook.title).toBe('Protected document')
-    expect(useEditor.getState().path).toBe('/current.trelyx')
+    expect(useEditor.getState().path).toBe('/current.brainstorming')
     expect(isDirty()).toBe(true)
     expect(bridge.saveDocument).not.toHaveBeenCalled()
   })

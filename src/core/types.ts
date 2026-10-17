@@ -48,7 +48,7 @@ export interface Topic {
 }
 
 export interface MindMapDocument extends DocumentExtensions {
-  readonly format: 'trelyx'
+  readonly format: 'brainstorming'
   readonly version: 1
   readonly id: string
   readonly title: string
@@ -71,7 +71,7 @@ export type TopicContentCommand =
   | { readonly type: 'removeTopicAttachment'; readonly topicId: string; readonly assetId: string }
 
 export interface TopicClipboard extends DocumentAnnotations {
-  readonly format: 'trelyx.topics'
+  readonly format: 'brainstorming.topics'
   readonly version: 1
   readonly roots: readonly string[]
   readonly topics: Readonly<Record<string, Topic>>
@@ -143,7 +143,7 @@ export interface MindMapSheet {
 }
 
 export interface MindMapWorkbook {
-  readonly format: 'trelyx'
+  readonly format: 'brainstorming'
   readonly version: 2
   readonly id: string
   readonly title: string

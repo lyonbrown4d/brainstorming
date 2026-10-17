@@ -36,7 +36,7 @@ export const CreationHeader = ({
       <div className="flex min-w-0 items-center gap-4">
         <div className="flex items-center gap-2 text-xl font-semibold tracking-tight">
           <Network className="size-6 text-primary" strokeWidth={1.7} />
-          <span className="hidden sm:inline">Trelyx</span>
+          <span className="hidden sm:inline">Brainstorming</span>
         </div>
         {onCancel && (
           <Button

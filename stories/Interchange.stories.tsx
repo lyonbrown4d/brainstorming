@@ -6,7 +6,7 @@ import '@renderer/styles/ui.css'
 
 const workbook = createWorkbook(createExampleDocument())
 const meta = {
-  title: 'Trelyx/导入与导出',
+  title: 'Brainstorming/导入与导出',
   component: ExportDialog,
   args: {
     workbook,

@@ -98,8 +98,8 @@ export const useFileLifecycle = (): void => {
       }
       window.document.title =
         workspace.screen === 'editor'
-          ? `${dirty ? '• ' : ''}${state.workbook.title} — Trelyx`
-          : 'Trelyx'
+          ? `${dirty ? '• ' : ''}${state.workbook.title} — Brainstorming`
+          : 'Brainstorming'
       if (tabs.tabs.length > 0 || tabs.recovery.length > 0) emptyWorkspaceQueued = false
       if (!canWriteRecovery()) recoveryWriter.cancel()
       else if (tabs.tabs.length > 0) recoveryWriter.schedule()

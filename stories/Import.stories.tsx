@@ -6,14 +6,17 @@ import '@renderer/styles/ui.css'
 import '@renderer/styles/chrome.css'
 
 const meta = {
-  title: 'Trelyx/XMind 导入',
+  title: 'Brainstorming/XMind 导入',
   component: ImportNotice,
   parameters: { layout: 'fullscreen' },
   beforeEach: () => {
     useEditor.setState({
       importReport: {
         sourceName: '产品规划.xmind',
-        warnings: ['未导入 XMind 图片（2 项）', 'XMind 布局已转换为 Trelyx 左右布局（1 项）'],
+        warnings: [
+          '未导入 XMind 图片（2 项）',
+          'XMind 布局已转换为 Brainstorming 左右布局（1 项）',
+        ],
       },
     })
     return () => {

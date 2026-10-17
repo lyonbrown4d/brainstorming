@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { mainWindow } from '@tests/desktop/windows'
 
 test('Electron系统主题事件自动更新；手动外观重启后保留并不受系统覆盖', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'trelyx-appearance-'))
+  const directory = await mkdtemp(join(tmpdir(), 'brainstorming-appearance-'))
   await seedChinese(directory)
   let app = await electron.launch({
     args: ['.', `--user-data-dir=${directory}`],
@@ -18,7 +18,9 @@ test('Electron系统主题事件自动更新；手动外观重启后保留并不
       nativeTheme.themeSource = 'dark'
     })
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-    expect(await page.evaluate(() => localStorage.getItem('trelyx-appearance'))).not.toBe('dark')
+    expect(await page.evaluate(() => localStorage.getItem('brainstorming-appearance'))).not.toBe(
+      'dark',
+    )
     await page.getByRole('button', { name: '应用外观', exact: true }).click()
     await page.getByRole('menuitemradio', { name: '浅色', exact: true }).click()
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
@@ -29,7 +31,9 @@ test('Electron系统主题事件自动更新；手动外观重启后保留并不
       nativeTheme.themeSource = 'dark'
     })
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
-    expect(await page.evaluate(() => localStorage.getItem('trelyx-appearance'))).toBe('light')
+    expect(await page.evaluate(() => localStorage.getItem('brainstorming-appearance'))).toBe(
+      'light',
+    )
     await page.getByRole('button', { name: '应用外观', exact: true }).click()
     await page.getByRole('menuitemradio', { name: '跟随系统', exact: true }).click()
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
@@ -37,7 +41,9 @@ test('Electron系统主题事件自动更新；手动外观重启后保留并不
       nativeTheme.themeSource = 'light'
     })
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
-    expect(await page.evaluate(() => localStorage.getItem('trelyx-appearance'))).toBe('system')
+    expect(await page.evaluate(() => localStorage.getItem('brainstorming-appearance'))).toBe(
+      'system',
+    )
   } finally {
     app.process().kill('SIGKILL')
     await rm(directory, { recursive: true, force: true })

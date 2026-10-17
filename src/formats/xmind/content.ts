@@ -1,7 +1,7 @@
 import { DOMParser, type Node as XmlNode } from '@xmldom/xmldom'
 import { validateDocumentAsset, type DocumentAsset, type Topic, type TopicImage } from '@core'
 import { createAsset, imageDimensions, safeAssetName } from '@assets'
-import { ASSET_LIMITS } from '@formats/trelyx/assets'
+import { ASSET_LIMITS } from '@formats/brainstorming/assets'
 import type { SourceRecord, Warnings } from '@formats/xmind/common'
 
 const object = (value: unknown): SourceRecord | undefined => {

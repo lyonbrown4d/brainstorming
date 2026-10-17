@@ -52,7 +52,8 @@ export interface TopicMetadata {
 }
 export interface DocumentSettings {
   readonly layout?: LayoutKind
-  readonly theme?: 'trelyx' | 'ocean' | 'forest' | 'sunset' | 'mono' | 'dawn' | 'paper' | 'night'
+  readonly theme?:
+    'brainstorming' | 'ocean' | 'forest' | 'sunset' | 'mono' | 'dawn' | 'paper' | 'night'
   readonly customPalette?: DocumentPalette
   readonly background?: string
   readonly fontFamily?: string

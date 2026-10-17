@@ -7,11 +7,11 @@ const preview: Preview = {
   parameters: { layout: 'fullscreen' },
   beforeEach: () => {
     useDocumentTabs.setState({ tabs: [], activeId: null, recovery: [] })
-    const previous = window.trelyx
-    window.trelyx = createStoryDesktop()
+    const previous = window.brainstorming
+    window.brainstorming = createStoryDesktop()
     return () => {
-      if (previous) window.trelyx = previous
-      else delete window.trelyx
+      if (previous) window.brainstorming = previous
+      else delete window.brainstorming
     }
   },
 }

@@ -2,7 +2,7 @@ import { app, dialog } from 'electron'
 import { desktopConfig } from '@main/config'
 import { createApplication } from '@main/di/container'
 
-app.setName('Trelyx')
+app.setName('Brainstorming')
 if (!app.requestSingleInstanceLock()) app.quit()
 else {
   const runtime = createApplication({
@@ -31,7 +31,10 @@ else {
     })
     .catch(async () => {
       await runtime.dispose()
-      dialog.showErrorBox('无法启动 Trelyx', '本地应用数据无法初始化，请检查存储空间与目录权限。')
+      dialog.showErrorBox(
+        '无法启动 Brainstorming',
+        '本地应用数据无法初始化，请检查存储空间与目录权限。',
+      )
       app.quit()
     })
 }

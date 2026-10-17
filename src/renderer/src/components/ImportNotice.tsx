@@ -24,7 +24,9 @@ export const ImportNotice = () => {
       <span>
         {translate('imported')}
         {report.sourceName}，
-        {path ? translate('savedAsATrelyxFile') : translate('savingWillCreateATrelyxFile')}
+        {path
+          ? translate('savedAsABrainstormingFile')
+          : translate('savingWillCreateABrainstormingFile')}
         {report.warnings.length > 0 && translate('someContentWasAdjustedOrCouldNot')}
       </span>
       {report.warnings.length > 0 && (
@@ -39,7 +41,7 @@ export const ImportNotice = () => {
               <DialogTitle>{translate('importReport')}</DialogTitle>
               <DialogDescription>
                 {report.sourceName}
-                {translate('convertedToAnEditableTrelyxDocumentThe')}
+                {translate('convertedToAnEditableBrainstormingDocumentThe')}
               </DialogDescription>
             </DialogHeader>
             <ul className="import-warning-list">

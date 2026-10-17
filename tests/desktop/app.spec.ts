@@ -8,16 +8,16 @@ import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createDocument, createWorkbook } from '@core'
-import { encodeTrelyx } from '@formats/trelyx'
+import { encodeBrainstorming } from '@formats/brainstorming'
 import { decodeFile } from '@formats'
 import { modernXmind } from '@tests/fixtures/xmind/archive'
 import { imageBase64, attachmentBytes } from '@tests/fixtures/content'
 
 test('生产 Electron 启动、sandbox preload 和恢复闭环', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'trelyx-desktop-'))
+  const directory = await mkdtemp(join(tmpdir(), 'brainstorming-desktop-'))
   await seedChinese(directory)
   const recovered = createWorkbook(createDocument('桌面恢复验证'))
-  await seedRecovery(directory, recovered.id, encodeTrelyx(recovered))
+  await seedRecovery(directory, recovered.id, encodeBrainstorming(recovered))
   const app = await electron.launch({
     colorScheme: null,
     args: ['.', `--user-data-dir=${directory}`],
@@ -34,10 +34,10 @@ test('生产 Electron 启动、sandbox preload 和恢复闭环', async () => {
     await expect(page.getByRole('button', { name: '探索示例', exact: true })).toBeVisible()
     const security = await page.evaluate(() => ({
       nodeIntegration: 'require' in window,
-      bridge: typeof window.trelyx?.saveDocument,
+      bridge: typeof window.brainstorming?.saveDocument,
     }))
     expect(security).toEqual({ nodeIntegration: false, bridge: 'function' })
-    expect(await page.evaluate(() => typeof window.trelyx?.saveDocument)).toBe('function')
+    expect(await page.evaluate(() => typeof window.brainstorming?.saveDocument)).toBe('function')
     await expect(page.getByRole('button', { name: /恢复/ })).toBeVisible()
     await page.getByRole('button', { name: /恢复/ }).click()
     await expect(page.getByTestId('topic-root')).toContainText('桌面恢复验证')
@@ -89,7 +89,7 @@ test('生产 Electron 启动、sandbox preload 和恢复闭环', async () => {
     await expect
       .poll(() => readFile(exportedPath).catch(() => Buffer.alloc(0)))
       .toEqual(Buffer.from(attachmentBytes))
-    const savedPath = join(directory, 'native-save.trelyx')
+    const savedPath = join(directory, 'native-save.brainstorming')
     await app.evaluate(({ dialog }, path) => {
       dialog.showSaveDialog = () => Promise.resolve({ canceled: false, filePath: path })
     }, savedPath)
@@ -124,13 +124,13 @@ test('生产 Electron 启动、sandbox preload 和恢复闭环', async () => {
 })
 
 test('系统传入的文件在启动和 macOS 打开事件中使用相同打开流程', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'trelyx-file-open-'))
+  const directory = await mkdtemp(join(tmpdir(), 'brainstorming-file-open-'))
   await seedChinese(directory)
-  const firstPath = join(directory, 'first.trelyx')
+  const firstPath = join(directory, 'first.brainstorming')
   const secondPath = join(directory, 'second.xmind')
   const originalXmind = modernXmind()
   await Promise.all([
-    writeFile(firstPath, encodeTrelyx(createWorkbook(createDocument('启动文件')))),
+    writeFile(firstPath, encodeBrainstorming(createWorkbook(createDocument('启动文件')))),
     writeFile(secondPath, originalXmind),
   ])
   const damagedRecovery = await seedRecovery(directory, 'damaged-workbook', 'damaged recovery')

@@ -30,7 +30,7 @@ export interface AIAssistantProps {
 }
 export const AIAssistant = ({
   onAddSheet,
-  api = window.trelyx,
+  api = window.brainstorming,
   defaultOpen = false,
 }: AIAssistantProps) => {
   const { translate } = useMessages()
@@ -82,7 +82,7 @@ export const AIAssistant = ({
         </DialogHeader>
         {!api ? (
           <p role="status" className="rounded-lg bg-muted p-4 text-sm">
-            {translate('theAiAssistantRequiresTheTrelyxDesktop')}
+            {translate('theAiAssistantRequiresTheBrainstormingDesktop')}
           </p>
         ) : (
           <>

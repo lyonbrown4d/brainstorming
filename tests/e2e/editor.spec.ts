@@ -16,7 +16,7 @@ test('新增、编辑、折叠、撤销、保存与重新打开', async ({ page 
   page.on('dialog', (dialog) => dialog.accept())
   await expect(page.getByTestId('topic-root')).toBeVisible()
   await expect(page.getByText('快捷记录灵感', { exact: true })).toBeVisible()
-  await page.screenshot({ path: testInfo.outputPath('trelyx-v0.1.png') })
+  await page.screenshot({ path: testInfo.outputPath('brainstorming-v0.1.png') })
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name: '新建导图', exact: true }).click()
   await completeDocumentCreation(page)
@@ -70,7 +70,7 @@ test('无效文件不替换当前文档，输入法 Enter 不创建主题', asyn
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name: '打开导图', exact: true }).click()
   await picker.selectFile({
-    name: 'broken.trelyx',
+    name: 'broken.brainstorming',
     mimeType: 'application/json',
     buffer: Buffer.from('{broken'),
   })

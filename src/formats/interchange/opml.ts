@@ -1,6 +1,6 @@
 import { DOMImplementation, DOMParser, XMLSerializer, type Element } from '@xmldom/xmldom'
 import type { MindMapWorkbook } from '@core'
-import { validateBoundedWorkbook } from '@formats/trelyx/validation'
+import { validateBoundedWorkbook } from '@formats/brainstorming/validation'
 import { xmlText } from '@formats/interchange/xml'
 import { assertTextSize, outlineWorkbook, type OutlineTopic } from '@formats/interchange/outline'
 
@@ -29,13 +29,13 @@ export const decodeOpml = (text: string): MindMapWorkbook => {
     }
   }
   const roots = children(body)
-  const trelyx = root.getAttribute('trelyx') === 'workbook-v1'
+  const brainstorming = root.getAttribute('brainstorming') === 'workbook-v1'
   const headTitle = root.getElementsByTagName('title')[0]?.textContent ?? '导入大纲'
   return outlineWorkbook(
-    trelyx
+    brainstorming
       ? roots.map((element) => {
           const nested = children(element)
-          if (nested.length !== 1) throw new Error('Trelyx OPML 画布须包含一个中心主题')
+          if (nested.length !== 1) throw new Error('Brainstorming OPML 画布须包含一个中心主题')
           const center = nested[0]
           if (!center) throw new Error('OPML 缺少中心主题')
           return { name: element.getAttribute('text') ?? '导入大纲', root: topic(center, 1) }
@@ -57,7 +57,7 @@ export const encodeOpml = (workbook: MindMapWorkbook): string => {
   const root = document.documentElement
   if (!root) throw new Error('无法创建 OPML 文档')
   root.setAttribute('version', '2.0')
-  root.setAttribute('trelyx', 'workbook-v1')
+  root.setAttribute('brainstorming', 'workbook-v1')
   const head = document.createElement('head')
   const title = document.createElement('title')
   title.appendChild(document.createTextNode(xmlText(workbook.title)))

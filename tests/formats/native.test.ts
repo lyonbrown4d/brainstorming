@@ -3,11 +3,11 @@ import { strToU8, zipSync } from 'fflate'
 import { applyCommand, createDocument, createWorkbook, serializeWorkbook } from '@core'
 import type { MindMapWorkbook, Topic } from '@core'
 import { readArchive } from '@formats/archive'
-import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
+import { decodeBrainstorming, encodeBrainstorming } from '@formats/brainstorming'
 const manifest = {
-  format: 'app.trelyx.document',
+  format: 'app.brainstorming.document',
   version: 1,
-  createdBy: { name: 'Trelyx', version: '0.1.0' },
+  createdBy: { name: 'Brainstorming', version: '0.1.0' },
 }
 const workbook = (): MindMapWorkbook => {
   let document = createDocument('中文中心 🌱', 'document-one')
@@ -65,12 +65,12 @@ const deepWorkbook = (depth: number): MindMapWorkbook => {
   }
   return createWorkbook({ ...createDocument('主题', 'deep'), rootId: 'topic-0', topics })
 }
-describe('Trelyx native ZIP document', () => {
+describe('Brainstorming native ZIP document', () => {
   it('roundtrips multiple sheets, independent document IDs, Unicode, ordering and all styles', () => {
     const original = workbook()
-    const bytes = encodeTrelyx(original)
+    const bytes = encodeBrainstorming(original)
     expect(Array.from(bytes.subarray(0, 4))).toEqual([80, 75, 3, 4])
-    expect(decodeTrelyx(bytes)).toEqual(original)
+    expect(decodeBrainstorming(bytes)).toEqual(original)
     const entries = readArchive(bytes)
     expect(JSON.parse(new TextDecoder().decode(entries.get('manifest.json')))).toEqual(manifest)
     const content: unknown = JSON.parse(new TextDecoder().decode(entries.get('document.json')))
@@ -78,27 +78,34 @@ describe('Trelyx native ZIP document', () => {
     expect(JSON.stringify(content)).not.toMatch(/"(?:format|version)":/u)
   })
   it('rejects legacy JSON, future native versions and missing required content', () => {
-    const bytes = encodeTrelyx(workbook())
-    expect(() => decodeTrelyx(strToU8(serializeWorkbook(workbook())))).toThrow(/ZIP/u)
+    const bytes = encodeBrainstorming(workbook())
     expect(() =>
-      decodeTrelyx(replaceEntry(bytes, 'manifest.json', { ...manifest, version: 2 })),
+      decodeBrainstorming(
+        replaceEntry(bytes, 'manifest.json', { ...manifest, format: 'app.legacy.document' }),
+      ),
+    ).toThrow(/原生文档/u)
+    expect(() => decodeBrainstorming(strToU8(serializeWorkbook(workbook())))).toThrow(/ZIP/u)
+    expect(() =>
+      decodeBrainstorming(replaceEntry(bytes, 'manifest.json', { ...manifest, version: 2 })),
     ).toThrow(/版本/u)
     expect(() =>
-      decodeTrelyx(zipSync({ 'manifest.json': strToU8(JSON.stringify(manifest)) })),
+      decodeBrainstorming(zipSync({ 'manifest.json': strToU8(JSON.stringify(manifest)) })),
     ).toThrow(/document.json/u)
   })
   it('rejects unsupported attachments and unknown domain fields instead of dropping them', () => {
-    const entries = Object.fromEntries(readArchive(encodeTrelyx(workbook())))
+    const entries = Object.fromEntries(readArchive(encodeBrainstorming(workbook())))
     expect(() =>
-      decodeTrelyx(zipSync({ ...entries, 'assets/photo.png': new Uint8Array([1]) })),
+      decodeBrainstorming(zipSync({ ...entries, 'assets/photo.png': new Uint8Array([1]) })),
     ).toThrow(/附加内容/u)
     expect(() =>
-      decodeTrelyx(zipSync({ ...entries, 'preview/image.png': new Uint8Array([1]) })),
+      decodeBrainstorming(zipSync({ ...entries, 'preview/image.png': new Uint8Array([1]) })),
     ).toThrow(/附加内容/u)
-    expect(decodeTrelyx(zipSync({ ...entries, 'assets/': new Uint8Array() }))).toEqual(workbook())
+    expect(decodeBrainstorming(zipSync({ ...entries, 'assets/': new Uint8Array() }))).toEqual(
+      workbook(),
+    )
     expect(() =>
-      decodeTrelyx(
-        replaceEntry(encodeTrelyx(workbook()), 'document.json', {
+      decodeBrainstorming(
+        replaceEntry(encodeBrainstorming(workbook()), 'document.json', {
           id: 'x',
           title: 'x',
           sheets: [],
@@ -108,20 +115,20 @@ describe('Trelyx native ZIP document', () => {
     ).toThrow(/不支持的内容/u)
   })
   it('validates the decoded tree and rejects malformed UTF-8 JSON', () => {
-    const entries = Object.fromEntries(readArchive(encodeTrelyx(workbook())))
+    const entries = Object.fromEntries(readArchive(encodeBrainstorming(workbook())))
     expect(() =>
-      decodeTrelyx(
+      decodeBrainstorming(
         zipSync({ ...entries, 'document.json': strToU8('{"id":"x","title":"x","sheets":[]}') }),
       ),
     ).toThrow(/至少需要一个画布/u)
     expect(() =>
-      decodeTrelyx(zipSync({ ...entries, 'document.json': new Uint8Array([0xff]) })),
+      decodeBrainstorming(zipSync({ ...entries, 'document.json': new Uint8Array([0xff]) })),
     ).toThrow(/UTF-8 JSON/u)
   })
   it('accepts depth 128 and rejects depth 129 when saving and opening', () => {
-    expect(decodeTrelyx(encodeTrelyx(deepWorkbook(128)))).toEqual(deepWorkbook(128))
+    expect(decodeBrainstorming(encodeBrainstorming(deepWorkbook(128)))).toEqual(deepWorkbook(128))
     const tooDeep = deepWorkbook(129)
-    expect(() => encodeTrelyx(tooDeep)).toThrow(/128 层/u)
+    expect(() => encodeBrainstorming(tooDeep)).toThrow(/128 层/u)
     const content = {
       id: tooDeep.id,
       title: tooDeep.title,
@@ -131,7 +138,7 @@ describe('Trelyx native ZIP document', () => {
       }),
     }
     expect(() =>
-      decodeTrelyx(replaceEntry(encodeTrelyx(workbook()), 'document.json', content)),
+      decodeBrainstorming(replaceEntry(encodeBrainstorming(workbook()), 'document.json', content)),
     ).toThrow(/128 层/u)
   })
   it('bounds topic count and serialized entry bytes', () => {
@@ -143,9 +150,9 @@ describe('Trelyx native ZIP document', () => {
     topics.root = { ...root, children }
     for (const id of children)
       topics[id] = { id, title: '', side: 'right', collapsed: false, children: [] }
-    expect(() => encodeTrelyx(createWorkbook({ ...base, topics }))).toThrow(/20000/u)
+    expect(() => encodeBrainstorming(createWorkbook({ ...base, topics }))).toThrow(/20000/u)
     expect(() =>
-      encodeTrelyx(createWorkbook(createDocument('大'.repeat(4 * 1024 * 1024), 'large'))),
+      encodeBrainstorming(createWorkbook(createDocument('大'.repeat(4 * 1024 * 1024), 'large'))),
     ).toThrow(/10 MiB/u)
   })
 })

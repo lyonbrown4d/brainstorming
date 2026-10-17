@@ -47,7 +47,7 @@ const loadSpatialCanvas = () => import('@renderer/components/spatial/SpatialCanv
 | `pnpm test:e2e`                                | 真实 Electron 新增、编辑、折叠、移动、保存、打开和输入法保护           |
 | `pnpm test:perf`                               | 真实 Electron 生产构建，固定 100/1000/5000 主题，每组采样三次并附 JSON |
 | `pnpm build` / `pnpm test:desktop`             | 生产构建与真实 Electron 启动、文件桥接                                 |
-| `pnpm moon run trelyx:package`                 | 先构建再打包                                                           |
+| `pnpm moon run brainstorming:package`          | 先构建再打包                                                           |
 
 Storybook 组件测试的浏览器由项目固定的 Playwright 版本安装：`pnpm exec playwright install chromium`。Linux CI 使用 `--with-deps`。E2E、桌面集成和性能测试通过 Playwright 启动真实 Electron，不配置浏览器 `webServer`。直接运行前先执行 `pnpm build`；Moon 的 `e2e`、`performance` 与 `package` 任务均依赖 `build`。桌面测试在 macOS 图形会话运行；其它系统安装目标已配置，尚不能等同于已在对应系统验证。
 
@@ -75,7 +75,7 @@ Electron renderer 和 Storybook 共用正式 React Compiler Babel 接入：`@vit
 
 Inversify 容器入口会加载 `reflect-metadata/lite`，因此项目将 `reflect-metadata` 显式声明为生产依赖；不能只依赖 pnpm 自动补齐的 peer。即使不使用装饰器，正式应用包也需要这个运行时依赖。macOS CI 在 `pnpm package --dir` 后执行 `pnpm test:packaged`，验证 ASAR 内的依赖装载、主页、新建与原生保存。
 
-`LocalDatabase` 使用 better-sqlite3 + Drizzle，单个主进程连接访问 `userData/trelyx.sqlite`，启用 WAL 和 3 秒 busy timeout。数据库保存界面语言、最近文件和恢复索引，不保存文档正文、资源或文件密码；SQL、数据库路径和连接不暴露给 renderer。没有旧 JSON 存储迁移流程。应用外观和小地图开关继续由现有 renderer 偏好管理，不写入导图文件。
+`LocalDatabase` 使用 better-sqlite3 + Drizzle，单个主进程连接访问 `userData/brainstorming.sqlite`，启用 WAL 和 3 秒 busy timeout。数据库保存界面语言、最近文件和恢复索引，不保存文档正文、资源或文件密码；SQL、数据库路径和连接不暴露给 renderer。没有旧 JSON 存储迁移流程。应用外观和小地图开关继续由现有 renderer 偏好管理，不写入导图文件。
 
 工作区恢复最多包含 32 份文档。先原子写入 `userData/recovery-v2` 下的新 ZIP，再在 SQLite 事务中替换索引，提交后清理旧文件。启用密码保护已有恢复记录与明文历史，并清理对应残留恢复文件；密钥仅留在主进程内存。恢复记录作为未保存副本打开，不恢复正式保存路径；原生文件协议见 [文件协议](file-format.md)。
 
@@ -113,7 +113,7 @@ preload 仅暴露平台、窗口焦点及全屏状态；读取状态仍校验当
 
 本地 macOS 预览未配置 Developer ID 签名或公证。CI 自动生成 macOS 预览 artifact，不自动发布正式版本。正式发布还需要签名、公证、应用图标和分发策略。当前 electron-builder 使用默认 Electron 图标。
 
-文件读取或恢复失败时，界面显示错误，保留当前内容。保存失败后脏状态保持；可另存到新位置重试。恢复文件或索引损坏时，先保留 `userData/recovery-v2`、`trelyx.sqlite` 及相关 WAL/SHM 文件再排查，不覆盖原记录。
+文件读取或恢复失败时，界面显示错误，保留当前内容。保存失败后脏状态保持；可另存到新位置重试。恢复文件或索引损坏时，先保留 `userData/recovery-v2`、`brainstorming.sqlite` 及相关 WAL/SHM 文件再排查，不覆盖原记录。
 
 运行时可选 `ELECTRON_RENDERER_URL` 仅供开发，通过 `src/main/config.ts` 校验为本机 loopback HTTP(S) 地址；生产始终加载打包资源。不要将凭据写入 `.env.example` 或文档。
 

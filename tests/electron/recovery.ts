@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
-import { decodeTrelyx } from '@formats/trelyx'
+import { decodeBrainstorming } from '@formats/brainstorming'
 import { recoveryFileStem, validateRecoveryIndex } from '@main/workspace-recovery/repository'
 import { storageOperation } from '@tests/electron/storage'
 
@@ -17,7 +17,7 @@ export const seedRecovery = async (
 ): Promise<string> => {
   const folder = join(directory, 'recovery-v2')
   await mkdir(folder, { recursive: true })
-  const fileName = `${recoveryFileStem(documentId)}.${randomUUID()}.trelyx`
+  const fileName = `${recoveryFileStem(documentId)}.${randomUUID()}.brainstorming`
   const path = join(folder, fileName)
   await writeFile(path, bytes)
   await storageOperation(
@@ -34,5 +34,5 @@ export const nativeRecoveryBytes = async (directory: string): Promise<Buffer | n
 export const nativeRecoveryContents = async (directory: string): Promise<string> => {
   const paths = await recoveryPaths(directory)
   const snapshots = await Promise.all(paths.map((path) => readFile(path).catch(() => null)))
-  return JSON.stringify(snapshots.flatMap((bytes) => (bytes ? [decodeTrelyx(bytes)] : [])))
+  return JSON.stringify(snapshots.flatMap((bytes) => (bytes ? [decodeBrainstorming(bytes)] : [])))
 }

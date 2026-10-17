@@ -31,7 +31,7 @@ export const exportNotice: Record<ExportFormat, string> = {
   opml: '保留画布、主题层级、标题和纯文本备注。OPML 不保留样式、折叠、图片、附件及其他注释内容。',
   txt: '保留画布名称、缩进层级和标题；标题内换行写作 \\n。纯文本不保留其他内容。',
   xmind:
-    '现代 XMind 文件包含所选画布、主题、备注和内嵌资源。每个主题的首个附件使用标准链接；额外附件和扩展元数据写入 Trelyx 扩展，其他软件可能忽略。仅导出当前画布时会移除指向其他画布的主题链接。',
+    '现代 XMind 文件包含所选画布、主题、备注和内嵌资源。每个主题的首个附件使用标准链接；额外附件和扩展元数据写入 Brainstorming 扩展，其他软件可能忽略。仅导出当前画布时会移除指向其他画布的主题链接。',
 }
 const rasterize = async (source: SheetSvg, scale: number): Promise<HTMLCanvasElement> => {
   if (!Number.isFinite(scale) || scale < 0.25 || scale > 3)
@@ -136,6 +136,6 @@ export const createExport = async (
       : sheet.name
     )
       .replace(/[\p{Cc}<>:"/\\|?*]/gu, '_')
-      .slice(0, 100) || 'Trelyx'
+      .slice(0, 100) || 'Brainstorming'
   return { format: options.format, suggestedName: `${name}.${options.format}`, bytes }
 }

@@ -24,7 +24,7 @@ const api: MCPAPI = {
   startMCPServer: (grant) => Promise.resolve({ ...connectionFor(), ...grant }),
 }
 const meta = {
-  title: 'Trelyx/MCP 连接',
+  title: 'Brainstorming/MCP 连接',
   component: MCPDialog,
   args: { api, defaultOpen: true },
   beforeEach: () => {

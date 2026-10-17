@@ -31,7 +31,7 @@ export class StartupWindow {
     this.splash = new BrowserWindow({
       width: 440,
       height: 400,
-      title: 'Trelyx — 正在启动',
+      title: 'Brainstorming — 正在启动',
       show: false,
       frame: false,
       resizable: false,
@@ -71,7 +71,7 @@ export class StartupWindow {
       : this.splash.loadFile(join(import.meta.dirname, '../renderer/splash.html'))
     void loading.catch(() => {
       if (this.disposed) return
-      dialog.showErrorBox('无法启动 Trelyx', '启动画面加载失败，请重新启动应用。')
+      dialog.showErrorBox('无法启动 Brainstorming', '启动画面加载失败，请重新启动应用。')
       this.cancel()
     })
   }

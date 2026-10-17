@@ -7,7 +7,7 @@ import { selectedTopicIds } from '@renderer/state/selection'
 import { openCanvasProperties } from '@stories/properties'
 
 const meta = {
-  title: 'Trelyx/图形结构',
+  title: 'Brainstorming/图形结构',
   component: App,
   parameters: { layout: 'fullscreen' },
   beforeEach: () => {

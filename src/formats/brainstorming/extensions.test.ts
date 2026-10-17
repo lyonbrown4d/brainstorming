@@ -3,7 +3,7 @@ import { strToU8, zipSync } from 'fflate'
 import { createWorkbook, validateWorkbook } from '@core'
 import { extensionFixture } from '@core/extension-test-fixture'
 import { readArchive } from '@formats/archive'
-import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx/index'
+import { decodeBrainstorming, encodeBrainstorming } from '@formats/brainstorming/index'
 
 /** A complete PCM WAV header plus one silent 16-bit sample, generated locally. */
 const wavBytes = (): Uint8Array => {
@@ -36,10 +36,10 @@ const workbook = () => {
 describe('native local-feature extensions', () => {
   it('roundtrips metadata, annotations, layouts, floating positions, saved presentation and embedded audio', () => {
     const original = workbook()
-    const encoded = encodeTrelyx(original)
+    const encoded = encodeBrainstorming(original)
     const entries = readArchive(encoded)
     expect(entries.get('assets/0/voice')).toEqual(wavBytes())
-    const decoded = decodeTrelyx(encoded)
+    const decoded = decodeBrainstorming(encoded)
     expect(decoded).toEqual(original)
     const manifest = JSON.parse(new TextDecoder().decode(entries.get('manifest.json'))) as {
       version: number
@@ -61,12 +61,12 @@ describe('native local-feature extensions', () => {
       topics: { ...document.topics, a: { ...topic, metadata, attachments: ['voice'] } },
       assets: { voice: { ...asset, mimeType: 'application/octet-stream' } },
     })
-    expect(decodeTrelyx(encodeTrelyx(legacy))).toEqual(legacy)
+    expect(decodeBrainstorming(encodeBrainstorming(legacy))).toEqual(legacy)
   })
 
   it('rejects unknown extension keys and dangling references from native JSON', () => {
     const original = workbook()
-    const encoded = encodeTrelyx(original)
+    const encoded = encodeBrainstorming(original)
     for (const mutate of [
       (document: Record<string, unknown>) => {
         document.settings = { layout: 'map', unsupported: true }
@@ -86,7 +86,7 @@ describe('native local-feature extensions', () => {
       if (!document) throw new Error('Missing serialized document')
       mutate(document)
       entries['document.json'] = strToU8(JSON.stringify(content))
-      expect(() => decodeTrelyx(zipSync(entries))).toThrow()
+      expect(() => decodeBrainstorming(zipSync(entries))).toThrow()
     }
   })
 })

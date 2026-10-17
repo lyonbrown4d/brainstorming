@@ -31,7 +31,7 @@ beforeEach(() => {
   )
   useEditor.getState().replace(workbook)
   useEditor.setState({ busy: false, recovery: null })
-  vi.stubGlobal('window', { trelyx: desktop(), confirm: vi.fn(() => true) })
+  vi.stubGlobal('window', { brainstorming: desktop(), confirm: vi.fn(() => true) })
 })
 
 afterEach(() => {
@@ -165,7 +165,7 @@ describe('工作簿文件边界', () => {
           finish = resolve
         }),
     )
-    window.trelyx = desktop({ saveDocument: persist })
+    window.brainstorming = desktop({ saveDocument: persist })
     renameRoot('第一页已保存内容')
     useEditor.getState().switchSheet('second')
     useEditor.getState().startEdit('root')
@@ -182,14 +182,14 @@ describe('工作簿文件边界', () => {
     useEditor.getState().addSheet()
     const newId = useEditor.getState().activeSheetId
     renameRoot('保存期间的新画布')
-    finish?.('/workbook.trelyx')
+    finish?.('/workbook.brainstorming')
     await saving
     expect(useEditor.getState().baseline).toBe(request.contents)
     expect(useEditor.getState().workbook.sheets).toHaveLength(3)
     expect(titleOf(newId)).toBe('保存期间的新画布')
     expect(isDirty()).toBe(true)
-    expect(useEditor.getState().path).toBe('/workbook.trelyx')
-    window.trelyx = desktop()
+    expect(useEditor.getState().path).toBe('/workbook.brainstorming')
+    window.brainstorming = desktop()
     await saveDocument()
     expect(isDirty()).toBe(false)
   })
@@ -197,9 +197,9 @@ describe('工作簿文件边界', () => {
   it('XMind 导入保持未保存，报告转换并使用新的原生文件路径保存', async () => {
     const legacy = createDocument('旧版中心', 'legacy')
     const persist = vi.fn<(request: SaveRequest) => Promise<string>>(() =>
-      Promise.resolve('/legacy.trelyx'),
+      Promise.resolve('/legacy.brainstorming'),
     )
-    window.trelyx = desktop({
+    window.brainstorming = desktop({
       openDocument: vi.fn(() =>
         Promise.resolve({
           path: null,

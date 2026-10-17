@@ -23,9 +23,9 @@ const observe = () => {
 
 describe('recent-file IPC query', () => {
   it('exposes loading, then resolves the external recent-file list', async () => {
-    const files = [{ path: '/planning.trelyx', name: 'planning.trelyx' }]
+    const files = [{ path: '/planning.brainstorming', name: 'planning.brainstorming' }]
     const getRecentFiles = vi.fn(() => Promise.resolve(files))
-    vi.stubGlobal('window', { trelyx: desktop({ getRecentFiles }) })
+    vi.stubGlobal('window', { brainstorming: desktop({ getRecentFiles }) })
     const observer = observe()
     expect(observer.getCurrentResult().isPending).toBe(true)
     await vi.waitFor(() => {
@@ -39,8 +39,10 @@ describe('recent-file IPC query', () => {
     const getRecentFiles = vi
       .fn()
       .mockRejectedValueOnce(new Error('IPC unavailable'))
-      .mockResolvedValueOnce([{ path: '/recovered.trelyx', name: 'recovered.trelyx' }])
-    vi.stubGlobal('window', { trelyx: desktop({ getRecentFiles }) })
+      .mockResolvedValueOnce([
+        { path: '/recovered.brainstorming', name: 'recovered.brainstorming' },
+      ])
+    vi.stubGlobal('window', { brainstorming: desktop({ getRecentFiles }) })
     const observer = observe()
     await vi.waitFor(() => {
       expect(observer.getCurrentResult().isError).toBe(true)
@@ -50,22 +52,24 @@ describe('recent-file IPC query', () => {
     expect(observer.getCurrentResult().isFetching).toBe(true)
     await retry
     expect(observer.getCurrentResult().isSuccess).toBe(true)
-    expect(observer.getCurrentResult().data?.[0]?.name).toBe('recovered.trelyx')
+    expect(observer.getCurrentResult().data?.[0]?.name).toBe('recovered.brainstorming')
     expect(getRecentFiles).toHaveBeenCalledTimes(2)
   })
 
   it('shares concurrent reads and refreshes after open/save invalidation and remount', async () => {
     const getRecentFiles = vi.fn().mockResolvedValue([])
-    vi.stubGlobal('window', { trelyx: desktop({ getRecentFiles }) })
+    vi.stubGlobal('window', { brainstorming: desktop({ getRecentFiles }) })
     const first = observe()
     const second = observe()
     await vi.waitFor(() => {
       expect(second.getCurrentResult().isSuccess).toBe(true)
     })
     expect(getRecentFiles).toHaveBeenCalledTimes(1)
-    getRecentFiles.mockResolvedValue([{ path: '/saved.trelyx', name: 'saved.trelyx' }])
+    getRecentFiles.mockResolvedValue([
+      { path: '/saved.brainstorming', name: 'saved.brainstorming' },
+    ])
     await invalidateRecentFiles(client)
-    expect(first.getCurrentResult().data?.[0]?.path).toBe('/saved.trelyx')
+    expect(first.getCurrentResult().data?.[0]?.path).toBe('/saved.brainstorming')
     expect(getRecentFiles).toHaveBeenCalledTimes(2)
     for (const unsubscribe of subscriptions) unsubscribe()
     subscriptions = []
@@ -77,7 +81,7 @@ describe('recent-file IPC query', () => {
 
   it('defers the menu read until opened and reloads when reopened', async () => {
     const getRecentFiles = vi.fn().mockResolvedValue([])
-    vi.stubGlobal('window', { trelyx: desktop({ getRecentFiles }) })
+    vi.stubGlobal('window', { brainstorming: desktop({ getRecentFiles }) })
     const options = recentFilesOptions()
     const observer = new QueryObserver(client, { ...options, enabled: false })
     subscriptions.push(observer.subscribe(() => undefined))

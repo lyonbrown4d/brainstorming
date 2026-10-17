@@ -18,7 +18,7 @@ export const useMCPServer = (api: MCPAPI | undefined, open: boolean) => {
   const update = useMutation(
     {
       mutationFn: async (input: MCPStart | null): Promise<MCPConnection | null> => {
-        if (!api) throw new Error(translate('mcpRequiresTheTrelyxDesktopAppLabel827'))
+        if (!api) throw new Error(translate('mcpRequiresTheBrainstormingDesktopAppLabel827'))
         if (input) return api.startMCPServer(input)
         await api.stopMCPServer()
         return null

@@ -3,7 +3,7 @@ import { wcagContrast } from 'culori'
 import { applyCommand, createDocument, createWorkbook, validateDocumentSettings } from '@core'
 import { mapPalettes, paletteAppearance } from '@shared/palettes'
 import { topicAppearance } from '@shared/appearance'
-import { encodeTrelyx, decodeTrelyx } from '@formats/trelyx'
+import { encodeBrainstorming, decodeBrainstorming } from '@formats/brainstorming'
 import { encodeXmind } from '@formats/interchange/xmind'
 import { importXmind } from '@formats/xmind'
 import { renderSheetSvg } from '@renderer/export/svg'
@@ -60,7 +60,7 @@ describe('独立导图配色', () => {
     useEditor.getState().undo()
     expect(useEditor.getState().history.document).toEqual(original)
     const workbook = createWorkbook(styled)
-    expect(decodeTrelyx(encodeTrelyx(workbook)).sheets[0]?.document.settings).toEqual(
+    expect(decodeBrainstorming(encodeBrainstorming(workbook)).sheets[0]?.document.settings).toEqual(
       styled.settings,
     )
     expect(importXmind(encodeXmind(workbook)).workbook.sheets[0]?.document.settings).toEqual(

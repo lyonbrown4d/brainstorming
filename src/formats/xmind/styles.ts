@@ -17,7 +17,7 @@ export const importStyle = (value: unknown, warnings: Warnings): TopicStyle | un
   for (const [rawKey, entry] of Object.entries(properties)) {
     const key = rawKey.replace(/^(?:fo|svg|xmind):/, '')
     if (mapProperty(result, key, entry)) continue
-    warnings.add('部分 XMind 样式不支持，已使用 Trelyx 默认样式')
+    warnings.add('部分 XMind 样式不支持，已使用 Brainstorming 默认样式')
   }
   return Object.keys(result).length > 0 ? result : undefined
 }

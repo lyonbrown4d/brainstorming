@@ -1,6 +1,6 @@
 # 架构与文档格式
 
-Trelyx 是单 package 桌面应用。React Flow 负责画布交互，d3-hierarchy 负责树形与层级分区布局，shadcn/ui 和 Radix 负责通用控件，dnd-kit 负责画布标签排序，Zustand 保存编辑状态，Electron 负责系统集成。
+Brainstorming 是单 package 桌面应用。React Flow 负责画布交互，d3-hierarchy 负责树形与层级分区布局，shadcn/ui 和 Radix 负责通用控件，dnd-kit 负责画布标签排序，Zustand 保存编辑状态，Electron 负责系统集成。
 
 三维视图按需加载 Three.js、React Three Fiber 和 Drei。`layout/spatial.ts` 从同一主题树派生空间坐标，Drei 负责相机、圆角几何、连线和中文标签投影；不将 Three 类型写入 core；普通相机仅是会话状态，显式保存的演示步骤使用纯数值坐标。独立 Zustand 视图状态保存各 Sheet 的维度、聚焦和相机，打开文档时重置。标题原位编辑仍由现有 Lexical 扩展提交类型化改名命令；触控板适配仅将浏览器 wheel 意图转换为 CameraControls 的平移、缩放和旋转调用。
 
@@ -30,7 +30,7 @@ src/
 
 ## 编辑与画布历史
 
-`StartupWindow` 由主进程管理独立启动窗和隐藏主窗的交接。启动窗在本地数据初始化前创建，使用独立的 sandbox preload，仅暴露阶段订阅、重试和退出；主窗 preload 只发送界面就绪和启动失败通知。主进程校验发送窗口及主框架，同时等待 Electron `ready-to-show` 与 React 首帧就绪，再显示主窗并销毁启动窗。失败与超时可重试，关闭启动窗会结束启动；定时器和 IPC 监听在交接或退出时清理。`index.html` 与 `splash.html` 共用 Vite 多入口构建，两个 preload 输出独立 CJS 文件，避免 sandbox 中加载本地共享分块。浏览器预览保留静态启动提示与减少动态效果支持。
+`StartupWindow` 由主进程管理独立启动窗和隐藏主窗的交接。启动窗在本地数据初始化前创建，使用独立的 sandbox preload，仅暴露阶段订阅、重试和退出；主窗 preload 只发送界面就绪和启动失败通知。主进程校验发送窗口及主框架，同时等待 Electron `ready-to-show` 与 React 首帧就绪，再显示主窗并销毁启动窗。失败与超时可重试，关闭启动窗会结束启动；定时器和 IPC 监听在交接或退出时清理。`index.html` 与 `splash.html` 共用 Vite 多入口构建，两个 preload 输出独立 CJS 文件，避免 sandbox 中加载本地共享分块。两个入口均保留静态启动提示与减少动态效果支持。
 
 `workspace` 保存首页、编辑器及文档/Sheet 创建引导的会话状态，不写入工作簿。启动时仅初始化内部空文档，直到用户创建、打开、恢复或主动探索示例后才启用自动恢复写入。导航到首页与创建引导保留原工作簿；确认创建时才替换文档或追加独立 Sheet。离开编辑器或替换文档时关闭查找面板，避免对隐藏文档进行替换。打开系统传入的文件和恢复草稿沿用原有校验流程，成功后进入编辑器。
 
@@ -52,7 +52,7 @@ Motion 管理侧栏进出和 Sheet 切换淡入；面板使用位移与透明度
 
 ## 文档协议
 
-原生 `.trelyx` 是 ZIP 容器，包含 `manifest.json` 和 `document.json`。容器协议标识为 `app.trelyx.document`、版本为 1。内容保存独立工作簿、画布、文档 ID、标题、主题树和样式；格式适配层负责与 core 模型转换。core 的版本化 JSON 仅用于内部传输和状态比较，不是磁盘协议。
+原生 `.brainstorming` 是 ZIP 容器，包含 `manifest.json` 和 `document.json`。容器协议标识为 `app.brainstorming.document`、版本为 1。内容保存独立工作簿、画布、文档 ID、标题、主题树和样式；格式适配层负责与 core 模型转换。core 的版本化 JSON 仅用于内部传输和状态比较，不是磁盘协议。
 
 不提供此前 JSON 文件或旧恢复记录的迁移。未来容器版本和未知原生内容明确拒绝，防止打开再保存导致静默丢失。活动画布、选择、历史、视口、面板、拖动状态和输入草稿不进入正式文件。
 
@@ -62,11 +62,11 @@ Motion 管理侧栏进出和 Sheet 切换淡入；面板使用位移与透明度
 
 renderer 通过 `src/shared/contracts.ts` 的 DesktopAPI 调用 preload。主进程验证 IPC 来自当前窗口主框架，文件访问限于原生对话框选定位置、当前会话授权位置和持久化最近文件列表。renderer 不直接访问 Node 文件系统；contextIsolation 和 sandbox 保持开启，nodeIntegration 关闭。
 
-保存和恢复覆盖整份工作簿，而非当前 Sheet。复用 write-file-atomic，先写同目录临时文件并同步，然后重命名替换。压缩输入限制 32 MiB，单条目解压后限制 10 MiB；另存为文件名独立清理并限制 UTF-8 字节长度。保存期间新增画布或继续输入，完成后仍保持未保存状态；等待打开文件期间若又有任何画布编辑，需要重新确认。
+保存和恢复覆盖整份工作簿，而非当前 Sheet。复用 write-file-atomic，先写同目录临时文件并同步，然后重命名替换。压缩输入限制 32 MiB，单条目解压后限制 10 MiB；另存为文件名独立清理并限制 UTF-8 字节长度。保存期间新增画布或继续输入，完成后仍保持未保存状态；打开文件新增文档标签，并捕获等待期间对原文档继续输入的内容。
 
-恢复文件与最近文件位于 Electron userData，分别为 recovery-v1.trelyx、recent-files.json。恢复写入串行；未处理上次记录时不以示例覆盖。自动恢复可提交当前输入草稿的副本，不额外增加撤销记录。原生关闭前检查整份工作簿的未保存更改。
+主进程通过 Inversify 显式模块组装服务，使用 Drizzle + better-sqlite3 保存界面语言、最近文件和工作区恢复索引，数据库为 userData 下的 brainstorming.sqlite。恢复正文位于 recovery-v2 下的独立 .brainstorming ZIP，最多包含 32 份文档；先写入新文件再事务替换索引。未处理上次记录时不覆盖；草稿以副本进入恢复，不额外增加撤销记录。原生关闭前检查所有文档的未保存更改。
 
-操作系统打开请求由 main 保存到一个待处理槽位，通过 preload 通知 renderer；renderer 在恢复记录处理完成后消费，并对未保存更改确认。启动参数、macOS open-file 与第二实例共用该流程，renderer 不能传入任意系统打开路径。
+操作系统打开请求由 main 保存到最多 32 项的去重队列，通过 preload 通知 renderer；恢复读取完成且编辑器空闲时依次消费，并以新标签打开，保留已有文档。启动参数、macOS open-file 与第二实例共用该流程，renderer 不能传入任意系统打开路径。
 
 ## 主题内容与多画布资源
 
@@ -74,7 +74,7 @@ renderer 通过 `src/shared/contracts.ts` 的 DesktopAPI 调用 preload。主进
 
 一个原生文件保存工作簿的有序 sheets 和所有引用资源。ZIP 中资源路径为 assets/<sheet-index>/<asset-id>，画布排序后重新生成包内路径；稳定的工作簿、Sheet、主题和资源 ID 不受排序影响。同名或同 ID 的附件在不同页隔离。删除再撤销恢复完整内容，保存不携带撤销历史。整份工作簿资源总量限制为 24 MiB，复制导致超限时保留原工作簿并提示。
 
-资源读取、文件选择和导出由受信任 IPC 与主进程执行，单资源上限 8 MiB，图片类型通过字节签名确认，禁止将 SVG/HTML 当作图片。附件只提供显式另存，不自动执行。浏览器使用 idb-keyval 在 IndexedDB 保存恢复记录，避免附件超出 localStorage 常见容量。
+资源读取、文件选择和导出由受信任 IPC 与主进程执行，单资源上限 8 MiB，图片类型通过字节签名确认，禁止将 SVG/HTML 当作图片。附件只提供显式另存，不自动执行。产品仅运行于 Electron；Storybook 使用类型明确的桌面 API mock，不提供浏览器文件与恢复实现。
 
 ## 注解、交换与安全
 

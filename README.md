@@ -1,8 +1,10 @@
-# Trelyx
+# Brainstorming（头脑风暴）
 
-Trelyx 是基于 React Flow 和 Electron 的本地优先桌面思维导图应用。
+Brainstorming 是基于 React Flow 和 Electron 的本地优先桌面思维导图应用。
 
-支持多布局导图、二维/三维原位编辑、多选与分支剪贴板、画布注解、富文本与嵌入资源、演示、大纲、导入导出，以及本地 `.trelyx` 保存、密码保护与历史恢复。项目采用单 package，源码、配置和共享契约使用 TypeScript。开发模式默认启用 React Scan，支持查看组件渲染；`VITE_REACT_SCAN=false` 可关闭，生产构建自动排除。
+项目与 GitHub 仓库现统一命名为 `brainstorming`，本地目录也使用该名称。原生文件后缀为 `.brainstorming`，不读取旧格式文件、恢复记录或本机偏好；此次更名不提供迁移兼容。
+
+支持多布局导图、二维/三维原位编辑、多选与分支剪贴板、画布注解、富文本与嵌入资源、演示、大纲、导入导出，以及本地 `.brainstorming` 保存、密码保护与历史恢复。项目采用单 package，源码、配置和共享契约使用 TypeScript。开发模式默认启用 React Scan，支持查看组件渲染；`VITE_REACT_SCAN=false` 可关闭，生产构建自动排除。
 
 ## 开发
 
@@ -22,9 +24,9 @@ pnpm dev
 
 启动进入两步创建引导，第一步直接展示全部 15 种结构方向，第二步填写名称并按需选择 4 种内容模板；返回上一步保留选择与输入。首页提供打开本地文件、桌面最近文件和探索示例入口；未创建或打开文档前不写入示例恢复记录。新建文档和底部“新建画布”共用引导，新增画布保留当前工作簿及保存路径，每个 Sheet 独立选择图形结构。步骤条复用 Dice UI 的 shadcn/Radix Stepper，文件与画布动作菜单统一使用官方 shadcn DropdownMenu。
 
-点击左上角 Trelyx 返回首页，或在创建引导中返回画布，不会丢弃当前内容；创建或打开文档会新增标签，保留已有文档；关闭含未保存修改的标签时需要确认。创建名称支持中文输入法。示例需主动打开，恢复记录仍由用户确认恢复。
+点击左上角 Brainstorming 返回首页，或在创建引导中返回画布，不会丢弃当前内容；创建或打开文档会新增标签，保留已有文档；关闭含未保存修改的标签时需要确认。创建名称支持中文输入法。示例需主动打开，恢复记录仍由用户确认恢复。
 
-界面采用“结构工作台”：精简顶栏、可收放的大纲与属性栏、大画布、底部浮动 Dock 和 Sheet 标签，保留 Trelyx 紫色视觉。Dock 保持固定入口，工具向上展开，图标与短标签单行排列并支持横向滚动；连线、编辑与子面板操作期间保持展开。关联线通过画布起终点创建，边界、概要与标注原位编辑。右上角独立开关左侧大纲和右侧属性栏，文件名菜单提供新建、打开、保存与最近文件。画布顶部浮动文档标签最多支持 32 份导图，平时收起，移入或键盘聚焦后展开，可横向滚动。每份导图独立保留路径、未保存状态、历史、当前 Sheet、二维/三维模式和视图；重复打开同一路径或工作簿会切换已有标签，关闭最后一份回到首页。Ctrl+Tab / Ctrl+Shift+Tab 切换导图，⌘/Ctrl+W 关闭当前导图，⇧⌘/Ctrl+Shift+W 关闭窗口。底部标签对应同一文件内的 Sheet，支持新增、重命名、复制、删除、键盘切换、菜单移动和拖动排序；每页保留独立内容、选择、缩放及撤销历史。
+界面采用“结构工作台”：精简顶栏、可收放的大纲与属性栏、大画布、底部浮动 Dock 和 Sheet 标签，保留 Brainstorming 紫色视觉。Dock 保持固定入口，工具向上展开，图标与短标签单行排列并支持横向滚动；连线、编辑与子面板操作期间保持展开。关联线通过画布起终点创建，边界、概要与标注原位编辑。右上角独立开关左侧大纲和右侧属性栏，文件名菜单提供新建、打开、保存与最近文件。画布顶部浮动文档标签最多支持 32 份导图，平时收起，移入或键盘聚焦后展开，可横向滚动。每份导图独立保留路径、未保存状态、历史、当前 Sheet、二维/三维模式和视图；重复打开同一路径或工作簿会切换已有标签，关闭最后一份回到首页。Ctrl+Tab / Ctrl+Shift+Tab 切换导图，⌘/Ctrl+W 关闭当前导图，⇧⌘/Ctrl+Shift+W 关闭窗口。底部标签对应同一文件内的 Sheet，支持新增、重命名、复制、删除、键盘切换、菜单移动和拖动排序；每页保留独立内容、选择、缩放及撤销历史。
 
 顶栏“应用外观”提供浅色、深色和跟随系统，默认跟随系统；本机记住用户选择，重启后恢复。Electron 通过 `nativeTheme.updated` 通知渲染进程，不使用轮询。启动页复用已保存外观，三维控制与浮层使用同一套界面颜色。
 
@@ -52,7 +54,7 @@ pnpm dev
 
 顶栏可直接播放演示，并提供演示设置入口。已有步骤按保存顺序播放；未设置步骤时按当前 Sheet 的可见主题生成临时路线。播放隐藏编辑工具与面板，可用方向键、空格、PageUp/PageDown、Home/End 切换，Esc 退出，可选全屏。退出恢复原来的选择和视图；播放不写入文件或撤销历史。
 
-使用 ⌘/Ctrl+S 保存，⌘/Ctrl+O 打开，⌘/Ctrl+N 新建。支持打开 `.trelyx` 原生文件和 `.xmind`；XMind 转为未保存文档，首次保存创建 `.trelyx`，源文件保持原样。导入报告列出样式调整和未导入内容。恢复提示需要主动选择；无效文件不会替换当前文档。
+使用 ⌘/Ctrl+S 保存，⌘/Ctrl+O 打开，⌘/Ctrl+N 新建。支持打开 `.brainstorming` 原生文件和 `.xmind`；XMind 转为未保存文档，首次保存创建 `.brainstorming`，源文件保持原样。导入报告列出样式调整和未导入内容。恢复提示需要主动选择；无效文件不会替换当前文档。
 
 桌面标题栏与文档工具栏合并，顶部空白可拖动窗口。macOS 保留原生红黄绿按钮；Windows/Linux 使用原生窗口按钮覆盖层。全屏与窗口失焦会同步调整标题栏。
 
@@ -66,7 +68,7 @@ pnpm dev
 
 最近文件使用 TanStack Query 共享异步 IPC 缓存，打开和保存后失效刷新。RxJS 合并自动恢复事件并串行写入，单次失败后仍继续接收后续恢复请求。文档树、草稿、选择和撤销历史仍由现有命令及 Zustand 管理。
 
-主进程通过 Inversify 显式模块组装服务；界面语言、最近文件和恢复索引使用 Drizzle + better-sqlite3，存入 `userData/trelyx.sqlite`。恢复正文仍是 `userData/recovery-v2` 下的 ZIP，最多保留 32 份文档；恢复时作为未保存副本打开，不恢复正式文件路径。启用密码同时保护已有恢复记录、历史和残留恢复文件，密钥仅留在主进程内存。
+主进程通过 Inversify 显式模块组装服务；界面语言、最近文件和恢复索引使用 Drizzle + better-sqlite3，存入 `userData/brainstorming.sqlite`。恢复正文仍是 `userData/recovery-v2` 下的 ZIP，最多保留 32 份文档；恢复时作为未保存副本打开，不恢复正式文件路径。启用密码同时保护已有恢复记录、历史和残留恢复文件，密钥仅留在主进程内存。
 
 package scripts 直接调用 CLI，多任务依赖和缓存交给 Moon。
 
@@ -80,7 +82,7 @@ pnpm test:storybook   # Vitest + Playwright 浏览器组件测试
 pnpm build
 pnpm test:desktop     # 真实 Electron 生产构建启动
 pnpm test:packaged    # 先 package --dir，再验证正式应用包启动和原生保存
-pnpm moon run trelyx:package
+pnpm moon run brainstorming:package
 ```
 
 首次运行 Storybook 组件测试前执行 `pnpm exec playwright install chromium`。E2E 和性能测试需要图形会话，并先执行 `pnpm build`；也可运行已声明构建依赖的 Moon `e2e` / `performance` 任务。`pnpm test` 使用 Electron 的 Node 运行时执行 Vitest，以匹配 SQLite 原生模块 ABI。CI 在 Ubuntu Node.js 24/26 执行质量与 Storybook 检查，在 macOS 执行真实 Electron E2E、性能采样、打包与产物启动回归。`pnpm package` 直接运行 electron-builder，执行前须先 `pnpm build`；Moon 的 package 任务已经声明这项依赖。
@@ -102,7 +104,7 @@ UI 通用组件使用官方 shadcn 源码，业务差异通过组合和 Tailwind
 
 ## 当前限制
 
-原生格式为 ZIP + JSON，协议版本 1；不读取旧 JSON `.trelyx` 或旧恢复记录。XMind 第三方扩展、特殊结构与部分样式仍可能丢失或转换，不能保证与 XMind 无损往返或视觉一致。Trelyx 自有扩展可在导出 XMind 后由 Trelyx 恢复。文件协议和格式损失说明见 [原生格式与 XMind 支持范围](docs/file-format.md)。
+原生格式为 ZIP + JSON，协议版本 1；不读取旧 JSON `.brainstorming` 或旧恢复记录。XMind 第三方扩展、特殊结构与部分样式仍可能丢失或转换，不能保证与 XMind 无损往返或视觉一致。Brainstorming 自有扩展可在导出 XMind 后由 Brainstorming 恢复。文件协议和格式损失说明见 [原生格式与 XMind 支持范围](docs/file-format.md)。
 
 PNG/SVG/PDF 和打印输出当前 Sheet 的完整二维布局；不会导出三维截图。Markdown/OPML/文本仅保留大纲内容。密码只保护原生文件、自动恢复和版本历史；导出副本是普通文件。修改密码后旧加密快照仍需原密码。
 

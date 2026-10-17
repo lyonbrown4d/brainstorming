@@ -1,6 +1,6 @@
 $schema: https://moonrepo.dev/schemas/workspace.json
 projects:
-  trelyx: .
-defaultProject: trelyx
+  brainstorming: .
+defaultProject: brainstorming
 vcs:
   defaultBranch: main

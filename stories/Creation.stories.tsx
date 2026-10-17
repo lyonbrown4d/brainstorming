@@ -3,7 +3,7 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import { CreationGallery } from '@renderer/components/creation/CreationGallery'
 
 const meta = {
-  title: 'Trelyx/创建引导',
+  title: 'Brainstorming/创建引导',
   component: CreationGallery,
   parameters: { layout: 'fullscreen' },
   decorators: [

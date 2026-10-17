@@ -3,7 +3,7 @@ import { strToU8, zipSync } from 'fflate'
 import { describe, expect, it } from 'vitest'
 import { createDocument, createWorkbook, type MindMapWorkbook } from '@core'
 import { assetBytes, createAsset } from '@assets'
-import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
+import { decodeBrainstorming, encodeBrainstorming } from '@formats/brainstorming'
 import { readArchive } from '@formats/archive'
 import { importXmind } from '@formats/xmind'
 import { contentXmind } from '@tests/fixtures/xmind/archive'
@@ -35,7 +35,7 @@ const contentWorkbook = (): MindMapWorkbook => {
 const modifyContent = (
   mutate: (content: Record<string, unknown>, entries: Record<string, Uint8Array>) => void,
 ): Uint8Array => {
-  const entries = Object.fromEntries(readArchive(encodeTrelyx(contentWorkbook())))
+  const entries = Object.fromEntries(readArchive(encodeBrainstorming(contentWorkbook())))
   const content = JSON.parse(new TextDecoder().decode(entries['document.json'])) as Record<
     string,
     unknown
@@ -60,14 +60,14 @@ const rootOf = (content: Record<string, unknown>): Record<string, unknown> => {
 describe('native embedded content', () => {
   it('roundtrips notes, image and binary attachment, deduplicates references and omits unused assets', () => {
     const original = contentWorkbook()
-    const bytes = encodeTrelyx(original)
+    const bytes = encodeBrainstorming(original)
     const entries = readArchive(bytes)
     expect([...entries.keys()].filter((path) => path.startsWith('assets/'))).toEqual([
       'assets/0/picture',
       'assets/0/attachment',
     ])
     expect(entries.get('assets/0/picture')).toEqual(fixture('pixel image.png'))
-    const decoded = decodeTrelyx(bytes)
+    const decoded = decodeBrainstorming(bytes)
     expect(decoded.sheets[0]?.document.topics).toEqual(original.sheets[0]?.document.topics)
     expect(
       assetBytes(
@@ -91,49 +91,49 @@ describe('native embedded content', () => {
 
   it('rejects missing files, path mismatch, unreferenced files and unknown asset or image fields', () => {
     expect(() =>
-      decodeTrelyx(
+      decodeBrainstorming(
         modifyContent((_content, entries) => {
           delete entries['assets/0/picture']
         }),
       ),
     ).toThrow(/缺失/)
     expect(() =>
-      decodeTrelyx(
+      decodeBrainstorming(
         modifyContent((content) => {
           assetOf(content).path = 'assets/0/attachment'
         }),
       ),
     ).toThrow(/路径/)
     expect(() =>
-      decodeTrelyx(
+      decodeBrainstorming(
         modifyContent((_content, entries) => {
           entries['assets/0/unused'] = strToU8('unused')
         }),
       ),
     ).toThrow(/附加内容/)
     expect(() =>
-      decodeTrelyx(
+      decodeBrainstorming(
         modifyContent((content) => {
           assetOf(content).extra = true
         }),
       ),
     ).toThrow(/不支持/)
     expect(() =>
-      decodeTrelyx(
+      decodeBrainstorming(
         modifyContent((content) => {
           ;(rootOf(content).image as Record<string, unknown>).extra = true
         }),
       ),
     ).toThrow(/不支持/)
     expect(() =>
-      decodeTrelyx(
+      decodeBrainstorming(
         modifyContent((content) => {
           rootOf(content).attachments = ['attachment', 'attachment']
         }),
       ),
     ).toThrow(/重复/)
     expect(() =>
-      decodeTrelyx(
+      decodeBrainstorming(
         modifyContent((content) => {
           rootOf(content).attachments = []
           delete rootOf(content).image
@@ -144,28 +144,28 @@ describe('native embedded content', () => {
 
   it('verifies MIME, image signature, dimensions and individual asset size', () => {
     expect(() =>
-      decodeTrelyx(
+      decodeBrainstorming(
         modifyContent((content) => {
           assetOf(content).mimeType = 'text/html'
         }),
       ),
     ).toThrow(/类型/)
     expect(() =>
-      decodeTrelyx(
+      decodeBrainstorming(
         modifyContent((_content, entries) => {
           entries['assets/0/picture'] = strToU8('<svg/>')
         }),
       ),
     ).toThrow(/类型/)
     expect(() =>
-      decodeTrelyx(
+      decodeBrainstorming(
         modifyContent((content) => {
           ;(rootOf(content).image as Record<string, unknown>).width = 2
         }),
       ),
     ).toThrow(/尺寸/)
     expect(() =>
-      decodeTrelyx(
+      decodeBrainstorming(
         modifyContent((_content, entries) => {
           entries['assets/0/attachment'] = new Uint8Array(8 * 1024 * 1024 + 1)
         }),
@@ -187,7 +187,7 @@ describe('native embedded content', () => {
         },
       ],
     }
-    expect(() => encodeTrelyx(invalid)).toThrow(/尺寸/)
+    expect(() => encodeBrainstorming(invalid)).toThrow(/尺寸/)
   })
 })
 
@@ -208,7 +208,7 @@ describe('XMind embedded content', () => {
         expect.arrayContaining([expect.stringContaining('富文本备注已转为纯文本')]),
       )
       expect(warnings.some((warning) => warning.includes('未引用'))).toBe(false)
-      expect(decodeTrelyx(encodeTrelyx(workbook))).toEqual(workbook)
+      expect(decodeBrainstorming(encodeBrainstorming(workbook))).toEqual(workbook)
     },
   )
 

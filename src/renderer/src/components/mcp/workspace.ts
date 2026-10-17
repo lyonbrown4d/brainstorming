@@ -1,6 +1,6 @@
 import { translate } from '@renderer/i18n'
 import { applyCommand, type Command, type MindMapDocument } from '@core'
-import { validateBoundedWorkbook } from '@formats/trelyx/validation'
+import { validateBoundedWorkbook } from '@formats/brainstorming/validation'
 import {
   MCP_LIMITS,
   mcpActionSchema,
@@ -148,7 +148,7 @@ export const handleMCPRequest = (request: MCPBridgeRequest): Record<string, unkn
   return {
     proposalId: proposal.id,
     status: proposal.status,
-    message: translate('waitingForApprovalInTrelyxTheDocument'),
+    message: translate('waitingForApprovalInBrainstormingTheDocument'),
   }
 }
 export const resolveMCPProposal = (

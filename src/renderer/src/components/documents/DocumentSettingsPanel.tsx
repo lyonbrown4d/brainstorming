@@ -170,7 +170,7 @@ export const DocumentSettingsPanel = ({ inline = false }: { inline?: boolean }) 
             }
           }
           onSave={(palette) => {
-            selectPalette(settings.theme ?? 'trelyx', palette)
+            selectPalette(settings.theme ?? 'brainstorming', palette)
             if (inline) setTab('presets')
             else setOpen(false)
           }}

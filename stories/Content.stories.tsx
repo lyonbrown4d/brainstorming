@@ -37,7 +37,7 @@ const contentDocument = () => {
 }
 
 const meta = {
-  title: 'Trelyx/主题内容',
+  title: 'Brainstorming/主题内容',
   component: App,
   parameters: { layout: 'fullscreen' },
   beforeEach: () => {

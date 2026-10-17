@@ -56,11 +56,11 @@ export const installMenu = (
   ]
   if (process.platform === 'darwin') {
     template.unshift({
-      label: 'Trelyx',
+      label: 'Brainstorming',
       submenu: [
-        { role: 'about', label: label('关于 Trelyx', 'About Trelyx') },
+        { role: 'about', label: label('关于 Brainstorming', 'About Brainstorming') },
         { type: 'separator' },
-        { role: 'quit', label: label('退出 Trelyx', 'Quit Trelyx') },
+        { role: 'quit', label: label('退出 Brainstorming', 'Quit Brainstorming') },
       ],
     })
   }

@@ -34,7 +34,7 @@ const api: AIAPI = {
   cancelAIGeneration: () => Promise.resolve(),
 }
 const meta = {
-  title: 'Trelyx/AI 助手',
+  title: 'Brainstorming/AI 助手',
   component: AIAssistant,
   parameters: { layout: 'centered' },
   args: {
@@ -82,11 +82,11 @@ export const StalePreview: Story = {
 export const BrowserRequiresDesktop: Story = {
   render: () => <AIAssistant defaultOpen onAddSheet={() => false} />,
   beforeEach: () => {
-    delete window.trelyx
+    delete window.brainstorming
   },
   play: async ({ canvasElement }) => {
     const page = within(canvasElement.ownerDocument.body)
-    await expect(await page.findByRole('status')).toHaveTextContent('需要 Trelyx 桌面版')
+    await expect(await page.findByRole('status')).toHaveTextContent('需要 Brainstorming 桌面版')
     await expect(page.queryByRole('button', { name: '发送并生成' })).not.toBeInTheDocument()
   },
 }

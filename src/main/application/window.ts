@@ -70,7 +70,7 @@ export class WindowLifecycle {
       height: 850,
       minWidth: 800,
       minHeight: 600,
-      title: 'Trelyx',
+      title: 'Brainstorming',
       show: false,
       backgroundColor: '#f3f2f8',
       ...windowChromeOptions(this.options.platform),
@@ -122,7 +122,7 @@ export class WindowLifecycle {
       if (this.session.dirty) {
         const result = await this.ports.showMessageBox(current, {
           type: 'warning',
-          title: text('关闭 Trelyx', 'Close Trelyx'),
+          title: text('关闭 Brainstorming', 'Close Brainstorming'),
           message: text('有打开的导图尚未保存。', 'Some open maps have unsaved changes.'),
           detail: text(
             '关闭窗口将丢弃所有未保存的更改。可返回编辑并逐一保存导图。',

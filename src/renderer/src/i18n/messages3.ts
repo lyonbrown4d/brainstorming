@@ -133,9 +133,9 @@ export const messages3 = {
     '使用你配置的服务与密钥。仅点击生成后联网；结果先预览，再添加到文档。',
     'Uses your configured service and key. Sends a request only when you generate; preview results before adding them.',
   ],
-  theAiAssistantRequiresTheTrelyxDesktop: [
-    'AI 助手需要 Trelyx 桌面版。浏览器预览不会连接 AI 服务或生成模拟结果。',
-    'The AI assistant requires the Trelyx desktop app.',
+  theAiAssistantRequiresTheBrainstormingDesktop: [
+    'AI 助手需要 Brainstorming 桌面版。浏览器预览不会连接 AI 服务或生成模拟结果。',
+    'The AI assistant requires the Brainstorming desktop app.',
   ],
   noModelConfigured: ['尚未配置模型', 'No model configured'],
   loadingLocalSettings: ['正在读取本地设置…', 'Loading local settings…'],

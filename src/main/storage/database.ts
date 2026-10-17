@@ -22,7 +22,9 @@ export class LocalDatabase {
 
   constructor(storageDirectory: string) {
     mkdirSync(storageDirectory, { recursive: true, mode: 0o700 })
-    this.connection = new Database(path.join(storageDirectory, 'trelyx.sqlite'), { timeout: 3000 })
+    this.connection = new Database(path.join(storageDirectory, 'brainstorming.sqlite'), {
+      timeout: 3000,
+    })
     try {
       this.connection.pragma('foreign_keys = ON')
       const database = drizzle(this.connection, { schema: metadataSchema })

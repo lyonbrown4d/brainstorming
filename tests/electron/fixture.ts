@@ -9,7 +9,7 @@ import { registerSession, resizeWindow } from '@tests/electron/session'
 export const test = base.extend<{ electronApp: ElectronApplication; profileDirectory: string }>({
   // eslint-disable-next-line no-empty-pattern -- Playwright requires destructured fixture arguments.
   profileDirectory: async ({}, use) => {
-    const directory = await mkdtemp(join(tmpdir(), 'trelyx-ui-'))
+    const directory = await mkdtemp(join(tmpdir(), 'brainstorming-ui-'))
     try {
       await seedChinese(directory)
       await use(directory)

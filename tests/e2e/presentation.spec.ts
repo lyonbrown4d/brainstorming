@@ -1,7 +1,7 @@
 import { prepareNativeSave } from '@tests/electron/native-files'
 import { expect, test, type Page } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
-import { decodeTrelyx } from '@formats/trelyx'
+import { decodeBrainstorming } from '@formats/brainstorming'
 import { openExample } from '@tests/e2e/workspace'
 
 const savedWorkbook = async (page: Page) => {
@@ -9,7 +9,7 @@ const savedWorkbook = async (page: Page) => {
   await page.keyboard.press('ControlOrMeta+s')
   const path = await pending.path()
   if (!path) throw new Error('没有生成保存文件')
-  return decodeTrelyx(await readFile(path))
+  return decodeBrainstorming(await readFile(path))
 }
 
 for (const mode of ['2d', '3d'] as const) {

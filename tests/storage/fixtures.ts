@@ -10,7 +10,7 @@ const directories: string[] = []
 const databases: LocalDatabase[] = []
 
 export const storageDirectory = async (): Promise<string> => {
-  const directory = await mkdtemp(path.join(tmpdir(), 'trelyx-storage-'))
+  const directory = await mkdtemp(path.join(tmpdir(), 'brainstorming-storage-'))
   directories.push(directory)
   return directory
 }
@@ -23,7 +23,7 @@ export const openDatabase = (directory: string): LocalDatabase => {
 
 export const recoveryEntry = (documentId: string): RecoveryEntry => ({
   documentId,
-  fileName: `${recoveryFileStem(documentId)}.${randomUUID()}.trelyx`,
+  fileName: `${recoveryFileStem(documentId)}.${randomUUID()}.brainstorming`,
   protocolVersion: 2,
 })
 

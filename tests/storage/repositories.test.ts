@@ -12,7 +12,10 @@ describe('SQLite application metadata repositories', () => {
     expect(await first.preferences.getLanguage()).toBeNull()
     expect(await first.recentFiles.read()).toEqual([])
     expect(await first.recoveryIndex.read()).toEqual([])
-    const recent = ['/maps/second.trelyx', "/maps/quote'); DROP TABLE preferences;--.trelyx"]
+    const recent = [
+      '/maps/second.brainstorming',
+      "/maps/quote'); DROP TABLE preferences;--.brainstorming",
+    ]
     const entries = [recoveryEntry('second'), recoveryEntry('first')]
     await first.preferences.setLanguage('zh-CN')
     await first.preferences.setLanguage('en')
@@ -35,7 +38,7 @@ describe('SQLite application metadata repositories', () => {
     await database.preferences.setLanguage('zh-CN')
     await expect(database.preferences.setLanguage('fr' as AppLanguage)).rejects.toThrow()
     expect(await database.preferences.getLanguage()).toBe('zh-CN')
-    const maximum = Array.from({ length: 10 }, (_, index) => `/maps/${index}.trelyx`)
+    const maximum = Array.from({ length: 10 }, (_, index) => `/maps/${index}.brainstorming`)
     await database.recentFiles.replace(maximum)
     for (const invalid of [
       [...maximum, '/extra'],
@@ -55,7 +58,7 @@ describe('SQLite application metadata repositories', () => {
     const invalidIndexes: readonly RecoveryEntry[][] = [
       [...maximum, recoveryEntry('extra')],
       [entry, entry],
-      [{ ...entry, fileName: '../outside.trelyx' }],
+      [{ ...entry, fileName: '../outside.brainstorming' }],
       [{ ...entry, fileName: recoveryEntry('other').fileName }],
       [{ ...entry, protocolVersion: 1 as 2 }],
     ]
@@ -68,9 +71,9 @@ describe('SQLite application metadata repositories', () => {
     const directory = await storageDirectory()
     const database = openDatabase(directory)
     const entries = [recoveryEntry('preserved')]
-    await database.recentFiles.replace(['/preserved.trelyx'])
+    await database.recentFiles.replace(['/preserved.brainstorming'])
     await database.recoveryIndex.replace(entries)
-    const connection = new Database(path.join(directory, 'trelyx.sqlite'))
+    const connection = new Database(path.join(directory, 'brainstorming.sqlite'))
     try {
       connection.exec(`
         CREATE TRIGGER reject_recent BEFORE INSERT ON recent_files
@@ -78,13 +81,13 @@ describe('SQLite application metadata repositories', () => {
         CREATE TRIGGER reject_recovery BEFORE INSERT ON workspace_recovery
         BEGIN SELECT RAISE(ABORT, 'injected recovery failure'); END;
       `)
-      await expect(database.recentFiles.replace(['/replacement.trelyx'])).rejects.toThrow(
+      await expect(database.recentFiles.replace(['/replacement.brainstorming'])).rejects.toThrow(
         'injected recent failure',
       )
       await expect(database.recoveryIndex.replace([recoveryEntry('replacement')])).rejects.toThrow(
         'injected recovery failure',
       )
-      expect(await database.recentFiles.read()).toEqual(['/preserved.trelyx'])
+      expect(await database.recentFiles.read()).toEqual(['/preserved.brainstorming'])
       expect(await database.recoveryIndex.read()).toEqual(entries)
     } finally {
       connection.close()
@@ -93,15 +96,15 @@ describe('SQLite application metadata repositories', () => {
 
   it('snapshots mutable replacement inputs before asynchronous execution', async () => {
     const database = openDatabase(await storageDirectory())
-    const paths = ['/original.trelyx']
+    const paths = ['/original.brainstorming']
     const entry = recoveryEntry('original')
     const entries = [entry]
     const pendingRecent = database.recentFiles.replace(paths)
     const pendingRecovery = database.recoveryIndex.replace(entries)
-    paths[0] = '/mutated.trelyx'
+    paths[0] = '/mutated.brainstorming'
     entry.documentId = 'mutated'
     await Promise.all([pendingRecent, pendingRecovery])
-    expect(await database.recentFiles.read()).toEqual(['/original.trelyx'])
+    expect(await database.recentFiles.read()).toEqual(['/original.brainstorming'])
     expect((await database.recoveryIndex.read())[0]?.documentId).toBe('original')
   })
 })

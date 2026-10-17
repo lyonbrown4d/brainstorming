@@ -3,7 +3,7 @@ import { createServer, type Server } from 'node:http'
 import { createMcpHandler, type McpHttpHandler } from '@modelcontextprotocol/server'
 import { hostHeaderValidation, originValidation, toNodeHandler } from '@modelcontextprotocol/node'
 import { MCP_LIMITS, type MCPConnection, type MCPStart } from '@shared/mcp'
-import { createTrelyxMCPServer, type MCPDispatch } from '@main/mcp/tools'
+import { createBrainstormingMCPServer, type MCPDispatch } from '@main/mcp/tools'
 
 export class EmbeddedMCPServer {
   private server: Server | null = null
@@ -20,7 +20,7 @@ export class EmbeddedMCPServer {
     const token = randomBytes(32).toString('base64url')
     const expectedAuth = Buffer.from(`Bearer ${token}`)
     const handler = createMcpHandler(
-      () => createTrelyxMCPServer(this.dispatch, grant.allowProposals),
+      () => createBrainstormingMCPServer(this.dispatch, grant.allowProposals),
       {
         legacy: 'stateless',
         maxRequestBodySize: MCP_LIMITS.bodyBytes,

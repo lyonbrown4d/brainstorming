@@ -15,8 +15,8 @@ import '@renderer/styles/window.css'
 
 const installRecentBridge = (getRecentFiles: DesktopAPI['getRecentFiles']) => {
   queryClient.removeQueries({ queryKey: ['recent-files'] })
-  const previous = window.trelyx
-  window.trelyx = {
+  const previous = window.brainstorming
+  window.brainstorming = {
     platform: 'macos',
     getLanguage: () => Promise.resolve('zh-CN'),
     setLanguage: (language) => Promise.resolve(language),
@@ -63,8 +63,8 @@ const installRecentBridge = (getRecentFiles: DesktopAPI['getRecentFiles']) => {
   }
   return () => {
     queryClient.removeQueries({ queryKey: ['recent-files'] })
-    if (previous) window.trelyx = previous
-    else delete window.trelyx
+    if (previous) window.brainstorming = previous
+    else delete window.brainstorming
   }
 }
 
@@ -76,7 +76,7 @@ const openRecentMenu = async (canvasElement: HTMLElement) => {
 }
 
 const meta = {
-  title: 'Trelyx/窗口标题栏',
+  title: 'Brainstorming/窗口标题栏',
   component: Toolbar,
   parameters: { layout: 'fullscreen' },
   beforeEach: () => {
@@ -121,15 +121,15 @@ export const Fullscreen: Story = {
 export const RecentFiles: Story = {
   beforeEach: () =>
     installRecentBridge(() =>
-      Promise.resolve([{ path: '/recent/产品规划.trelyx', name: '产品规划.trelyx' }]),
+      Promise.resolve([{ path: '/recent/产品规划.brainstorming', name: '产品规划.brainstorming' }]),
     ),
   play: async ({ canvasElement }) => {
     const page = await openRecentMenu(canvasElement)
-    await userEvent.click(await page.findByRole('menuitem', { name: '产品规划.trelyx' }))
+    await userEvent.click(await page.findByRole('menuitem', { name: '产品规划.brainstorming' }))
     await expect(within(canvasElement).getByRole('heading', { level: 1 })).toHaveTextContent(
-      '最近规划.trelyx',
+      '最近规划.brainstorming',
     )
-    await expect(useEditor.getState().path).toBe('/recent/产品规划.trelyx')
+    await expect(useEditor.getState().path).toBe('/recent/产品规划.brainstorming')
   },
 }
 export const RecentFilesEmpty: Story = {

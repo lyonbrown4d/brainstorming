@@ -15,7 +15,7 @@ import {
   useTopicFilters,
 } from '@renderer/components/documents/filterTopics'
 
-const ALL = `trelyx:any:${'0'.repeat(65)}`
+const ALL = `brainstorming:any:${'0'.repeat(65)}`
 
 export const TopicFilter = () => {
   const { translate } = useMessages()

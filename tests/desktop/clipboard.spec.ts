@@ -8,7 +8,7 @@ import { join } from 'node:path'
 import { dockAction, openDock } from '@tests/e2e/dock'
 
 test('原生剪贴板跨画布复制子树与 Lexical 文字选区分别处理，并可撤销', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'trelyx-clipboard-'))
+  const directory = await mkdtemp(join(tmpdir(), 'brainstorming-clipboard-'))
   await seedChinese(directory)
   const app = await electron.launch({
     colorScheme: null,
@@ -32,7 +32,7 @@ test('原生剪贴板跨画布复制子树与 Lexical 文字选区分别处理�
       )
       // Verify the fully materialized copy is writable before changing any clipboard content.
       await clipboard.write(snapshot)
-      Object.assign(globalThis, { trelyxClipboardSnapshot: snapshot })
+      Object.assign(globalThis, { brainstormingClipboardSnapshot: snapshot })
     })
     captured = true
     const page = await mainWindow(app)
@@ -43,8 +43,8 @@ test('原生剪贴板跨画布复制子树与 Lexical 文字选区分别处理�
     await expect
       .poll(() => app.evaluate(({ clipboard }) => clipboard.readText()))
       .toBe('产品愿景\n\t让思考自由生长\n\t本地优先')
-    const payload = await page.evaluate(() => window.trelyx?.readTopicClipboard())
-    expect(payload).toContain('Trelyx topics v1\n')
+    const payload = await page.evaluate(() => window.brainstorming?.readTopicClipboard())
+    expect(payload).toContain('Brainstorming topics v1\n')
     await page.keyboard.press('Escape')
     await page
       .getByRole('tablist', { name: '文档画布', exact: true })
@@ -70,7 +70,7 @@ test('原生剪贴板跨画布复制子树与 Lexical 文字选区分别处理�
     expect(await page.evaluate(() => getSelection()?.toString())).toBe(selected)
     await editor.press('ControlOrMeta+c')
     await expect.poll(() => app.evaluate(({ clipboard }) => clipboard.readText())).toBe(selected)
-    expect(await page.evaluate(() => window.trelyx?.readTopicClipboard())).toBe(selected)
+    expect(await page.evaluate(() => window.brainstorming?.readTopicClipboard())).toBe(selected)
     await app.evaluate(({ clipboard }) => clipboard.writeText('原生纯文本粘贴'))
     await editor.press('ControlOrMeta+v')
     await expect(editor).toHaveText(`${original.slice(0, -2)}原生纯文本粘贴`)
@@ -82,9 +82,9 @@ test('原生剪贴板跨画布复制子树与 Lexical 文字选区分别处理�
     try {
       if (captured)
         await app.evaluate(async ({ clipboard }) => {
-          const snapshot: unknown = Reflect.get(globalThis, 'trelyxClipboardSnapshot')
+          const snapshot: unknown = Reflect.get(globalThis, 'brainstormingClipboardSnapshot')
           if (Array.isArray(snapshot)) await clipboard.write(snapshot as Electron.ClipboardItem[])
-          Reflect.deleteProperty(globalThis, 'trelyxClipboardSnapshot')
+          Reflect.deleteProperty(globalThis, 'brainstormingClipboardSnapshot')
         })
     } finally {
       app.process().kill('SIGKILL')

@@ -10,7 +10,7 @@ import { dockAction, openDock } from '@tests/e2e/dock'
 
 // Local deterministic provider fixture: no external account, API key or internet request.
 test('真实 Electron AI 配置、预览、添加与一次撤销闭环', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'trelyx-ai-desktop-'))
+  const directory = await mkdtemp(join(tmpdir(), 'brainstorming-ai-desktop-'))
   await seedChinese(directory)
   const requests: { path: string; authorization: string | undefined; body: string }[] = []
   const server = createServer((request, response) => {

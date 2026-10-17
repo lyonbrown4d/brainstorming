@@ -4,10 +4,10 @@ import { applyCommand, createDocument, createWorkbook } from '@core'
 import { LAYOUT_KINDS, type LayoutKind } from '@core/extensions'
 import { readArchive } from '@formats/archive'
 import { encodeXmind } from '@formats/interchange/xmind'
-import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
+import { decodeBrainstorming, encodeBrainstorming } from '@formats/brainstorming'
 import { importXmind } from '@formats/xmind'
 
-const provider = 'org.trelyx.interchange'
+const provider = 'org.brainstorming.interchange'
 const pairs = [
   ['map', 'org.xmind.ui.map.unbalanced'],
   ['logic-right', 'org.xmind.ui.logic.right'],
@@ -68,7 +68,7 @@ describe('diagram structure file compatibility', () => {
       const second = createWorkbook(createDocument('第二页')).sheets[0]
       if (!second) throw new Error('Missing sheet')
       const workbook = { ...original, sheets: [...original.sheets, { ...second, id: 'second' }] }
-      expect(decodeTrelyx(encodeTrelyx(workbook))).toEqual(workbook)
+      expect(decodeBrainstorming(encodeBrainstorming(workbook))).toEqual(workbook)
       const imported = importXmind(encodeXmind(workbook)).workbook
       expect(imported.sheets[0]?.document.settings?.layout).toBe(layout)
       expect(imported.sheets[0]?.document.topics.branch?.structure).toBe(layout)
@@ -128,7 +128,7 @@ describe('diagram structure file compatibility', () => {
     expect(imported.warnings).toEqual([])
   })
 
-  it('keeps exact Trelyx root and branch extensions authoritative over standard fallback structures', () => {
+  it('keeps exact Brainstorming root and branch extensions authoritative over standard fallback structures', () => {
     const imported = importXmind(
       modern(
         {
@@ -188,7 +188,7 @@ describe('diagram structure file compatibility', () => {
   it.each(['settings', 'topic'])(
     'rejects invalid native %s layout values when reopening',
     (target) => {
-      const entries = Object.fromEntries(readArchive(encodeTrelyx(book('map'))))
+      const entries = Object.fromEntries(readArchive(encodeBrainstorming(book('map'))))
       const value = JSON.parse(new TextDecoder().decode(entries['document.json'])) as {
         sheets: {
           document: { settings: { layout: string }; topics: { branch: { structure: string } } }
@@ -199,7 +199,7 @@ describe('diagram structure file compatibility', () => {
       if (target === 'settings') document.settings.layout = 'tree-unsupported'
       else document.topics.branch.structure = 'tree-unsupported'
       entries['document.json'] = strToU8(JSON.stringify(value))
-      expect(() => decodeTrelyx(zipSync(entries))).toThrow()
+      expect(() => decodeBrainstorming(zipSync(entries))).toThrow()
     },
   )
 })

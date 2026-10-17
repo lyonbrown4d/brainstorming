@@ -12,7 +12,7 @@ beforeEach(() => {
   useDocumentTabs.setState({ tabs: [], activeId: null, recovery: [] })
   useEditor.getState().replace(createDocument('起点'))
   useEditor.setState({ busy: false, recovery: null })
-  vi.stubGlobal('window', { trelyx: desktop(), confirm: vi.fn(() => true) })
+  vi.stubGlobal('window', { brainstorming: desktop(), confirm: vi.fn(() => true) })
 })
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -86,28 +86,28 @@ describe('文件边界', () => {
           finish = resolve
         }),
     )
-    window.trelyx = desktop({ saveDocument: saved })
+    window.brainstorming = desktop({ saveDocument: saved })
     useEditor.getState().startEdit('root')
     useEditor.getState().setDraft('已写入的标题')
     const operation = saveDocument()
     expect(saved.mock.calls).toHaveLength(1)
     useEditor.getState().startEdit('root')
     useEditor.getState().setDraft('保存期间的新输入')
-    finish?.('/map.trelyx')
+    finish?.('/map.brainstorming')
     await operation
     expect(useEditor.getState().history.document.title).toBe('已写入的标题')
     expect(useEditor.getState().draft).toBe('保存期间的新输入')
     expect(isDirty()).toBe(true)
-    expect(useEditor.getState().path).toBe('/map.trelyx')
+    expect(useEditor.getState().path).toBe('/map.brainstorming')
   })
   it('保存取消或失败都保留脏状态，失败给出可见原因', async () => {
     useEditor.getState().startEdit('root')
     useEditor.getState().setDraft('未保存')
-    window.trelyx = desktop({ saveDocument: vi.fn(() => Promise.resolve(null)) })
+    window.brainstorming = desktop({ saveDocument: vi.fn(() => Promise.resolve(null)) })
     await saveDocument()
     expect(isDirty()).toBe(true)
     expect(useEditor.getState().path).toBeNull()
-    window.trelyx = desktop({
+    window.brainstorming = desktop({
       saveDocument: vi.fn(() => Promise.reject(new Error('磁盘空间不足'))),
     })
     await saveDocument()
@@ -117,8 +117,10 @@ describe('文件边界', () => {
   })
   it('无效导入保留当前文档；取消放弃更改时不创建新导图', async () => {
     const before = useEditor.getState().history.document
-    window.trelyx = desktop({
-      openDocument: vi.fn(() => Promise.resolve({ path: '/broken.trelyx', contents: '{broken' })),
+    window.brainstorming = desktop({
+      openDocument: vi.fn(() =>
+        Promise.resolve({ path: '/broken.brainstorming', contents: '{broken' }),
+      ),
     })
     await openDocument()
     expect(useEditor.getState().history.document).toBe(before)
@@ -135,7 +137,7 @@ describe('文件边界', () => {
 describe('读取期间的更改保护', () => {
   it('打开新标签时完整保留读取期间原标签的新增历史和未提交草稿', async () => {
     let finish: ((result: OpenedDocument) => void) | undefined
-    window.trelyx = desktop({
+    window.brainstorming = desktop({
       openDocument: vi.fn(
         () =>
           new Promise<OpenedDocument>((resolve) => {
@@ -153,7 +155,7 @@ describe('读取期间的更改保护', () => {
     const confirm = vi.fn(() => false)
     window.confirm = confirm
     finish?.({
-      path: '/other.trelyx',
+      path: '/other.brainstorming',
       contents: serializeWorkbook(createWorkbook(createDocument('其他文件'))),
     })
     await operation
@@ -175,7 +177,7 @@ describe('读取期间的更改保护', () => {
   })
   it('不确认放弃当前文档，重复打开同一路径复用标签且保留原草稿', async () => {
     let finish: ((result: OpenedDocument) => void) | undefined
-    window.trelyx = desktop({
+    window.brainstorming = desktop({
       openDocument: vi.fn(
         () =>
           new Promise<OpenedDocument>((resolve) => {
@@ -189,21 +191,21 @@ describe('读取期间的更改保护', () => {
     useEditor.getState().startEdit('root')
     useEditor.getState().setDraft('等待期间的编辑')
     finish?.({
-      path: '/other.trelyx',
+      path: '/other.brainstorming',
       contents: serializeWorkbook(createWorkbook(createDocument('其他文件'))),
     })
     await operation
     expect(confirm).not.toHaveBeenCalled()
     expect(useEditor.getState().history.document.title).toBe('其他文件')
     expect(useEditor.getState().draft).toBe('')
-    expect(useEditor.getState().path).toBe('/other.trelyx')
+    expect(useEditor.getState().path).toBe('/other.brainstorming')
     expect(useDocumentTabs.getState().tabs[0]?.editor.draft).toBe('等待期间的编辑')
     expect(useDocumentTabs.getState().tabs).toHaveLength(2)
     confirm.mockClear()
-    window.trelyx = desktop({
+    window.brainstorming = desktop({
       openDocument: vi.fn(() =>
         Promise.resolve({
-          path: '/other.trelyx',
+          path: '/other.brainstorming',
           contents: serializeWorkbook(createWorkbook(createDocument('其他文件'))),
         }),
       ),
@@ -242,16 +244,16 @@ describe('可见导航与保存文件名', () => {
     const title = '规划/调研:*?' + '🌱中文'.repeat(200)
     useEditor.getState().replace(createDocument(title))
     const persist = vi.fn((request: SaveRequest) => Promise.resolve(request.suggestedName))
-    window.trelyx = desktop({ saveDocument: persist })
+    window.brainstorming = desktop({ saveDocument: persist })
     await saveDocument()
     const request = persist.mock.calls[0]?.[0]
     expect(request?.suggestedName).toMatch(/^规划-调研---/u)
-    expect(request?.suggestedName.endsWith('.trelyx')).toBe(true)
+    expect(request?.suggestedName.endsWith('.brainstorming')).toBe(true)
     expect(new TextEncoder().encode(request?.suggestedName).byteLength).toBeLessThanOrEqual(160)
     expect(request?.suggestedName).not.toContain('�')
     expect(useEditor.getState().history.document.title).toBe(title)
     expect(isDirty()).toBe(false)
-    expect(suggestedFileName('CON')).toBe('_CON.trelyx')
-    expect(suggestedFileName('...')).toBe('未命名导图.trelyx')
+    expect(suggestedFileName('CON')).toBe('_CON.brainstorming')
+    expect(suggestedFileName('...')).toBe('未命名导图.brainstorming')
   })
 })

@@ -11,7 +11,7 @@ import {
 import { AI_LIMITS, assertAITree, type AIContextTopic, type AIMode, type AITree } from '@shared/ai'
 import { useEditor } from '@renderer/state/editor'
 import { truncateSheetName } from '@core/workbook'
-import { validateBoundedWorkbook } from '@formats/trelyx/validation'
+import { validateBoundedWorkbook } from '@formats/brainstorming/validation'
 
 export interface AISnapshot {
   readonly workbook: MindMapWorkbook

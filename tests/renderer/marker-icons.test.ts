@@ -8,7 +8,7 @@ import { useEditor } from '@renderer/state/editor'
 import { setMetadataField, toggleTopicMarker } from '@renderer/components/metadata/commands'
 beforeEach(() => {
   useEditor.getState().replace(createDocument('图标测试'))
-  vi.stubGlobal('window', { trelyx: undefined })
+  vi.stubGlobal('window', { brainstorming: undefined })
 })
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -80,7 +80,7 @@ describe('offline topic markers', () => {
     expect(github?.width).toBeGreaterThan(0)
     expect(brandMarkerNames()).toContain('simple-icons:github')
     expect(brandMarkerNames().every((name) => name.length <= 64)).toBe(true)
-    expect(brandMarkerIcon('simple-icons:unknown-trelyx-icon')).toBeUndefined()
+    expect(brandMarkerIcon('simple-icons:unknown-brainstorming-icon')).toBeUndefined()
     expect(brandMarkerIcon('__proto__')).toBeUndefined()
     expect(fetch).not.toHaveBeenCalled()
     const exported = renderSheetSvg(marked).svg

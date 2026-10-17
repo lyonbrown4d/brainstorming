@@ -3,7 +3,7 @@ import { strToU8, zipSync } from 'fflate'
 import { describe, expect, it } from 'vitest'
 import { validateWorkbook } from '@core'
 import { importXmind } from '@formats/xmind'
-import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
+import { decodeBrainstorming, encodeBrainstorming } from '@formats/brainstorming'
 
 const fixture = (name: string): Uint8Array =>
   readFileSync(new URL(`../fixtures/xmind/${name}`, import.meta.url))
@@ -25,7 +25,7 @@ describe('XMind import', () => {
       'Main Topic 3',
     ])
     expect(warnings).toEqual(expect.arrayContaining([expect.stringContaining('主题配色')]))
-    expect(decodeTrelyx(encodeTrelyx(workbook))).toEqual(workbook)
+    expect(decodeBrainstorming(encodeBrainstorming(workbook))).toEqual(workbook)
   })
 
   it('preserves modern sheet order, titles, ordered subtrees, collapse and explicit styles', () => {

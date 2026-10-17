@@ -145,7 +145,9 @@ test('品牌图标虚拟滚动可直达末尾、键盘选择，搜索重置滚�
   expect(await buttons.last().getAttribute('aria-label')).not.toBe(first)
   await page.getByRole('textbox', { name: '搜索图标', exact: true }).fill('github')
   await expect(grid.getByRole('button', { name: '品牌图标 github', exact: true })).toBeVisible()
-  await page.getByRole('textbox', { name: '搜索图标', exact: true }).fill('no-such-trelyx-icon')
+  await page
+    .getByRole('textbox', { name: '搜索图标', exact: true })
+    .fill('no-such-brainstorming-icon')
   await expect(page.getByText('没有匹配的图标。', { exact: true })).toBeVisible()
   await page.getByRole('textbox', { name: '搜索图标', exact: true }).fill('')
   await expect(buttons.first()).toHaveAttribute('aria-label', first ?? '')

@@ -46,12 +46,12 @@ export const messages6 = {
   couldNotProcessDraft: ['草稿处理失败', 'Could not process draft'],
   mcpConnection: ['MCP 连接', 'MCP connection'],
   allowExternalAiClientsToAccessThis: [
-    '让外部 AI 客户端访问本次共享的工作簿。连接仅在 Trelyx 运行期间有效。',
-    'Allow external AI clients to access this workbook. The connection lasts only while Trelyx is running.',
+    '让外部 AI 客户端访问本次共享的工作簿。连接仅在 Brainstorming 运行期间有效。',
+    'Allow external AI clients to access this workbook. The connection lasts only while Brainstorming is running.',
   ],
-  mcpRequiresTheTrelyxDesktopApp: [
-    'MCP 需要 Trelyx 桌面版。',
-    'MCP requires the Trelyx desktop app.',
+  mcpRequiresTheBrainstormingDesktopApp: [
+    'MCP 需要 Brainstorming 桌面版。',
+    'MCP requires the Brainstorming desktop app.',
   ],
   loadingConnectionStatus: ['正在读取连接状态…', 'Loading connection status…'],
   mcpEnabled: ['MCP 已启用 ·', 'MCP enabled ·'],
@@ -136,9 +136,9 @@ export const messages6 = {
   sheetOperationFailed: ['画布操作失败', 'Sheet operation failed'],
   operationFailedPleaseRetry: ['操作失败，请重试。', 'Operation failed. Please retry.'],
   clipboardContentIsTooLarge: ['剪贴板内容过大', 'Clipboard content is too large'],
-  noTrelyxTopicsInTheClipboardCopy: [
-    '剪贴板中没有 Trelyx 主题，请先复制主题分支',
-    'No Trelyx topics in the clipboard. Copy a branch first.',
+  noBrainstormingTopicsInTheClipboardCopy: [
+    '剪贴板中没有 Brainstorming 主题，请先复制主题分支',
+    'No Brainstorming topics in the clipboard. Copy a branch first.',
   ],
   clipboardTopicContentExceeds10Mib: [
     '剪贴板主题内容超过 10 MiB',

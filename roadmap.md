@@ -1,4 +1,4 @@
-# Trelyx Roadmap
+# Brainstorming Roadmap
 
 ## V0.1
 
@@ -6,7 +6,7 @@
 
 ## 当前已落地
 
-Trelyx Focus 界面、独立收放侧栏、同文件多画布、样式编辑、画布管理、备注/图片/附件、新 ZIP 原生协议与现代/旧版 XMind 导入。目录采用 electron-vite 标准布局。
+Brainstorming Focus 界面、独立收放侧栏、同文件多画布、样式编辑、画布管理、备注/图片/附件、新 ZIP 原生协议与现代/旧版 XMind 导入。目录采用 electron-vite 标准布局。
 
 三维空间视图首版支持分支聚焦、卡片内编辑和触控板操作，与二维共享内容及历史；后续继续按真实大图与设备采样改进可读性和性能。
 

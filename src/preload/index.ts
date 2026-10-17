@@ -112,7 +112,7 @@ const api: DesktopAPI = {
     return () => ipcRenderer.removeListener('menu:action', listener)
   },
 }
-contextBridge.exposeInMainWorld('trelyx', api)
+contextBridge.exposeInMainWorld('brainstorming', api)
 const startup: StartupAPI = {
   ready: () => {
     ipcRenderer.send('startup:ready')
@@ -121,4 +121,4 @@ const startup: StartupAPI = {
     ipcRenderer.send('startup:failed')
   },
 }
-contextBridge.exposeInMainWorld('trelyxStartup', startup)
+contextBridge.exposeInMainWorld('brainstormingStartup', startup)

@@ -27,7 +27,7 @@ const fixture = async (allowProposals = false) => {
 }
 const connect = async (connection: MCPConnection, legacy = false) => {
   const client = new Client(
-    { name: 'trelyx-integration-test', version: '1.0.0' },
+    { name: 'brainstorming-integration-test', version: '1.0.0' },
     legacy ? { supportedProtocolVersions: ['2025-11-25'] } : {},
   )
   clients.push(client)

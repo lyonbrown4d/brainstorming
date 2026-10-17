@@ -5,7 +5,7 @@ import { completeDocumentCreation, openExample } from '@tests/e2e/workspace'
 import { expect, test, type Page } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
 import { applyCommand, createExampleDocument, createWorkbook } from '@core'
-import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
+import { decodeBrainstorming, encodeBrainstorming } from '@formats/brainstorming'
 import { structureOptions } from '@renderer/components/documents/structureOptions'
 import { dockAction } from '@tests/e2e/dock'
 
@@ -23,7 +23,7 @@ const save = async (page: Page) => {
   await page.keyboard.press('ControlOrMeta+s')
   const path = await download.path()
   if (!path) throw new Error('保存未生成原生文件')
-  return { path, workbook: decodeTrelyx(await readFile(path)) }
+  return { path, workbook: decodeBrainstorming(await readFile(path)) }
 }
 
 test('缩略图可用键盘应用全部结构，切换保留主题并支持一次撤销重做', async ({ page }, testInfo) => {
@@ -108,10 +108,10 @@ test('当前画布清除根覆盖，保留批量分支结构；重置可撤销�
   const chooser = await prepareNativeOpen(page)
   await fileAction(page, '打开导图')
   await chooser.selectFile({
-    name: '混合结构.trelyx',
+    name: '混合结构.brainstorming',
     mimeType: 'application/octet-stream',
     buffer: Buffer.from(
-      encodeTrelyx({ ...createWorkbook(document), id: 'mixed-structure-workbook' }),
+      encodeBrainstorming({ ...createWorkbook(document), id: 'mixed-structure-workbook' }),
     ),
   })
   let picker = await openPicker(page)

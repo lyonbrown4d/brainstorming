@@ -4,7 +4,7 @@ import { openExample } from '@tests/e2e/workspace'
 import { expect, test } from '@tests/electron/fixture'
 import { openDock, dockAction } from '@tests/e2e/dock'
 import { readFile } from 'node:fs/promises'
-import { decodeTrelyx } from '@formats/trelyx'
+import { decodeBrainstorming } from '@formats/brainstorming'
 
 test('保存多布局、主题、游离位置和演示步骤，播放不修改保存内容', async ({ page }) => {
   await openExample(page)
@@ -37,7 +37,7 @@ test('保存多布局、主题、游离位置和演示步骤，播放不修改�
   await page.keyboard.press('ControlOrMeta+s')
   const path = await download.path()
   if (!path) throw new Error('没有保存文件')
-  const workbook = decodeTrelyx(await readFile(path))
+  const workbook = decodeBrainstorming(await readFile(path))
   const document = workbook.sheets[0]?.document
   expect(document?.settings).toMatchObject({ layout: 'logic-right', theme: 'ocean' })
   expect(document?.presentation).toHaveLength(1)

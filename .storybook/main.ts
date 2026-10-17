@@ -16,7 +16,7 @@ const config: StorybookConfig = {
   addons: ['@storybook/addon-a11y', '@storybook/addon-vitest'],
   viteFinal: (config) =>
     mergeConfig(config, {
-      cacheDir: resolve('node_modules/.vite/trelyx-storybook'),
+      cacheDir: resolve('node_modules/.vite/brainstorming-storybook'),
       resolve: { tsconfigPaths: true, dedupe: ['three'] },
       optimizeDeps: rendererOptimizeDeps,
       plugins: [babel({ presets: [reactCompilerPreset()] }), tailwindcss()],

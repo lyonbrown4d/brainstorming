@@ -4,7 +4,7 @@ import { completeDocumentCreation, openExample } from '@tests/e2e/workspace'
 import { dockAction } from '@tests/e2e/dock'
 import { expect, test, type Page } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
-import { decodeTrelyx } from '@formats/trelyx'
+import { decodeBrainstorming } from '@formats/brainstorming'
 import { imageBase64, attachmentBytes } from '@tests/fixtures/content'
 import { composeChinese } from '@tests/e2e/ime'
 
@@ -90,7 +90,7 @@ test('备注中文编辑、图片和附件在多画布复制排序、删除撤�
   await fileAction(page, '保存导图')
   const path = await download.path()
   if (!path) throw new Error('未生成原生文件')
-  const workbook = decodeTrelyx(await readFile(path))
+  const workbook = decodeBrainstorming(await readFile(path))
   expect(workbook.sheets.map(({ name }) => name)).toEqual([copyName, firstName])
   expect(workbook.sheets.map(({ document }) => document.topics.root?.notes)).toEqual([
     '副本备注独立保存',

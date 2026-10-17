@@ -79,7 +79,7 @@ export const ToolbarFileMenu = () => {
 
   const title = useEditor((state) => state.workbook.title)
   const busy = useEditor((state) => state.busy)
-  const filename = title.endsWith('.trelyx') ? title : `${title}.trelyx`
+  const filename = title.endsWith('.brainstorming') ? title : `${title}.brainstorming`
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

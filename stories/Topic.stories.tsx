@@ -28,7 +28,7 @@ const TopicPreview = ({ root = false }: { root?: boolean }) => {
   )
 }
 const meta = {
-  title: 'Trelyx/主题',
+  title: 'Brainstorming/主题',
   component: TopicPreview,
   beforeEach: () => {
     useEditor.getState().replace(createDocument('一个新的想法'))

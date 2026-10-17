@@ -1,12 +1,12 @@
 # MCP 连接
 
-Trelyx 桌面版在 Electron 主进程内嵌 MCP Server，通过本机 Streamable HTTP 向外部客户端提供当前授权工作簿的读取和编辑草稿能力。服务默认关闭，不需要独立启动脚本，也不要求用户安装 Node.js。此功能与内置 AI 的模型服务配置相互独立。
+Brainstorming 桌面版在 Electron 主进程内嵌 MCP Server，通过本机 Streamable HTTP 向外部客户端提供当前授权工作簿的读取和编辑草稿能力。服务默认关闭，不需要独立启动脚本，也不要求用户安装 Node.js。此功能与内置 AI 的模型服务配置相互独立。
 
 ## 启用与停止
 
 1. 打开或创建工作簿，在画布底部 Dock 打开「MCP 连接」。
 2. 按需勾选「允许读取主题备注」及「允许提交编辑草稿，由我确认后应用」。默认均不勾选。
-3. 点击「启用本机 MCP 服务」。Trelyx 绑定 `127.0.0.1` 的空闲端口，生成本次连接的随机访问令牌。
+3. 点击「启用本机 MCP 服务」。Brainstorming 绑定 `127.0.0.1` 的空闲端口，生成本次连接的随机访问令牌。
 4. 点击「显示连接配置」，将配置交给支持 Streamable HTTP 与自定义请求头的客户端。客户端的配置文件结构以其文档为准。
 5. 使用结束后点击「停止 MCP 服务」。再次启用会生成新的端口和令牌，需要更新客户端配置。
 
@@ -15,7 +15,7 @@ Trelyx 桌面版在 Electron 主进程内嵌 MCP Server，通过本机 Streamabl
 ```json
 {
   "mcpServers": {
-    "trelyx": {
+    "brainstorming": {
       "url": "http://127.0.0.1:PORT/mcp",
       "headers": {
         "Authorization": "Bearer SESSION_TOKEN"
@@ -25,7 +25,7 @@ Trelyx 桌面版在 Electron 主进程内嵌 MCP Server，通过本机 Streamabl
 }
 ```
 
-关闭窗口、重新加载 renderer、renderer 崩溃或退出应用会停止服务。重启应用不会自动恢复连接。连接配置只保留在内存，不写入 `.trelyx`、恢复记录或本机设置；客户端如何保存令牌由客户端决定。
+关闭窗口、重新加载 renderer、renderer 崩溃或退出应用会停止服务。重启应用不会自动恢复连接。连接配置只保留在内存，不写入 `.brainstorming`、恢复记录或本机设置；客户端如何保存令牌由客户端决定。
 
 ## 共享范围
 

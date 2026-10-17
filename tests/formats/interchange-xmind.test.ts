@@ -6,8 +6,8 @@ import { encodeXmind } from '@formats/interchange/xmind'
 import { exportSheets } from '@formats/interchange/outline'
 import { importXmind } from '@formats/xmind'
 
-const provider = 'org.trelyx.interchange'
-describe('XMind Trelyx extension interchange', () => {
+const provider = 'org.brainstorming.interchange'
+describe('XMind Brainstorming extension interchange', () => {
   it('rejects archives beyond the reader entry limit before exporting an unreopenable file', () => {
     const base = createDocument('资源数量')
     const ids = Array.from({ length: 510 }, (_, index) => `asset-${index}`)

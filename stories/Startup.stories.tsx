@@ -10,12 +10,12 @@ const preview = startupHtml
   .replace('</head>', `<style>${startupStyles}</style></head>`)
 
 const meta = {
-  title: 'Trelyx/启动画面',
+  title: 'Brainstorming/启动画面',
   parameters: { layout: 'fullscreen' },
   args: { failed: false },
   render: ({ failed }: { failed: boolean }) => (
     <iframe
-      title="Trelyx 启动画面预览"
+      title="Brainstorming 启动画面预览"
       srcDoc={preview}
       className="h-screen w-full border-0"
       onLoad={(event) => {

@@ -9,7 +9,7 @@ const entrySchema = z
     fileName: z
       .string()
       .regex(
-        /^[a-f0-9]{64}\.[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.trelyx$/u,
+        /^[a-f0-9]{64}\.[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.brainstorming$/u,
       ),
     protocolVersion: z.literal(2),
   })

@@ -6,7 +6,7 @@ import { useEditor } from '@renderer/state/editor'
 import '@renderer/styles/ui.css'
 
 const meta = {
-  title: 'Trelyx/画布标签',
+  title: 'Brainstorming/画布标签',
   component: SheetTabs,
   parameters: { layout: 'fullscreen' },
   decorators: [

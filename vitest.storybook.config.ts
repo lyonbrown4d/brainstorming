@@ -10,7 +10,7 @@ const rendererOptions = JSON.parse(
 const rendererOptimizeDeps = rendererOptions.optimizeDeps
 
 export default defineConfig({
-  cacheDir: resolve('node_modules/.vite/trelyx-storybook-test'),
+  cacheDir: resolve('node_modules/.vite/brainstorming-storybook-test'),
   resolve: { tsconfigPaths: true, dedupe: ['three'] },
   optimizeDeps: rendererOptimizeDeps,
   plugins: [storybookTest({ configDir: resolve('.storybook') })],

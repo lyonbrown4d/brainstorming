@@ -42,7 +42,7 @@ import { createDocument, createWorkbook } from '@core'
 let directory: string
 const containers: ReturnType<typeof createApplicationContainer>[] = []
 beforeEach(async () => {
-  directory = await mkdtemp(join(tmpdir(), 'trelyx-di-'))
+  directory = await mkdtemp(join(tmpdir(), 'brainstorming-di-'))
   mocks.handlers.clear()
   mocks.events.clear()
   mocks.installMenu.mockClear()

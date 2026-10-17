@@ -46,7 +46,7 @@ export const messages7 = {
     'The document changed. Reopen version history.',
   ],
   couldNotLoadVersionHistory: ['无法读取版本历史', 'Could not load version history'],
-  trelyxRequestFailed: ['Trelyx 请求失败', 'Trelyx request failed'],
+  brainstormingRequestFailed: ['Brainstorming 请求失败', 'Brainstorming request failed'],
   pleaseSaveTheFileManually: ['请手动保存文件。', 'Please save the file manually.'],
   couldNotLoadRecoveryDataSaveThe: [
     '无法读取自动恢复记录。请先手动保存当前导图。',
@@ -87,7 +87,7 @@ export const messages7 = {
     '导出 SVG 超过 40 MiB，请拆分画布',
     'Exported SVG exceeds 40 MiB. Split the sheet.',
   ],
-  trelyxFullMapPrint: ['Trelyx 完整导图打印', 'Trelyx full map print'],
+  brainstormingFullMapPrint: ['Brainstorming 完整导图打印', 'Brainstorming full map print'],
   couldNotCreatePrintDocument: ['当前环境无法创建打印文档', 'Could not create print document'],
   couldNotOpenPrintDialogExportPdf: [
     '无法打开打印窗口，请使用 PDF 导出后打印',

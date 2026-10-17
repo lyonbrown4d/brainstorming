@@ -8,7 +8,7 @@ import { useSearch } from '@renderer/state/search'
 import { openTopicProperties } from '@stories/properties'
 
 const meta = {
-  title: 'Trelyx/批量编辑与查找',
+  title: 'Brainstorming/批量编辑与查找',
   component: App,
   parameters: { layout: 'fullscreen' },
   beforeEach: () => {

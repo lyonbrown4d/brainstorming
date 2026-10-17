@@ -2,11 +2,11 @@ import { prepareNativeOpen } from '@tests/electron/native-files'
 import { reloadWindow } from '@tests/electron/session'
 import { expect, test } from '@tests/electron/fixture'
 import { createFixtureDocument, createWorkbook } from '@core'
-import { encodeTrelyx } from '@formats/trelyx'
+import { encodeBrainstorming } from '@formats/brainstorming'
 
 for (const count of [100, 1_000, 5_000]) {
   test(`${count} 主题固定文档打开与交互采样`, async ({ page }, testInfo) => {
-    const contents = encodeTrelyx(createWorkbook(createFixtureDocument(count)))
+    const contents = encodeBrainstorming(createWorkbook(createFixtureDocument(count)))
     const samples: number[] = []
     const mounted: number[] = []
     for (let sample = 0; sample < 3; sample += 1) {
@@ -15,8 +15,8 @@ for (const count of [100, 1_000, 5_000]) {
       const started = performance.now()
       await page.getByRole('button', { name: '打开本地文件', exact: true }).click()
       await picker.selectFile({
-        name: `fixed-${count}.trelyx`,
-        mimeType: 'application/vnd.trelyx+zip',
+        name: `fixed-${count}.brainstorming`,
+        mimeType: 'application/vnd.brainstorming+zip',
         buffer: Buffer.from(contents),
       })
       await expect(page.getByTestId('topic-root')).toBeVisible()

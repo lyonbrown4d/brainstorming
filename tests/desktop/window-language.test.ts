@@ -63,10 +63,10 @@ const fixture = async (locale: AppLanguage) => {
 
 describe('native close language and all-document confirmation', () => {
   it.each([
-    ['zh-CN', '关闭 Trelyx', '有打开的导图尚未保存。', ['返回编辑', '丢弃并关闭']],
+    ['zh-CN', '关闭 Brainstorming', '有打开的导图尚未保存。', ['返回编辑', '丢弃并关闭']],
     [
       'en',
-      'Close Trelyx',
+      'Close Brainstorming',
       'Some open maps have unsaved changes.',
       ['Return to editing', 'Discard and close'],
     ],
@@ -107,7 +107,7 @@ describe('native close language and all-document confirmation', () => {
     })
     expect(state.ports.showMessageBox).toHaveBeenCalledWith(
       state.window,
-      expect.objectContaining({ title: 'Close Trelyx' }),
+      expect.objectContaining({ title: 'Close Brainstorming' }),
     )
     expect(state.clearRecovery).not.toHaveBeenCalled()
   })

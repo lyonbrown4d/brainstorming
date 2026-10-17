@@ -13,7 +13,7 @@ export const useCanvasPreferences = create<CanvasPreferences>()(
       setMinimap: (minimap) => set({ minimap }),
     }),
     {
-      name: 'trelyx-canvas-preferences',
+      name: 'brainstorming-canvas-preferences',
       storage: createJSONStorage(() => localStorage),
       partialize: ({ minimap }) => ({ minimap }),
     },

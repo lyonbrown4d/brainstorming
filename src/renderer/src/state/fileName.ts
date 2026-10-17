@@ -1,5 +1,5 @@
 import { translate } from '@renderer/i18n'
-const EXTENSION = '.trelyx'
+const EXTENSION = '.brainstorming'
 const MAX_FILE_NAME_BYTES = 160
 const encoder = new TextEncoder()
 

@@ -4,12 +4,12 @@ import { _electron as electron, expect, test } from '@playwright/test'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { decodeTrelyx } from '@formats/trelyx'
+import { decodeBrainstorming } from '@formats/brainstorming'
 
 test('桌面首页创建并保存后，新建独立画布沿用原文件路径，最近文件可从首页重新打开', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'trelyx-create-desktop-'))
+  const directory = await mkdtemp(join(tmpdir(), 'brainstorming-create-desktop-'))
   await seedChinese(directory)
-  const path = join(directory, '设计工作簿.trelyx')
+  const path = join(directory, '设计工作簿.brainstorming')
   const app = await electron.launch({
     colorScheme: null,
     args: ['.', `--user-data-dir=${directory}`],
@@ -30,11 +30,11 @@ test('桌面首页创建并保存后，新建独立画布沿用原文件路径�
     await expect
       .poll(async () =>
         readFile(path)
-          .then((bytes) => decodeTrelyx(bytes).sheets.length)
+          .then((bytes) => decodeBrainstorming(bytes).sheets.length)
           .catch(() => 0),
       )
       .toBe(1)
-    const original = decodeTrelyx(await readFile(path))
+    const original = decodeBrainstorming(await readFile(path))
     // A misplaced save-as flow now cancels instead of silently reusing our fixture path.
     await app.evaluate(({ dialog }) => {
       dialog.showSaveDialog = () => Promise.resolve({ canceled: true, filePath: '' })
@@ -48,13 +48,13 @@ test('桌面首页创建并保存后，新建独立画布沿用原文件路径�
       page.getByRole('tablist', { name: '文档画布', exact: true }).getByRole('tab'),
     ).toHaveCount(2)
     await page.keyboard.press('ControlOrMeta+s')
-    await expect.poll(async () => decodeTrelyx(await readFile(path)).sheets.length).toBe(2)
-    const saved = decodeTrelyx(await readFile(path))
+    await expect.poll(async () => decodeBrainstorming(await readFile(path)).sheets.length).toBe(2)
+    const saved = decodeBrainstorming(await readFile(path))
     expect(saved.id).toBe(original.id)
     expect(saved.sheets[0]).toEqual(original.sheets[0])
     expect(saved.sheets[1]?.document.settings?.layout).toBe('timeline-vertical')
     await page.getByRole('button', { name: '返回首页', exact: true }).click()
-    const recent = page.getByRole('button', { name: /设计工作簿\.trelyx/ })
+    const recent = page.getByRole('button', { name: /设计工作簿\.brainstorming/ })
     await expect(recent).toBeVisible()
     await recent.click()
     await expect(

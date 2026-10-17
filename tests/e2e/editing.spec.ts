@@ -3,7 +3,7 @@ import { openExample } from '@tests/e2e/workspace'
 import { dockAction } from '@tests/e2e/dock'
 import { expect, test } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
-import { decodeTrelyx } from '@formats/trelyx'
+import { decodeBrainstorming } from '@formats/brainstorming'
 import { composeChinese } from '@tests/e2e/ime'
 
 test('选中后连续输入不丢首字，中文组词、换行、取消和整次撤销正常', async ({ page }) => {
@@ -49,7 +49,7 @@ test('右侧同样使用 Lexical，中文草稿在快捷键保存时完整写入
   await input.press('ControlOrMeta+S')
   const path = await download.path()
   if (!path) throw new Error('保存没有生成文件')
-  const workbook = decodeTrelyx(await readFile(path))
+  const workbook = decodeBrainstorming(await readFile(path))
   expect(workbook.sheets[0]?.document.title).toBe('从侧栏输入中文')
   await expect(page.getByTestId('topic-root')).toContainText('从侧栏输入中文')
 })

@@ -24,7 +24,7 @@ const clientConfig = (connection: MCPConnection): string =>
   JSON.stringify(
     {
       mcpServers: {
-        trelyx: {
+        brainstorming: {
           url: connection.endpoint,
           headers: { Authorization: `Bearer ${connection.token}` },
         },
@@ -35,7 +35,7 @@ const clientConfig = (connection: MCPConnection): string =>
   )
 
 export const MCPDialog = ({
-  api = window.trelyx,
+  api = window.brainstorming,
   defaultOpen = false,
 }: {
   api?: MCPAPI
@@ -92,7 +92,7 @@ export const MCPDialog = ({
         </DialogHeader>
         {!api ? (
           <p role="status" className="text-sm">
-            {translate('mcpRequiresTheTrelyxDesktopApp')}
+            {translate('mcpRequiresTheBrainstormingDesktopApp')}
           </p>
         ) : (
           <div className="grid gap-4">

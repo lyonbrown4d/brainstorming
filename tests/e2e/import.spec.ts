@@ -3,7 +3,7 @@ import { reloadWindow } from '@tests/electron/session'
 import { completeDocumentCreation, openExample } from '@tests/e2e/workspace'
 import { expect, test, type Page } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
-import { decodeTrelyx } from '@formats/trelyx'
+import { decodeBrainstorming } from '@formats/brainstorming'
 import { legacyXmind, modernXmind } from '@tests/fixtures/xmind/archive'
 import { openDocumentTabs } from '@tests/e2e/documents'
 
@@ -68,10 +68,12 @@ for (const variant of [
     const download = await prepareNativeSave(page)
     await fileAction(page, '保存导图')
     const file = download
-    expect((await file.path()).split('/').at(-1)).toMatch(/\.trelyx$/u)
+    expect((await file.path()).split('/').at(-1)).toMatch(/\.brainstorming$/u)
     const path = await file.path()
     if (!path) throw new Error('没有生成原生文件')
-    expect(decodeTrelyx(await readFile(path)).sheets[0]?.document.title).toBe('导入后继续编辑')
+    expect(decodeBrainstorming(await readFile(path)).sheets[0]?.document.title).toBe(
+      '导入后继续编辑',
+    )
     await fileAction(page, '新建导图')
     // Force a disk reopen instead of reusing the imported tab and its conversion report.
     await (
@@ -95,7 +97,7 @@ test('旧 JSON 文件与损坏 XMind 不替换当前导图', async ({ page }) =>
   page.on('dialog', (dialog) => dialog.accept())
   await openExample(page)
   for (const [name, contents] of [
-    ['old.trelyx', '{"format":"trelyx","version":2}'],
+    ['old.brainstorming', '{"format":"brainstorming","version":2}'],
     ['bad.xmind', 'bad'],
   ] as const) {
     const picker = await prepareNativeOpen(page)

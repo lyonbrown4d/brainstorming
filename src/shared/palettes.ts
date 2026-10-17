@@ -7,8 +7,8 @@ export interface MapPalette extends DocumentPalette {
 }
 export const mapPalettes = [
   {
-    id: 'trelyx',
-    name: 'Trelyx',
+    id: 'brainstorming',
+    name: 'Brainstorming',
     root: '#6d5bd0',
     background: '#fafafc',
     branches: ['#d87578', '#399f91', '#c8953d', '#5c86c6', '#9784c6'],
@@ -80,5 +80,5 @@ export const paletteAppearance = (palette: DocumentPalette) => ({
     formatHex(interpolate([branch, palette.background], 'rgb')(0.78)),
   ),
 })
-export const findPalette = (id: PaletteId = 'trelyx'): MapPalette =>
+export const findPalette = (id: PaletteId = 'brainstorming'): MapPalette =>
   mapPalettes.find((palette) => palette.id === id) ?? mapPalettes[0]

@@ -11,7 +11,7 @@ import type { OpenedDocument } from '@shared/contracts'
 
 vi.mock('electron', () => ({ nativeTheme: {} }))
 
-const pathFor = (name: string): string => join(tmpdir(), 'trelyx-open-requests', name)
+const pathFor = (name: string): string => join(tmpdir(), 'brainstorming-open-requests', name)
 const opened = (path: string): OpenedDocument => ({ path, contents: '' })
 const createFiles = () => ({
   openSelected: vi.fn((path: string): Promise<OpenedDocument> => Promise.resolve(opened(path))),
@@ -52,15 +52,16 @@ describe('operating-system document open queue', () => {
   it('keeps every valid argument in order and deduplicates normalized absolute paths', async () => {
     const requests = new OpenFileRequests()
     const files = createFiles()
-    const first = pathFor('first.trelyx')
+    const first = pathFor('first.brainstorming')
     const second = pathFor('second.XMIND')
     expect(
       requests.enqueueArguments([
         '--inspect',
-        'relative.trelyx',
+        'relative.brainstorming',
         pathFor('ignored.txt'),
+        pathFor('unsupported.legacy'),
         first,
-        `${first}/../first.trelyx`,
+        `${first}/../first.brainstorming`,
         second,
       ]),
     ).toBe(true)
@@ -74,13 +75,13 @@ describe('operating-system document open queue', () => {
   it('limits pending requests to 32 without replacing earlier requests', async () => {
     const requests = new OpenFileRequests()
     const files = createFiles()
-    const paths = Array.from({ length: 33 }, (_, index) => pathFor(`${index}.trelyx`))
+    const paths = Array.from({ length: 33 }, (_, index) => pathFor(`${index}.brainstorming`))
     expect(requests.enqueueArguments(paths)).toBe(true)
-    expect(requests.enqueue(pathFor('overflow.trelyx'))).toBe(false)
+    expect(requests.enqueue(pathFor('overflow.brainstorming'))).toBe(false)
     const documents: (OpenedDocument | null)[] = []
     while (requests.hasPending()) documents.push(await requests.take(files))
     expect(documents).toEqual(paths.slice(0, 32).map(opened))
-    const overflow = pathFor('32.trelyx')
+    const overflow = pathFor('32.brainstorming')
     expect(requests.enqueue(overflow)).toBe(true)
     expect(await requests.take(files)).toEqual(opened(overflow))
   })
@@ -88,38 +89,40 @@ describe('operating-system document open queue', () => {
   it('rejects malformed requests and consumes a failed file without losing the next request', async () => {
     const requests = new OpenFileRequests()
     const files = createFiles()
-    expect(requests.enqueueArguments(['', 'relative.xmind', pathFor('nul\0.trelyx')])).toBe(false)
+    expect(requests.enqueueArguments(['', 'relative.xmind', pathFor('nul\0.brainstorming')])).toBe(
+      false,
+    )
     expect(requests.hasPending()).toBe(false)
-    requests.enqueueArguments([pathFor('damaged.trelyx'), pathFor('valid.trelyx')])
+    requests.enqueueArguments([pathFor('damaged.brainstorming'), pathFor('valid.brainstorming')])
     files.openSelected.mockRejectedValueOnce(new Error('damaged ZIP'))
     await expect(requests.take(files)).rejects.toThrow('damaged ZIP')
     expect(requests.hasPending()).toBe(true)
-    expect(await requests.take(files)).toEqual(opened(pathFor('valid.trelyx')))
+    expect(await requests.take(files)).toEqual(opened(pathFor('valid.brainstorming')))
   })
 })
 
 describe('queued open-file IPC', () => {
   it('notifies the renderer after a successful take while more paths remain', async () => {
     const { requests, webContents, take } = setupIPC()
-    requests.enqueueArguments([pathFor('first.trelyx'), pathFor('second.trelyx')])
-    expect(await take()).toEqual(opened(pathFor('first.trelyx')))
+    requests.enqueueArguments([pathFor('first.brainstorming'), pathFor('second.brainstorming')])
+    expect(await take()).toEqual(opened(pathFor('first.brainstorming')))
     expect(webContents.send).toHaveBeenCalledExactlyOnceWith('document:open-file-ready')
-    expect(await take()).toEqual(opened(pathFor('second.trelyx')))
+    expect(await take()).toEqual(opened(pathFor('second.brainstorming')))
     expect(webContents.send).toHaveBeenCalledTimes(1)
   })
 
   it('notifies after a rejected take so a later valid file can still open', async () => {
     const { requests, files, webContents, take } = setupIPC()
-    requests.enqueueArguments([pathFor('damaged.trelyx'), pathFor('valid.trelyx')])
+    requests.enqueueArguments([pathFor('damaged.brainstorming'), pathFor('valid.brainstorming')])
     files.openSelected.mockRejectedValueOnce(new Error('damaged ZIP'))
     await expect(take()).rejects.toThrow('damaged ZIP')
     expect(webContents.send).toHaveBeenCalledExactlyOnceWith('document:open-file-ready')
-    expect(await take()).toEqual(opened(pathFor('valid.trelyx')))
+    expect(await take()).toEqual(opened(pathFor('valid.brainstorming')))
   })
 
   it('rejects other senders and child frames before consuming any queued capability', async () => {
     const { requests, files, webContents, event, take } = setupIPC()
-    requests.enqueue(pathFor('private.trelyx'))
+    requests.enqueue(pathFor('private.brainstorming'))
     for (const invalid of [
       { ...event, sender: {} },
       { ...event, senderFrame: {} },
@@ -135,8 +138,11 @@ describe('queued open-file IPC', () => {
     for (const target of ['window', 'webContents'] as const) {
       const fixture = setupIPC()
       fixture[target].isDestroyed.mockReturnValue(true)
-      fixture.requests.enqueueArguments([pathFor('first.trelyx'), pathFor('second.trelyx')])
-      expect(await fixture.take()).toEqual(opened(pathFor('first.trelyx')))
+      fixture.requests.enqueueArguments([
+        pathFor('first.brainstorming'),
+        pathFor('second.brainstorming'),
+      ])
+      expect(await fixture.take()).toEqual(opened(pathFor('first.brainstorming')))
       expect(fixture.requests.hasPending()).toBe(true)
       expect(fixture.webContents.send).not.toHaveBeenCalled()
     }

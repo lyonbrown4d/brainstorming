@@ -35,7 +35,7 @@ export const desktop = (overrides: Partial<DesktopAPI> = {}): DesktopAPI => {
     takeOpenFile: () => Promise.resolve(null),
     onOpenFile: () => () => undefined,
     openDocument: () => Promise.resolve(null),
-    saveDocument: () => Promise.resolve('/map.trelyx'),
+    saveDocument: () => Promise.resolve('/map.brainstorming'),
     readRecovery: () => Promise.resolve(null),
     writeRecovery: () => Promise.resolve(),
     setDirty: () => undefined,

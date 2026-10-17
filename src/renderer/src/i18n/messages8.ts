@@ -46,16 +46,16 @@ export const messages8 = {
     'Keep sheet names, hierarchy and titles. Title line breaks are written as \\\\n. Other content is excluded.',
   ],
   modernXmindIncludesSelectedSheetsTopicsNotes: [
-    '现代 XMind 文件包含所选画布、主题、备注和内嵌资源。每个主题的首个附件使用标准链接；额外附件和扩展元数据写入 Trelyx 扩展，其他软件可能忽略。仅导出当前画布时会移除指向其他画布的主题链接。',
-    'Modern XMind includes selected sheets, topics, notes and embedded resources. The first attachment uses a standard link. Extra attachments and metadata use Trelyx extensions that other apps may ignore. Exporting one sheet removes links to other sheets.',
+    '现代 XMind 文件包含所选画布、主题、备注和内嵌资源。每个主题的首个附件使用标准链接；额外附件和扩展元数据写入 Brainstorming 扩展，其他软件可能忽略。仅导出当前画布时会移除指向其他画布的主题链接。',
+    'Modern XMind includes selected sheets, topics, notes and embedded resources. The first attachment uses a standard link. Extra attachments and metadata use Brainstorming extensions that other apps may ignore. Exporting one sheet removes links to other sheets.',
   ],
   sheetDoesNotExist: ['画布不存在', 'Sheet does not exist'],
   theSheetChangedReadItAgain: ['画布已改变，请重新读取', 'The sheet changed. Read it again.'],
   paginationRequiresARevision: ['分页读取须提供 revision', 'Pagination requires a revision'],
   topicDoesNotExist: ['主题不存在', 'Topic does not exist'],
   theSharedWorkbookWasClosedOrChanged: [
-    '共享的工作簿已关闭或切换，请在 Trelyx 中重新启用 MCP',
-    'The shared workbook was closed or changed. Re-enable MCP in Trelyx.',
+    '共享的工作簿已关闭或切换，请在 Brainstorming 中重新启用 MCP',
+    'The shared workbook was closed or changed. Re-enable MCP in Brainstorming.',
   ],
   editingDraftDoesNotExistOrHas: [
     '编辑草稿不存在或已过期',
@@ -66,12 +66,12 @@ export const messages8 = {
     'This connection does not allow editing drafts',
   ],
   tooManyPendingDraftsReviewThemIn: [
-    '待确认草稿已达上限，请先在 Trelyx 中处理',
-    'Too many pending drafts. Review them in Trelyx first.',
+    '待确认草稿已达上限，请先在 Brainstorming 中处理',
+    'Too many pending drafts. Review them in Brainstorming first.',
   ],
-  waitingForApprovalInTrelyxTheDocument: [
-    '等待用户在 Trelyx 中确认；文档尚未修改',
-    'Waiting for approval in Trelyx. The document has not changed.',
+  waitingForApprovalInBrainstormingTheDocument: [
+    '等待用户在 Brainstorming 中确认；文档尚未修改',
+    'Waiting for approval in Brainstorming. The document has not changed.',
   ],
   finishEditingFileOperationsOrPresentationFirst: [
     '请先完成当前编辑、文件操作或演示',
@@ -89,8 +89,8 @@ export const messages8 = {
     '读取结果过大，请减少 limit 或选择较小分支',
     'Read result is too large. Reduce the limit or choose a smaller branch.',
   ],
-  mcpRequiresTheTrelyxDesktopAppLabel827: [
-    'MCP 需要 Trelyx 桌面版',
-    'MCP requires the Trelyx desktop app',
+  mcpRequiresTheBrainstormingDesktopAppLabel827: [
+    'MCP 需要 Brainstorming 桌面版',
+    'MCP requires the Brainstorming desktop app',
   ],
 } as const

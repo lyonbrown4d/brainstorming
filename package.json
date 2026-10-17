@@ -1,15 +1,15 @@
 {
-  "name": "trelyx",
+  "name": "brainstorming",
   "version": "0.1.0",
   "private": true,
   "description": "本地优先的桌面思维导图工具，基于 React Flow 与 Electron。",
   "type": "module",
   "main": "out/main/index.js",
-  "author": "Trelyx contributors",
+  "author": "Brainstorming contributors",
   "license": "UNLICENSED",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lyonbrown4d/trelyx.git"
+    "url": "https://github.com/lyonbrown4d/brainstorming.git"
   },
   "packageManager": "pnpm@10.12.1",
   "engines": {
@@ -34,7 +34,7 @@
     "test:storybook": "vitest run --config vitest.storybook.config.ts",
     "build": "electron-vite build",
     "package": "electron-builder --config electron-builder.yml --publish never",
-    "ci-gate": "moon run trelyx:check",
+    "ci-gate": "moon run brainstorming:check",
     "moon": "moon",
     "prepare": "husky",
     "postinstall": "install-electron && electron-builder install-app-deps",

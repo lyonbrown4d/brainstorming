@@ -16,7 +16,11 @@ export const DialogContent = ({
   const closeLabel = suppliedCloseLabel ?? translate('close')
 
   return (
-    <BaseDialogContent {...props} showCloseButton={false} className={`trelyx-dialog ${className}`}>
+    <BaseDialogContent
+      {...props}
+      showCloseButton={false}
+      className={`brainstorming-dialog ${className}`}
+    >
       {children}
       <DialogClose asChild>
         <Button

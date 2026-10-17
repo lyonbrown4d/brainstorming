@@ -29,8 +29,11 @@ export const messages5 = {
   exporting: ['正在导出…', 'Exporting…'],
   exportFile: ['导出文件', 'Export file'],
   imported: ['已导入', 'Imported'],
-  savedAsATrelyxFile: ['已保存为 Trelyx 文件。', 'Saved as a Trelyx file.'],
-  savingWillCreateATrelyxFile: ['保存时将创建 Trelyx 文件。', 'Saving will create a Trelyx file.'],
+  savedAsABrainstormingFile: ['已保存为 Brainstorming 文件。', 'Saved as a Brainstorming file.'],
+  savingWillCreateABrainstormingFile: [
+    '保存时将创建 Brainstorming 文件。',
+    'Saving will create a Brainstorming file.',
+  ],
   someContentWasAdjustedOrCouldNot: [
     '部分内容已调整或未导入。',
     'Some content was adjusted or could not be imported.',
@@ -38,9 +41,9 @@ export const messages5 = {
   viewImportReport: ['查看导入报告', 'View import report'],
   closeImportReport: ['关闭导入报告', 'Close import report'],
   importReport: ['导入报告', 'Import report'],
-  convertedToAnEditableTrelyxDocumentThe: [
-    '已转换为可编辑的 Trelyx 文档。源文件保持原样，以下内容需要留意。',
-    'Converted to an editable Trelyx document. The source file stays unchanged. Review the following details.',
+  convertedToAnEditableBrainstormingDocumentThe: [
+    '已转换为可编辑的 Brainstorming 文档。源文件保持原样，以下内容需要留意。',
+    'Converted to an editable Brainstorming document. The source file stays unchanged. Review the following details.',
   ],
   dismissImportNotice: ['关闭导入提示', 'Dismiss import notice'],
   mapActions: ['导图操作', 'Map actions'],

@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createDocument, createWorkbook, serializeWorkbook } from '@core'
-import { encodeTrelyx } from '@formats/trelyx'
+import { encodeBrainstorming } from '@formats/brainstorming'
 import { decodeFile } from '@formats'
 import { zipSync, strToU8 } from 'fflate'
 import { OpenFileRequests } from '@main/openFiles'
@@ -21,7 +21,7 @@ const workbook = createWorkbook(createDocument('保存测试', 'file-test'))
 const contents = serializeWorkbook(workbook)
 
 beforeEach(async () => {
-  directory = await mkdtemp(join(tmpdir(), 'trelyx-files-'))
+  directory = await mkdtemp(join(tmpdir(), 'brainstorming-files-'))
   files = documentFiles(join(directory, 'application'))
   await files.initialize()
 })
@@ -32,28 +32,28 @@ afterEach(async () => {
 
 describe('桌面文件服务', () => {
   it('保存、重新打开并持久化最近文件', async () => {
-    const path = files.authorizeSelected(join(directory, '导图.trelyx'))
+    const path = files.authorizeSelected(join(directory, '导图.brainstorming'))
     await files.save(path, contents)
     expect(await files.openSelected(path)).toEqual({ path, contents, warnings: [] })
     const restarted = documentFiles(join(directory, 'application'))
     await restarted.initialize()
-    expect(restarted.getRecentFiles()).toEqual([{ path, name: '导图.trelyx' }])
+    expect(restarted.getRecentFiles()).toEqual([{ path, name: '导图.brainstorming' }])
     expect(await restarted.openRecent(path)).toEqual({ path, contents, warnings: [] })
   })
 
   it('无效文档或未授权位置不会覆盖文件', async () => {
-    const path = files.authorizeSelected(join(directory, 'existing.trelyx'))
+    const path = files.authorizeSelected(join(directory, 'existing.brainstorming'))
     await files.save(path, contents)
     await expect(files.save(path, '{}')).rejects.toThrow()
-    await expect(files.save(join(directory, 'other.trelyx'), contents)).rejects.toThrow(
+    await expect(files.save(join(directory, 'other.brainstorming'), contents)).rejects.toThrow(
       '选择保存位置',
     )
     expect(decodeFile(await readFile(path), path).workbook).toEqual(workbook)
-    expect(await readdir(directory)).not.toContain('other.trelyx')
+    expect(await readdir(directory)).not.toContain('other.brainstorming')
   })
 
   it('损坏的打开文件不会获得写入权限，最近文件不能任意读取', async () => {
-    const path = join(directory, 'bad.trelyx')
+    const path = join(directory, 'bad.brainstorming')
     await writeFile(path, '{broken')
     await expect(files.openSelected(path)).rejects.toThrow()
     await expect(files.save(path, contents)).rejects.toThrow('选择保存位置')
@@ -62,7 +62,7 @@ describe('桌面文件服务', () => {
   })
 
   it('替换失败时保留目标并清理临时文件', async () => {
-    const target = join(directory, 'directory.trelyx')
+    const target = join(directory, 'directory.brainstorming')
     await mkdir(target)
     await writeFile(join(target, 'keep'), 'original')
     await expect(atomicWrite(target, contents)).rejects.toThrow()
@@ -103,16 +103,16 @@ describe('桌面文件服务', () => {
     expect(opened).toMatchObject({ path: null, sourcePath: path })
     expect(opened.warnings).toBeDefined()
     expect(opened.contents).toContain('XMind')
-    expect(() => files.authorizeSelected(path)).toThrow('.trelyx')
-    await expect(files.save(path, opened.contents)).rejects.toThrow('.trelyx')
+    expect(() => files.authorizeSelected(path)).toThrow('.brainstorming')
+    await expect(files.save(path, opened.contents)).rejects.toThrow('.brainstorming')
     expect(await readFile(path)).toEqual(Buffer.from(source))
   })
 
   it('拒绝旧 JSON 文件、伪装的原生 JSON 和超过边界的文件', async () => {
     const jsonPath = join(directory, 'old.json')
     await writeFile(jsonPath, contents)
-    await expect(files.openSelected(jsonPath)).rejects.toThrow('.trelyx')
-    const nativePath = join(directory, 'old.trelyx')
+    await expect(files.openSelected(jsonPath)).rejects.toThrow('.brainstorming')
+    const nativePath = join(directory, 'old.brainstorming')
     await writeFile(nativePath, contents)
     await expect(files.openSelected(nativePath)).rejects.toThrow()
     await writeFile(nativePath, Buffer.alloc(MAX_FILE_BYTES + 1))
@@ -121,18 +121,20 @@ describe('桌面文件服务', () => {
   })
 
   it('恢复文件使用二进制格式且不读取旧恢复命名空间', async () => {
-    await writeFile(join(directory, 'application', 'recovery.trelyx'), contents)
+    await writeFile(join(directory, 'application', 'recovery.brainstorming'), contents)
     expect(await files.readRecovery()).toBeNull()
     await files.writeRecovery(contents)
     const bytes = await recoveryArchive(join(directory, 'application'), files)
-    expect(bytes).toEqual(Buffer.from(encodeTrelyx(workbook)))
+    expect(bytes).toEqual(Buffer.from(encodeBrainstorming(workbook)))
   })
 
   it('系统打开请求仅消费绝对路径，并通过相同文件校验', async () => {
     const requests = new OpenFileRequests()
     expect(requests.hasPending()).toBe(false)
-    expect(requests.enqueueArguments(['electron', '.', '--flag', 'relative.trelyx'])).toBe(false)
-    const path = files.authorizeSelected(join(directory, 'system.trelyx'))
+    expect(requests.enqueueArguments(['electron', '.', '--flag', 'relative.brainstorming'])).toBe(
+      false,
+    )
+    const path = files.authorizeSelected(join(directory, 'system.brainstorming'))
     await files.save(path, contents)
     expect(requests.enqueueArguments(['electron', path])).toBe(true)
     expect(requests.hasPending()).toBe(true)

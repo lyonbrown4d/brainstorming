@@ -24,7 +24,7 @@ const editing = new SystemEditing({
 })
 const assets = new AssetFiles({ showSaveDialog, showOpenDialog, decodeImage: () => true })
 beforeEach(async () => {
-  directory = await mkdtemp(join(tmpdir(), 'trelyx-system-'))
+  directory = await mkdtemp(join(tmpdir(), 'brainstorming-system-'))
   vi.resetAllMocks()
   openExternal.mockResolvedValue()
   writeClipboard.mockResolvedValue()
@@ -43,13 +43,13 @@ describe('injected native editing capabilities', () => {
       side: 'right',
     })
     const contents =
-      'Trelyx topics v1\n' + JSON.stringify(createTopicClipboard(document, ['child']))
+      'Brainstorming topics v1\n' + JSON.stringify(createTopicClipboard(document, ['child']))
     const item = {} as Electron.ClipboardItem
     createClipboardItem.mockReturnValue(item)
     await editing.writeTopics(contents, 'Branch')
     expect(createClipboardItem).toHaveBeenCalledWith({
       'text/plain': 'Branch',
-      'web application/vnd.trelyx.topics+json': contents,
+      'web application/vnd.brainstorming.topics+json': contents,
     })
     expect(writeClipboard).toHaveBeenCalledWith([item])
     await expect(editing.writeTopics('invalid', 'Branch')).rejects.toThrow('格式无效')

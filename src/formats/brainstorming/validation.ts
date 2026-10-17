@@ -1,6 +1,6 @@
 import { validateWorkbook } from '@core/workbook'
 import type { MindMapWorkbook } from '@core/types'
-import { decodeAssets } from '@formats/trelyx/assets'
+import { decodeAssets } from '@formats/brainstorming/assets'
 
 export const DOCUMENT_LIMITS = { topics: 20_000, depth: 128, sheets: 128 } as const
 
@@ -11,13 +11,13 @@ export const record = (value: unknown): Record<string, unknown> => {
     Array.isArray(value) ||
     (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null)
   )
-    throw new Error('Trelyx 文档结构无效')
+    throw new Error('Brainstorming 文档结构无效')
   return value as Record<string, unknown>
 }
 
 export const onlyKeys = (value: Record<string, unknown>, allowed: readonly string[]): void => {
   if (Object.keys(value).some((key) => !allowed.includes(key)))
-    throw new Error('Trelyx 文档包含当前版本不支持的内容')
+    throw new Error('Brainstorming 文档包含当前版本不支持的内容')
 }
 
 /** Bound the whole workbook as well as individual tree depth before layout or editing. */
@@ -49,7 +49,7 @@ export const nativeWorkbook = (
 ): MindMapWorkbook => {
   const content = record(value)
   onlyKeys(content, ['id', 'title', 'sheets'])
-  if (!Array.isArray(content.sheets)) throw new Error('Trelyx 文档缺少画布')
+  if (!Array.isArray(content.sheets)) throw new Error('Brainstorming 文档缺少画布')
   const budget = { bytes: 0 }
   const sheets = content.sheets.map((value: unknown, index: number) => {
     const sheet = record(value)
@@ -105,7 +105,7 @@ export const nativeWorkbook = (
       name: sheet.name,
       document: {
         ...document,
-        format: 'trelyx',
+        format: 'brainstorming',
         version: 1,
         ...(document.assets === undefined
           ? {}
@@ -113,7 +113,13 @@ export const nativeWorkbook = (
       },
     }
   })
-  const workbook = { format: 'trelyx', version: 2, id: content.id, title: content.title, sheets }
+  const workbook = {
+    format: 'brainstorming',
+    version: 2,
+    id: content.id,
+    title: content.title,
+    sheets,
+  }
   validateBoundedWorkbook(workbook)
   return workbook
 }
