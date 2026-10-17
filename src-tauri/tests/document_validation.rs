@@ -3,6 +3,7 @@ mod fixture;
 use base64::{Engine, engine::general_purpose::STANDARD};
 use brainstorming_native::document::DocumentStore;
 use serde_json::json;
+use sqlx::{Connection, SqliteConnection, sqlite::SqliteConnectOptions};
 
 #[tokio::test]
 async fn inline_image_bytes_mime_dimensions_and_unused_assets_are_validated_natively() {
@@ -36,10 +37,18 @@ async fn inline_image_bytes_mime_dimensions_and_unused_assets_are_validated_nati
         1
     );
     store.release(&path).await.unwrap();
-    let db = rusqlite::Connection::open(&path).unwrap();
-    db.execute_batch("UPDATE topics SET data=json_set(data,'$.image.width',2) WHERE id='a'")
+    let mut db = SqliteConnection::connect_with(
+        &SqliteConnectOptions::new()
+            .filename(&path)
+            .create_if_missing(true),
+    )
+    .await
+    .unwrap();
+    sqlx::query("UPDATE topics SET data=json_set(data,'$.image.width',2) WHERE id='a'")
+        .execute(&mut db)
+        .await
         .unwrap();
-    drop(db);
+    db.close().await.unwrap();
     assert!(store.read(&path, None).await.is_err());
     store.release(&path).await.unwrap();
 }
@@ -68,9 +77,15 @@ async fn damaged_native_protocol_order_extensions_and_references_are_rejected() 
             .await
             .unwrap();
         store.release(&path).await.unwrap();
-        let db = rusqlite::Connection::open(&path).unwrap();
-        db.execute_batch(sql).unwrap();
-        drop(db);
+        let mut db = SqliteConnection::connect_with(
+            &SqliteConnectOptions::new()
+                .filename(&path)
+                .create_if_missing(true),
+        )
+        .await
+        .unwrap();
+        sqlx::raw_sql(sql).execute(&mut db).await.unwrap();
+        db.close().await.unwrap();
         assert!(
             store.read(&path, None).await.is_err(),
             "mutation should be rejected: {sql}"

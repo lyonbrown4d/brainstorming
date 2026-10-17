@@ -42,8 +42,9 @@ thiserror = "2.0.21"
 tokio = { version = "1.53.3", features = ["rt-multi-thread", "sync", "time", "net", "fs", "io-util", "macros"] }
 tokio-util = { version = "0.7.20", features = ["io", "rt"] }
 futures-util = "0.3.34"
-rusqlite = { version = "0.40.2", features = ["bundled-sqlcipher-vendored-openssl", "limits", "blob", "backup", "fallible_uint"] }
-deadpool-sqlite = { version = "0.14.0", features = ["bundled-sqlcipher-vendored-openssl"] }
+sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros"] }
+libsqlite3-sys = { version = "0.37.0", features = ["bundled-sqlcipher-vendored-openssl"] }
+bytes = "1.12.1"
 sha2 = "0.11.1"
 hex = "0.4.3"
 uuid = { version = "1.28.0", features = ["v4", "serde"] }

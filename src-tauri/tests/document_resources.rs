@@ -5,6 +5,7 @@ use brainstorming_native::{
     storage::ResourceVault,
 };
 use serde_json::json;
+use sqlx::{Connection, SqliteConnection, sqlite::SqliteConnectOptions};
 use std::sync::Arc;
 
 #[tokio::test]
@@ -178,13 +179,19 @@ async fn corrupt_chunk_is_rejected_instead_of_served_and_inline_imports_become_s
         .as_str()
         .unwrap();
     store.release(&path).await.unwrap();
-    let db = rusqlite::Connection::open(&path).unwrap();
-    db.execute(
-        "UPDATE resource_chunks SET data=x'0000000000' WHERE object_id=?1",
-        [oid],
+    let mut db = SqliteConnection::connect_with(
+        &SqliteConnectOptions::new()
+            .filename(&path)
+            .create_if_missing(true),
     )
+    .await
     .unwrap();
-    drop(db);
+    sqlx::query("UPDATE resource_chunks SET data=x'0000000000' WHERE object_id=?1")
+        .bind(oid)
+        .execute(&mut db)
+        .await
+        .unwrap();
+    db.close().await.unwrap();
     assert!(
         store
             .read_resource(&path, oid, 0, Some(5), None)

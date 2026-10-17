@@ -74,3 +74,11 @@ Tauri 的 `src-tauri/gen/schemas` 是按当前构建 feature 生成的权限 sch
 开发编译的最后一个 Rust 任务同时生成平台所需的库，Cargo 进度条可能较久不变。`profile.dev.debug = "line-tables-only"` 使用官方行号调试信息，减少完整类型符号和静态归档的磁盘写入，保留文件与行号堆栈。首次修改 profile 会重新编译依赖；需要变量级原生调试时可临时设置 `CARGO_PROFILE_DEV_DEBUG=full`。不通过清空 `target` 处理正常编译等待。
 
 macOS `build:desktop --debug`（未指定证书）或显式 `APPLE_SIGNING_IDENTITY=-` 的本地预览包会叠加 `tauri.preview.conf.json`，由 Tauri 完成 [ad-hoc 签名](https://v2.tauri.app/distribute/sign/macos/#ad-hoc-signing)。此预览配置不启用 Hardened Runtime：ad-hoc 主程序和 libvips 均没有 Team ID，无法通过其[同团队动态库校验](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.security.cs.disable-library-validation)。正式分发不使用此预览配置，需配置 Developer ID 和公证；默认发布配置仍保留 Hardened Runtime。
+
+## 数据库迁移
+
+数据访问使用 SQLx / SQLCipher；`libsqlite3-sys` 使用 SQLx 稳定版支持的兼容版本并启用 SQLCipher，不能另外链接普通 SQLite。根目录 `.cargo/config.toml` 在编译 SQLCipher 时固定 `SQLITE_MAX_LENGTH=134217728`，使初次连接读取不可信 schema 前就有长度上限；连接认证仍设置同样的运行时限制。每条连接在读取数据库前完成 key pragma，关闭 SQL 日志，验证 SQLCipher 和数据库可读性。
+
+文档迁移放在 `src-tauri/src/document/migrations`，本机设置迁移放在 `src-tauri/src/storage/migrations`。两组使用独立 Migrator；执行入口是应用内配置好的 Migrator，不对用户文件执行默认 CLI 迁移。履历表均为 `_brainstorming_migrations`，由 SQLx 维护版本与校验和。不要手写履历 INSERT，也不要运行用户文件内的 SQL。
+
+新变更追加有序编号 SQL，例如 `002_add_topic_index.sql`；不修改已发布的迁移。迁移编号独立于文件协议的 `application_id` / `user_version`。Cargo build.rs 追踪两个迁移目录，新增文件会重新嵌入。迁移或校验失败必须保留原文件，相关测试使用真实 SQLCipher 和有界资源。

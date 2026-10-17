@@ -1,6 +1,7 @@
 use super::{Result, error::invalid, schema};
-use deadpool_sqlite::{Config, Hook, HookError, Pool, Runtime};
+use futures_util::future::BoxFuture;
 use sha2::{Digest, Sha256};
+use sqlx::{SqliteConnection, SqlitePool, sqlite::SqlitePoolOptions};
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
@@ -18,7 +19,7 @@ static REGISTRY: OnceLock<Mutex<Registry>> = OnceLock::new();
 
 #[derive(Default)]
 pub(crate) struct Entry {
-    pools: HashMap<String, Pool>,
+    pools: HashMap<String, SqlitePool>,
     pub references: usize,
 }
 
@@ -68,32 +69,10 @@ pub(crate) async fn lock(path: &Path) -> Result<(PathBuf, OwnedMutexGuard<Entry>
 
 impl Entry {
     pub async fn close(&mut self) -> Result<()> {
-        let mut failure = None;
         for (_, pool) in self.pools.drain() {
-            if pool.status().size > 0 {
-                let closed = async {
-                    let connection = pool.get().await.map_err(|_| super::DocumentError::Pool)?;
-                    connection
-                        .interact(|db| {
-                            let placeholder = rusqlite::Connection::open_in_memory()?;
-                            let original = std::mem::replace(db, placeholder);
-                            original.close().map_err(|(_, error)| error)?;
-                            Ok::<_, super::DocumentError>(())
-                        })
-                        .await
-                        .map_err(|_| super::DocumentError::Worker)?
-                }
-                .await;
-                if let Err(error) = closed {
-                    failure = Some(error);
-                }
-            }
-            pool.close();
+            pool.close().await;
         }
-        match failure {
-            Some(error) => Err(error),
-            None => Ok(()),
-        }
+        Ok(())
     }
 
     pub async fn run<T, F>(
@@ -105,72 +84,51 @@ impl Entry {
     ) -> Result<T>
     where
         T: Send + 'static,
-        F: FnOnce(&mut rusqlite::Connection) -> Result<T> + Send + 'static,
+        F: for<'a> FnOnce(&'a mut SqliteConnection) -> BoxFuture<'a, Result<T>>,
     {
         if !create
             && !tokio::fs::metadata(&path)
                 .await
-                .is_ok_and(|metadata| metadata.is_file())
+                .is_ok_and(|item| item.is_file())
         {
             return Err(invalid("文档文件不存在"));
         }
         let password = Zeroizing::new(password.unwrap_or_default().to_owned());
-        let (password, digest) = tokio::task::spawn_blocking(move || {
-            let digest = hex::encode(Sha256::digest(password.as_bytes()));
-            (password, digest)
-        })
-        .await
-        .map_err(|_| super::DocumentError::Worker)?;
+        let digest = hex::encode(Sha256::digest(password.as_bytes()));
         let pool = if let Some(pool) = self.pools.get(&digest) {
             pool.clone()
         } else {
-            // SQLite URI mode=rw prevents the standard manager's CREATE flag
-            // from recreating a document removed between validation and open.
-            let mut uri =
-                url::Url::from_file_path(&path).map_err(|_| invalid("文档路径无法编码"))?;
-            uri.query_pairs_mut().append_pair("mode", "rw");
-            let filename = match uri.host_str() {
-                Some(host) if host != "localhost" => {
-                    format!("file:////{host}{}?mode=rw", uri.path())
-                }
-                _ => uri.to_string(),
-            };
-            let config = Config::new(filename);
-            let manager = deadpool_sqlite::Manager::from_config(&config, Runtime::Tokio1);
-            let pool = Pool::builder(manager)
-                .post_create(Hook::async_fn(move |connection, _| {
-                    let password = password.clone();
+            let options = schema::options(&path, Some(password.as_str()), create, false)?;
+            let pool = SqlitePoolOptions::new()
+                .max_connections(1)
+                .after_connect(|db, _| {
                     Box::pin(async move {
-                        connection
-                            .interact(move |db| {
-                                schema::configure(db, Some(password.as_str()))?;
-                                schema::initialize(db, create)
-                            })
+                        schema::authenticate(db)
                             .await
-                            .map_err(|_| HookError::message("数据库操作线程失败"))?
-                            .map_err(|error| HookError::message(error.to_string()))
+                            .map_err(|_| sqlx::Error::Protocol("文档数据库连接认证失败".into()))
                     })
-                }))
-                .max_size(1)
-                .build()
-                .map_err(|_| super::DocumentError::Pool)?;
-            self.pools.insert(digest.clone(), pool.clone());
+                })
+                .connect_with(options)
+                .await?;
+            let initialized = async {
+                let mut db = pool.acquire().await?;
+                schema::initialize(&mut db, create).await
+            }
+            .await;
+            if let Err(error) = initialized {
+                pool.close().await;
+                return Err(error);
+            }
+            self.pools.insert(digest, pool.clone());
             pool
         };
         let result = async {
-            let conn = pool
-                .get()
-                .await
-                .map_err(|error| invalid(error.to_string()))?;
-            conn.interact(operation)
-                .await
-                .map_err(|_| super::DocumentError::Worker)?
+            let mut db = pool.acquire().await?;
+            operation(&mut db).await
         }
         .await;
-        if result.is_err()
-            && let Err(error) = self.close().await
-        {
-            tracing::warn!(error=%error,"Native document connection cleanup failed");
+        if result.is_err() {
+            self.close().await?;
         }
         result
     }

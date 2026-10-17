@@ -9,12 +9,16 @@ mod key_change;
 mod maintenance;
 mod pool;
 mod presentation_validation;
+mod resource_insert;
+mod resource_reader;
 mod resource_write;
 pub(crate) mod resources;
+mod save;
 pub(crate) mod schema;
 mod source;
 mod structure;
 mod structure_read;
+mod structure_read_parts;
 mod validation;
 mod write;
 
@@ -26,11 +30,7 @@ pub use resources::{
 };
 use serde_json::Value;
 pub use source::{CompositeSource, DocumentSource};
-use std::{
-    io::{Cursor, Read},
-    path::Path,
-    sync::Arc,
-};
+use std::{io::Cursor, path::Path, sync::Arc};
 pub use validation::validate_workbook;
 
 #[derive(Clone, Default)]
@@ -45,61 +45,8 @@ impl DocumentStore {
     pub async fn read(&self, path: impl AsRef<Path>, password: Option<&str>) -> Result<Value> {
         let (path, mut entry) = pool::lock(path.as_ref()).await?;
         entry
-            .run(path, password, false, |db| structure::read(db))
+            .run(path, password, false, |db| Box::pin(structure::read(db)))
             .await
-    }
-    pub async fn write(
-        &self,
-        path: impl AsRef<Path>,
-        workbook: Value,
-        password: Option<&str>,
-        existing_password: Option<&str>,
-        source: Option<Arc<dyn ResourceSource>>,
-    ) -> Result<Value> {
-        let workbook = tokio::task::spawn_blocking(move || {
-            validation::validate_workbook(&workbook)?;
-            Ok::<_, DocumentError>(workbook)
-        })
-        .await
-        .map_err(|_| DocumentError::Worker)??;
-        let (path, mut entry) = pool::lock(path.as_ref()).await?;
-        if !tokio::fs::try_exists(&path).await? {
-            entry.close().await?;
-            return creation::write_new(path, password, workbook, source).await;
-        }
-        if password.unwrap_or_default() != existing_password.unwrap_or_default() {
-            return key_change::replace(
-                &mut entry,
-                path,
-                existing_password,
-                password,
-                Some(workbook),
-                source,
-            )
-            .await?
-            .ok_or_else(|| error::invalid("密码变更缺少工作簿"));
-        }
-        entry
-            .run(path, password, false, move |db| {
-                write::write(db, workbook, source.as_deref())
-            })
-            .await
-    }
-
-    pub async fn rekey(
-        &self,
-        path: impl AsRef<Path>,
-        previous: Option<&str>,
-        password: Option<&str>,
-    ) -> Result<()> {
-        let (path, mut entry) = pool::lock(path.as_ref()).await?;
-        if previous.unwrap_or_default() == password.unwrap_or_default() {
-            return entry
-                .run(path, previous, false, |db| structure::read(db).map(|_| ()))
-                .await;
-        }
-        key_change::replace(&mut entry, path, previous, password, None, None).await?;
-        Ok(())
     }
     pub async fn revisions(
         &self,
@@ -108,7 +55,9 @@ impl DocumentStore {
     ) -> Result<Vec<Revision>> {
         let (path, mut entry) = pool::lock(path.as_ref()).await?;
         entry
-            .run(path, password, false, |db| maintenance::revisions(db))
+            .run(path, password, false, |db| {
+                Box::pin(maintenance::revisions(db))
+            })
             .await
     }
     pub async fn read_revision(
@@ -121,7 +70,7 @@ impl DocumentStore {
         let id = id.to_owned();
         entry
             .run(path, password, false, move |db| {
-                maintenance::read_revision(db, &id)
+                Box::pin(async move { maintenance::read_revision(db, &id).await })
             })
             .await
     }
@@ -135,8 +84,10 @@ impl DocumentStore {
         let id = id.to_owned();
         entry
             .run(path, password, false, move |db| {
-                let workbook = maintenance::read_revision(db, &id)?;
-                write::write(db, workbook, None)
+                Box::pin(async move {
+                    let workbook = maintenance::read_revision(db, &id).await?;
+                    write::write(db, workbook, None).await
+                })
             })
             .await
     }
@@ -152,7 +103,7 @@ impl DocumentStore {
         let id = id.to_owned();
         entry
             .run(path, password, false, move |db| {
-                resources::read_range(db, &id, offset, length)
+                Box::pin(async move { resources::read_range(db, &id, offset, length).await })
             })
             .await
     }
@@ -166,9 +117,11 @@ impl DocumentStore {
         let id = id.to_owned();
         entry
             .run(path, password, false, move |db| {
-                Ok(ResourceObject {
-                    byte_length: resources::size(db, &id)?,
-                    object_id: id,
+                Box::pin(async move {
+                    Ok(ResourceObject {
+                        byte_length: resources::size(db, &id).await?,
+                        object_id: id,
+                    })
                 })
             })
             .await
@@ -183,7 +136,7 @@ impl DocumentStore {
         let id = id.to_owned();
         entry
             .run(path, password, false, move |db| {
-                resources::derivatives(db, &id)
+                Box::pin(async move { resources::derivatives(db, &id).await })
             })
             .await
     }
@@ -200,7 +153,7 @@ impl DocumentStore {
         let id = id.to_owned();
         entry
             .run(path, password, false, move |db| {
-                resources::image_tile(db, &id, level, x, y)
+                Box::pin(async move { resources::image_tile(db, &id, level, x, y).await })
             })
             .await
     }
@@ -216,16 +169,19 @@ impl DocumentStore {
     pub async fn import_reader(
         &self,
         path: impl AsRef<Path>,
-        mut reader: Box<dyn Read + Send>,
+        mut reader: resources::ResourceReader,
         password: Option<&str>,
     ) -> Result<ResourceObject> {
         let (path, mut entry) = pool::lock(path.as_ref()).await?;
         entry
             .run(path, password, false, move |db| {
-                let tx = db.transaction()?;
-                let object = resources::insert(&tx, &mut reader, None)?;
-                tx.commit()?;
-                Ok(object)
+                Box::pin(async move {
+                    use sqlx::Connection;
+                    let mut tx = db.begin_with("BEGIN IMMEDIATE").await?;
+                    let object = resources::insert(&mut tx, &mut reader, None).await?;
+                    tx.commit().await?;
+                    Ok(object)
+                })
             })
             .await
     }
@@ -240,13 +196,15 @@ impl DocumentStore {
         let (path, mut entry) = pool::lock(path.as_ref()).await?;
         entry
             .run(path, password, false, move |db| {
-                maintenance::compact(db, &pinned)
+                Box::pin(async move { maintenance::compact(db, &pinned).await })
             })
             .await
     }
     pub async fn retain(&self, path: impl AsRef<Path>, password: Option<&str>) -> Result<()> {
         let (path, mut entry) = pool::lock(path.as_ref()).await?;
-        entry.run(path, password, false, |_| Ok(())).await?;
+        entry
+            .run(path, password, false, |_| Box::pin(async { Ok(()) }))
+            .await?;
         entry.references = entry
             .references
             .checked_add(1)
@@ -266,15 +224,6 @@ impl DocumentStore {
         path: impl AsRef<Path>,
         password: Option<&str>,
     ) -> Result<Arc<dyn ResourceSource>> {
-        let path = path.as_ref().to_owned();
-        let password = zeroize::Zeroizing::new(password.unwrap_or_default().to_owned());
-        tokio::task::spawn_blocking(move || {
-            Ok(
-                Arc::new(DocumentSource::new(path, Some(password.as_str()))?)
-                    as Arc<dyn ResourceSource>,
-            )
-        })
-        .await
-        .map_err(|_| DocumentError::Worker)?
+        Ok(Arc::new(DocumentSource::new(path, password).await?) as Arc<dyn ResourceSource>)
     }
 }

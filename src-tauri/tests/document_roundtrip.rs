@@ -2,6 +2,7 @@
 mod fixture;
 use brainstorming_native::document::{DocumentStore, validate_workbook};
 use serde_json::json;
+use sqlx::{Connection, SqliteConnection, sqlite::SqliteConnectOptions};
 
 #[tokio::test]
 async fn relational_roundtrip_preserves_sheets_order_annotations_and_extensions() {
@@ -100,9 +101,18 @@ async fn rejected_validation_and_missing_resource_preserve_previous_file() {
 async fn native_protocol_is_explicit_and_old_or_unknown_versions_are_rejected() {
     let folder = tempfile::tempdir().unwrap();
     let path = folder.path().join("old.brainstorming");
-    let db = rusqlite::Connection::open(&path).unwrap();
-    db.execute_batch("PRAGMA application_id=1112690259;PRAGMA user_version=1;CREATE TABLE old_document(id TEXT);").unwrap();
-    drop(db);
+    let mut db = SqliteConnection::connect_with(
+        &SqliteConnectOptions::new()
+            .filename(&path)
+            .create_if_missing(true),
+    )
+    .await
+    .unwrap();
+    sqlx::raw_sql("PRAGMA application_id=1112690259;PRAGMA user_version=1;CREATE TABLE old_document(id TEXT);")
+        .execute(&mut db)
+        .await
+        .unwrap();
+    db.close().await.unwrap();
     let store = DocumentStore::new();
     assert!(
         store

@@ -1,13 +1,23 @@
-use crate::document::{DocumentError, Result};
-use deadpool_sqlite::{Config, Pool, Runtime};
-use rusqlite::{OptionalExtension, params};
+use crate::document::{DocumentError, Result, schema::MIGRATION_TABLE};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::{collections::HashSet, path::Path};
+use sqlx::{
+    Connection, SqliteConnection, SqlitePool,
+    migrate::{Migrate, Migrator},
+    sqlite::SqliteConnectOptions,
+};
+use std::{collections::HashSet, path::Path, sync::LazyLock, time::Duration};
+
+static MIGRATOR: LazyLock<Migrator> = LazyLock::new(|| {
+    let mut migrator = sqlx::migrate!("./src/storage/migrations");
+    // Fixed before the first deployment; never rename an existing database's ledger.
+    migrator.dangerous_set_table_name(MIGRATION_TABLE);
+    migrator
+});
 
 #[derive(Clone)]
 pub struct MetadataStore {
-    pool: Pool,
+    pool: SqlitePool,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -25,150 +35,214 @@ impl MetadataStore {
         if let Some(parent) = path.as_ref().parent() {
             tokio::fs::create_dir_all(parent).await?;
         }
-        let config = Config::new(path.as_ref());
-        let manager = deadpool_sqlite::Manager::from_config(&config, Runtime::Tokio1);
-        let pool = Pool::builder(manager)
-            .max_size(1)
-            .build()
-            .map_err(|_| DocumentError::Pool)?;
-        let store = Self { pool };
-        store
-            .run(|db| {
-                db.busy_timeout(std::time::Duration::from_secs(10))?;
-                let version: i64 = db.pragma_query_value(None, "user_version", |r| r.get(0))?;
-                let app: i64 = db.pragma_query_value(None, "application_id", |r| r.get(0))?;
-                if version == 0 && app == 0 {
-                    let tables: i64 = db.query_row(
-                        "SELECT count(*) FROM sqlite_master WHERE type='table'",
-                        [],
-                        |r| r.get(0),
-                    )?;
-                    if tables != 0 {
-                        return Err(invalid("不能覆盖旧版本本机数据库"));
-                    }
-                    let tx = db.transaction()?;
-                    tx.execute_batch(include_str!("migrations/001_metadata.sql"))?;
-                    tx.commit()?;
-                } else if version != 1 || app != 1112682061 {
-                    return Err(invalid("不支持此本机数据库版本"));
-                }
-                Ok(())
-            })
+        let options = SqliteConnectOptions::new()
+            .filename(path.as_ref())
+            .create_if_missing(true)
+            .busy_timeout(Duration::from_secs(10));
+        let pool = sqlx::sqlite::SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect_with(options)
             .await?;
-        Ok(store)
-    }
-    async fn run<T, F>(&self, operation: F) -> Result<T>
-    where
-        T: Send + 'static,
-        F: FnOnce(&mut rusqlite::Connection) -> Result<T> + Send + 'static,
-    {
-        let db = self.pool.get().await.map_err(|_| DocumentError::Pool)?;
-        db.interact(operation)
-            .await
-            .map_err(|_| DocumentError::Worker)?
+        let initialized = async {
+            let mut db = pool.acquire().await?;
+            initialize(&mut db).await
+        }
+        .await;
+        if let Err(error) = initialized {
+            pool.close().await;
+            return Err(error);
+        }
+        Ok(Self { pool })
     }
     pub async fn shutdown(&self) -> Result<()> {
-        if self.pool.is_closed() {
-            return Ok(());
-        }
-        let connection = match self.pool.get().await {
-            Ok(connection) => connection,
-            Err(_) if self.pool.is_closed() => return Ok(()),
-            Err(_) => return Err(DocumentError::Pool),
-        };
-        self.pool.close();
-        connection
-            .interact(|db| {
-                let placeholder = rusqlite::Connection::open_in_memory()?;
-                let original = std::mem::replace(db, placeholder);
-                original.close().map_err(|(_, error)| error)?;
-                Ok(())
-            })
-            .await
-            .map_err(|_| DocumentError::Worker)?
+        self.pool.close().await;
+        Ok(())
     }
     pub async fn language(&self) -> Result<Option<String>> {
-        self.run(|db| {
-            let language: Option<String> = db
-                .query_row("SELECT language FROM preferences WHERE id=1", [], |r| {
-                    r.get(0)
-                })
-                .optional()?;
-            if language
-                .as_deref()
-                .is_some_and(|s| s != "en" && s != "zh-CN")
-            {
-                return Err(invalid("本机语言无效"));
-            }
-            Ok(language)
-        })
-        .await
+        let language: Option<String> =
+            sqlx::query_scalar("SELECT language FROM preferences WHERE id=1")
+                .fetch_optional(&self.pool)
+                .await?;
+        if language
+            .as_deref()
+            .is_some_and(|s| s != "en" && s != "zh-CN")
+        {
+            return Err(invalid("本机语言无效"));
+        }
+        Ok(language)
     }
     pub async fn set_language(&self, language: &str) -> Result<()> {
         if !["en", "zh-CN"].contains(&language) {
             return Err(invalid("不支持此语言"));
         }
-        let language = language.to_owned();
-        self.run(move|db|{db.execute("INSERT INTO preferences VALUES (1,?1) ON CONFLICT(id) DO UPDATE SET language=excluded.language",[language])?;Ok(())}).await
+        sqlx::query(
+            "INSERT INTO preferences (id,language) VALUES (1,?1) \
+             ON CONFLICT(id) DO UPDATE SET language=excluded.language",
+        )
+        .bind(language)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
     }
     pub async fn recent_files(&self) -> Result<Vec<String>> {
-        self.run(|db| {
-            let mut query =
-                db.prepare("SELECT path FROM recent_files ORDER BY position LIMIT 11")?;
-            let paths = query
-                .query_map([], |r| r.get(0))?
-                .collect::<std::result::Result<Vec<String>, _>>()?;
-            validate_paths(&paths)?;
-            Ok(paths)
-        })
-        .await
+        let paths = sqlx::query_scalar("SELECT path FROM recent_files ORDER BY position LIMIT 11")
+            .fetch_all(&self.pool)
+            .await?;
+        validate_paths(&paths)?;
+        Ok(paths)
     }
     pub async fn replace_recent_files(&self, paths: Vec<String>) -> Result<()> {
         validate_paths(&paths)?;
-        self.run(move |db| {
-            let tx = db.transaction()?;
-            tx.execute("DELETE FROM recent_files", [])?;
-            for (position, path) in paths.iter().enumerate() {
-                tx.execute(
-                    "INSERT INTO recent_files VALUES (?1,?2)",
-                    params![position as i64, path],
-                )?;
-            }
-            tx.commit()?;
-            Ok(())
-        })
-        .await
+        let mut tx = self.pool.begin().await?;
+        sqlx::query("DELETE FROM recent_files")
+            .execute(&mut *tx)
+            .await?;
+        for (position, path) in paths.iter().enumerate() {
+            sqlx::query("INSERT INTO recent_files (position,path) VALUES (?1,?2)")
+                .bind(position as i64)
+                .bind(path)
+                .execute(&mut *tx)
+                .await?;
+        }
+        tx.commit().await?;
+        Ok(())
     }
     pub async fn recovery_index(&self) -> Result<Vec<RecoveryEntry>> {
-        self.run(|db|{
-            let mut query=db.prepare("SELECT document_id,file_name,protocol_version FROM workspace_recovery ORDER BY position LIMIT 33")?;
-            let entries=query.query_map([],|r|Ok(RecoveryEntry{document_id:r.get(0)?,file_name:r.get(1)?,protocol_version:r.get(2)?}))?.collect::<std::result::Result<Vec<_>,_>>()?;
-            validate_entries(&entries)?;
-            Ok(entries)
-        }).await
+        let rows: Vec<(String, String, i64)> = sqlx::query_as(
+            "SELECT document_id,file_name,protocol_version FROM workspace_recovery \
+             ORDER BY position LIMIT 33",
+        )
+        .fetch_all(&self.pool)
+        .await?;
+        let entries = decode_entries(rows)?;
+        validate_entries(&entries)?;
+        Ok(entries)
     }
     pub async fn replace_recovery_index(&self, entries: Vec<RecoveryEntry>) -> Result<()> {
-        self.run(move |db| {
-            validate_entries(&entries)?;
-            let tx = db.transaction()?;
-            tx.execute("DELETE FROM workspace_recovery", [])?;
-            for (position, entry) in entries.iter().enumerate() {
-                tx.execute(
-                    "INSERT INTO workspace_recovery VALUES (?1,?2,?3,?4)",
-                    params![
-                        position as i64,
-                        entry.document_id,
-                        entry.file_name,
-                        entry.protocol_version
-                    ],
-                )?;
-            }
-            tx.commit()?;
-            Ok(())
-        })
-        .await
+        validate_entries(&entries)?;
+        let mut tx = self.pool.begin().await?;
+        sqlx::query("DELETE FROM workspace_recovery")
+            .execute(&mut *tx)
+            .await?;
+        for (position, entry) in entries.iter().enumerate() {
+            sqlx::query(
+                "INSERT INTO workspace_recovery \
+                 (position,document_id,file_name,protocol_version) VALUES (?1,?2,?3,?4)",
+            )
+            .bind(position as i64)
+            .bind(&entry.document_id)
+            .bind(&entry.file_name)
+            .bind(i64::from(entry.protocol_version))
+            .execute(&mut *tx)
+            .await?;
+        }
+        tx.commit().await?;
+        Ok(())
     }
 }
+
+async fn initialize(db: &mut SqliteConnection) -> Result<()> {
+    // File identity is independent of migration sequence and checked before ledger creation.
+    let version: i64 = sqlx::query_scalar("PRAGMA user_version")
+        .fetch_one(&mut *db)
+        .await?;
+    let app: i64 = sqlx::query_scalar("PRAGMA application_id")
+        .fetch_one(&mut *db)
+        .await?;
+    if version == 0 && app == 0 {
+        let objects: i64 =
+            sqlx::query_scalar("SELECT count(*) FROM sqlite_master WHERE name NOT GLOB 'sqlite_*'")
+                .fetch_one(&mut *db)
+                .await?;
+        if objects != 0 {
+            return Err(invalid("不能覆盖旧版本本机数据库"));
+        }
+    } else if version == 1 && app == 1112682061 {
+        let ledger: i64 =
+            sqlx::query_scalar("SELECT count(*) FROM sqlite_master WHERE type='table' AND name=?1")
+                .bind(MIGRATION_TABLE)
+                .fetch_one(&mut *db)
+                .await?;
+        if ledger != 1 {
+            register_baseline(db).await?;
+        }
+    } else {
+        return Err(invalid("不支持此本机数据库版本"));
+    }
+    MIGRATOR.run_direct(None, &mut *db, false).await?;
+    Ok(())
+}
+async fn register_baseline(db: &mut SqliteConnection) -> Result<()> {
+    let mut tx = db.begin_with("BEGIN IMMEDIATE").await?;
+    let ledger: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM sqlite_master WHERE type='table' AND name=?1")
+            .bind(MIGRATION_TABLE)
+            .fetch_one(&mut *tx)
+            .await?;
+    if ledger == 0 {
+        let definitions: Vec<String> = sqlx::query_scalar(
+            "SELECT sql FROM sqlite_master WHERE name NOT GLOB 'sqlite_*' ORDER BY name",
+        )
+        .fetch_all(&mut *tx)
+        .await?;
+        let normalize = |sql: &str| sql.trim().to_owned();
+        let mut expected = include_str!("migrations/001_metadata.sql")
+            .split(';')
+            .map(str::trim)
+            .filter(|sql| sql.starts_with("CREATE TABLE"))
+            .map(normalize)
+            .collect::<Vec<_>>();
+        let mut actual = definitions
+            .iter()
+            .map(|sql| normalize(sql))
+            .collect::<Vec<_>>();
+        expected.sort();
+        actual.sort();
+        if expected != actual {
+            return Err(invalid("本机数据库结构无效"));
+        }
+        let languages: Vec<(i64, String)> =
+            sqlx::query_as("SELECT id,language FROM preferences LIMIT 2")
+                .fetch_all(&mut *tx)
+                .await?;
+        if languages.len() > 1
+            || languages
+                .iter()
+                .any(|(id, lang)| *id != 1 || !["en", "zh-CN"].contains(&lang.as_str()))
+        {
+            return Err(invalid("本机语言无效"));
+        }
+        let paths = sqlx::query_scalar("SELECT path FROM recent_files ORDER BY position LIMIT 11")
+            .fetch_all(&mut *tx)
+            .await?;
+        validate_paths(&paths)?;
+        let rows = sqlx::query_as("SELECT document_id,file_name,protocol_version FROM workspace_recovery ORDER BY position LIMIT 33")
+            .fetch_all(&mut *tx).await?;
+        validate_entries(&decode_entries(rows)?)?;
+        tx.ensure_migrations_table(MIGRATION_TABLE).await?;
+        let baseline = MIGRATOR
+            .iter()
+            .find(|migration| migration.version == 1)
+            .expect("metadata baseline migration exists");
+        tx.skip(MIGRATION_TABLE, baseline).await?;
+    }
+    tx.commit().await?;
+    Ok(())
+}
+
+fn decode_entries(rows: Vec<(String, String, i64)>) -> Result<Vec<RecoveryEntry>> {
+    rows.into_iter()
+        .map(|(document_id, file_name, version)| {
+            Ok(RecoveryEntry {
+                document_id,
+                file_name,
+                protocol_version: u32::try_from(version)
+                    .map_err(|_| invalid("工作区恢复索引损坏，请保留恢复目录后重试"))?,
+            })
+        })
+        .collect()
+}
+
 fn validate_paths(paths: &[String]) -> Result<()> {
     let mut unique = HashSet::new();
     if paths.len() > 10 {

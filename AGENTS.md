@@ -22,7 +22,7 @@ Brainstorming 是基于 React Flow + Tauri 2 / Rust 的本地优先跨平台思�
 - 产品运行于 Tauri，目标为 macOS、Windows、Linux、iOS、Android，不维护纯 Web 产品或浏览器文件、密码、恢复降级。Storybook 可注入类型明确的平台 API 预览组件。
 - Rust 重复计算优先使用成熟异步缓存库；当前图片派生元数据使用 Moka，键包含原图内容摘要、管线版本和参数。缓存必须有容量和过期上限，不缓存失败、明文临时文件、密钥或授权结果；命中仍执行取消、文件变化校验与资源授权。
 - Rust `AppState` 显式组合文档、恢复、资源、AI、MCP 服务，移动端系统能力使用 Tauri 插件；不保留 Node 后端。
-- SQLite 使用 rusqlite / SQLCipher，连接使用 Deadpool，迁移使用静态注册的显式 SQL。文档按规范路径共享连接池，借用期间不得关闭；密码只留在原生内存。
+- SQLite 使用 SQLx / SQLCipher，查询、事务和连接池统一使用 SQLx 异步 API。迁移采用编译内嵌的显式 SQL，由 SQLx Migrator 管理，履历表统一为 `_brainstorming_migrations`；文档库和本机库分别维护迁移序列，已发布迁移不可修改，新增变更追加文件。迁移版本独立于文件协议标识。文档按规范路径共享连接池，借用期间不得关闭；密码只留在原生内存。
 - Tauri capabilities 仅授权应用窗口；远程页面没有原生命令权限。文件访问必须经系统选择器或会话授权，网页截图禁用脚本及外部子资源。
 
 ## 工具链

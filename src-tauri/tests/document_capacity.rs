@@ -2,6 +2,7 @@
 mod fixture;
 use brainstorming_native::{document::DocumentStore, storage::ResourceVault};
 use serde_json::json;
+use sqlx::{Connection, SqliteConnection, sqlite::SqliteConnectOptions};
 use std::sync::Arc;
 
 #[tokio::test]
@@ -31,14 +32,21 @@ async fn aggregate_and_entry_counts_are_independent_of_legacy_zip_limits() {
         bytes
     );
     store.release(&path).await.unwrap();
-    let db = rusqlite::Connection::open(&path).unwrap();
+    let mut db = SqliteConnection::connect_with(
+        &SqliteConnectOptions::new()
+            .filename(&path)
+            .create_if_missing(true),
+    )
+    .await
+    .unwrap();
     assert_eq!(
-        db.query_row("SELECT count(*) FROM resource_objects", [], |r| r
-            .get::<_, u64>(0))
+        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM resource_objects")
+            .fetch_one(&mut db)
+            .await
             .unwrap(),
         1
     );
-    drop(db);
+    db.close().await.unwrap();
 
     let mut workbook = fixture::workbook();
     let document = &mut workbook["sheets"][0]["document"];
@@ -87,15 +95,23 @@ async fn oversized_corrupt_chunk_is_bounded_before_serving_one_byte() {
         .await
         .unwrap();
     store.release(&path).await.unwrap();
-    let db = rusqlite::Connection::open(&path).unwrap();
-    db.execute_batch("PRAGMA ignore_check_constraints=ON")
-        .unwrap();
-    db.execute(
-        "UPDATE resource_chunks SET data=zeroblob(1048576) WHERE object_id=?1",
-        [&object.object_id],
+    let mut db = SqliteConnection::connect_with(
+        &SqliteConnectOptions::new()
+            .filename(&path)
+            .create_if_missing(true),
     )
+    .await
     .unwrap();
-    drop(db);
+    sqlx::query("PRAGMA ignore_check_constraints=ON")
+        .execute(&mut db)
+        .await
+        .unwrap();
+    sqlx::query("UPDATE resource_chunks SET data=zeroblob(1048576) WHERE object_id=?1")
+        .bind(&object.object_id)
+        .execute(&mut db)
+        .await
+        .unwrap();
+    db.close().await.unwrap();
     assert!(
         store
             .read_resource(&path, &object.object_id, 0, Some(1), None)

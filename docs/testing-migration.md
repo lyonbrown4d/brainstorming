@@ -72,3 +72,5 @@
 | 加密、错误密码、恢复与取消          | `tests/native/content-security.spec.ts` 与 Rust document / runtime 测试 |
 
 此前的全量图形手势、演示、各种结构、系统主题和打包 / 性能浏览器流程尚未全部逐条迁移为 Tauri 原生 UI 用例。共享 TS 的行为测试仍运行；不能把这些覆盖视为已经完成真机 UI 验收。原生打包、iOS 和 Android 的签名、系统文件与设备能力以各平台实际构建和运行结果为准。
+
+SQLx 数据访问与迁移回归见 [document_migrations.rs](../src-tauri/tests/document_migrations.rs) 和 [document_metadata.rs](../src-tauri/tests/document_metadata.rs)：覆盖自定义履历表、校验和与未知版本拒绝、当前基线登记及数据保留。调用方取消后的保存、改密和临时文件关闭顺序见 [document_cancellation.rs](../src-tauri/tests/document_cancellation.rs)。这些测试使用小型真实 SQLCipher 文件，不运行大场景渲染或资源压力测试。

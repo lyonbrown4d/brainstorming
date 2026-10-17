@@ -4,19 +4,36 @@ use brainstorming_native::{
     document::DocumentStore,
     storage::{MetadataStore, ResourceVault},
 };
-use std::{io::Read, sync::mpsc, time::Duration};
+use std::{
+    future::Future,
+    pin::Pin,
+    task::{Context, Poll, ready},
+    time::Duration,
+};
+use tokio::{
+    io::{AsyncRead, ReadBuf},
+    sync::oneshot,
+};
 
 struct HeldReader {
-    entered: Option<tokio::sync::oneshot::Sender<()>>,
-    release: mpsc::Receiver<()>,
+    entered: Option<oneshot::Sender<()>>,
+    release: Option<oneshot::Receiver<()>>,
 }
-impl Read for HeldReader {
-    fn read(&mut self, _: &mut [u8]) -> std::io::Result<usize> {
-        if let Some(entered) = self.entered.take() {
+impl AsyncRead for HeldReader {
+    fn poll_read(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        _: &mut ReadBuf<'_>,
+    ) -> Poll<std::io::Result<()>> {
+        let reader = self.get_mut();
+        if let Some(entered) = reader.entered.take() {
             entered.send(()).unwrap();
-            self.release.recv().unwrap();
         }
-        Ok(0)
+        if let Some(release) = reader.release.as_mut() {
+            ready!(Pin::new(release).poll(cx)).unwrap();
+            reader.release = None;
+        }
+        Poll::Ready(Ok(()))
     }
 }
 
@@ -68,8 +85,8 @@ async fn shutdown_closes_file_handles_and_prevents_new_native_operations() {
             .unwrap()
             .is_none()
     );
-    let (entered, waiting) = tokio::sync::oneshot::channel();
-    let (release, blocked) = mpsc::channel();
+    let (entered, waiting) = oneshot::channel();
+    let (release, blocked) = oneshot::channel();
     let active_path = path.clone();
     let active = tokio::spawn(async move {
         DocumentStore::new()
@@ -77,7 +94,7 @@ async fn shutdown_closes_file_handles_and_prevents_new_native_operations() {
                 &active_path,
                 Box::new(HeldReader {
                     entered: Some(entered),
-                    release: blocked,
+                    release: Some(blocked),
                 }),
                 Some("shutdown-pass"),
             )

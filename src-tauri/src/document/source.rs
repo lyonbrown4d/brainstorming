@@ -1,7 +1,10 @@
-use super::{Derivatives, ResourceSource, Result, error::invalid, pool, resources, schema};
-use rusqlite::Connection;
+use super::{
+    Derivatives, ResourceSource, Result, error::invalid, pool, resource_reader, resources, schema,
+};
+use futures_util::future::BoxFuture;
+use resources::ResourceReader;
+use sqlx::{Connection, SqliteConnection};
 use std::{
-    io::{Cursor, Read},
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -12,63 +15,35 @@ pub struct DocumentSource {
     password: Zeroizing<String>,
 }
 impl DocumentSource {
-    pub fn new(path: impl AsRef<Path>, password: Option<&str>) -> Result<Self> {
+    pub async fn new(path: impl AsRef<Path>, password: Option<&str>) -> Result<Self> {
+        let path = path.as_ref().to_owned();
+        let path = tokio::task::spawn_blocking(move || pool::canonical(&path))
+            .await
+            .map_err(|_| super::DocumentError::Worker)??;
         Ok(Self {
-            path: pool::canonical(path.as_ref())?,
+            path,
             password: Zeroizing::new(password.unwrap_or_default().to_owned()),
         })
     }
-    fn connection(&self) -> Result<Connection> {
-        let mut db =
-            Connection::open_with_flags(&self.path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
-        schema::configure(&db, Some(self.password.as_str()))?;
-        schema::initialize(&mut db, false)?;
-        Ok(db)
+    async fn connection(&self) -> Result<SqliteConnection> {
+        // A source read must not acquire a destination's registry gate: two
+        // cross-document copies can otherwise wait on one another indefinitely.
+        schema::connect(&self.path, Some(self.password.as_str()), false, true).await
     }
 }
 impl ResourceSource for DocumentSource {
-    fn open(&self, id: &str) -> Result<Box<dyn Read + Send>> {
-        let db = self.connection()?;
-        db.execute_batch("BEGIN DEFERRED")?;
-        let total = resources::size(&db, id)?;
-        Ok(Box::new(ObjectReader {
-            db,
-            id: id.to_owned(),
-            total,
-            offset: 0,
-            pending: Cursor::new(Vec::new()),
-        }))
+    fn open<'a>(&'a self, id: &'a str) -> BoxFuture<'a, Result<ResourceReader>> {
+        Box::pin(
+            async move { resource_reader::standalone_reader(self.connection().await?, id).await },
+        )
     }
-    fn derivatives(&self, id: &str) -> Result<Derivatives> {
-        resources::derivatives(&self.connection()?, id)
-    }
-}
-
-/// One authenticated chunk is held in native memory; a read transaction pins
-/// the source snapshot while another document is populated.
-struct ObjectReader {
-    db: Connection,
-    id: String,
-    total: u64,
-    offset: u64,
-    pending: Cursor<Vec<u8>>,
-}
-impl Read for ObjectReader {
-    fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
-        if buffer.is_empty() {
-            return Ok(0);
-        }
-        if self.pending.position() as usize == self.pending.get_ref().len() {
-            if self.offset >= self.total {
-                return Ok(0);
-            }
-            let length = (self.total - self.offset).min(resources::RESOURCE_CHUNK_BYTES as u64);
-            let chunk = resources::read_range(&self.db, &self.id, self.offset, Some(length))
-                .map_err(std::io::Error::other)?;
-            self.offset += chunk.len() as u64;
-            self.pending = Cursor::new(chunk);
-        }
-        self.pending.read(buffer)
+    fn derivatives<'a>(&'a self, id: &'a str) -> BoxFuture<'a, Result<Derivatives>> {
+        Box::pin(async move {
+            let mut db = self.connection().await?;
+            let result = resources::derivatives(&mut db, id).await;
+            db.close().await?;
+            result
+        })
     }
 }
 
@@ -81,20 +56,24 @@ impl CompositeSource {
     }
 }
 impl ResourceSource for CompositeSource {
-    fn open(&self, id: &str) -> Result<Box<dyn Read + Send>> {
-        for source in &self.sources {
-            if let Ok(reader) = source.open(id) {
-                return Ok(reader);
+    fn open<'a>(&'a self, id: &'a str) -> BoxFuture<'a, Result<ResourceReader>> {
+        Box::pin(async move {
+            for source in &self.sources {
+                if let Ok(reader) = source.open(id).await {
+                    return Ok(reader);
+                }
             }
-        }
-        Err(invalid("资源对象来源不可用"))
+            Err(invalid("资源对象来源不可用"))
+        })
     }
-    fn derivatives(&self, id: &str) -> Result<Derivatives> {
-        for source in &self.sources {
-            if source.open(id).is_ok() {
-                return source.derivatives(id);
+    fn derivatives<'a>(&'a self, id: &'a str) -> BoxFuture<'a, Result<Derivatives>> {
+        Box::pin(async move {
+            for source in &self.sources {
+                if source.open(id).await.is_ok() {
+                    return source.derivatives(id).await;
+                }
             }
-        }
-        Err(invalid("资源派生对象来源不可用"))
+            Err(invalid("资源派生对象来源不可用"))
+        })
     }
 }

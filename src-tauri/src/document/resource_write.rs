@@ -5,12 +5,12 @@ use super::{
     validation::*,
 };
 use base64::{Engine, engine::general_purpose::STANDARD};
-use rusqlite::Connection;
 use serde_json::{Value, json};
+use sqlx::SqliteConnection;
 use std::io::Cursor;
 
-pub(crate) fn normalize(
-    db: &Connection,
+pub(crate) async fn normalize(
+    db: &mut SqliteConnection,
     workbook: &mut Value,
     source: Option<&dyn ResourceSource>,
 ) -> Result<()> {
@@ -58,7 +58,7 @@ pub(crate) fn normalize(
                 {
                     return Err(invalid("主题图片尺寸与实际内容不一致"));
                 }
-                let object = resources::insert(db, &mut Cursor::new(bytes), None)?;
+                let object = resources::insert(db, &mut Cursor::new(bytes), None).await?;
                 asset.as_object_mut().unwrap().remove("data");
                 asset["storage"] = serde_json::to_value(object)?;
                 if let Some((width, height)) = dimensions {
@@ -69,16 +69,16 @@ pub(crate) fn normalize(
             let storage = &asset["storage"];
             let oid = text(&storage["objectId"])?;
             let length = integer(&storage["byteLength"], 0, resources::MAX_OBJECT_BYTES)?;
-            ensure(db, oid, length, source)?;
+            ensure(db, oid, length, source).await?;
             let mut derivatives = if let Some(source) = source {
-                source.derivatives(oid)?
+                source.derivatives(oid).await?
             } else {
                 Derivatives::default()
             };
             if let Some(preview) = storage.get("preview") {
                 let pid = text(&preview["objectId"])?;
                 let size = integer(&preview["byteLength"], 0, resources::MAX_RANGE_BYTES)?;
-                ensure(db, pid, size, source)?;
+                ensure(db, pid, size, source).await?;
                 derivatives.preview = Some(Preview {
                     object_id: pid.to_owned(),
                     mime_type: text(&preview["mimeType"])?.to_owned(),
@@ -88,48 +88,50 @@ pub(crate) fn normalize(
             }
             if let Some(source) = source {
                 if let Some(preview) = &derivatives.preview
-                    && resources::size(db, &preview.object_id).is_err()
+                    && resources::size(db, &preview.object_id).await.is_err()
                 {
-                    let mut reader = source.open(&preview.object_id)?;
-                    let object = resources::insert(db, &mut reader, None)?;
+                    let mut reader = source.open(&preview.object_id).await?;
+                    let object = resources::insert(db, &mut reader, None).await?;
+                    drop(reader);
                     if object.object_id != preview.object_id {
                         return Err(invalid("预览资源摘要不一致"));
                     }
                 }
                 for tile in &derivatives.tiles {
-                    if resources::size(db, &tile.object_id).is_ok() {
+                    if resources::size(db, &tile.object_id).await.is_ok() {
                         continue;
                     }
-                    let mut reader = source.open(&tile.object_id)?;
-                    let object = resources::insert(db, &mut reader, None)?;
+                    let mut reader = source.open(&tile.object_id).await?;
+                    let object = resources::insert(db, &mut reader, None).await?;
+                    drop(reader);
                     if object.object_id != tile.object_id {
                         return Err(invalid("瓦片资源摘要不一致"));
                     }
                 }
             }
-            resources::link_derivatives(db, oid, &derivatives)?;
+            resources::link_derivatives(db, oid, &derivatives).await?;
             if let Some(preview) = derivatives.preview {
-                asset["storage"]["preview"] = json!({"objectId":preview.object_id,"mimeType":preview.mime_type,"width":preview.width,"height":preview.height,"byteLength":resources::size(db,&preview.object_id)?});
+                asset["storage"]["preview"] = json!({"objectId":preview.object_id,"mimeType":preview.mime_type,"width":preview.width,"height":preview.height,"byteLength":resources::size(db,&preview.object_id).await?});
             }
         }
     }
     Ok(())
 }
 
-fn ensure(
-    db: &Connection,
+async fn ensure(
+    db: &mut SqliteConnection,
     id: &str,
     length: u64,
     source: Option<&dyn ResourceSource>,
 ) -> Result<()> {
-    if let Ok(existing) = resources::size(db, id) {
+    if let Ok(existing) = resources::size(db, id).await {
         if existing != length {
             return Err(invalid("资源对象长度不一致"));
         }
         return Ok(());
     }
     let source = source.ok_or_else(|| invalid("资源对象来源不可用"))?;
-    let mut reader = source.open(id)?;
-    resources::insert(db, &mut reader, Some((id, length)))?;
+    let mut reader = source.open(id).await?;
+    resources::insert(db, &mut reader, Some((id, length))).await?;
     Ok(())
 }
