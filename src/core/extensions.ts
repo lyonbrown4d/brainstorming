@@ -52,10 +52,17 @@ export interface TopicMetadata {
 }
 export interface DocumentSettings {
   readonly layout?: LayoutKind
-  readonly theme?: 'trelyx' | 'ocean' | 'forest' | 'sunset' | 'mono'
+  readonly theme?: 'trelyx' | 'ocean' | 'forest' | 'sunset' | 'mono' | 'dawn' | 'paper' | 'night'
+  readonly customPalette?: DocumentPalette
   readonly background?: string
   readonly fontFamily?: string
   readonly lineWidth?: number
+}
+export interface DocumentPalette {
+  readonly name: string
+  readonly root: string
+  readonly branches: readonly [string, string, string, string, string]
+  readonly background: string
 }
 export interface Relation {
   readonly id: string

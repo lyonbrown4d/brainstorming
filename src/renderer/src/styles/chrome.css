@@ -9,9 +9,9 @@
   z-index: 9;
 }
 .recovery-banner {
-  background: #f1eefb;
-  color: #6c5bb8;
-  border-bottom: 1px solid #e4def5;
+  background: var(--ui-accent);
+  color: var(--ui-accent-foreground);
+  border-bottom: 1px solid var(--ui-border);
 }
 .recovery-banner span,
 .error-banner span,
@@ -22,8 +22,8 @@
   font-size: 12px;
 }
 .error-banner {
-  background: #fff0ee;
-  color: #a34840;
+  background: var(--ui-background);
+  color: var(--ui-destructive);
 }
 .import-banner {
   background: var(--ui-accent);

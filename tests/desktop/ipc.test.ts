@@ -35,6 +35,8 @@ const setup = () => {
   const webContents = { mainFrame: frame }
   const window = {
     webContents,
+    setBackgroundColor: vi.fn(),
+    setTitleBarOverlay: vi.fn(),
     isFocused: () => false,
     isFullScreen: () => true,
   } as unknown as BrowserWindow
@@ -69,6 +71,15 @@ describe('桌面 IPC 信任与取消', () => {
         '不受信任',
       )
     }
+  })
+  it('外观更新只允许主框架提交浅色或深色枚举', async () => {
+    const { event } = setup()
+    await expect(invoke('window:appearance', event, 'dark')).resolves.toBeUndefined()
+    await expect(invoke('window:appearance', event, 'light')).resolves.toBeUndefined()
+    await expect(invoke('window:appearance', event, 'system')).rejects.toThrow('外观无效')
+    await expect(
+      invoke('window:appearance', { ...event, senderFrame: {} } as IpcMainInvokeEvent, 'dark'),
+    ).rejects.toThrow('不受信任')
   })
   it('取消打开或另存为返回 null，不触碰文档存储', async () => {
     const { event, files } = setup()

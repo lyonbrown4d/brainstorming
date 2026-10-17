@@ -113,10 +113,24 @@ export const validateTopicMetadata: (value: unknown) => asserts value is TopicMe
 export const validateDocumentSettings: (value: unknown) => asserts value is DocumentSettings = (
   value: unknown,
 ) => {
-  const settings = v.record(value, ['layout', 'theme', 'background', 'fontFamily', 'lineWidth'])
+  const settings = v.record(value, [
+    'layout',
+    'theme',
+    'customPalette',
+    'background',
+    'fontFamily',
+    'lineWidth',
+  ])
   v.optional(settings, 'layout', validateLayoutKind)
   v.optional(settings, 'theme', (entry) => {
-    v.oneOf(entry, ['trelyx', 'ocean', 'forest', 'sunset', 'mono'])
+    v.oneOf(entry, ['trelyx', 'ocean', 'forest', 'sunset', 'mono', 'dawn', 'paper', 'night'])
+  })
+  v.optional(settings, 'customPalette', (entry) => {
+    const palette = v.record(entry, ['name', 'root', 'branches', 'background'])
+    v.text(palette.name, 40)
+    v.color(palette.root)
+    v.color(palette.background)
+    for (const branch of v.list(palette.branches, 5, 5)) v.color(branch)
   })
   v.optional(settings, 'background', v.color)
   v.optional(settings, 'fontFamily', (entry) => {

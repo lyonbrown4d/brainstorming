@@ -7,15 +7,11 @@
       'PingFang SC',
       'Microsoft YaHei',
       sans-serif;
-    color: #30313b;
-    background: #fcfcfa;
+    color: var(--ui-foreground);
+    background: var(--ui-secondary);
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
-    --surface: #fff;
-    --muted: #77788e;
-    --border: #ebe9f0;
-    --accent: #7666c4;
   }
   * {
     box-sizing: border-box;
@@ -48,8 +44,8 @@
       color 140ms;
   }
   button:hover {
-    background: #f0edf9;
-    color: #6959b8;
+    background: var(--ui-accent);
+    color: var(--ui-accent-foreground);
   }
   button:disabled {
     opacity: 0.4;
@@ -62,7 +58,7 @@
   button:focus-visible,
   select:focus-visible,
   textarea:focus-visible {
-    outline: 2px solid #9686d6;
+    outline: 2px solid var(--ui-ring);
     outline-offset: 3px;
   }
   button svg {
@@ -71,7 +67,7 @@
   kbd {
     font-family: inherit;
     font-size: 11px;
-    color: #9091a3;
+    color: var(--ui-muted-foreground);
     white-space: nowrap;
   }
   .muted {

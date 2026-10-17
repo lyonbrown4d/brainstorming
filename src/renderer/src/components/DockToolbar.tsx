@@ -55,7 +55,7 @@ export const DockToolbar = ({ children, hint }: { children: ReactNode; hint?: Re
         id="floating-map-actions"
         aria-hidden={!open}
         inert={!open}
-        className={`absolute bottom-[calc(100%+0.5rem)] w-full rounded-2xl border border-border/80 bg-background/95 p-1.5 shadow-[0_8px_30px_-10px_#352d4d30] ring-1 ring-background/80 backdrop-blur-xl ${open ? 'pointer-events-auto' : 'pointer-events-none'}`}
+        className={`absolute bottom-[calc(100%+0.5rem)] w-full rounded-2xl border border-border/80 bg-background/95 p-1.5 shadow-xl shadow-black/10 ring-1 ring-background/80 backdrop-blur-xl ${open ? 'pointer-events-auto' : 'pointer-events-none'}`}
       >
         <ScrollArea type="auto" className="h-[3.25rem] w-full">
           <div className="w-max pb-1">{children}</div>

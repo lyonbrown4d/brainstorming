@@ -1,4 +1,7 @@
+import { initializeAppearance } from '@renderer/appearanceBootstrap'
 import { showStartupIssue } from '@renderer/startupStatus'
+
+initializeAppearance()
 
 // This entry stays independent of React, React Scan and the editor bundle.
 const slowStart = window.setTimeout(() => {

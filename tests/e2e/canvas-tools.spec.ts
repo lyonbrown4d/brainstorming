@@ -33,7 +33,7 @@ test('Dock hover、延迟收起、键盘聚焦和弹出面板保持展开', asyn
   // The nested portal must stay usable after the normal collapse delay.
   await page.waitForTimeout(600)
   await expect(handle).toHaveAttribute('aria-expanded', 'true')
-  await expect(page.getByRole('combobox', { name: '主题配色', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: '使用Trelyx配色', exact: true })).toBeVisible()
   const panelBounds = await layout.boundingBox()
   const dockBounds = await handle.boundingBox()
   if (!panelBounds || !dockBounds) throw new Error('Dock 或布局面板未显示')

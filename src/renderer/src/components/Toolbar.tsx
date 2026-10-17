@@ -1,3 +1,4 @@
+import { AppAppearance } from '@renderer/components/appearance/AppAppearance'
 import { Check, ListTree, Network, SlidersHorizontal } from 'lucide-react'
 import { useEditor, editorIsDirty } from '@renderer/state/editor'
 import { showWorkspaceHome } from '@renderer/state/creation'
@@ -48,6 +49,7 @@ export const Toolbar = () => {
       </div>
       <ViewModeSwitch />
       <div className="toolbar-actions flex shrink-0 items-center justify-end gap-1">
+        <AppAppearance />
         <Button
           variant="ghost"
           className="h-8 gap-2 px-2 aria-pressed:bg-accent aria-pressed:text-accent-foreground"

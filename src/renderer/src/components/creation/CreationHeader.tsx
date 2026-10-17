@@ -1,3 +1,4 @@
+import { AppAppearance } from '@renderer/components/appearance/AppAppearance'
 import { ArrowLeft, FolderOpen, Network } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import {
@@ -68,7 +69,8 @@ export const CreationHeader = ({
           ))}
         </StepperList>
       </Stepper>
-      <div className="toolbar-actions flex items-center">
+      <div className="toolbar-actions flex items-center gap-2">
+        <AppAppearance />
         {onOpen && (
           <Button
             variant="outline"

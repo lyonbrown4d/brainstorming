@@ -1,4 +1,5 @@
 import { StrictMode } from 'react'
+import { AppearanceProvider } from '@renderer/components/appearance/AppearanceProvider'
 import { createRoot } from 'react-dom/client'
 import { App } from '@renderer/App'
 import { showStartupIssue } from '@renderer/startupStatus'
@@ -12,6 +13,8 @@ createRoot(container, {
   },
 }).render(
   <StrictMode>
-    <App />
+    <AppearanceProvider>
+      <App />
+    </AppearanceProvider>
   </StrictMode>,
 )

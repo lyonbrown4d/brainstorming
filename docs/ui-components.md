@@ -2,6 +2,10 @@
 
 通用控件优先使用 shadcn/ui。缺少组件时，使用固定版本的官方 CLI 和 pnpm 获取，按项目的 `components.json` 放入 `src/renderer/src/components/ui`。
 
+应用外观复用 [next-themes](https://github.com/pacocoursey/next-themes) `0.4.6`（MIT），管理系统偏好、本机持久化和跨窗口同步；Electron 仅增加白名单事件和原生标题栏颜色同步。纯客户端入口通过公开 `scriptProps` 将库的 SSR 引导脚本设为惰性数据块，实际切换由库的 effect 执行；React-free 启动页只读取已保存选择。
+
+导图配色复用 [Culori](https://culorijs.org/api/) `4.0.2`（MIT）计算填充色和文字对比度。`PaletteChooser`、`CustomPaletteEditor` 与应用外观菜单组合现有 shadcn Button、Input、Label、ScrollArea、ToggleGroup、Popover 和 DropdownMenu；颜色输入调用原生控件，未维护自制拾色器。缩略图是由同一配色数据驱动的微型导图，不使用界面截图作为运行时素材。
+
 本轮使用 CLI `shadcn@4.21.5` 获取 Button、Dialog、Tooltip、Badge、ScrollArea、Input、Select、Label、Separator、Popover、DropdownMenu、Toggle 和 ToggleGroup。下载目录保留官方源码，不通过业务补丁修改组件结构、逻辑、默认样式或公开 API；Prettier 和 ESLint 不重写该目录，TypeScript 检查和交互测试仍覆盖其使用。
 
 业务组合放在 `src/renderer/src/components`：

@@ -1,3 +1,4 @@
+import { useAppearanceColors } from '@renderer/hooks/useAppearanceColors'
 /* eslint react/no-unknown-property: "off" -- React Three Fiber uses Three.js JSX properties. */
 import { useEffect, useMemo, useRef, type RefObject } from 'react'
 import { useThree } from '@react-three/fiber'
@@ -67,6 +68,7 @@ export const SpatialScene = ({
   onContextLost,
   onSelectionBox,
 }: SpatialSceneProps) => {
+  const chromeColors = useAppearanceColors()
   const selectedIds = useSelectedIds()
   const controls = useRef<CameraControlsImpl | null>(null)
   const gl = useThree((state) => state.gl)
@@ -176,8 +178,8 @@ export const SpatialScene = ({
         sectionSize={5}
         cellThickness={0.45}
         sectionThickness={0.55}
-        cellColor="#d9dbea"
-        sectionColor="#d9dbea"
+        cellColor={appearance.grid}
+        sectionColor={appearance.grid}
         fadeDistance={35}
         fadeStrength={2.4}
         infiniteGrid
@@ -255,10 +257,10 @@ export const SpatialScene = ({
           <GizmoViewcube
             faces={CUBE_FACES}
             font="500 34px system-ui, sans-serif"
-            color="#f3f1fa"
-            hoverColor="#e5dfff"
-            textColor="#85809a"
-            strokeColor="#dedbea"
+            color={chromeColors.surface}
+            hoverColor={chromeColors.accent}
+            textColor={chromeColors.foreground}
+            strokeColor={chromeColors.border}
             opacity={0.9}
             onClick={(event) => {
               event.stopPropagation()

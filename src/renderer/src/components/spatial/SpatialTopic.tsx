@@ -1,6 +1,5 @@
 import { TopicMarkerLayout } from '@renderer/components/metadata/TopicMarkerLayout'
 /* eslint react/no-unknown-property: "off" -- React Three Fiber uses Three.js JSX properties. */
-import { Color } from 'three'
 import { Billboard, Html, RoundedBox } from '@react-three/drei'
 import { ChevronLeft, ChevronRight, FileText, Focus, Paperclip } from 'lucide-react'
 import { memo, type RefObject } from 'react'
@@ -50,10 +49,7 @@ export const SpatialTopic = memo(
     onFocus,
     onCollapse,
   }: SpatialTopicProps) => {
-    const cardFill =
-      node.depth > 1 && !topic.style?.fill
-        ? new Color(branchColor).lerp(new Color(fill), 0.82).getStyle()
-        : fill
+    const cardFill = fill
     const width = node.width
     const height = node.height
     const hasImage = Boolean(

@@ -32,6 +32,8 @@ const installRecentBridge = (getRecentFiles: DesktopAPI['getRecentFiles']) => {
     generateMindMap: () => Promise.reject(new Error('尚未配置 AI')),
     cancelAIGeneration: () => Promise.resolve(),
     getRecentFiles,
+    setAppearance: () => Promise.resolve(),
+    onSystemThemeChanged: () => () => undefined,
     getWindowState: () => Promise.resolve({ focused: true, fullScreen: false }),
     onWindowStateChanged: () => () => undefined,
     selectAsset: () => Promise.resolve(null),

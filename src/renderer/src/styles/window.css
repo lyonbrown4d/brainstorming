@@ -22,7 +22,7 @@
   -webkit-app-region: no-drag;
 }
 .app-shell[data-focused='false'] > .toolbar {
-  background: #fafafb;
+  background: var(--ui-secondary);
 }
 .app-shell[data-focused='false'] > .toolbar .document-title,
 .app-shell[data-focused='false'] > .toolbar .toolbar-actions {

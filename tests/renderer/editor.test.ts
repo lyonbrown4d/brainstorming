@@ -23,6 +23,8 @@ const desktop = (overrides: Partial<DesktopAPI> = {}): DesktopAPI => {
     saveAISettings: () => Promise.reject(new Error('尚未配置 AI')),
     generateMindMap: () => Promise.reject(new Error('尚未配置 AI')),
     cancelAIGeneration: () => Promise.resolve(),
+    setAppearance: () => Promise.resolve(),
+    onSystemThemeChanged: () => () => undefined,
     getWindowState: vi.fn(() => Promise.resolve({ focused: true, fullScreen: false })),
     onWindowStateChanged: vi.fn(() => () => undefined),
     selectAsset: () => Promise.resolve(null),

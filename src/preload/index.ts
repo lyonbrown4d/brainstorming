@@ -19,6 +19,14 @@ const api: DesktopAPI = {
   platform:
     process.platform === 'darwin' ? 'macos' : process.platform === 'win32' ? 'windows' : 'linux',
   getWindowState: () => ipcRenderer.invoke('window:state'),
+  setAppearance: (theme) => ipcRenderer.invoke('window:appearance', theme),
+  onSystemThemeChanged: (callback) => {
+    const listener = () => {
+      callback()
+    }
+    ipcRenderer.on('window:system-theme-changed', listener)
+    return () => ipcRenderer.removeListener('window:system-theme-changed', listener)
+  },
   onWindowStateChanged: (callback) => {
     const listener = (_event: Electron.IpcRendererEvent, state: unknown) => {
       if (isWindowState(state)) callback(state)

@@ -1,5 +1,8 @@
+import { initializeAppearance } from '@renderer/appearanceBootstrap'
 import { showStartupIssue } from '@renderer/startupStatus'
 import type { StartupPhase } from '@shared/startup'
+
+initializeAppearance()
 
 const bridge = window.trelyxSplash
 const retry = document.getElementById('startup-retry')

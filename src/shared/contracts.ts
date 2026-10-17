@@ -38,6 +38,8 @@ export interface SaveRequest {
 export interface DesktopAPI extends FileSecurityAPI, AIAPI, MCPAPI {
   readonly platform: DesktopPlatform
   getWindowState(): Promise<WindowState>
+  setAppearance(theme: 'light' | 'dark'): Promise<void>
+  onSystemThemeChanged(callback: () => void): () => void
   onWindowStateChanged(callback: (state: WindowState) => void): () => void
   hasOpenFile(): Promise<boolean>
   takeOpenFile(): Promise<OpenedDocument | null>

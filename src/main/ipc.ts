@@ -8,7 +8,7 @@ import {
 import type { DocumentFiles } from '@main/files'
 import { validateContents, validateSavePath } from '@main/files'
 import type { OpenedDocument, SaveRequest } from '@shared/contracts'
-import { readWindowState } from '@main/windowChrome'
+import { readWindowState, setWindowAppearance } from '@main/windowChrome'
 import { registerAssetIPC } from '@main/assets'
 import { registerEditingIPC } from '@main/editing'
 import { registerAIIPC } from '@main/ai'
@@ -39,6 +39,9 @@ export const registerIPC = (
   registerAIIPC(trusted)
   registerMCPIPC(getWindow, trusted)
   ipcMain.handle('window:state', (event) => readWindowState(trusted(event)))
+  ipcMain.handle('window:appearance', (event, theme: unknown) => {
+    setWindowAppearance(trusted(event), theme)
+  })
   ipcMain.handle('document:has-open-file', (event) => {
     trusted(event)
     return hasOpenFile()

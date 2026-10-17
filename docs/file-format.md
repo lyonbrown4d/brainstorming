@@ -48,6 +48,8 @@ example.trelyx
 
 `settings.layout` 和主题 `structure` 支持 `map`、`logic-right/left`、`org-down/up`、`tree-down/up`、`brace-right/left`、`fishbone`、`timeline`、`timeline-vertical`、`matrix`、`tree-table-right/down`。这些是各个独立枚举值，斜杠仅用于本文合并方向说明。协议仍为 ZIP v1，缺省结构使用导图；文件不保存派生节点坐标、括号路径或表格几何。旧版本 Trelyx 无法读取包含新增枚举值的文件。
 
+`settings.theme` 支持 `trelyx`、`ocean`、`forest`、`sunset`、`mono`、`dawn`、`paper`、`night`。可选 `customPalette` 保存 `name`（最多 40 字符）、`root`、恰好 5 个 `branches` 颜色和 `background`；颜色均为六位十六进制值。文字与浅填充从这些数据计算，不保存视图缓存。旧版 Trelyx 可能拒绝新增预设或字段；XMind 通过 Trelyx 命名空间扩展保留这些设置，不保证外部 XMind 使用相同配色。应用的浅色、深色或系统偏好仅保存在本机，不写入工作簿。
+
 音频使用同一资源路径与预算。导入通过字节嗅探校验支持的音频类型，不能只凭扩展名认定类型。
 
 内部 core JSON 使用规范 base64 传输资源字节，仅用于 IPC、状态比较及浏览器恢复；磁盘 ZIP 使用原始二进制，不写 Lexical 内部状态或 React Flow 节点。
