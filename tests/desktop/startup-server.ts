@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import { extname, resolve, sep } from 'node:path'
 
 /** Serves the actual production HTML/assets while holding only the editor module. */
-export const startupServer = async () => {
+export const startupServer = async ({ failFirst = true }: { failFirst?: boolean } = {}) => {
   let unblock: (() => void) | undefined
   let requested: (() => void) | undefined
   const blocked = new Promise<void>((resolve) => {
@@ -12,7 +12,7 @@ export const startupServer = async () => {
   const editorRequested = new Promise<void>((resolve) => {
     requested = resolve
   })
-  let failNext = true
+  let failNext = failFirst
   const root = resolve('out/renderer')
   const server = createServer((request, response) => {
     void (async () => {

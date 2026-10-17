@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { DialogContent } from '@renderer/components/DialogContent'
 import { FileCheck2, X } from 'lucide-react'
 import { useEditor } from '@renderer/state/editor'
@@ -11,6 +13,8 @@ import {
 } from '@renderer/components/ui/dialog'
 
 export const ImportNotice = () => {
+  const { translate } = useMessages()
+
   const report = useEditor((state) => state.importReport)
   const path = useEditor((state) => state.path)
   if (!report) return null
@@ -18,21 +22,24 @@ export const ImportNotice = () => {
     <div className="import-banner" role="status">
       <FileCheck2 size={17} aria-hidden="true" />
       <span>
-        已导入 {report.sourceName}，{path ? '已保存为 Trelyx 文件。' : '保存时将创建 Trelyx 文件。'}
-        {report.warnings.length > 0 && ' 部分内容已调整或未导入。'}
+        {translate('imported')}
+        {report.sourceName}，
+        {path ? translate('savedAsATrelyxFile') : translate('savingWillCreateATrelyxFile')}
+        {report.warnings.length > 0 && translate('someContentWasAdjustedOrCouldNot')}
       </span>
       {report.warnings.length > 0 && (
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="ghost" size="sm">
-              查看导入报告
+              {translate('viewImportReport')}
             </Button>
           </DialogTrigger>
-          <DialogContent closeLabel="关闭导入报告">
+          <DialogContent closeLabel={translate('closeImportReport')}>
             <DialogHeader>
-              <DialogTitle>导入报告</DialogTitle>
+              <DialogTitle>{translate('importReport')}</DialogTitle>
               <DialogDescription>
-                {report.sourceName} 已转换为可编辑的 Trelyx 文档。源文件保持原样，以下内容需要留意。
+                {report.sourceName}
+                {translate('convertedToAnEditableTrelyxDocumentThe')}
               </DialogDescription>
             </DialogHeader>
             <ul className="import-warning-list">
@@ -46,7 +53,7 @@ export const ImportNotice = () => {
       <Button
         variant="ghost"
         size="icon"
-        aria-label="关闭导入提示"
+        aria-label={translate('dismissImportNotice')}
         onClick={() => {
           useEditor.setState({ importReport: null })
         }}

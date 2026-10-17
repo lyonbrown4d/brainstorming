@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { ChevronDown, ChevronRight, PanelLeftClose } from 'lucide-react'
 import { topicAppearance } from '@shared/appearance'
 import { useEditor } from '@renderer/state/editor'
@@ -5,6 +7,8 @@ import { selectTopic, useTopicSelected } from '@renderer/state/selection'
 import { Button } from '@renderer/components/ui/button'
 
 const OutlineBranch = ({ id, depth }: { id: string; depth: number }) => {
+  const { translate } = useMessages()
+
   const topic = useEditor((state) => state.history.document.topics[id])
   const stroke = useEditor((state) => topicAppearance(state.history.document, id).stroke)
   const selected = useTopicSelected(id)
@@ -21,7 +25,10 @@ const OutlineBranch = ({ id, depth }: { id: string; depth: number }) => {
             variant="ghost"
             size="icon"
             className="size-5 shrink-0 text-muted-foreground"
-            aria-label={`${topic.collapsed ? '展开' : '折叠'}大纲 ${topic.title}`}
+            aria-label={translate('value0OutlineValue1', {
+              value0: topic.collapsed ? translate('expand') : translate('collapse'),
+              value1: topic.title,
+            })}
             onClick={() => {
               useEditor.getState().commitDraft()
               useEditor.getState().command({ type: 'toggleCollapse', topicId: id })
@@ -63,21 +70,23 @@ const OutlineBranch = ({ id, depth }: { id: string; depth: number }) => {
 }
 
 export const Outline = () => {
+  const { translate } = useMessages()
+
   const rootId = useEditor((state) => state.history.document.rootId)
   const floatingIds = useEditor((state) => state.history.document.floatingIds)
   const count = useEditor((state) => Object.keys(state.history.document.topics).length)
   return (
     <aside
       className="outline-panel flex min-h-0 w-[216px] shrink-0 basis-[216px] flex-col border-r border-border bg-background text-sm"
-      aria-label="文档大纲"
+      aria-label={translate('documentOutline')}
     >
       <div className="flex h-14 shrink-0 items-center justify-between px-4">
-        <h2 className="text-sm font-semibold">大纲</h2>
+        <h2 className="text-sm font-semibold">{translate('outline')}</h2>
         <Button
           variant="ghost"
           size="icon"
           className="size-7 text-muted-foreground"
-          aria-label="关闭大纲"
+          aria-label={translate('closeOutline')}
           onClick={() => {
             useEditor.setState({ outlineOpen: false })
           }}
@@ -92,7 +101,8 @@ export const Outline = () => {
         ))}
       </ul>
       <p className="border-t border-border px-4 py-3 text-xs text-muted-foreground">
-        {count} 个主题
+        {count}
+        {translate('topics')}
       </p>
     </aside>
   )

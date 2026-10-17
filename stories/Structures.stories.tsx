@@ -4,14 +4,13 @@ import { createExampleDocument } from '@core'
 import { App } from '@renderer/App'
 import { useEditor } from '@renderer/state/editor'
 import { selectedTopicIds } from '@renderer/state/selection'
-import { clearBrowserRecovery } from '@renderer/state/recovery'
+import { openCanvasProperties } from '@stories/properties'
 
 const meta = {
   title: 'Trelyx/图形结构',
   component: App,
   parameters: { layout: 'fullscreen' },
-  beforeEach: async () => {
-    await clearBrowserRecovery()
+  beforeEach: () => {
     useEditor.getState().replace(createExampleDocument())
     useEditor.setState({ recovery: null, inspectorOpen: false, outlineOpen: false })
   },
@@ -23,16 +22,14 @@ export const ThumbnailSelection: Story = {
   play: async ({ canvasElement }) => {
     const user = userEvent.setup()
     const canvas = within(canvasElement)
-    const page = within(canvasElement.ownerDocument.body)
-    await user.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
-    await user.click(page.getByRole('button', { name: '图形结构' }))
-    let picker = within(await page.findByRole('dialog', { name: '图形结构' }))
+    let panel = await openCanvasProperties(canvasElement)
+    let picker = within(panel.getByRole('region', { name: '图形结构' }))
     const tree = picker.getByRole('button', { name: '应用向下树形图' })
     tree.focus()
     await user.keyboard('{Enter}')
     await waitFor(() => expect(tree).toHaveAttribute('aria-pressed', 'true'))
     await expect(useEditor.getState().history.document.settings?.layout).toBe('tree-down')
-    await user.keyboard('{Escape}')
+    await user.click(panel.getByRole('button', { name: '关闭属性面板' }))
     await user.click(canvas.getByTestId('topic-vision'))
     await user.keyboard('{Meta>}')
     await user.click(canvas.getByTestId('topic-experience'))
@@ -40,9 +37,8 @@ export const ThumbnailSelection: Story = {
     await waitFor(() =>
       expect(selectedTopicIds(useEditor.getState())).toEqual(['vision', 'experience']),
     )
-    await user.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
-    await user.click(page.getByRole('button', { name: '图形结构' }))
-    picker = within(await page.findByRole('dialog', { name: '图形结构' }))
+    panel = await openCanvasProperties(canvasElement)
+    picker = within(panel.getByRole('region', { name: '图形结构' }))
     await user.click(picker.getByRole('button', { name: '所选分支' }))
     await user.click(picker.getByRole('button', { name: '应用向右括号图' }))
     await waitFor(() =>

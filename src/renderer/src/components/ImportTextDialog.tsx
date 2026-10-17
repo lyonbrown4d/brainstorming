@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useId, useRef, useState } from 'react'
 import type { MindMapWorkbook } from '@core'
 import { decodeMarkdown, decodeOpml } from '@formats/interchange'
@@ -24,6 +26,8 @@ export interface ImportTextDialogProps {
   defaultOpen?: boolean
 }
 export const ImportTextDialog = ({ onImport, defaultOpen = false }: ImportTextDialogProps) => {
+  const { translate } = useMessages()
+
   const [open, setOpen] = useState(defaultOpen)
   const [format, setFormat] = useState<'md' | 'opml'>('md')
   const [text, setText] = useState('')
@@ -45,7 +49,7 @@ export const ImportTextDialog = ({ onImport, defaultOpen = false }: ImportTextDi
     >
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm">
-          导入大纲
+          {translate('importOutline')}
         </Button>
       </DialogTrigger>
       <DialogContent
@@ -58,11 +62,8 @@ export const ImportTextDialog = ({ onImport, defaultOpen = false }: ImportTextDi
         }}
       >
         <DialogHeader>
-          <DialogTitle>导入大纲</DialogTitle>
-          <DialogDescription>
-            先检查主题数量，再打开为新文档。当前文档有未保存修改时会先确认。Markdown
-            读取标题与列表；OPML 读取层级与纯文本备注。
-          </DialogDescription>
+          <DialogTitle>{translate('importOutline')}</DialogTitle>
+          <DialogDescription>{translate('checkTheTopicCountBeforeOpeningA')}</DialogDescription>
         </DialogHeader>
         <form
           className="grid gap-4"
@@ -74,12 +75,12 @@ export const ImportTextDialog = ({ onImport, defaultOpen = false }: ImportTextDi
               setPreview(format === 'md' ? decodeMarkdown(text) : decodeOpml(text))
             } catch (cause) {
               setPreview(null)
-              setError(cause instanceof Error ? cause.message : '无法解析大纲')
+              setError(cause instanceof Error ? cause.message : translate('couldNotParseOutline'))
             }
           }}
         >
           <FieldSelect
-            label="大纲格式"
+            label={translate('outlineFormat')}
             value={format}
             options={[
               { value: 'md', label: 'Markdown' },
@@ -91,7 +92,7 @@ export const ImportTextDialog = ({ onImport, defaultOpen = false }: ImportTextDi
             }}
           />
           <Label className="grid gap-2">
-            选择文本文件
+            {translate('chooseTextFile')}
             <Input
               type="file"
               accept=".md,.markdown,.opml,.xml,text/markdown,text/xml"
@@ -100,7 +101,7 @@ export const ImportTextDialog = ({ onImport, defaultOpen = false }: ImportTextDi
                 const file = event.target.files?.[0]
                 if (!file) return
                 if (file.size > 8 * 1024 * 1024) {
-                  setError('大纲文本不能超过 8 MiB')
+                  setError(translate('outlineTextCannotExceed8Mib'))
                   return
                 }
                 void file
@@ -112,12 +113,12 @@ export const ImportTextDialog = ({ onImport, defaultOpen = false }: ImportTextDi
                     setError('')
                   })
                   .catch(() => {
-                    setError('无法读取文件')
+                    setError(translate('couldNotReadFile'))
                   })
               }}
             />
           </Label>
-          <Label htmlFor={textId}>或粘贴大纲内容</Label>
+          <Label htmlFor={textId}>{translate('orPasteOutlineText')}</Label>
           <Textarea
             id={textId}
             value={text}
@@ -136,22 +137,24 @@ export const ImportTextDialog = ({ onImport, defaultOpen = false }: ImportTextDi
           )}
           {preview && (
             <p role="status" className="text-sm">
-              共 {preview.sheets.length} 个画布，
+              {translate('total')}
+              {preview.sheets.length}
+              {translate('sheets')}
               {preview.sheets.reduce(
                 (sum, sheet) => sum + Object.keys(sheet.document.topics).length,
                 0,
               )}{' '}
-              个主题。导入不会执行 HTML 或下载外部资源。
+              {translate('topicsImportDoesNotExecuteHtmlOr')}
             </p>
           )}
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="ghost" disabled={busy}>
-                取消
+                {translate('cancel')}
               </Button>
             </DialogClose>
             <Button type="submit" variant="outline" disabled={busy || !text.trim()}>
-              检查大纲
+              {translate('checkOutline')}
             </Button>
             <Button
               type="button"
@@ -167,7 +170,7 @@ export const ImportTextDialog = ({ onImport, defaultOpen = false }: ImportTextDi
                     if (result !== false) setOpen(false)
                   })
                   .catch((cause: unknown) => {
-                    setError(cause instanceof Error ? cause.message : '导入失败')
+                    setError(cause instanceof Error ? cause.message : translate('importFailed'))
                   })
                   .finally(() => {
                     locked.current = false
@@ -175,7 +178,7 @@ export const ImportTextDialog = ({ onImport, defaultOpen = false }: ImportTextDi
                   })
               }}
             >
-              {busy ? '正在导入…' : '打开导入结果'}
+              {busy ? translate('importing') : translate('openImportedMap')}
             </Button>
           </DialogFooter>
         </form>

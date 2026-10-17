@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { PCFShadowMap } from 'three'
@@ -22,6 +24,8 @@ export const SpatialCanvas = ({
   onCollapse,
   onCameraChange,
 }: SpatialCanvasProps) => {
+  const { translate } = useMessages()
+
   const presentation = usePresentation()
   const presentedId = presentation.playing
     ? presentation.steps[presentation.index]?.topicId
@@ -48,12 +52,12 @@ export const SpatialCanvas = ({
     setContextLost(true)
   }, [])
 
-  if (contextLost) throw new Error('3D 图形上下文已丢失，请重新进入 3D 视图。')
+  if (contextLost) throw new Error(translate('3dGraphicsContextWasLostPleaseReopen'))
 
   return (
     <section
       className="relative h-full w-full overflow-hidden bg-background [container-type:inline-size]"
-      aria-label="3D 思维导图"
+      aria-label={translate('3dMindMap')}
       data-spatial-surface
     >
       <div
@@ -69,7 +73,7 @@ export const SpatialCanvas = ({
           gl={{ antialias: true, alpha: false, powerPreference: 'default' }}
           fallback={
             <p className="flex h-full items-center justify-center text-sm text-muted-foreground">
-              当前设备无法创建 3D 画布，请返回二维视图。
+              {translate('thisDeviceCannotCreateA3dCanvas')}
             </p>
           }
         >

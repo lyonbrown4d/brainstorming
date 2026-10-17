@@ -40,6 +40,18 @@ tasks:
     deps: [build]
     options:
       cache: false
+  e2e:
+    inputs: ['@group(source)']
+    command: pnpm test:e2e
+    deps: [build]
+    options:
+      cache: false
+  performance:
+    inputs: ['@group(source)']
+    command: pnpm test:perf
+    deps: [build]
+    options:
+      cache: false
   check:
     inputs: ['@group(source)']
     deps: [format, lint, typecheck, test, build]

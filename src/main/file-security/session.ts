@@ -10,15 +10,16 @@ interface Pending {
   readonly path: string | null
   readonly expires: number
   readonly authorize: boolean
+  readonly documentId?: string
+  readonly timer: ReturnType<typeof setTimeout>
   unlocked?: { documentId: string; password: string }
 }
+
+/** Keys belong to document IDs, while each bounded unlock request owns an independent token. */
 export class FileSecuritySession {
-  private pending: Pending | null = null
-  private expiry: ReturnType<typeof setTimeout> | null = null
-  private session: { documentId: string; password: string | null } | null = null
-  passwordFor = (documentId: string): string | null => {
-    return this.session?.documentId === documentId ? this.session.password : null
-  }
+  private readonly pending = new Map<string, Pending>()
+  private readonly passwords = new Map<string, string>()
+  passwordFor = (documentId: string): string | null => this.passwords.get(documentId) ?? null
   configure = (
     documentId: unknown,
     password: unknown,
@@ -26,44 +27,57 @@ export class FileSecuritySession {
   ): { encrypted: boolean } => {
     validateSecurityDocumentId(documentId)
     if (password !== null) validateFilePassword(password, !existing)
-    this.session = { documentId, password }
+    if (password === null) this.passwords.delete(documentId)
+    else this.passwords.set(documentId, password)
     return { encrypted: password !== null }
   }
   state = (documentId: unknown): { encrypted: boolean } => {
     validateSecurityDocumentId(documentId)
     return { encrypted: this.passwordFor(documentId) !== null }
   }
-  lock = (bytes: Uint8Array, path: string | null, authorize = false): OpenedDocument => {
+  lock = (
+    bytes: Uint8Array,
+    path: string | null,
+    authorize = false,
+    documentId?: string,
+  ): OpenedDocument => {
+    // A workspace may contain up to 32 protected documents, plus explicit opens/history requests.
+    if (this.pending.size >= 64) {
+      const oldest = this.pending.keys().next().value
+      if (oldest) this.cancel(oldest)
+    }
     const token = randomUUID()
-    if (this.expiry) clearTimeout(this.expiry)
-    this.expiry = setTimeout(() => {
-      if (this.pending?.token === token) this.pending = null
+    const timer = setTimeout(() => {
+      this.cancel(token)
     }, 5 * 60_000)
-    this.expiry.unref()
-    this.pending = {
+    timer.unref()
+    this.pending.set(token, {
       token,
+      ...(documentId === undefined ? {} : { documentId }),
       bytes: bytes.slice(),
       path,
       authorize,
+      timer,
       expires: Date.now() + 5 * 60_000,
-    }
+    })
     return { path, contents: '', lockedToken: token, encrypted: true }
   }
   private requirePending = (token: unknown): Pending => {
-    if (typeof token !== 'string' || token !== this.pending?.token)
-      throw new Error('解锁请求已失效，请重新选择文件')
-    if (Date.now() > this.pending.expires) {
-      this.pending = null
+    const pending = typeof token === 'string' ? this.pending.get(token) : undefined
+    if (!pending) throw new Error('解锁请求已失效，请重新选择文件')
+    if (Date.now() > pending.expires) {
+      this.cancel(pending.token)
       throw new Error('解锁请求已失效，请重新选择文件')
     }
-    return this.pending
+    return pending
   }
   unlock = async (token: unknown, password: unknown): Promise<OpenedDocument> => {
     const pending = this.requirePending(token)
     validateFilePassword(password, false)
     const workbook = await decryptTrelyx(pending.bytes, password)
-    // A second request can replace the token while decryption is running.
     this.requirePending(token)
+    if (pending.documentId !== undefined && workbook.id !== pending.documentId)
+      throw new Error('恢复工作簿与索引不一致')
     pending.unlocked = { documentId: workbook.id, password }
     return {
       path: pending.path,
@@ -83,14 +97,18 @@ export class FileSecuritySession {
   } => {
     const pending = this.requirePending(token)
     if (!pending.unlocked) throw new Error('请先解锁文件')
-    this.pending = null
-    if (this.expiry) clearTimeout(this.expiry)
+    this.cancel(token)
     return { ...pending.unlocked, path: pending.path, authorize: pending.authorize }
   }
   cancel = (token: unknown): void => {
-    if (typeof token === 'string' && this.pending?.token === token) {
-      this.pending = null
-      if (this.expiry) clearTimeout(this.expiry)
-    }
+    if (typeof token !== 'string') return
+    const pending = this.pending.get(token)
+    if (!pending) return
+    clearTimeout(pending.timer)
+    this.pending.delete(token)
+  }
+  dispose = (): void => {
+    for (const token of this.pending.keys()) this.cancel(token)
+    this.passwords.clear()
   }
 }

@@ -1,3 +1,4 @@
+import { useMessages } from '@renderer/i18n/useMessages'
 import { useAppearanceColors } from '@renderer/hooks/useAppearanceColors'
 /* eslint react/no-unknown-property: "off" -- React Three Fiber uses Three.js JSX properties. */
 import { useEffect, useMemo, useRef, type RefObject } from 'react'
@@ -68,6 +69,7 @@ export const SpatialScene = ({
   onContextLost,
   onSelectionBox,
 }: SpatialSceneProps) => {
+  const { translateLabel } = useMessages()
   const chromeColors = useAppearanceColors()
   const selectedIds = useSelectedIds()
   const controls = useRef<CameraControlsImpl | null>(null)
@@ -255,7 +257,7 @@ export const SpatialScene = ({
           margin={[62 + (!playing && inspectorOpen ? 256 : 0), 124]}
         >
           <GizmoViewcube
-            faces={CUBE_FACES}
+            faces={CUBE_FACES.map(translateLabel)}
             font="500 34px system-ui, sans-serif"
             color={chromeColors.surface}
             hoverColor={chromeColors.accent}

@@ -3,7 +3,7 @@ import { expect, userEvent, within, waitFor } from 'storybook/test'
 import { applyCommand, createExampleDocument } from '@core'
 import { App } from '@renderer/App'
 import { useEditor } from '@renderer/state/editor'
-import { clearBrowserRecovery } from '@renderer/state/recovery'
+import { openTopicProperties } from '@stories/properties'
 
 const contentDocument = () => {
   let document = createExampleDocument()
@@ -40,8 +40,7 @@ const meta = {
   title: 'Trelyx/主题内容',
   component: App,
   parameters: { layout: 'fullscreen' },
-  beforeEach: async () => {
-    await clearBrowserRecovery()
+  beforeEach: () => {
     useEditor.getState().replace(contentDocument())
     useEditor.setState({ selectedId: 'root', inspectorOpen: true, outlineOpen: false })
   },
@@ -53,7 +52,7 @@ export const NotesImagesAttachments: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
-    const panel = within(canvas.getByRole('complementary', { name: '主题面板' }))
+    const panel = await openTopicProperties(canvasElement)
     await expect(panel.getByRole('textbox', { name: '主题备注' })).toHaveTextContent(
       '备注保留换行。',
     )
@@ -83,8 +82,9 @@ export const MultilineNotes: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
-    const notes = canvas.getByRole('textbox', { name: '主题备注' })
-    const title = canvas.getByRole('textbox', { name: '主题名称' }).textContent
+    const panel = await openTopicProperties(canvasElement)
+    const notes = panel.getByRole('textbox', { name: '主题备注' })
+    const title = panel.getByRole('textbox', { name: '主题名称' }).textContent
     await userEvent.click(notes)
     const modifier = /Macintosh|Mac OS/.test(navigator.userAgent) ? 'Meta' : 'Control'
     await userEvent.keyboard(`{${modifier}>}a{/${modifier}}{Backspace}`)
@@ -93,7 +93,7 @@ export const MultilineNotes: Story = {
     await waitFor(() =>
       expect(useEditor.getState().history.document.topics.root?.notes).toBe('第一行\n第二行'),
     )
-    await expect(canvas.getByRole('textbox', { name: '主题名称' })).toHaveTextContent(title)
+    await expect(panel.getByRole('textbox', { name: '主题名称' })).toHaveTextContent(title)
   },
 }
 
@@ -106,8 +106,9 @@ export const NotesFromCanvas: Story = {
     await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
     const root = within(canvas.getByTestId('topic-root'))
     await userEvent.click(root.getByRole('button', { name: '查看主题备注' }))
-    await expect(canvas.getByRole('complementary', { name: '主题面板' })).toBeVisible()
-    await expect(canvas.getByRole('textbox', { name: '主题备注' })).toHaveTextContent(
+    await expect(canvas.getByRole('complementary', { name: '属性面板' })).toBeVisible()
+    const panel = await openTopicProperties(canvasElement)
+    await expect(panel.getByRole('textbox', { name: '主题备注' })).toHaveTextContent(
       '备注保留换行。',
     )
   },
@@ -118,7 +119,7 @@ export const FormattingControls: Story = {
     const canvas = within(canvasElement)
     await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
     const page = within(canvasElement.ownerDocument.body)
-    const panel = within(canvas.getByRole('complementary', { name: '主题面板' }))
+    const panel = await openTopicProperties(canvasElement)
     await userEvent.click(panel.getByRole('combobox', { name: '主题形状' }))
     await userEvent.click(await page.findByRole('option', { name: '椭圆' }))
     await expect(panel.getByRole('combobox', { name: '主题形状' })).toHaveTextContent('椭圆')

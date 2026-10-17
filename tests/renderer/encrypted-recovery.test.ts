@@ -1,91 +1,121 @@
+import { mkdtemp, rm } from 'node:fs/promises'
+import { join } from 'node:path'
+import { tmpdir } from 'node:os'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-const storage = vi.hoisted(() => new Map<string, unknown>())
-vi.mock('idb-keyval', () => ({
-  createStore: () => ({}),
-  get: (key: string) => Promise.resolve(storage.get(key)),
-  set: (key: string, value: unknown) => {
-    storage.set(key, value)
-    return Promise.resolve()
-  },
-  del: (key: string) => {
-    storage.delete(key)
-    return Promise.resolve()
-  },
-}))
 import { createDocument, createWorkbook, serializeWorkbook } from '@core'
 import { isEncryptedTrelyx } from '@formats/encrypted'
+import type { DocumentFiles } from '@main/files'
+import { documentFiles, closeDocumentFiles, recoveryArchive } from '@tests/fixtures/files'
+import { desktop } from '@tests/fixtures/desktop'
+import { isDirty, useEditor } from '@renderer/state/editor'
 import {
-  readBrowserRecovery,
-  writeBrowserRecovery,
-  RECOVERY_KEY,
-  protectBrowserRecovery,
-  adoptBrowserRecoveryPassword,
-} from '@renderer/state/recovery'
+  changeFilePassword,
+  readRecoveryContents,
+  restoreRecovery,
+} from '@renderer/state/fileSecurityActions'
 import {
   answerPassword,
-  browserPasswordFor,
-  resetBrowserPassword,
-  setBrowserPassword,
+  resetFileSecurityState,
   useFileSecurityState,
   usePasswordPrompt,
 } from '@renderer/state/password'
 
-const workbook = createWorkbook(createDocument('Browser encrypted draft', 'browser-protected'))
+const workbook = createWorkbook(createDocument('Native protected draft', 'native-protected'))
 const contents = serializeWorkbook(workbook)
-const password = 'browser-password-123'
-beforeEach(() => {
-  storage.clear()
-  resetBrowserPassword()
+const password = 'native-password-123'
+let directory: string
+let files: DocumentFiles
+const bindFiles = (service: DocumentFiles): void => {
+  vi.stubGlobal('window', {
+    confirm: () => true,
+    trelyx: desktop({
+      readLockedRecovery: service.readLockedRecovery,
+      writeRecovery: service.writeRecovery,
+      setFilePassword: service.setFilePassword,
+      unlockDocument: service.unlockDocument,
+      activateUnlockedDocument: service.activateUnlockedDocument,
+      cancelUnlock: (token) => {
+        service.cancelUnlock(token)
+        return Promise.resolve()
+      },
+    }),
+  })
+}
+beforeEach(async () => {
+  directory = await mkdtemp(join(tmpdir(), 'trelyx-renderer-recovery-'))
+  files = documentFiles(directory)
+  await files.initialize()
+  useEditor.getState().replace(workbook)
+  useEditor.setState({ busy: false, recovery: null })
+  resetFileSecurityState()
   useFileSecurityState.setState({ lockedRecovery: false })
+  bindFiles(files)
 })
-afterEach(() => {
+afterEach(async () => {
+  await closeDocumentFiles()
   answerPassword(null)
-  resetBrowserPassword()
+  resetFileSecurityState()
+  vi.unstubAllGlobals()
+  await rm(directory, { recursive: true, force: true })
 })
-const encryptedBytes = (): Uint8Array => {
-  const value = storage.get(RECOVERY_KEY)
-  if (
-    !value ||
-    typeof value !== 'object' ||
-    !('bytes' in value) ||
-    !(value.bytes instanceof Uint8Array)
-  )
-    throw new Error('Recovery was not encrypted')
-  return value.bytes
+const waitForPrompt = async (): Promise<void> => {
+  await vi.waitFor(() => {
+    expect(usePasswordPrompt.getState().request).not.toBeNull()
+  })
 }
 
-describe('browser encrypted recovery storage', () => {
-  it('stores ciphertext, retains no persistent password and prompts again after a fresh session', async () => {
-    setBrowserPassword(workbook.id, password)
-    await writeBrowserRecovery(contents)
-    expect(await isEncryptedTrelyx(encryptedBytes())).toBe(true)
-    expect(JSON.stringify(storage.get(RECOVERY_KEY))).not.toContain(password)
-    resetBrowserPassword()
-    const reading = readBrowserRecovery()
-    await vi.waitFor(() => {
-      expect(usePasswordPrompt.getState().request).not.toBeNull()
-    })
+describe('native encrypted recovery boundary', () => {
+  it('protects existing recovery in main and activates a fresh unlock only when restored', async () => {
+    await files.writeRecovery(contents)
+    await changeFilePassword(password)
+    const encrypted = await recoveryArchive(directory, files)
+    expect(await isEncryptedTrelyx(encrypted)).toBe(true)
+    expect(encrypted.includes(Buffer.from('Native protected draft'))).toBe(false)
+    expect(encrypted.includes(Buffer.from(password))).toBe(false)
+    const restarted = documentFiles(directory)
+    await restarted.initialize()
+    bindFiles(restarted)
+    resetFileSecurityState()
+    const reading = readRecoveryContents()
+    await waitForPrompt()
     answerPassword('wrong-password')
     await vi.waitFor(() => {
       expect(usePasswordPrompt.getState().request?.error).toContain('密码错误')
     })
     answerPassword(password)
     expect(await reading).toBe(contents)
-    expect(browserPasswordFor(workbook.id)).toBeNull()
-    adoptBrowserRecoveryPassword(workbook.id)
-    expect(browserPasswordFor(workbook.id)).toBe(password)
-  })
-  it('protects existing plaintext recovery and preserves encrypted bytes when unlocking is canceled', async () => {
-    await writeBrowserRecovery(contents)
-    await protectBrowserRecovery(workbook.id, null, password)
-    const before = encryptedBytes().slice()
-    const reading = readBrowserRecovery()
+    expect(restarted.getFileSecurity(workbook.id)).toEqual({ encrypted: false })
+    expect(useFileSecurityState.getState().encrypted).toBe(false)
+    useEditor.setState({ recovery: contents })
+    restoreRecovery()
     await vi.waitFor(() => {
-      expect(usePasswordPrompt.getState().request).not.toBeNull()
+      expect(useEditor.getState().busy).toBe(false)
     })
+    expect(useEditor.getState().workbook).toEqual(workbook)
+    expect(useEditor.getState().recovery).toBeNull()
+    expect(isDirty()).toBe(true)
+    expect(restarted.getFileSecurity(workbook.id)).toEqual({ encrypted: true })
+    await restarted.writeRecovery(contents)
+    expect(await isEncryptedTrelyx(await recoveryArchive(directory, files))).toBe(true)
+  })
+
+  it('preserves native ciphertext and the current document when recovery unlocking is canceled', async () => {
+    await files.writeRecovery(contents)
+    await changeFilePassword(password)
+    const before = await recoveryArchive(directory, files)
+    const restarted = documentFiles(directory)
+    await restarted.initialize()
+    bindFiles(restarted)
+    useEditor.getState().replace(createDocument('Current document', 'current'))
+    const current = useEditor.getState().workbook
+    const reading = readRecoveryContents()
+    const rejected = expect(reading).rejects.toThrow('已保留')
+    await waitForPrompt()
     answerPassword(null)
-    await expect(reading).rejects.toThrow('已保留')
-    expect(encryptedBytes()).toEqual(before)
+    await rejected
+    expect(await recoveryArchive(directory, files)).toEqual(before)
+    expect(useEditor.getState().workbook).toBe(current)
+    expect(restarted.getFileSecurity(workbook.id)).toEqual({ encrypted: false })
     expect(useFileSecurityState.getState().lockedRecovery).toBe(true)
   })
 })

@@ -1,3 +1,4 @@
+import { translate } from '@renderer/i18n'
 const EXTENSION = '.trelyx'
 const MAX_FILE_NAME_BYTES = 160
 const encoder = new TextEncoder()
@@ -17,11 +18,11 @@ export const suggestedFileName = (title: string): string => {
   const budget = MAX_FILE_NAME_BYTES - encoder.encode(EXTENSION).byteLength
   let result = ''
   let bytes = 0
-  for (const character of portable || '未命名导图') {
+  for (const character of portable || translate('untitledMap')) {
     const length = encoder.encode(character).byteLength
     if (bytes + length > budget) break
     result += character
     bytes += length
   }
-  return `${result.trimEnd().replace(/[. ]+$/gu, '') || '未命名导图'}${EXTENSION}`
+  return `${result.trimEnd().replace(/[. ]+$/gu, '') || translate('untitledMap')}${EXTENSION}`
 }

@@ -5,14 +5,13 @@ import { App } from '@renderer/App'
 import { useEditor } from '@renderer/state/editor'
 import { setSelectedTopics, useSelection } from '@renderer/state/selection'
 import { useSpatialView } from '@renderer/state/spatial'
-import { clearBrowserRecovery } from '@renderer/state/recovery'
+import { openTopicProperties } from '@stories/properties'
 
 const meta = {
   title: 'Trelyx/结构工作台',
   component: App,
   parameters: { layout: 'fullscreen' },
-  beforeEach: async () => {
-    await clearBrowserRecovery()
+  beforeEach: () => {
     useSelection.setState({ sheets: {} })
     useEditor.getState().replace(createExampleDocument())
     useEditor.setState({ recovery: null, outlineOpen: true, inspectorOpen: true })
@@ -27,8 +26,8 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('complementary', { name: '文档大纲' })).toBeVisible()
-    const panel = within(canvas.getByRole('complementary', { name: '主题面板' }))
-    await expect(panel.getByRole('heading', { name: '样式' })).toBeVisible()
+    const panel = await openTopicProperties(canvasElement)
+    await expect(panel.getByRole('heading', { name: '属性' })).toBeVisible()
     await expect(panel.getByRole('combobox', { name: '主题形状' })).toBeVisible()
   },
 }
@@ -46,9 +45,11 @@ export const MultipleSelection: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const panel = within(canvas.getByRole('complementary', { name: '主题面板' }))
+    const panel = await openTopicProperties(canvasElement)
     const outline = within(canvas.getByRole('complementary', { name: '文档大纲' }))
-    await expect(panel.getByRole('heading', { name: '已选 2 个主题' })).toBeVisible()
+    await expect(
+      panel.getByText(/已选\s*2\s*个主题；样式和标记将应用到全部所选主题。/),
+    ).toBeVisible()
     await expect(outline.getByRole('button', { name: '让思考自由生长' })).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -85,6 +86,7 @@ export const MultipleSelection: Story = {
     await user.keyboard('{Shift>}')
     await user.click(outline.getByRole('button', { name: '产品愿景' }))
     await user.keyboard('{/Shift}')
-    await expect(panel.getByRole('heading', { name: '已选 3 个主题' })).toBeVisible()
+    await expect(useSelection.getState().sheets[useEditor.getState().activeSheetId]).toHaveLength(3)
+    await expect(panel.getByText(/已选\s*3\s*个主题；/)).toBeVisible()
   },
 }

@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useMemo, useState } from 'react'
 import { searchWorkbook, type SearchMatch } from '@core'
 import { useEditor } from '@renderer/state/editor'
@@ -14,6 +16,8 @@ import {
 } from '@renderer/components/ui/dialog'
 
 export const SearchPanel = () => {
+  const { translate } = useMessages()
+
   const search = useSearch()
   const workbook = useEditor((state) => state.workbook)
   const sheetId = useEditor((state) => state.activeSheetId)
@@ -58,15 +62,15 @@ export const SearchPanel = () => {
     >
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>查找与替换</DialogTitle>
+          <DialogTitle>{translate('findAndReplace')}</DialogTitle>
           <DialogDescription>
-            查找主题标题和备注。替换操作仅作用于当前画布，可一次撤销。
+            {translate('findTopicTitlesAndNotesReplacementsAffect')}
           </DialogDescription>
         </DialogHeader>
         <Input
-          aria-label="查找文本"
+          aria-label={translate('findText')}
           value={search.query}
-          placeholder="输入要查找的文本"
+          placeholder={translate('enterTextToFind')}
           onChange={(event) => {
             useSearch.setState({ query: event.target.value })
           }}
@@ -80,10 +84,10 @@ export const SearchPanel = () => {
         <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
           {(
             [
-              ['matchCase', '区分大小写'],
-              ['wholeWord', '全词匹配'],
-              ['includeNotes', '包含备注'],
-              ['allSheets', '所有画布'],
+              ['matchCase', translate('matchCase')],
+              ['wholeWord', translate('wholeWords')],
+              ['includeNotes', translate('includeNotes')],
+              ['allSheets', translate('allSheets')],
             ] as const
           ).map(([key, label]) => (
             <Button
@@ -103,9 +107,9 @@ export const SearchPanel = () => {
         <div className="flex flex-wrap gap-2">
           <Input
             className="min-w-32 flex-1"
-            aria-label="替换为"
+            aria-label={translate('replaceWith')}
             value={search.replacement}
-            placeholder="替换为（可留空）"
+            placeholder={translate('replaceWithOptional')}
             onChange={(event) => {
               useSearch.setState({ replacement: event.target.value })
             }}
@@ -117,7 +121,7 @@ export const SearchPanel = () => {
               if (selected) replaceSearchResults(selected)
             }}
           >
-            替换此结果
+            {translate('replaceThisResult')}
           </Button>
           <Button
             disabled={!currentResults.length}
@@ -125,15 +129,18 @@ export const SearchPanel = () => {
               replaceSearchResults()
             }}
           >
-            替换当前画布全部
+            {translate('replaceAllOnThisSheet')}
           </Button>
         </div>
         <p className="text-xs text-muted-foreground" role="status">
           {search.query
-            ? `共 ${results.reduce((count, match) => count + match.count, 0)} 处匹配，当前画布 ${currentResults.length} 个结果`
-            : '输入文本开始查找'}
+            ? translate('value0MatchesValue1ResultsOnThisSheet', {
+                value0: results.reduce((count, match) => count + match.count, 0),
+                value1: currentResults.length,
+              })
+            : translate('enterTextToSearch')}
         </p>
-        <div className="max-h-72 space-y-1 overflow-y-auto" aria-label="查找结果">
+        <div className="max-h-72 space-y-1 overflow-y-auto" aria-label={translate('searchResults')}>
           {results.map((match) => (
             <Button
               key={`${match.sheetId}:${match.topicId}:${match.field}`}
@@ -147,14 +154,18 @@ export const SearchPanel = () => {
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-xs text-muted-foreground">
                   {workbook.sheets.find((sheet) => sheet.id === match.sheetId)?.name} ·{' '}
-                  {match.field === 'notes' ? '备注' : '标题'} · {match.count} 处
+                  {match.field === 'notes' ? translate('notes') : translate('title')} ·{' '}
+                  {match.count}
+                  {translate('matches')}
                 </span>
                 <span className="block truncate">{match.text}</span>
               </span>
             </Button>
           ))}
           {search.query && results.length === 0 && (
-            <p className="py-8 text-center text-sm text-muted-foreground">没有匹配的主题</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              {translate('noMatchingTopics')}
+            </p>
           )}
         </div>
       </DialogContent>

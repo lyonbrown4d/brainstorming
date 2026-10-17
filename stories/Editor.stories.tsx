@@ -3,13 +3,12 @@ import { expect, userEvent, within, waitFor } from 'storybook/test'
 import { createExampleDocument, applyCommand } from '@core'
 import { App } from '@renderer/App'
 import { useEditor } from '@renderer/state/editor'
-import { clearBrowserRecovery } from '@renderer/state/recovery'
+import { openTopicProperties } from '@stories/properties'
 const meta = {
   title: 'Trelyx/思维导图',
   component: App,
   parameters: { layout: 'fullscreen' },
-  beforeEach: async () => {
-    await clearBrowserRecovery()
+  beforeEach: () => {
     useEditor.getState().replace(createExampleDocument())
     useEditor.setState({ recovery: null, outlineOpen: false, inspectorOpen: false })
   },
@@ -63,13 +62,15 @@ export const StylePanel: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
-    await expect(canvas.getByRole('complementary', { name: '主题面板' })).toBeVisible()
-    await expect(canvas.getByRole('button', { name: '样式面板' })).toHaveAttribute(
+    const panel = await openTopicProperties(canvasElement)
+    await expect(panel.getByRole('tab', { name: '主题' })).toHaveAttribute('aria-selected', 'true')
+    await expect(canvas.getByRole('complementary', { name: '属性面板' })).toBeVisible()
+    await expect(canvas.getByRole('button', { name: '属性面板' })).toHaveAttribute(
       'aria-pressed',
       'true',
     )
-    await userEvent.click(canvas.getByRole('button', { name: '关闭样式面板' }))
-    await expect(canvas.queryByRole('complementary', { name: '主题面板' })).not.toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button', { name: '关闭属性面板' }))
+    await expect(canvas.queryByRole('complementary', { name: '属性面板' })).not.toBeInTheDocument()
   },
 }
 export const OutlineView: Story = {
@@ -119,7 +120,7 @@ export const FileMenu: Story = {
     await expect(page.getByRole('menuitem', { name: '保存导图' })).toBeVisible()
     await expect(page.getByRole('menuitem', { name: '另存为' })).toBeVisible()
     await userEvent.hover(page.getByRole('menuitem', { name: '最近文件' }))
-    await waitFor(() => expect(page.getByText('桌面版会记住最近打开的文件。')).toBeVisible())
+    await waitFor(() => expect(page.getByText('还没有最近打开的文件。')).toBeVisible())
     await userEvent.keyboard('{Escape}{Escape}')
   },
 }

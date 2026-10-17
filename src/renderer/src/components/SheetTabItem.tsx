@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { Tabs } from 'radix-ui'
 import { useEffect, useRef } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
@@ -18,6 +20,8 @@ interface SheetTabItemProps {
 }
 
 export const SheetTabItem = ({ sheet, index, count, busy, onDialog }: SheetTabItemProps) => {
+  const { translate } = useMessages()
+
   const active = useEditor((state) => state.activeSheetId === sheet.id)
   const reducedMotion = useReducedMotion()
   const trigger = useRef<HTMLButtonElement>(null)
@@ -50,8 +54,8 @@ export const SheetTabItem = ({ sheet, index, count, busy, onDialog }: SheetTabIt
         disabled={busy}
         {...attributes}
         {...listeners}
-        aria-label={`拖动画布 ${sheet.name}`}
-        title="拖动排序，也可在画布菜单中移动"
+        aria-label={translate('dragSheetValue0', { value0: sheet.name })}
+        title={translate('dragToReorderOrMoveUsingThe')}
       >
         <GripVertical size={12} className="size-3" />
       </Button>

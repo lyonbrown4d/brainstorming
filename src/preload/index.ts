@@ -4,6 +4,7 @@ import { isWindowState } from '@shared/window'
 import type { StartupAPI } from '@shared/startup'
 
 const actions = new Set<MenuAction>([
+  'closeTab',
   'new',
   'open',
   'save',
@@ -18,6 +19,8 @@ const actions = new Set<MenuAction>([
 const api: DesktopAPI = {
   platform:
     process.platform === 'darwin' ? 'macos' : process.platform === 'win32' ? 'windows' : 'linux',
+  getLanguage: () => ipcRenderer.invoke('app:language:get'),
+  setLanguage: (language) => ipcRenderer.invoke('app:language:set', language),
   getWindowState: () => ipcRenderer.invoke('window:state'),
   setAppearance: (theme) => ipcRenderer.invoke('window:appearance', theme),
   onSystemThemeChanged: (callback) => {
@@ -88,6 +91,8 @@ const api: DesktopAPI = {
   getFileSecurity: (id) => ipcRenderer.invoke('document:security', id),
   setFilePassword: (id, password) => ipcRenderer.invoke('document:set-password', id, password),
   readLockedRecovery: () => ipcRenderer.invoke('recovery:read-locked'),
+  readWorkspaceRecovery: () => ipcRenderer.invoke('recovery:workspace:read'),
+  writeWorkspaceRecovery: (contents) => ipcRenderer.invoke('recovery:workspace:write', contents),
   listDocumentBackups: (id) => ipcRenderer.invoke('document:backups', id),
   restoreDocumentBackup: (id) => ipcRenderer.invoke('document:restore-backup', id),
   readRecovery: () => ipcRenderer.invoke('recovery:read'),

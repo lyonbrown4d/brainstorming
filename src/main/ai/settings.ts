@@ -69,7 +69,7 @@ export class AISettingsStore {
       }
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT')
-        throw new Error('无法读取 AI 设置，请重新保存服务配置')
+        throw new Error('无法读取 AI 设置，请重新保存服务配置', { cause: error })
     }
   }
   private view = (): AISettings => {

@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useMemo, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { ReactFlow, useReactFlow } from '@xyflow/react'
@@ -28,6 +30,8 @@ const nodeTypes = { topic: TopicNode }
 const edgeTypes = { relation: RelationEdge, structure: StructureEdge }
 export { ZoomControls } from '@renderer/components/ZoomControls'
 export const Canvas = () => {
+  const { translate } = useMessages()
+
   const flow = useReactFlow<TopicFlowNode>()
   useCanvasViewport()
   const reduceMotion = useReducedMotion()
@@ -55,7 +59,7 @@ export const Canvas = () => {
       }}
       id="sheet-panel"
       role="tabpanel"
-      aria-label="当前画布"
+      aria-label={translate('currentSheet')}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: reduceMotion ? 0 : 0.12 }}

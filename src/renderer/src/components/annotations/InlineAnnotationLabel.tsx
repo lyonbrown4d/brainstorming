@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useCallback, useEffect, useRef } from 'react'
 import { useEditor } from '@renderer/state/editor'
 import {
@@ -21,6 +23,8 @@ export const InlineAnnotationLabel = ({
   text: string
   color?: string | undefined
 }) => {
+  const { translate } = useMessages()
+
   const sheetId = useEditor((state) => state.activeSheetId)
   const selected = useAnnotationInteraction(
     (state) =>
@@ -81,7 +85,7 @@ export const InlineAnnotationLabel = ({
       if (callout)
         success = runAnnotationCommand({
           type: 'upsertCallout',
-          callout: { ...callout, text: draft.trim() || '标注' },
+          callout: { ...callout, text: draft.trim() || translate('callout') },
         })
     }
     if (success) useAnnotationInteraction.setState({ editing: false })
@@ -95,10 +99,10 @@ export const InlineAnnotationLabel = ({
         className="nodrag nopan nowheel pointer-events-auto min-h-8 w-48 bg-background text-xs"
         aria-label={
           kind === 'relation'
-            ? '编辑关联线名称'
+            ? translate('editRelationshipLabel')
             : kind === 'group'
-              ? '编辑分组名称'
-              : '编辑标注文字'
+              ? translate('editGroupLabel')
+              : translate('editCalloutText')
         }
         defaultValue={text}
         maxLength={10000}
@@ -130,8 +134,8 @@ export const InlineAnnotationLabel = ({
       type="button"
       className={`nodrag nopan pointer-events-auto block max-w-60 rounded border bg-background/95 px-2 py-1 text-left text-xs whitespace-pre-wrap shadow-sm ${selected ? 'border-primary ring-1 ring-primary' : 'border-transparent'}`}
       style={{ color }}
-      aria-label={`${kind === 'relation' ? '关联线' : kind === 'group' ? '分组' : '标注'}：${text || '未命名'}`}
-      title="双击原位编辑"
+      aria-label={`${kind === 'relation' ? translate('relationship') : kind === 'group' ? translate('group') : translate('callout')}：${text || translate('untitled')}`}
+      title={translate('doubleclickToEdit')}
       onPointerDown={(event) => {
         event.stopPropagation()
       }}
@@ -144,7 +148,7 @@ export const InlineAnnotationLabel = ({
         start()
       }}
     >
-      {text || '未命名'}
+      {text || translate('untitled')}
     </button>
   )
 }

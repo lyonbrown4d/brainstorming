@@ -1,4 +1,6 @@
-import { expect, test } from '@playwright/test'
+import { prepareNativeOpen } from '@tests/electron/native-files'
+import { reloadWindow } from '@tests/electron/session'
+import { expect, test } from '@tests/electron/fixture'
 import { createFixtureDocument, createWorkbook } from '@core'
 import { encodeTrelyx } from '@formats/trelyx'
 
@@ -8,13 +10,11 @@ for (const count of [100, 1_000, 5_000]) {
     const samples: number[] = []
     const mounted: number[] = []
     for (let sample = 0; sample < 3; sample += 1) {
-      await page.goto('/')
-      const picker = page.waitForEvent('filechooser')
+      await reloadWindow(page)
+      const picker = await prepareNativeOpen(page)
       const started = performance.now()
       await page.getByRole('button', { name: '打开本地文件', exact: true }).click()
-      await (
-        await picker
-      ).setFiles({
+      await picker.selectFile({
         name: `fixed-${count}.trelyx`,
         mimeType: 'application/vnd.trelyx+zip',
         buffer: Buffer.from(contents),
@@ -34,8 +34,8 @@ for (const count of [100, 1_000, 5_000]) {
           samplesMs: samples,
           medianMs: median,
           mounted,
-          viewport: { width: 1440, height: 960 },
-          note: '开发构建，含文件选择和解析；仅报告，无性能阈值。',
+          viewport: await page.evaluate(() => ({ width: innerWidth, height: innerHeight })),
+          note: '真实 Electron 生产构建，含原生文件选择和解析；仅报告，无性能阈值。',
         },
         null,
         2,

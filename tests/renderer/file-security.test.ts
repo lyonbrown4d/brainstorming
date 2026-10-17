@@ -1,9 +1,16 @@
+import { useDocumentTabs, switchDocumentTab } from '@renderer/state/documentTabs'
+import { desktop } from '@tests/fixtures/desktop'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDocument, createWorkbook, serializeWorkbook } from '@core'
 import { isDirty, useEditor } from '@renderer/state/editor'
 import { openDocument } from '@renderer/state/files'
 import { readRecoveryContents, restoreBackup } from '@renderer/state/fileSecurityActions'
-import { answerPassword, resetBrowserPassword, usePasswordPrompt } from '@renderer/state/password'
+import {
+  answerPassword,
+  resetFileSecurityState,
+  usePasswordPrompt,
+  useFileSecurityState,
+} from '@renderer/state/password'
 
 const contents = serializeWorkbook(
   createWorkbook(createDocument('Protected document', 'protected-book')),
@@ -36,13 +43,14 @@ const setup = () => {
     saveDocument: vi.fn(),
   }
   const confirm = vi.fn(() => true)
-  vi.stubGlobal('window', { trelyx: bridge, confirm })
+  vi.stubGlobal('window', { trelyx: desktop(bridge), confirm })
   return { bridge, confirm }
 }
 beforeEach(() => {
+  useDocumentTabs.setState({ tabs: [], activeId: null, recovery: [] })
   useEditor.getState().replace(createDocument('Current', 'current'))
   useEditor.setState({ busy: false, recovery: null })
-  resetBrowserPassword()
+  resetFileSecurityState()
 })
 afterEach(() => {
   answerPassword(null)
@@ -95,18 +103,58 @@ describe('renderer protected-file acceptance', () => {
     expect(isDirty()).toBe(false)
     expect(useEditor.getState().busy).toBe(false)
   })
-  it('preserves edits made while reading when replacement confirmation is declined', async () => {
+  it('opens the accepted file in a new tab while preserving a concurrent external replacement', async () => {
     const { bridge, confirm } = setup()
     const reading = openDocument()
     await prompt()
     useEditor.getState().replace(createDocument('Concurrent edit', 'concurrent'))
+    const concurrent = useEditor.getState().workbook
     confirm.mockReturnValue(false)
     answerPassword('correct-password')
     await reading
-    expect(useEditor.getState().workbook.title).toBe('Concurrent edit')
-    expect(bridge.activateUnlockedDocument).not.toHaveBeenCalled()
-    expect(bridge.cancelUnlock).toHaveBeenCalledWith('token')
+    expect(confirm).not.toHaveBeenCalled()
+    expect(useEditor.getState().workbook.title).toBe('Protected document')
+    expect(bridge.activateUnlockedDocument).toHaveBeenCalledWith('token')
+    const original = useDocumentTabs
+      .getState()
+      .tabs.find((tab) => tab.editor.workbook.id === concurrent.id)
+    expect(original?.editor.workbook).toBe(concurrent)
+    expect(useDocumentTabs.getState().tabs).toHaveLength(2)
+    if (!original) throw new Error('Concurrent document tab was lost')
+    switchDocumentTab(original.id)
+    expect(useEditor.getState().workbook).toBe(concurrent)
+    expect(useEditor.getState().history.document.title).toBe('Concurrent edit')
   })
+
+  it('retains edits and the outgoing encryption indicator while native activation is pending', async () => {
+    const { bridge } = setup()
+    const id = useEditor.getState().workbook.id
+    useFileSecurityState.setState({ documentId: id, encrypted: true })
+    let complete = (): void => undefined
+    bridge.activateUnlockedDocument.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          complete = () => {
+            resolve({ encrypted: true })
+          }
+        }),
+    )
+    const opening = openDocument()
+    await prompt()
+    answerPassword('correct-password')
+    await vi.waitFor(() => {
+      expect(bridge.activateUnlockedDocument).toHaveBeenCalledOnce()
+    })
+    useEditor.getState().startEdit('root')
+    useEditor.getState().setDraft('Typed while the incoming key was activating')
+    complete()
+    await opening
+    const original = useDocumentTabs.getState().tabs.find((tab) => tab.editor.workbook.id === id)
+    expect(original?.editor.draft).toBe('Typed while the incoming key was activating')
+    expect(original?.security).toMatchObject({ documentId: id, encrypted: true })
+    expect(useEditor.getState().workbook.title).toBe('Protected document')
+  })
+
   it('restores a history snapshot dirty in memory and waits for an explicit save to touch the current file', async () => {
     const { bridge } = setup()
     useEditor.setState({ path: '/current.trelyx' })

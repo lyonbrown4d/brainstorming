@@ -4,14 +4,12 @@ import { createExampleDocument } from '@core'
 import { App } from '@renderer/App'
 import { useEditor } from '@renderer/state/editor'
 import { useSpatialView } from '@renderer/state/spatial'
-import { clearBrowserRecovery } from '@renderer/state/recovery'
 
 const meta = {
   title: 'Trelyx/空间视图',
   component: App,
   parameters: { layout: 'fullscreen' },
-  beforeEach: async () => {
-    await clearBrowserRecovery()
+  beforeEach: () => {
     useEditor.getState().replace(createExampleDocument())
     useEditor.setState({ selectedId: 'root', inspectorOpen: false, outlineOpen: false })
     useSpatialView.getState().setMode(useEditor.getState().activeSheetId, '3d')

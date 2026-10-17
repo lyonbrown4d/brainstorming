@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { FORMAT_TEXT_COMMAND } from 'lexical'
 import { INSERT_ORDERED_LIST_COMMAND, INSERT_UNORDERED_LIST_COMMAND } from '@lexical/list'
@@ -5,19 +7,21 @@ import { Bold, Italic, Code, Strikethrough, List, ListOrdered } from 'lucide-rea
 import { Button } from '@renderer/components/ui/button'
 
 export const RichTextToolbar = ({ title }: { title: boolean }) => {
+  const { translate } = useMessages()
+
   const [editor] = useLexicalComposerContext()
   return (
     <div
       className="flex flex-wrap gap-0.5 border-b border-border p-1"
       role="toolbar"
-      aria-label={title ? '标题局部格式' : '备注文本格式'}
+      aria-label={title ? translate('titleTextFormatting') : translate('notesFormatting')}
     >
       {(
         [
-          { format: 'bold', label: '粗体文字', Icon: Bold },
-          { format: 'italic', label: '斜体文字', Icon: Italic },
-          { format: 'strikethrough', label: '删除线文字', Icon: Strikethrough },
-          { format: 'code', label: '行内代码', Icon: Code },
+          { format: 'bold', label: translate('boldText'), Icon: Bold },
+          { format: 'italic', label: translate('italicText'), Icon: Italic },
+          { format: 'strikethrough', label: translate('strikethroughText'), Icon: Strikethrough },
+          { format: 'code', label: translate('inlineCode'), Icon: Code },
         ] as const
       ).map(({ format, label, Icon }) => (
         <Button
@@ -44,7 +48,7 @@ export const RichTextToolbar = ({ title }: { title: boolean }) => {
             variant="ghost"
             size="icon"
             className="size-7"
-            aria-label="无序列表"
+            aria-label={translate('bulletList')}
             onMouseDown={(event) => {
               event.preventDefault()
             }}
@@ -59,7 +63,7 @@ export const RichTextToolbar = ({ title }: { title: boolean }) => {
             variant="ghost"
             size="icon"
             className="size-7"
-            aria-label="有序列表"
+            aria-label={translate('numberedList')}
             onMouseDown={(event) => {
               event.preventDefault()
             }}

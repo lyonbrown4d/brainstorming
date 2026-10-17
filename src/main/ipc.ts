@@ -1,65 +1,50 @@
-import {
-  dialog,
-  ipcMain,
-  type BrowserWindow,
-  type IpcMainInvokeEvent,
-  type IpcMainEvent,
-} from 'electron'
+import type { dialog as ElectronDialog } from 'electron'
 import type { DocumentFiles } from '@main/files'
 import { validateContents, validateSavePath } from '@main/files'
-import type { OpenedDocument, SaveRequest } from '@shared/contracts'
+import type { SaveRequest } from '@shared/contracts'
 import { readWindowState, setWindowAppearance } from '@main/windowChrome'
-import { registerAssetIPC } from '@main/assets'
-import { registerEditingIPC } from '@main/editing'
-import { registerAIIPC } from '@main/ai'
-import { registerMCPIPC } from '@main/mcp'
+import type { IPCRegistry } from '@main/application/ipcRegistry'
+import type { WindowSession } from '@main/application/session'
+import type { OpenFileRequests } from '@main/openFiles'
 
 const openFilters = [{ name: '思维导图', extensions: ['trelyx', 'xmind'] }]
 const saveFilters = [{ name: 'Trelyx 思维导图', extensions: ['trelyx'] }]
 
 export const registerIPC = (
-  getWindow: () => BrowserWindow | null,
+  ipc: IPCRegistry,
+  session: WindowSession,
   files: DocumentFiles,
-  setDirty: (dirty: boolean, preserveRecovery: boolean) => void,
-  takeOpenFile: () => Promise<OpenedDocument | null>,
-  hasOpenFile: () => boolean,
+  requests: OpenFileRequests,
+  dialogs: Pick<typeof ElectronDialog, 'showOpenDialog' | 'showSaveDialog'>,
 ): void => {
-  const trusted = (event: IpcMainInvokeEvent | IpcMainEvent): BrowserWindow => {
-    const window = getWindow()
-    if (
-      event.sender !== window?.webContents ||
-      event.senderFrame !== window.webContents.mainFrame
-    ) {
-      throw new Error('不受信任的请求')
-    }
-    return window
-  }
-  registerAssetIPC(trusted)
-  registerEditingIPC(trusted)
-  registerAIIPC(trusted)
-  registerMCPIPC(getWindow, trusted)
-  ipcMain.handle('window:state', (event) => readWindowState(trusted(event)))
-  ipcMain.handle('window:appearance', (event, theme: unknown) => {
+  const trusted = session.trusted
+  ipc.handle('window:state', (event) => readWindowState(trusted(event)))
+  ipc.handle('window:appearance', (event, theme: unknown) => {
     setWindowAppearance(trusted(event), theme)
   })
-  ipcMain.handle('document:has-open-file', (event) => {
+  ipc.handle('document:has-open-file', (event) => {
     trusted(event)
-    return hasOpenFile()
+    return requests.hasPending()
   })
-  ipcMain.handle('document:take-open-file', (event) => {
-    trusted(event)
-    return takeOpenFile()
-  })
-  ipcMain.handle('document:open', async (event) => {
+  ipc.handle('document:take-open-file', async (event) => {
     const window = trusted(event)
-    const result = await dialog.showOpenDialog(window, {
+    try {
+      return await requests.take(files)
+    } finally {
+      if (requests.hasPending() && !window.isDestroyed() && !window.webContents.isDestroyed())
+        window.webContents.send('document:open-file-ready')
+    }
+  })
+  ipc.handle('document:open', async (event) => {
+    const window = trusted(event)
+    const result = await dialogs.showOpenDialog(window, {
       filters: openFilters,
       properties: ['openFile'],
     })
     const path = result.filePaths[0]
     return result.canceled || !path ? null : files.openSelected(path)
   })
-  ipcMain.handle('document:save', async (event, input: unknown) => {
+  ipc.handle('document:save', async (event, input: unknown) => {
     const window = trusted(event)
     if (!input || typeof input !== 'object') throw new Error('保存请求无效')
     const request = input as Partial<SaveRequest>
@@ -68,7 +53,7 @@ export const registerIPC = (
     let path = request.path
     if (path === null) {
       if (typeof request.suggestedName !== 'string') throw new Error('文件名无效')
-      const result = await dialog.showSaveDialog(window, {
+      const result = await dialogs.showSaveDialog(window, {
         filters: saveFilters,
         defaultPath: suggestedFilename(request.suggestedName),
       })
@@ -85,57 +70,65 @@ export const registerIPC = (
       ? files.save(path, request.contents)
       : files.save(path, request.contents, request.password)
   })
-  ipcMain.handle('document:recent', (event) => {
+  ipc.handle('document:recent', (event) => {
     trusted(event)
     return files.getRecentFiles()
   })
-  ipcMain.handle('document:open-recent', (event, path: unknown) => {
+  ipc.handle('document:open-recent', (event, path: unknown) => {
     trusted(event)
     return files.openRecent(path)
   })
-  ipcMain.handle('recovery:read', (event) => {
+  ipc.handle('recovery:workspace:read', (event) => {
+    trusted(event)
+    return files.readWorkspaceRecovery()
+  })
+  ipc.handle('recovery:workspace:write', (event, contents: unknown) => {
+    trusted(event)
+    return files.writeWorkspaceRecovery(contents)
+  })
+  ipc.handle('recovery:read', (event) => {
     trusted(event)
     return files.readRecovery()
   })
-  ipcMain.handle('document:unlock', (event, token: unknown, password: unknown) => {
+  ipc.handle('document:unlock', (event, token: unknown, password: unknown) => {
     trusted(event)
     return files.unlockDocument(token, password)
   })
-  ipcMain.handle('document:activate-unlocked', (event, token: unknown) => {
+  ipc.handle('document:activate-unlocked', (event, token: unknown) => {
     trusted(event)
     return files.activateUnlockedDocument(token)
   })
-  ipcMain.handle('document:cancel-unlock', (event, token: unknown) => {
+  ipc.handle('document:cancel-unlock', (event, token: unknown) => {
     trusted(event)
     files.cancelUnlock(token)
   })
-  ipcMain.handle('document:security', (event, id: unknown) => {
+  ipc.handle('document:security', (event, id: unknown) => {
     trusted(event)
     return files.getFileSecurity(id)
   })
-  ipcMain.handle('document:set-password', (event, id: unknown, password: unknown) => {
+  ipc.handle('document:set-password', (event, id: unknown, password: unknown) => {
     trusted(event)
     return files.setFilePassword(id, password)
   })
-  ipcMain.handle('recovery:read-locked', (event) => {
+  ipc.handle('recovery:read-locked', (event) => {
     trusted(event)
     return files.readLockedRecovery()
   })
-  ipcMain.handle('document:backups', (event, id: unknown) => {
+  ipc.handle('document:backups', (event, id: unknown) => {
     trusted(event)
     return files.listDocumentBackups(id)
   })
-  ipcMain.handle('document:restore-backup', (event, id: unknown) => {
+  ipc.handle('document:restore-backup', (event, id: unknown) => {
     trusted(event)
     return files.restoreDocumentBackup(id)
   })
-  ipcMain.handle('recovery:write', (event, contents: unknown) => {
+  ipc.handle('recovery:write', (event, contents: unknown) => {
     trusted(event)
     return files.writeRecovery(contents)
   })
-  ipcMain.on('document:dirty', (event, dirty: unknown, preserveRecovery: unknown = false) => {
+  ipc.on('document:dirty', (event, dirty: unknown, preserveRecovery: unknown = false) => {
     // send() has no rejection channel; silently reject untrusted/invalid notifications.
-    const window = getWindow()
+    const window = session.getWindow()
     if (
       event.sender !== window?.webContents ||
       event.senderFrame !== window.webContents.mainFrame ||
@@ -143,7 +136,7 @@ export const registerIPC = (
       typeof preserveRecovery !== 'boolean'
     )
       return
-    setDirty(dirty, preserveRecovery)
+    session.setDirty(dirty, preserveRecovery)
   })
 }
 

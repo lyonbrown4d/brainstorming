@@ -1,12 +1,12 @@
+import { requireDesktopAPI } from '@renderer/lib/desktop'
 import { useEffect, useState } from 'react'
 import type { WindowState } from '@shared/window'
 
 /** Synchronize native focus/fullscreen without putting window state into the document. */
 export const useWindowChrome = () => {
-  const bridge = window.trelyx
+  const bridge = requireDesktopAPI()
   const [state, setState] = useState<WindowState>({ focused: true, fullScreen: false })
   useEffect(() => {
-    if (!bridge) return
     let alive = true
     let changed = false
     const unsubscribe = bridge.onWindowStateChanged((next) => {
@@ -26,5 +26,5 @@ export const useWindowChrome = () => {
       unsubscribe()
     }
   }, [bridge])
-  return { ...state, platform: bridge?.platform ?? 'browser' }
+  return { ...state, platform: bridge.platform }
 }

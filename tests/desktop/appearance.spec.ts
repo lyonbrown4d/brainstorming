@@ -1,3 +1,4 @@
+import { seedChinese } from '@tests/electron/preferences'
 import { _electron as electron, expect, test } from '@playwright/test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -6,6 +7,7 @@ import { mainWindow } from '@tests/desktop/windows'
 
 test('Electron系统主题事件自动更新；手动外观重启后保留并不受系统覆盖', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'trelyx-appearance-'))
+  await seedChinese(directory)
   let app = await electron.launch({
     args: ['.', `--user-data-dir=${directory}`],
     colorScheme: null,

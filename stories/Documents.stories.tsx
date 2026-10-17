@@ -3,15 +3,14 @@ import { expect, userEvent, within, waitFor } from 'storybook/test'
 import { applyCommand, createExampleDocument } from '@core'
 import { App } from '@renderer/App'
 import { useEditor } from '@renderer/state/editor'
-import { clearBrowserRecovery } from '@renderer/state/recovery'
+import { openCanvasProperties, openTopicProperties } from '@stories/properties'
 import { defaultTopicFilters, useTopicFilters } from '@renderer/components/documents/filterTopics'
 
 const meta = {
   title: 'Trelyx/布局模板与演示',
   component: App,
   parameters: { layout: 'fullscreen' },
-  beforeEach: async () => {
-    await clearBrowserRecovery()
+  beforeEach: () => {
     let document = applyCommand(createExampleDocument(), {
       type: 'setDocumentSettings',
       settings: { theme: 'ocean' },
@@ -46,8 +45,8 @@ export const EditableTemplate: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement),
       page = within(canvasElement.ownerDocument.body)
-    await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
-    await userEvent.click(page.getByRole('button', { name: '模板' }))
+    const panel = await openCanvasProperties(canvasElement, '模板')
+    await userEvent.click(panel.getByRole('button', { name: '模板' }))
     const dialog = within(await page.findByRole('dialog', { name: '从模板创建' }))
     await userEvent.click(dialog.getByRole('button', { name: /学习笔记/ }))
     await waitFor(async () => {
@@ -75,12 +74,10 @@ export const SemanticFilter: Story = {
 export const TopicMarkers: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const page = within(canvasElement.ownerDocument.body)
     await userEvent.click(canvas.getByTestId('topic-vision'))
-    await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
-    await userEvent.click(canvas.getByRole('button', { name: '图标与任务标记' }))
-    await userEvent.click(page.getByRole('button', { name: '优先级 2' }))
-    await userEvent.click(page.getByRole('button', { name: '星标' }))
+    const panel = await openTopicProperties(canvasElement)
+    await userEvent.click(panel.getByRole('button', { name: '优先级 2' }))
+    await userEvent.click(panel.getByRole('button', { name: '星标' }))
     await expect(canvas.getByTestId('topic-vision')).toHaveTextContent('P2')
     await expect(within(canvas.getByTestId('topic-vision')).getByLabelText('星标')).toBeVisible()
   },

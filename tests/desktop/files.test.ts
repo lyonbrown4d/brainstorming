@@ -7,7 +7,13 @@ import { encodeTrelyx } from '@formats/trelyx'
 import { decodeFile } from '@formats'
 import { zipSync, strToU8 } from 'fflate'
 import { OpenFileRequests } from '@main/openFiles'
-import { atomicWrite, DocumentFiles, MAX_FILE_BYTES } from '@main/files'
+import { atomicWrite, type DocumentFiles, MAX_FILE_BYTES } from '@main/files'
+import {
+  documentFiles,
+  closeDocumentFiles,
+  recoveryArchive,
+  recoveryIndexFor,
+} from '@tests/fixtures/files'
 
 let directory: string
 let files: DocumentFiles
@@ -16,10 +22,11 @@ const contents = serializeWorkbook(workbook)
 
 beforeEach(async () => {
   directory = await mkdtemp(join(tmpdir(), 'trelyx-files-'))
-  files = new DocumentFiles(join(directory, 'application'))
+  files = documentFiles(join(directory, 'application'))
   await files.initialize()
 })
 afterEach(async () => {
+  await closeDocumentFiles()
   await rm(directory, { recursive: true, force: true })
 })
 
@@ -28,7 +35,7 @@ describe('桌面文件服务', () => {
     const path = files.authorizeSelected(join(directory, '导图.trelyx'))
     await files.save(path, contents)
     expect(await files.openSelected(path)).toEqual({ path, contents, warnings: [] })
-    const restarted = new DocumentFiles(join(directory, 'application'))
+    const restarted = documentFiles(join(directory, 'application'))
     await restarted.initialize()
     expect(restarted.getRecentFiles()).toEqual([{ path, name: '导图.trelyx' }])
     expect(await restarted.openRecent(path)).toEqual({ path, contents, warnings: [] })
@@ -75,7 +82,10 @@ describe('桌面文件服务', () => {
   })
 
   it('损坏恢复文件明确报错并保留文件供排查', async () => {
-    const path = join(directory, 'application', 'recovery-v1.trelyx')
+    await files.writeRecovery(contents)
+    const entry = (await recoveryIndexFor(files).read())[0]
+    if (!entry) throw new Error('Missing recovery fixture')
+    const path = join(directory, 'application', 'recovery-v2', entry.fileName)
     await writeFile(path, 'broken')
     await expect(files.readRecovery()).rejects.toThrow('恢复文件无法读取')
     expect(await readFile(path, 'utf8')).toBe('broken')
@@ -114,7 +124,7 @@ describe('桌面文件服务', () => {
     await writeFile(join(directory, 'application', 'recovery.trelyx'), contents)
     expect(await files.readRecovery()).toBeNull()
     await files.writeRecovery(contents)
-    const bytes = await readFile(join(directory, 'application', 'recovery-v1.trelyx'))
+    const bytes = await recoveryArchive(join(directory, 'application'), files)
     expect(bytes).toEqual(Buffer.from(encodeTrelyx(workbook)))
   })
 

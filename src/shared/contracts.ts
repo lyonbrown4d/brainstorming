@@ -1,3 +1,4 @@
+import type { LanguageAPI } from '@shared/language'
 import type { DesktopPlatform, WindowState } from '@shared/window'
 import type { DocumentAsset } from '@core'
 import type { FileSecurityAPI } from '@shared/fileSecurity'
@@ -6,6 +7,7 @@ import type { MCPAPI } from '@shared/mcp'
 import type { ExportRequest } from '@shared/exports'
 
 export type MenuAction =
+  | 'closeTab'
   | 'new'
   | 'open'
   | 'save'
@@ -17,6 +19,7 @@ export type MenuAction =
   | 'actualSize'
   | 'centerRoot'
 export interface OpenedDocument {
+  recoveryId?: string
   path: string | null
   contents: string
   sourcePath?: string
@@ -35,7 +38,7 @@ export interface SaveRequest {
   suggestedName: string
   password?: string | null
 }
-export interface DesktopAPI extends FileSecurityAPI, AIAPI, MCPAPI {
+export interface DesktopAPI extends FileSecurityAPI, AIAPI, MCPAPI, LanguageAPI {
   readonly platform: DesktopPlatform
   getWindowState(): Promise<WindowState>
   setAppearance(theme: 'light' | 'dark'): Promise<void>

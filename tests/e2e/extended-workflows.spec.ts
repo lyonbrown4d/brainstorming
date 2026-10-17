@@ -1,5 +1,7 @@
+import { openDocumentTabs } from '@tests/e2e/documents'
+import { prepareNativeSave, prepareNativeOpen } from '@tests/electron/native-files'
 import { completeDocumentCreation, openExample } from '@tests/e2e/workspace'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
 import { importXmind } from '@formats/xmind'
 import { openDock, dockAction } from '@tests/e2e/dock'
@@ -26,10 +28,10 @@ test('完整导图可导出图片、PDF、大纲和XMind，超出当前视口的
   ] as const) {
     await dialog.getByRole('combobox', { name: '导出格式', exact: true }).click()
     await page.getByRole('option', { name: label, exact: true }).click()
-    const download = page.waitForEvent('download')
+    const download = await prepareNativeSave(page)
     await dialog.getByRole('button', { name: '导出文件', exact: true }).click()
-    const file = await download
-    expect(file.suggestedFilename()).toMatch(new RegExp(`\\.${extension}$`))
+    const file = download
+    expect((await file.path()).split('/').at(-1)).toMatch(new RegExp(`\\.${extension}$`))
     const path = await file.path()
     if (!path) throw new Error('没有生成导出文件')
     const bytes = await readFile(path)
@@ -77,11 +79,13 @@ test('跨Sheet查找、当前Sheet批量替换可整次撤销', async ({ page })
     .click()
   await page.keyboard.press('Escape')
   await expect(
-    page.getByRole('tab', { name: '用户研究', selected: true, exact: true }),
+    page
+      .getByRole('tablist', { name: '文档画布', exact: true })
+      .getByRole('tab', { name: '用户研究', selected: true, exact: true }),
   ).toBeVisible()
 })
 
-test('密码保护的浏览器文件保存、错误重试、取消与重新解锁', async ({ page }) => {
+test('密码保护的原生文件保存、错误重试、取消与重新解锁', async ({ page }) => {
   page.on('dialog', (dialog) => dialog.accept())
   await openExample(page)
   await openDock(page)
@@ -92,21 +96,26 @@ test('密码保护的浏览器文件保存、错误重试、取消与重新解�
   await settings.getByRole('button', { name: '启用密码', exact: true }).click()
   await expect(settings).toBeHidden()
   await page.keyboard.press('Escape')
-  const download = page.waitForEvent('download')
+  const download = await prepareNativeSave(page)
   await fileAction(page, '保存导图')
-  const downloaded = await download
+  const downloaded = download
   const saved = await downloaded.path()
   if (!saved) throw new Error('没有保存加密文件')
   const bytes = await readFile(saved)
   expect(bytes.includes(Buffer.from('产品规划'))).toBe(false)
   await fileAction(page, '新建导图')
+  // Close the saved encrypted tab before testing a fresh unlock; duplicate opens reuse it.
+  await (
+    await openDocumentTabs(page)
+  )
+    .getByRole('button', { name: /^关闭导图 / })
+    .first()
+    .click()
   const open = async () => {
-    const chooser = page.waitForEvent('filechooser')
+    const chooser = await prepareNativeOpen(page)
     await fileAction(page, '打开导图')
-    await (
-      await chooser
-    ).setFiles({
-      name: downloaded.suggestedFilename(),
+    await chooser.selectFile({
+      name: saved.split('/').at(-1) ?? 'protected.trelyx',
       mimeType: 'application/vnd.trelyx+zip',
       buffer: bytes,
     })

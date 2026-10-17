@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { DialogContent } from '@renderer/components/DialogContent'
 import type { TopicImage as TopicImageData } from '@core'
 import { Expand } from 'lucide-react'
@@ -12,25 +14,27 @@ import {
 } from '@renderer/components/ui/dialog'
 
 export const TopicImagePreview = ({ image }: { image: TopicImageData }) => {
+  const { translate } = useMessages()
+
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Button
           variant="ghost"
           className="h-[31px] gap-[5px] px-[9px] text-xs"
-          aria-label="预览图片"
+          aria-label={translate('previewImage')}
         >
           <Expand size={14} />
-          预览
+          {translate('preview')}
         </Button>
       </DialogTrigger>
       <DialogContent
         className="topic-image-dialog sm:max-w-[min(720px,calc(100vw-48px))]"
-        closeLabel="关闭图片预览"
+        closeLabel={translate('closeImagePreview')}
       >
         <DialogHeader>
-          <DialogTitle>主题图片</DialogTitle>
-          <DialogDescription>图片随导图文件保存，可在主题面板中替换或移除。</DialogDescription>
+          <DialogTitle>{translate('topicImage')}</DialogTitle>
+          <DialogDescription>{translate('imagesAreSavedWithTheMapReplace')}</DialogDescription>
         </DialogHeader>
         <TopicImage
           image={image}

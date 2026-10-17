@@ -1,3 +1,4 @@
+import { seedChinese } from '@tests/electron/preferences'
 import { mainWindow } from '@tests/desktop/windows'
 import { enterExampleIfHome } from '@tests/e2e/workspace'
 import { _electron as electron, expect, test, type ElectronApplication } from '@playwright/test'
@@ -10,6 +11,7 @@ import { dockAction, openDock } from '@tests/e2e/dock'
 // Local deterministic provider fixture: no external account, API key or internet request.
 test('真实 Electron AI 配置、预览、添加与一次撤销闭环', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'trelyx-ai-desktop-'))
+  await seedChinese(directory)
   const requests: { path: string; authorization: string | undefined; body: string }[] = []
   const server = createServer((request, response) => {
     const chunks: Buffer[] = []
@@ -72,7 +74,7 @@ test('真实 Electron AI 配置、预览、添加与一次撤销闭环', async (
     })
     const address = server.address()
     if (!address || typeof address === 'string') throw new Error('本地 AI fixture 端口不可用')
-    app = await electron.launch({ args: ['.', `--user-data-dir=${directory}`] })
+    app = await electron.launch({ colorScheme: null, args: ['.', `--user-data-dir=${directory}`] })
     const page = await mainWindow(app)
     await enterExampleIfHome(page)
     const errors: string[] = []

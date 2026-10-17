@@ -1,3 +1,4 @@
+import { translate } from '@renderer/i18n'
 import { create } from 'zustand'
 import { truncateSheetName } from '@core/workbook'
 import {
@@ -40,7 +41,7 @@ const editSheets = (command: WorkbookCommand, nextId?: string): void => {
       (workbook.sheets.some((sheet) => sheet.id === current.activeSheetId)
         ? current.activeSheetId
         : workbook.sheets[0]?.id)
-    if (!activeSheetId) throw new Error('工作簿至少需要一个画布')
+    if (!activeSheetId) throw new Error(translate('aWorkbookNeedsAtLeastOneSheet'))
     const sessions = Object.fromEntries(
       workbook.sheets.map((sheet) => [
         sheet.id,
@@ -60,13 +61,15 @@ const editSheets = (command: WorkbookCommand, nextId?: string): void => {
       error: null,
     })
   } catch (error) {
-    state.setError(error instanceof Error ? error.message : '画布操作失败')
+    state.setError(error instanceof Error ? error.message : translate('sheetOperationFailed'))
   }
 }
 export const addDocumentSheet = (document: MindMapDocument): boolean => {
   if (useEditor.getState().busy) return false
   const id = crypto.randomUUID()
-  const name = truncateSheetName(document.title.replace(/[\p{Cc}]/gu, ' ').trim()) || '新画布'
+  const name =
+    truncateSheetName(document.title.replace(/[\p{Cc}]/gu, ' ').trim()) ||
+    translate('newSheetLabel402')
   editSheets(
     { type: 'addSheet', sheet: { id, name, document: { ...document, id: crypto.randomUUID() } } },
     id,
@@ -171,7 +174,9 @@ export const useEditor = create<EditorState>((set, get) => ({
       }
       return true
     } catch (error) {
-      set({ error: error instanceof Error ? error.message : '操作失败，请重试。' })
+      set({
+        error: error instanceof Error ? error.message : translate('operationFailedPleaseRetry'),
+      })
       return false
     }
   },
@@ -256,7 +261,10 @@ export const useEditor = create<EditorState>((set, get) => ({
     while (names.has(`画布 ${index}`)) index += 1
     const name = `画布 ${index}`
     editSheets(
-      { type: 'addSheet', sheet: { id, name, document: createDocument('中心主题', id) } },
+      {
+        type: 'addSheet',
+        sheet: { id, name, document: createDocument(translate('centralTopic'), id) },
+      },
       id,
     )
   },

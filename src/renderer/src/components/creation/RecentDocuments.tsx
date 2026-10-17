@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { BookOpen, File, RefreshCw } from 'lucide-react'
 import { useRecentFiles } from '@renderer/hooks/useRecentFiles'
 import { openDocument } from '@renderer/state/files'
@@ -5,22 +7,24 @@ import { Button } from '@renderer/components/ui/button'
 import { Separator } from '@renderer/components/ui/separator'
 
 export const RecentDocuments = ({ busy, onExample }: { busy: boolean; onExample: () => void }) => {
+  const { translate } = useMessages()
+
   const recent = useRecentFiles()
   return (
     <aside
       className="flex min-w-0 flex-col items-start border-t border-border pt-6 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8"
-      aria-label="最近文件"
+      aria-label={translate('recentFiles')}
     >
-      <h2 className="mb-5 text-lg font-semibold">最近打开</h2>
+      <h2 className="mb-5 text-lg font-semibold">{translate('recentlyOpened')}</h2>
       {recent.isPending && (
         <p role="status" className="text-xs text-muted-foreground">
-          正在读取最近文件…
+          {translate('loadingRecentFiles')}
         </p>
       )}
       {recent.isError && (
         <div className="flex flex-col gap-3">
           <p role="alert" className="text-xs text-muted-foreground">
-            最近文件读取失败。
+            {translate('couldNotLoadRecentFiles')}
           </p>
           <Button
             variant="outline"
@@ -31,7 +35,7 @@ export const RecentDocuments = ({ busy, onExample }: { busy: boolean; onExample:
             }}
           >
             <RefreshCw data-icon="inline-start" />
-            重新读取
+            {translate('retry')}
           </Button>
         </div>
       )}
@@ -43,7 +47,7 @@ export const RecentDocuments = ({ busy, onExample }: { busy: boolean; onExample:
                 key={file.path}
                 variant="ghost"
                 disabled={busy}
-                aria-label={`打开最近文件 ${file.name}`}
+                aria-label={translate('openRecentFileValue0', { value0: file.name })}
                 title={file.path}
                 className="h-20 w-full justify-start gap-3 px-2 text-left"
                 onClick={() => void openDocument(file.path)}
@@ -54,12 +58,12 @@ export const RecentDocuments = ({ busy, onExample }: { busy: boolean; onExample:
             ))}
           </div>
         ) : (
-          <p className="text-xs leading-6 text-muted-foreground">暂无最近文件</p>
+          <p className="text-xs leading-6 text-muted-foreground">{translate('noRecentFiles')}</p>
         ))}
       <Separator className="my-6" />
       <Button type="button" variant="ghost" disabled={busy} onClick={onExample}>
         <BookOpen data-icon="inline-start" />
-        探索示例
+        {translate('exploreExample')}
       </Button>
     </aside>
   )

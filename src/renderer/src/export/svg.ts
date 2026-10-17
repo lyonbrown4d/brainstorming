@@ -1,3 +1,4 @@
+import { translate } from '@renderer/i18n'
 import { DOMImplementation, XMLSerializer, type Element } from '@xmldom/xmldom'
 import type { MindMapDocument, Topic } from '@core'
 import { layoutDocument, measureTopicImage } from '@layout'
@@ -32,9 +33,7 @@ export const checkRasterSize = (width: number, height: number): void => {
     height > EXPORT_LIMITS.dimension ||
     width * height > EXPORT_LIMITS.pixels
   )
-    throw new Error(
-      '导图过大，图片单边最多 16384 像素、总计最多 4000 万像素；请导出 SVG 或降低图片倍率',
-    )
+    throw new Error(translate('mapIsTooLargeMaximum16384Pixels'))
 }
 const wrappedTitle = (title: string, fontSize: number, maxWidth: number): string[] => {
   const lines = ['']
@@ -73,7 +72,7 @@ export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = fal
   const height = Math.ceil(Math.max(...bounds.map((node) => node.y + node.height)) - minY + margin)
   const xml = new DOMImplementation().createDocument('http://www.w3.org/2000/svg', 'svg', null)
   const root = xml.documentElement
-  if (!root) throw new Error('无法创建 SVG 文档')
+  if (!root) throw new Error(translate('couldNotCreateSvgDocument'))
   const element = (
     name: string,
     attrs: Record<string, string | number>,
@@ -171,7 +170,7 @@ export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = fal
     let contentY = (topic.id === source.rootId ? 14 : 10) + markerLayout.contentY
     if (topic.image) {
       const asset = source.assets?.[topic.image.assetId]
-      if (!asset) throw new Error('导出图片资源缺失')
+      if (!asset) throw new Error(translate('exportImageResourceIsMissing'))
       imageDimensions(asset)
       const size = measureTopicImage(topic.image)
       element(
@@ -211,9 +210,9 @@ export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = fal
         ? `${metadata.task.done ? '✓' : '○'} ${metadata.task.progress ?? 0}%${metadata.task.priority ? ` P${metadata.task.priority}` : ''}`
         : '',
       metadata?.labels?.join('、') ?? '',
-      metadata?.link ? '链接' : '',
-      metadata?.equation ? '公式' : '',
-      metadata?.audioAssetId ? '音频' : '',
+      metadata?.link ? translate('link') : '',
+      metadata?.equation ? translate('formula') : '',
+      metadata?.audioAssetId ? translate('audio') : '',
     ]
       .filter(Boolean)
       .join(' · ')
@@ -241,8 +240,10 @@ export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = fal
         group,
       ).appendChild(xml.createTextNode(xmlText(badge)))
     const details = [
-      topic.notes ? '备注' : '',
-      topic.attachments?.length ? `${topic.attachments.length} 个附件` : '',
+      topic.notes ? translate('notes') : '',
+      topic.attachments?.length
+        ? translate('value0Attachments', { value0: topic.attachments.length })
+        : '',
       !includeCollapsed && topic.collapsed && topic.children.length
         ? `+${topic.children.length}`
         : '',
@@ -266,6 +267,6 @@ export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = fal
   drawExportAnnotations(xml, root, source, layout.nodes, annotations, 'overlay')
   const svg = new XMLSerializer().serializeToString(xml)
   if (new TextEncoder().encode(svg).length > EXPORT_LIMITS.svgBytes)
-    throw new Error('导出 SVG 超过 40 MiB，请拆分画布')
+    throw new Error(translate('exportedSvgExceeds40MibSplitThe'))
   return { svg, width, height }
 }

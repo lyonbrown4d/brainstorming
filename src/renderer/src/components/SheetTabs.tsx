@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useId, useState } from 'react'
 import { LayoutGroup } from 'motion/react'
 import { Tabs } from 'radix-ui'
@@ -12,6 +14,8 @@ import '@renderer/styles/sheets.css'
 import { beginCreation } from '@renderer/state/creation'
 
 export const SheetTabs = () => {
+  const { translate } = useMessages()
+
   const layoutId = useId()
   const sheets = useEditor((state) => state.workbook.sheets)
   const activeId = useEditor((state) => state.activeSheetId)
@@ -21,7 +25,7 @@ export const SheetTabs = () => {
   return (
     <div className="sheet-bar flex h-12 min-w-0 flex-1 items-center bg-background text-muted-foreground">
       <span className="sheet-bar-label flex h-5 shrink-0 items-center border-r border-border px-5 text-xs">
-        画布
+        {translate('sheet')}
       </span>
       <DndContext
         sensors={sensors}
@@ -39,7 +43,10 @@ export const SheetTabs = () => {
             useEditor.getState().switchSheet(id)
           }}
         >
-          <Tabs.List className="sheet-tab-list flex h-12 w-max min-w-full" aria-label="文档画布">
+          <Tabs.List
+            className="sheet-tab-list flex h-12 w-max min-w-full"
+            aria-label={translate('workbookSheets')}
+          >
             <LayoutGroup id={layoutId}>
               <SortableContext
                 items={sheets.map((sheet) => sheet.id)}
@@ -65,8 +72,8 @@ export const SheetTabs = () => {
         size="icon"
         type="button"
         className="sheet-add mx-1 size-8 shrink-0 rounded-lg p-0 text-muted-foreground hover:text-primary"
-        aria-label="新建画布"
-        title="新建画布"
+        aria-label={translate('newSheet')}
+        title={translate('newSheet')}
         disabled={busy}
         onClick={() => {
           beginCreation('sheet')

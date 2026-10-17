@@ -1,3 +1,4 @@
+import { translate } from '@renderer/i18n'
 import {
   applyCommand,
   createDocument,
@@ -21,7 +22,7 @@ export const captureAISnapshot = (): AISnapshot => {
   const state = useEditor.getState()
   state.commitDraft()
   const current = useEditor.getState()
-  if (current.busy || current.editingId) throw new Error('请先完成当前编辑再使用 AI')
+  if (current.busy || current.editingId) throw new Error(translate('finishEditingBeforeUsingAi'))
   return {
     workbook: current.workbook,
     sheetId: current.activeSheetId,
@@ -30,21 +31,21 @@ export const captureAISnapshot = (): AISnapshot => {
 }
 export const aiContext = (snapshot: AISnapshot, includeNotes: boolean): AIContextTopic[] => {
   const document = snapshot.workbook.sheets.find((sheet) => sheet.id === snapshot.sheetId)?.document
-  if (!document) throw new Error('当前画布不存在')
+  if (!document) throw new Error(translate('currentSheetDoesNotExist'))
   const result: AIContextTopic[] = []
   const pending = [{ id: snapshot.targetId, depth: 0 }]
   while (pending.length) {
     const item = pending.pop()
     if (!item) break
     const topic = document.topics[item.id]
-    if (!topic) throw new Error('选定分支不存在')
+    if (!topic) throw new Error(translate('selectedBranchDoesNotExist'))
     result.push({
       title: topic.title,
       depth: item.depth,
       ...(includeNotes && topic.notes ? { notes: topic.notes } : {}),
     })
     if (result.length > AI_LIMITS.topics || JSON.stringify(result).length > AI_LIMITS.context)
-      throw new Error('选定分支超过 200 个主题或 12000 字符，请选择更小的分支')
+      throw new Error(translate('selectASmallerBranchMaximum200Topics'))
     pending.push(...topic.children.map((id) => ({ id, depth: item.depth + 1 })).reverse())
   }
   return result
@@ -82,7 +83,7 @@ export const applyAIResult = (
     state.editingId ||
     state.busy
   )
-    throw new Error('生成期间文档或画布已改变，请重新生成后再应用')
+    throw new Error(translate('theDocumentChangedDuringGenerationGenerateAgain'))
   const generated = aiTreeDocument(tree)
   if (mode === 'generate') {
     validateBoundedWorkbook({
@@ -94,7 +95,8 @@ export const applyAIResult = (
     })
     return addSheet(generated)
   }
-  if (!state.history.document.topics[snapshot.targetId]) throw new Error('生成目标主题已不存在')
+  if (!state.history.document.topics[snapshot.targetId])
+    throw new Error(translate('targetTopicNoLongerExists'))
   const clipboard = createTopicClipboard(generated, [generated.rootId])
   const command = {
     type: 'pasteTopics' as const,

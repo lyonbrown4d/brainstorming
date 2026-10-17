@@ -16,6 +16,8 @@ export interface FileSecurityAPI {
   getFileSecurity(documentId: string): Promise<FileSecurityState>
   setFilePassword(documentId: string, password: string | null): Promise<FileSecurityState>
   readLockedRecovery(): Promise<OpenedDocument | null>
+  readWorkspaceRecovery(): Promise<readonly OpenedDocument[]>
+  writeWorkspaceRecovery(contents: readonly string[]): Promise<void>
   listDocumentBackups(documentId: string): Promise<DocumentBackup[]>
   restoreDocumentBackup(id: string): Promise<OpenedDocument>
 }

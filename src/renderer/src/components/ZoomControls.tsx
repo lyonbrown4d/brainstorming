@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { canvasFitPadding } from '@renderer/hooks/useWorkbenchInsets'
 import { useReducedMotion } from 'motion/react'
 import { useReactFlow, useViewport } from '@xyflow/react'
@@ -7,19 +9,21 @@ import { useEditor } from '@renderer/state/editor'
 import type { TopicFlowNode } from '@renderer/components/TopicNode'
 
 export const ZoomControls = () => {
+  const { translate } = useMessages()
+
   const reduceMotion = useReducedMotion()
   const flow = useReactFlow<TopicFlowNode>()
   const { zoom } = useViewport()
   return (
     <div
       className="canvas-controls flex shrink-0 items-center rounded-lg border border-border bg-background p-0.5 text-muted-foreground [&_button]:size-7"
-      aria-label="画布视图"
+      aria-label={translate('canvasView')}
     >
       <Button
         variant="ghost"
         size="icon"
-        title="缩小"
-        aria-label="缩小"
+        title={translate('zoomOut')}
+        aria-label={translate('zoomOut')}
         onClick={() => void flow.zoomOut({ duration: reduceMotion ? 0 : 160 })}
       >
         <Minus size={16} />
@@ -30,8 +34,8 @@ export const ZoomControls = () => {
       <Button
         variant="ghost"
         size="icon"
-        title="放大"
-        aria-label="放大"
+        title={translate('zoomIn')}
+        aria-label={translate('zoomIn')}
         onClick={() => void flow.zoomIn({ duration: reduceMotion ? 0 : 160 })}
       >
         <Plus size={16} />
@@ -40,8 +44,8 @@ export const ZoomControls = () => {
       <Button
         variant="ghost"
         size="icon"
-        title="适应画布"
-        aria-label="适应画布"
+        title={translate('fitCanvas')}
+        aria-label={translate('fitCanvas')}
         onClick={() =>
           void flow.fitView({
             padding: canvasFitPadding(),
@@ -55,8 +59,8 @@ export const ZoomControls = () => {
       <Button
         variant="ghost"
         size="icon"
-        title="聚焦选中主题"
-        aria-label="聚焦选中主题"
+        title={translate('focusSelectedTopic')}
+        aria-label={translate('focusSelectedTopic')}
         onClick={() => {
           const node = flow.getNode(useEditor.getState().selectedId)
           if (node)

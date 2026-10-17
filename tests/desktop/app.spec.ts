@@ -1,3 +1,6 @@
+import { openDocumentTabs } from '@tests/e2e/documents'
+import { nativeRecoveryContents, seedRecovery } from '@tests/electron/recovery'
+import { seedChinese } from '@tests/electron/preferences'
 import { mainWindow } from '@tests/desktop/windows'
 import { completeDocumentCreation } from '@tests/e2e/workspace'
 import { _electron as electron, expect, test } from '@playwright/test'
@@ -12,11 +15,13 @@ import { imageBase64, attachmentBytes } from '@tests/fixtures/content'
 
 test('生产 Electron 启动、sandbox preload 和恢复闭环', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'trelyx-desktop-'))
-  await writeFile(
-    join(directory, 'recovery-v1.trelyx'),
-    encodeTrelyx(createWorkbook(createDocument('桌面恢复验证'))),
-  )
-  const app = await electron.launch({ args: ['.', `--user-data-dir=${directory}`] })
+  await seedChinese(directory)
+  const recovered = createWorkbook(createDocument('桌面恢复验证'))
+  await seedRecovery(directory, recovered.id, encodeTrelyx(recovered))
+  const app = await electron.launch({
+    colorScheme: null,
+    args: ['.', `--user-data-dir=${directory}`],
+  })
   try {
     const page = await mainWindow(app)
     page.on('dialog', (dialog) => {
@@ -56,11 +61,9 @@ test('生产 Electron 启动、sandbox preload 和恢复闭环', async () => {
     await invokeEditMenu('重做')
     await expect(input).toHaveText('原生桌面编辑继续')
     await page.locator('.react-flow__pane').click({ position: { x: 20, y: 20 } })
-    await expect
-      .poll(async () => page.evaluate(() => window.trelyx?.readRecovery()))
-      .toContain('原生桌面编辑')
-    await page.getByRole('button', { name: '样式面板', exact: true }).click()
-    const panel = page.getByRole('complementary', { name: '主题面板', exact: true })
+    await expect.poll(() => nativeRecoveryContents(directory)).toContain('原生桌面编辑')
+    await page.getByRole('button', { name: '属性面板', exact: true }).click()
+    const panel = page.getByRole('complementary', { name: '属性面板', exact: true })
     await panel.getByRole('textbox', { name: '主题备注' }).fill('桌面备注\n第二行')
     const imagePath = join(directory, '桌面图片.png')
     const attachmentPath = join(directory, '资料.bin')
@@ -122,15 +125,19 @@ test('生产 Electron 启动、sandbox preload 和恢复闭环', async () => {
 
 test('系统传入的文件在启动和 macOS 打开事件中使用相同打开流程', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'trelyx-file-open-'))
+  await seedChinese(directory)
   const firstPath = join(directory, 'first.trelyx')
   const secondPath = join(directory, 'second.xmind')
   const originalXmind = modernXmind()
   await Promise.all([
     writeFile(firstPath, encodeTrelyx(createWorkbook(createDocument('启动文件')))),
     writeFile(secondPath, originalXmind),
-    writeFile(join(directory, 'recovery-v1.trelyx'), 'damaged recovery'),
   ])
-  const app = await electron.launch({ args: ['.', `--user-data-dir=${directory}`, firstPath] })
+  const damagedRecovery = await seedRecovery(directory, 'damaged-workbook', 'damaged recovery')
+  const app = await electron.launch({
+    colorScheme: null,
+    args: ['.', `--user-data-dir=${directory}`, firstPath],
+  })
   try {
     const page = await mainWindow(app)
     await expect(page.getByTestId('topic-root')).toContainText('启动文件')
@@ -143,19 +150,15 @@ test('系统传入的文件在启动和 macOS 打开事件中使用相同打开�
     await page.getByTestId('topic-root').dblclick()
     await page.getByRole('textbox', { name: '编辑主题标题' }).fill('尚未保存')
     await page.locator('.react-flow__pane').click({ position: { x: 20, y: 20 } })
-    const declined = page.waitForEvent('dialog')
+    const tabs = await openDocumentTabs(page)
     await app.evaluate(({ app }, path) => {
       app.emit('second-instance', {}, ['electron', path], '')
     }, firstPath)
-    await (await declined).dismiss()
-    await expect(page.getByTestId('topic-root')).toContainText('尚未保存')
-    const accepted = page.waitForEvent('dialog')
-    await app.evaluate(({ app }, path) => {
-      app.emit('second-instance', {}, ['electron', path], '')
-    }, firstPath)
-    await (await accepted).accept()
     await expect(page.getByTestId('topic-root')).toContainText('启动文件')
-    expect(await readFile(join(directory, 'recovery-v1.trelyx'), 'utf8')).toBe('damaged recovery')
+    await expect(tabs.getByRole('tab')).toHaveCount(2)
+    await tabs.getByRole('tab').last().click()
+    await expect(page.getByTestId('topic-root')).toContainText('尚未保存')
+    expect(await readFile(damagedRecovery, 'utf8')).toBe('damaged recovery')
   } finally {
     app.process().kill('SIGKILL')
     await rm(directory, { recursive: true, force: true })

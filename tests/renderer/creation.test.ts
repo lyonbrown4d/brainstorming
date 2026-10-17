@@ -1,3 +1,4 @@
+import { useDocumentTabs, switchDocumentTab } from '@renderer/state/documentTabs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDocument } from '@core'
 import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
@@ -10,23 +11,20 @@ import {
 } from '@renderer/state/creation'
 import { isDirty, useEditor } from '@renderer/state/editor'
 import { newDocument } from '@renderer/state/files'
-import {
-  browserPasswordFor,
-  resetBrowserPassword,
-  setBrowserPassword,
-} from '@renderer/state/password'
+import { resetFileSecurityState, useFileSecurityState } from '@renderer/state/password'
 import { enterWorkspaceEditor, useWorkspace } from '@renderer/state/workspace'
 import { useSearch } from '@renderer/state/search'
 
 const discardPrompt = vi.fn(() => true)
 const request = { title: ' 新的计划 ', layout: 'brace-left', template: 'blank' } as const
 beforeEach(() => {
+  useDocumentTabs.setState({ tabs: [], activeId: null, recovery: [] })
   discardPrompt.mockReset().mockReturnValue(true)
   vi.stubGlobal('window', { confirm: discardPrompt })
   useEditor.getState().replace(createDocument('已有导图'), '/existing.trelyx')
   useEditor.setState({ busy: false })
   enterWorkspaceEditor()
-  resetBrowserPassword()
+  resetFileSecurityState()
 })
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -76,21 +74,29 @@ describe('full-page document and sheet creation', () => {
     expect(useEditor.getState().workbook).toBe(before)
   })
 
-  it('retains the guide and dirty document when discard is declined at creation time', () => {
+  it('creates a new tab without discarding the dirty document when discard would be declined', () => {
     dirty()
     beginCreation('document')
     const before = useEditor.getState().workbook
     discardPrompt.mockReturnValue(false)
-    expect(createFromRequest(request)).toBe(false)
-    expect(discardPrompt).toHaveBeenCalledOnce()
-    expect(useWorkspace.getState().screen).toBe('create-document')
+    expect(createFromRequest(request)).toBe(true)
+    expect(discardPrompt).not.toHaveBeenCalled()
+    expect(useEditor.getState().history.document.title).toBe('新的计划')
+    expect(useWorkspace.getState().screen).toBe('editor')
+    const original = useDocumentTabs
+      .getState()
+      .tabs.find((tab) => tab.editor.workbook.id === before.id)
+    expect(original?.editor.workbook).toBe(before)
+    if (!original) throw new Error('Original document tab was lost')
+    switchDocumentTab(original.id)
     expect(useEditor.getState().workbook).toBe(before)
+    expect(useEditor.getState().path).toBe('/existing.trelyx')
     expect(isDirty()).toBe(true)
   })
 
   it('creates a trimmed title with the selected structure, no seed history and a fresh password state', () => {
     const oldId = useEditor.getState().workbook.id
-    setBrowserPassword(oldId, 'creation-password')
+    useFileSecurityState.setState({ documentId: oldId, encrypted: true })
     dirty()
     beginCreation('document')
     expect(createFromRequest({ ...request, template: 'project' })).toBe(true)
@@ -102,11 +108,15 @@ describe('full-page document and sheet creation', () => {
     expect(state.structurePast).toHaveLength(0)
     expect(state.path).toBeNull()
     expect(isDirty()).toBe(true)
-    expect(browserPasswordFor(state.workbook.id)).toBeNull()
-    expect(browserPasswordFor(oldId)).toBeNull()
+    expect(useFileSecurityState.getState()).toMatchObject({ documentId: null, encrypted: false })
     expect(useWorkspace.getState().screen).toBe('editor')
     expect(createFromRequest(request)).toBe(false)
     expect(useEditor.getState().workbook).toBe(state.workbook)
+    const original = useDocumentTabs.getState().tabs.find((tab) => tab.editor.workbook.id === oldId)
+    expect(original?.security).toMatchObject({ documentId: oldId, encrypted: true })
+    if (!original) throw new Error('Protected document tab was lost')
+    switchDocumentTab(original.id)
+    expect(useFileSecurityState.getState()).toMatchObject({ documentId: oldId, encrypted: true })
   })
 
   it.each(['document', 'sheet'] as const)('uses the default blank %s name', (mode) => {
@@ -120,7 +130,7 @@ describe('full-page document and sheet creation', () => {
   it('adds a Sheet in one undo with independent structure, preserving path, password and native reopen values', () => {
     useEditor.getState().command({ type: 'setDocumentSettings', settings: { layout: 'tree-up' } })
     const original = useEditor.getState().workbook
-    setBrowserPassword(original.id, 'creation-password')
+    useFileSecurityState.setState({ documentId: original.id, encrypted: true })
     beginCreation('sheet')
     expect(createFromRequest({ ...request, layout: 'timeline-vertical' })).toBe(true)
     const state = useEditor.getState()
@@ -131,7 +141,10 @@ describe('full-page document and sheet creation', () => {
     expect(state.history.past).toHaveLength(0)
     expect(state.structurePast).toHaveLength(1)
     expect(state.path).toBe('/existing.trelyx')
-    expect(browserPasswordFor(original.id)).toBe('creation-password')
+    expect(useFileSecurityState.getState()).toMatchObject({
+      documentId: original.id,
+      encrypted: true,
+    })
     expect(decodeTrelyx(encodeTrelyx(state.workbook))).toEqual(state.workbook)
     state.undo()
     expect(useEditor.getState().workbook).toEqual(original)
@@ -186,7 +199,7 @@ describe('full-page document and sheet creation', () => {
     expect(useEditor.getState().editingId).toBe('root')
   })
 
-  it('explores the example from initial Home without a discard prompt, then protects real dirty work', () => {
+  it('explores the example from initial Home and reuses its dirty tab without discarding edits', () => {
     useWorkspace.setState({ screen: 'home', hasDocument: false })
     dirty()
     discardPrompt.mockReturnValue(false)
@@ -197,8 +210,10 @@ describe('full-page document and sheet creation', () => {
     dirty()
     const before = useEditor.getState().workbook
     expect(showWorkspaceHome()).toBe(true)
-    expect(exploreExample()).toBe(false)
+    expect(exploreExample()).toBe(true)
+    expect(discardPrompt).not.toHaveBeenCalled()
     expect(useEditor.getState().workbook).toBe(before)
-    expect(useWorkspace.getState().screen).toBe('home')
+    expect(useDocumentTabs.getState().tabs).toHaveLength(1)
+    expect(useWorkspace.getState().screen).toBe('editor')
   })
 })

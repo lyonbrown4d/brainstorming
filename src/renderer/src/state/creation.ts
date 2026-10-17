@@ -1,10 +1,10 @@
+import { translate } from '@renderer/i18n'
 import { applyCommand, createDocument, validateDocument, type MindMapDocument } from '@core'
 import type { CreationRequest } from '@renderer/components/creation/CreationGallery'
 import { createTemplate } from '@renderer/components/documents/templates'
-import { confirmDiscard } from '@renderer/state/documentDiscard'
+import { openDocumentTab } from '@renderer/state/documentTabs'
 import { addDocumentSheet, useEditor } from '@renderer/state/editor'
 import { exampleWorkbook } from '@renderer/state/example'
-import { resetBrowserPassword } from '@renderer/state/password'
 import { useSearch } from '@renderer/state/searchState'
 import { enterWorkspaceEditor, useWorkspace } from '@renderer/state/workspace'
 
@@ -47,10 +47,13 @@ export const showWorkspaceHome = (): boolean => {
 const initialDocument = (request: CreationRequest, sheet: boolean): MindMapDocument => {
   const base =
     request.template === 'blank'
-      ? createDocument(sheet ? '新画布' : '新的想法', crypto.randomUUID())
+      ? createDocument(
+          sheet ? translate('newSheetLabel402') : translate('newIdea'),
+          crypto.randomUUID(),
+        )
       : createTemplate(request.template)
   const title = request.title.trim() || base.title
-  if (title.length > 80) throw new Error('名称不能超过 80 个字符')
+  if (title.length > 80) throw new Error(translate('nameCannotExceed80Characters'))
   const named = applyCommand(base, { type: 'renameTopic', topicId: base.rootId, title })
   const document = applyCommand(named, {
     type: 'setDocumentSettings',
@@ -69,7 +72,7 @@ export const createFromRequest = (request: CreationRequest): boolean => {
     sheet &&
     (!workspace.hasDocument || workspace.creationWorkbookId !== useEditor.getState().workbook.id)
   ) {
-    useEditor.getState().setError('当前工作簿已更改，请重新进入新建画布。')
+    useEditor.getState().setError(translate('theWorkbookChangedStartCreatingTheSheet'))
     return false
   }
   try {
@@ -77,23 +80,21 @@ export const createFromRequest = (request: CreationRequest): boolean => {
     if (sheet) {
       if (!addDocumentSheet(document)) return false
     } else {
-      if (workspace.hasDocument && !confirmDiscard()) return false
-      resetBrowserPassword()
-      useEditor.getState().replace(document, null, true)
+      if (!openDocumentTab(document, null, true)) return false
     }
     enterWorkspaceEditor()
     return true
   } catch (error) {
-    useEditor.getState().setError(error instanceof Error ? error.message : '创建失败，请重试。')
+    useEditor
+      .getState()
+      .setError(error instanceof Error ? error.message : translate('creationFailedPleaseRetry'))
     return false
   }
 }
 
 export const exploreExample = (): boolean => {
   if (!commitReady()) return false
-  if (useWorkspace.getState().hasDocument && !confirmDiscard()) return false
-  resetBrowserPassword()
-  useEditor.getState().replace(exampleWorkbook())
+  if (!openDocumentTab(exampleWorkbook())) return false
   enterWorkspaceEditor()
   return true
 }

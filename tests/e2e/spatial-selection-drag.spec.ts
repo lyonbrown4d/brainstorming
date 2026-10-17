@@ -1,10 +1,11 @@
-import { expect, test, type Locator, type Page } from '@playwright/test'
+import { prepareNativeSave, prepareNativeOpen } from '@tests/electron/native-files'
+import { expect, test, type Locator, type Page } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
-import { basename } from 'node:path'
 import { applyCommand, createDocument, createWorkbook } from '@core'
 import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
 import { dockAction } from '@tests/e2e/dock'
 import { openExample } from '@tests/e2e/workspace'
+import { reloadWindow } from '@tests/electron/session'
 
 interface Box {
   x: number
@@ -23,9 +24,9 @@ const bounds = async (locator: Locator): Promise<Box> => {
 }
 
 const save = async (page: Page) => {
-  const pending = page.waitForEvent('download')
+  const pending = await prepareNativeSave(page)
   await page.keyboard.press('ControlOrMeta+s')
-  const path = await (await pending).path()
+  const path = await pending.path()
   if (!path) throw new Error('没有生成保存文件')
   const document = decodeTrelyx(await readFile(path)).sheets[0]?.document
   if (!document) throw new Error('保存文件缺少画布')
@@ -116,7 +117,7 @@ test.beforeEach(async ({ page }) => {
   await openExample(page)
   await page.getByRole('button', { name: '三维视图', exact: true }).click()
   await expect(title(page, 'root')).toBeVisible()
-  const closePanel = page.getByRole('button', { name: '关闭主题面板', exact: true })
+  const closePanel = page.getByRole('button', { name: '关闭属性面板', exact: true })
   if (await closePanel.isVisible()) await closePanel.click()
   await expect(card(page, 'vision-0')).toBeInViewport()
 })
@@ -162,11 +163,11 @@ test('三维选中组一起拖动挂接，二维一次撤销后保存重开恢�
   const restored = await save(page)
   expect(restored.document.topics.vision?.children).toEqual(leaves)
   for (const id of leaves) expect(restored.document.topics.users?.children).not.toContain(id)
-  const chooser = page.waitForEvent('filechooser')
-  await page.getByRole('button', { name: '文件菜单', exact: true }).click()
-  await page.getByRole('menuitem', { name: '打开导图', exact: true }).click()
-  await (await chooser).setFiles(restored.path)
-  await expect(page.locator('.save-status')).toHaveAttribute('title', basename(restored.path))
+  await reloadWindow(page)
+  const chooser = await prepareNativeOpen(page)
+  await page.getByRole('button', { name: '打开本地文件', exact: true }).click()
+  await chooser.selectFile(restored.path)
+  await expect(page.locator('.save-status')).toHaveAttribute('title', restored.path)
   for (const id of leaves) await expect(page.getByTestId(`topic-${id}`)).toBeVisible()
   expect((await save(page)).document.topics).toEqual(restored.document.topics)
 })
@@ -207,17 +208,24 @@ test('三维拖动在 pointercancel 和持键切换画布后取消，不污染�
   expect((await save(page)).document).toEqual(baseline.sheets[0]?.document)
   await beginDrag(page, 'vision')
   await expectSharedPreview(page, ids, originals, false)
-  await page.getByRole('tab', { name: '产品总览', exact: true }).focus()
+  await page
+    .getByRole('tablist', { name: '文档画布', exact: true })
+    .getByRole('tab', { name: '产品总览', exact: true })
+    .focus()
   await page.keyboard.press('ArrowRight')
-  await expect(page.getByRole('tab', { name: '用户研究', exact: true })).toHaveAttribute(
-    'aria-selected',
-    'true',
-  )
+  await expect(
+    page
+      .getByRole('tablist', { name: '文档画布', exact: true })
+      .getByRole('tab', { name: '用户研究', exact: true }),
+  ).toHaveAttribute('aria-selected', 'true')
   await page.mouse.up()
   await expect(page.locator('[data-spatial-selection]')).toHaveCount(0)
   const saved = decodeTrelyx(await readFile((await save(page)).path))
   expect(saved.sheets).toEqual(baseline.sheets)
-  await page.getByRole('tab', { name: '产品总览', exact: true }).click()
+  await page
+    .getByRole('tablist', { name: '文档画布', exact: true })
+    .getByRole('tab', { name: '产品总览', exact: true })
+    .click()
   for (const [index, id] of ids.entries()) {
     const original = originals[index]
     if (original) await expectPosition(card(page, id), original)
@@ -235,17 +243,16 @@ test('三维游离组选区同步平移，只保存二维坐标并可在二维�
       x: 650,
       y: index * 220 - 110,
     })
-  const chooser = page.waitForEvent('filechooser')
+  const chooser = await prepareNativeOpen(page)
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name: '打开导图', exact: true }).click()
-  await (
-    await chooser
-  ).setFiles({
+  const selectedPath = await chooser.selectFile({
     name: 'spatial-floating.trelyx',
     mimeType: 'application/octet-stream',
     buffer: Buffer.from(encodeTrelyx(createWorkbook(document))),
   })
-  await expect(page.locator('.save-status')).toHaveAttribute('title', 'spatial-floating.trelyx')
+  if (!selectedPath) throw new Error('未选择真实游离主题文件')
+  await expect(page.locator('.save-status')).toHaveAttribute('title', selectedPath)
   await page.getByRole('button', { name: '三维视图', exact: true }).click()
   for (const [index, id] of ids.entries()) {
     await expect(card(page, id)).toBeInViewport()

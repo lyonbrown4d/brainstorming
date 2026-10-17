@@ -1,11 +1,12 @@
+import { canvasProperties } from '@tests/e2e/properties'
 import { openExample } from '@tests/e2e/workspace'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page } from '@tests/electron/fixture'
 import { structureOptions } from '@renderer/components/documents/structureOptions'
 import { dockAction } from '@tests/e2e/dock'
 
 const applyStructure = async (page: Page, label: string) => {
-  await dockAction(page, '图形结构')
-  const picker = page.getByRole('dialog', { name: '图形结构', exact: true })
+  await canvasProperties(page, '结构')
+  const picker = page.getByRole('region', { name: '图形结构', exact: true })
   const option = picker.getByRole('button', { name: `应用${label}`, exact: true })
   await option.click()
   await expect(option).toHaveAttribute('aria-pressed', 'true')
@@ -76,7 +77,7 @@ test('新增三维结构均可原位中文编辑并与二维共用一次撤销�
     await dockAction(page, '撤销')
     await page.getByRole('button', { name: '三维视图', exact: true }).click()
     await expect(root).toBeVisible()
-    await dockAction(page, '图形结构')
+    await canvasProperties(page, '结构')
     await expect(page.getByRole('button', { name: `应用${label}`, exact: true })).toHaveAttribute(
       'aria-pressed',
       'true',

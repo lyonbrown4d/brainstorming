@@ -1,13 +1,15 @@
+import type { RecentFilesRepository } from '@main/storage/repositories'
+import type { RecoveryWorkspaceService } from '@main/workspace-recovery/service'
 import { atomicWrite } from '@main/file-security/write'
 export { atomicWrite } from '@main/file-security/write'
-import { mkdir, unlink, readFile } from 'node:fs/promises'
-import { basename, extname, join, resolve } from 'node:path'
+import { mkdir } from 'node:fs/promises'
+import { basename, extname, resolve } from 'node:path'
 import { deserializeWorkbook, serializeWorkbook } from '@core'
 import { decodeFile } from '@formats'
 import { encodeTrelyx } from '@formats/trelyx'
-import { decryptTrelyx, encryptTrelyx, isEncryptedTrelyx } from '@formats/encrypted'
-import { FileSecuritySession } from '@main/file-security/session'
-import { DocumentBackups } from '@main/file-security/backups'
+import { encryptTrelyx, isEncryptedTrelyx } from '@formats/encrypted'
+import type { FileSecuritySession } from '@main/file-security/session'
+import type { DocumentBackups } from '@main/file-security/backups'
 import { readDocumentBytes } from '@main/file-security/read'
 import { validateFilePassword, validateSecurityDocumentId } from '@shared/fileSecurity'
 import type { OpenedDocument, RecentFile } from '@shared/contracts'
@@ -52,10 +54,6 @@ export const validateSavePath: (value: unknown) => asserts value is string = (
   validatePath(value, ['.trelyx'])
 }
 
-const isMissing = (error: unknown): boolean => {
-  return error instanceof Error && 'code' in error && error.code === 'ENOENT'
-}
-
 const decodeDocument = (
   bytes: Uint8Array,
   path: string,
@@ -70,40 +68,30 @@ const decodeDocument = (
 }
 
 export class DocumentFiles {
-  private readonly security = new FileSecuritySession()
-  private readonly backups: DocumentBackups
   private readonly authorizedPaths = new Set<string>()
   private recentPaths: string[] = []
   private recoveryQueue: Promise<void> = Promise.resolve()
-  private readonly recoveryPath: string
-  private readonly recentPath: string
 
-  constructor(private readonly storageDirectory: string) {
-    this.backups = new DocumentBackups(join(storageDirectory, 'history-v1'))
-    this.recoveryPath = join(storageDirectory, 'recovery-v1.trelyx')
-    this.recentPath = join(storageDirectory, 'recent-files.json')
-  }
+  constructor(
+    private readonly storageDirectory: string,
+    private readonly security: FileSecuritySession,
+    private readonly backups: DocumentBackups,
+    private readonly workspace: RecoveryWorkspaceService,
+    private readonly recent: RecentFilesRepository,
+  ) {}
 
   initialize = async (): Promise<void> => {
     await mkdir(this.storageDirectory, { recursive: true })
-    try {
-      const parsed: unknown = JSON.parse(await readFile(this.recentPath, 'utf8'))
-      if (Array.isArray(parsed)) {
-        this.recentPaths = parsed
-          .filter((path): path is string => {
-            try {
-              validateOpenPath(path)
-              return resolve(path) === path
-            } catch {
-              return false
-            }
-          })
-          .slice(0, 10)
-      }
-    } catch (error) {
-      // A damaged recent-file list must not prevent document recovery/startup.
-      if (!isMissing(error)) this.recentPaths = []
-    }
+    this.recentPaths = (await this.recent.read())
+      .filter((path) => {
+        try {
+          validateOpenPath(path)
+          return resolve(path) === path
+        } catch {
+          return false
+        }
+      })
+      .slice(0, 10)
   }
 
   getRecentFiles = (): RecentFile[] => {
@@ -152,35 +140,36 @@ export class DocumentFiles {
   }
 
   readRecovery = async (): Promise<string | null> => {
-    try {
-      const bytes = await readDocumentBytes(this.recoveryPath)
-      if (await isEncryptedTrelyx(bytes)) throw new Error('恢复记录已加密，请输入密码')
-      return decodeDocument(bytes, this.recoveryPath, null).contents
-    } catch (error) {
-      if (isMissing(error)) return null
-      throw new Error('自动恢复文件无法读取，请保留原文件后重试', { cause: error })
+    const opened = await this.readLockedRecovery()
+    if (opened?.lockedToken) {
+      this.security.cancel(opened.lockedToken)
+      throw new Error('自动恢复文件无法读取，请输入密码')
     }
+    return opened?.contents ?? null
   }
 
-  writeRecovery = (contents: unknown): Promise<void> => {
-    validateContents(contents)
-    const workbook = deserializeWorkbook(contents)
-    const key = this.security.passwordFor(workbook.id)
-    const write = this.recoveryQueue.then(async () => {
-      const bytes =
-        key === null ? encodeTrelyx(workbook) : await encryptTrelyx(workbook, key, 'existing')
-      await atomicWrite(this.recoveryPath, bytes)
-    })
+  writeRecovery = (contents: unknown): Promise<void> => this.writeWorkspaceRecovery([contents])
+
+  readWorkspaceRecovery = async (): Promise<readonly OpenedDocument[]> => {
+    await this.recoveryQueue
+    return this.workspace.read()
+  }
+
+  writeWorkspaceRecovery = (contents: unknown): Promise<void> => {
+    return this.queueRecovery(this.workspace.prepareWrite(contents))
+  }
+
+  private queueRecovery = (operation: () => Promise<void>): Promise<void> => {
+    const write = this.recoveryQueue.then(operation)
     this.recoveryQueue = write.catch(() => undefined)
     return write
   }
 
-  clearRecovery = async (): Promise<void> => {
+  flush = async (): Promise<void> => {
     await this.recoveryQueue
-    await unlink(this.recoveryPath).catch((error: unknown) => {
-      if (!isMissing(error)) throw error
-    })
   }
+
+  clearRecovery = (): Promise<void> => this.writeWorkspaceRecovery([])
 
   getFileSecurity = (documentId: unknown) => {
     return this.security.state(documentId)
@@ -199,28 +188,7 @@ export class DocumentFiles {
     const key = this.security.passwordFor(documentId)
     if (key === previous) return state
     const change = this.recoveryQueue.then(async () => {
-      try {
-        const bytes = await readDocumentBytes(this.recoveryPath)
-        const encrypted = await isEncryptedTrelyx(bytes)
-        if (encrypted && previous === null) {
-          await this.backups.protect(documentId, key)
-          return
-        }
-        const workbook =
-          encrypted && previous !== null
-            ? await decryptTrelyx(bytes, previous)
-            : decodeFile(bytes, this.recoveryPath).workbook
-        if (workbook.id !== documentId) {
-          await this.backups.protect(documentId, key)
-          return
-        }
-        await atomicWrite(
-          this.recoveryPath,
-          key === null ? encodeTrelyx(workbook) : await encryptTrelyx(workbook, key, 'existing'),
-        )
-      } catch (error) {
-        if (!isMissing(error)) throw new Error('密码设置失败：无法保护现有恢复记录')
-      }
+      await this.workspace.protect(documentId, previous, key)
       await this.backups.protect(documentId, key)
     })
     this.recoveryQueue = change.catch(() => undefined)
@@ -248,15 +216,9 @@ export class DocumentFiles {
     return { encrypted: true }
   }
   readLockedRecovery = async (): Promise<OpenedDocument | null> => {
-    try {
-      const bytes = await readDocumentBytes(this.recoveryPath)
-      return (await isEncryptedTrelyx(bytes))
-        ? this.security.lock(bytes, null)
-        : decodeDocument(bytes, this.recoveryPath, null)
-    } catch (error) {
-      if (isMissing(error)) return null
-      throw new Error('自动恢复文件无法读取，请保留原文件后重试')
-    }
+    const [first, ...rest] = await this.readWorkspaceRecovery()
+    for (const item of rest) this.security.cancel(item.lockedToken)
+    return first ?? null
   }
   listDocumentBackups = (documentId: unknown) => {
     return this.backups.list(documentId)
@@ -274,6 +236,6 @@ export class DocumentFiles {
   private remember = async (path: string): Promise<void> => {
     this.recentPaths = [path, ...this.recentPaths.filter((entry) => entry !== path)].slice(0, 10)
     // The document is already saved/opened; recent-list failure must not report data loss.
-    await atomicWrite(this.recentPath, JSON.stringify(this.recentPaths)).catch(() => undefined)
+    await this.recent.replace(this.recentPaths).catch(() => undefined)
   }
 }

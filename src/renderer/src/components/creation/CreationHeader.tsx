@@ -1,3 +1,6 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
+import { LanguageMenu } from '@renderer/components/LanguageMenu'
 import { AppAppearance } from '@renderer/components/appearance/AppAppearance'
 import { ArrowLeft, FolderOpen, Network } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
@@ -23,8 +26,11 @@ export const CreationHeader = ({
   busy,
   onOpen,
   onCancel,
-  cancelLabel = '返回画布',
+  cancelLabel: suppliedCancelLabel,
 }: CreationHeaderProps) => {
+  const { translate } = useMessages()
+  const cancelLabel = suppliedCancelLabel ?? translate('returnToCanvas')
+
   return (
     <header className="toolbar relative z-10 flex h-14 min-h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-background px-5">
       <div className="flex min-w-0 items-center gap-4">
@@ -48,40 +54,43 @@ export const CreationHeader = ({
       <Stepper
         value={String(step)}
         nonInteractive
-        aria-label="创建步骤"
+        aria-label={translate('creationSteps')}
         className="pointer-events-none absolute left-1/2 w-[168px]! -translate-x-1/2"
       >
         <StepperList role="list" tabIndex={-1} className="gap-10">
-          {(['选择结构', '设置画布'] as const).map((label, index) => (
-            <StepperItem
-              key={label}
-              value={String(index + 1)}
-              role="listitem"
-              aria-current={step === index + 1 ? 'step' : undefined}
-              className="w-16 flex-none! flex-col gap-0.5 text-muted-foreground data-[state=active]:text-primary"
-            >
-              <StepperIndicator className="size-6 border-0 bg-secondary text-xs">
-                {index + 1}
-              </StepperIndicator>
-              <StepperTitle className="text-xs font-normal">{label}</StepperTitle>
-              <StepperSeparator className="absolute top-3 left-[calc(50%+1.25rem)] w-16" />
-            </StepperItem>
-          ))}
+          {([translate('chooseStructureLabel463'), translate('setUpSheet')] as const).map(
+            (label, index) => (
+              <StepperItem
+                key={label}
+                value={String(index + 1)}
+                role="listitem"
+                aria-current={step === index + 1 ? 'step' : undefined}
+                className="w-16 flex-none! flex-col gap-0.5 text-muted-foreground data-[state=active]:text-primary"
+              >
+                <StepperIndicator className="size-6 border-0 bg-secondary text-xs">
+                  {index + 1}
+                </StepperIndicator>
+                <StepperTitle className="text-xs font-normal">{label}</StepperTitle>
+                <StepperSeparator className="absolute top-3 left-[calc(50%+1.25rem)] w-16" />
+              </StepperItem>
+            ),
+          )}
         </StepperList>
       </Stepper>
       <div className="toolbar-actions flex items-center gap-2">
+        <LanguageMenu />
         <AppAppearance />
         {onOpen && (
           <Button
             variant="outline"
             className="border-border"
-            aria-label="打开本地文件"
+            aria-label={translate('openLocalFile')}
             disabled={busy}
             onClick={onOpen}
           >
             <FolderOpen data-icon="inline-start" />
-            <span className="hidden sm:inline">打开本地文件</span>
-            <span className="sm:hidden">打开</span>
+            <span className="hidden sm:inline">{translate('openLocalFile')}</span>
+            <span className="sm:hidden">{translate('open')}</span>
           </Button>
         )}
       </div>

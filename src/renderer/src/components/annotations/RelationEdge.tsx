@@ -1,9 +1,13 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, type EdgeProps } from '@xyflow/react'
 import { useEditor } from '@renderer/state/editor'
 import { selectAnnotation, useAnnotationInteraction } from '@renderer/state/annotationInteraction'
 import { InlineAnnotationLabel } from '@renderer/components/annotations/InlineAnnotationLabel'
 
 export const RelationEdge = (props: EdgeProps) => {
+  const { translate } = useMessages()
+
   const selected = useAnnotationInteraction(
     (state) =>
       state.selected?.kind === 'relation' &&
@@ -49,7 +53,7 @@ export const RelationEdge = (props: EdgeProps) => {
           <InlineAnnotationLabel
             kind="relation"
             id={relation.id}
-            text={relation.title?.trim() ? relation.title : '关联线'}
+            text={relation.title?.trim() ? relation.title : translate('relationship')}
             color={relation.color}
           />
         </div>

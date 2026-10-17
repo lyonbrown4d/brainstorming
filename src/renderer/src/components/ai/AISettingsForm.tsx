@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useId, useRef, useState } from 'react'
 import type { AIAPI, AISettings } from '@shared/ai'
 import { Button } from '@renderer/components/ui/button'
@@ -14,6 +16,8 @@ export const AISettingsForm = ({
   settings: AISettings | null
   onSave: (value: AISettings) => void
 }) => {
+  const { translate } = useMessages()
+
   const [baseURL, setBaseURL] = useState(settings?.baseURL ?? 'https://api.openai.com/v1')
   const [model, setModel] = useState(settings?.model ?? '')
   const [key, setKey] = useState('')
@@ -54,7 +58,7 @@ export const AISettingsForm = ({
             setClearKey(false)
           })
           .catch(() => {
-            setError('保存失败，请检查地址、模型、密钥格式及本地目录权限')
+            setError(translate('couldNotSaveCheckTheUrlModel'))
           })
           .finally(() => {
             setKey('')
@@ -64,7 +68,7 @@ export const AISettingsForm = ({
       }}
     >
       <Label className="grid gap-2" htmlFor={`${id}-url`}>
-        OpenAI 兼容服务地址
+        {translate('openaicompatibleServiceUrl')}
         <Input
           id={`${id}-url`}
           value={baseURL}
@@ -77,10 +81,10 @@ export const AISettingsForm = ({
         />
       </Label>
       <p className="text-xs text-muted-foreground">
-        支持 HTTPS；Ollama 等本机服务可用 http://localhost:11434/v1。更换服务地址会清除旧密钥。
+        {translate('supportsHttpsLocalServicesSuchAsOllama')}
       </p>
       <Label className="grid gap-2" htmlFor={`${id}-model`}>
-        模型名称
+        {translate('modelName')}
         <Input
           id={`${id}-model`}
           value={model}
@@ -88,13 +92,13 @@ export const AISettingsForm = ({
           onChange={(event) => {
             setModel(event.target.value)
           }}
-          placeholder="服务提供的模型 ID"
+          placeholder={translate('modelIdFromYourService')}
           required
           disabled={busy}
         />
       </Label>
       <Label className="grid gap-2" htmlFor={`${id}-key`}>
-        API 密钥
+        {translate('apiKey')}
         <Input
           id={`${id}-key`}
           type="password"
@@ -104,7 +108,11 @@ export const AISettingsForm = ({
           onChange={(event) => {
             setKey(event.target.value)
           }}
-          placeholder={settings?.hasKey ? '已设置，留空保留' : '本机服务可以留空'}
+          placeholder={
+            settings?.hasKey
+              ? translate('configuredLeaveBlankToKeep')
+              : translate('optionalForLocalServices')
+          }
           disabled={busy}
         />
       </Label>
@@ -116,7 +124,7 @@ export const AISettingsForm = ({
           }}
           disabled={busy}
         />
-        安全存储可用时记住密钥
+        {translate('rememberKeyWhenSecureStorageIsAvailable')}
       </Label>
       <Label className="flex items-center gap-2">
         <Checkbox
@@ -126,7 +134,7 @@ export const AISettingsForm = ({
           }}
           disabled={busy}
         />
-        服务支持 JSON Schema 结构化输出
+        {translate('serviceSupportsJsonSchemaOutput')}
       </Label>
       <Label className="flex items-center gap-2">
         <Checkbox
@@ -136,7 +144,7 @@ export const AISettingsForm = ({
           }}
           disabled={busy}
         />
-        清除现有密钥
+        {translate('clearSavedKey')}
       </Label>
       {settings?.notice && (
         <p role="status" className="text-xs text-muted-foreground">
@@ -149,7 +157,7 @@ export const AISettingsForm = ({
         </p>
       )}
       <Button type="submit" variant="outline" disabled={busy || !model.trim()}>
-        {busy ? '正在保存…' : '保存服务设置'}
+        {busy ? translate('saving') : translate('saveServiceSettings')}
       </Button>
     </form>
   )

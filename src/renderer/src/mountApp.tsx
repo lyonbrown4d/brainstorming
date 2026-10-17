@@ -3,6 +3,8 @@ import { AppearanceProvider } from '@renderer/components/appearance/AppearancePr
 import { createRoot } from 'react-dom/client'
 import { App } from '@renderer/App'
 import { showStartupIssue } from '@renderer/startupStatus'
+import { requireDesktopAPI } from '@renderer/lib/desktop'
+requireDesktopAPI()
 const container = document.getElementById('root')
 if (!container) throw new Error('应用挂载点不存在')
 createRoot(container, {

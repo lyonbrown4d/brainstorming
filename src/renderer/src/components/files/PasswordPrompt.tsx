@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useId, useState } from 'react'
 import {
   Dialog,
@@ -22,6 +24,8 @@ const PasswordForm = ({
   description?: string
   error?: string
 }) => {
+  const { translate } = useMessages()
+
   const [password, setPassword] = useState('')
   const passwordId = useId()
   return (
@@ -37,11 +41,11 @@ const PasswordForm = ({
       <DialogHeader>
         <DialogTitle>{title}</DialogTitle>
         <DialogDescription>
-          {description ?? '此文件使用密码保护。密码仅在当前会话中保留。'}
+          {description ?? translate('thisFileIsPasswordProtectedThePassword')}
         </DialogDescription>
       </DialogHeader>
       <label htmlFor={passwordId} className="grid gap-2 text-sm">
-        密码
+        {translate('password')}
         <Input
           id={passwordId}
           type="password"
@@ -67,10 +71,10 @@ const PasswordForm = ({
             answerPassword(null)
           }}
         >
-          取消
+          {translate('cancel')}
         </Button>
         <Button type="submit" disabled={!password}>
-          解锁
+          {translate('unlock')}
         </Button>
       </DialogFooter>
     </form>

@@ -1,13 +1,13 @@
-import { expect, test, type Page } from '@playwright/test'
+import { prepareNativeSave } from '@tests/electron/native-files'
+import { expect, test, type Page } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
 import { decodeTrelyx } from '@formats/trelyx'
 import { openExample } from '@tests/e2e/workspace'
-import { openDock } from '@tests/e2e/dock'
 
 const savedWorkbook = async (page: Page) => {
-  const pending = page.waitForEvent('download')
+  const pending = await prepareNativeSave(page)
   await page.keyboard.press('ControlOrMeta+s')
-  const path = await (await pending).path()
+  const path = await pending.path()
   if (!path) throw new Error('没有生成保存文件')
   return decodeTrelyx(await readFile(path))
 }
@@ -37,8 +37,6 @@ for (const mode of ['2d', '3d'] as const) {
       await page.mouse.up({ button: 'middle' })
       beforeViewport = await page.locator('.react-flow__viewport').getAttribute('style')
     }
-    await openDock(page)
-    await page.getByRole('button', { name: '演示', exact: true }).click()
     await expect(page.getByRole('button', { name: '开始演示', exact: true })).toBeEnabled()
     await page.getByRole('button', { name: '开始演示', exact: true }).click()
     const playback = page.getByRole('toolbar', { name: '演示播放控制', exact: true })

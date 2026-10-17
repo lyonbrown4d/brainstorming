@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useEditor } from '@renderer/state/editor'
 import { openDocument, retryRecovery } from '@renderer/state/files'
 import { useFileSecurityState } from '@renderer/state/password'
@@ -14,6 +16,8 @@ import { CreationHeader } from '@renderer/components/creation/CreationHeader'
 import { RecentDocuments } from '@renderer/components/creation/RecentDocuments'
 
 export const WorkspaceHeader = () => {
+  const { translate } = useMessages()
+
   const screen = useWorkspace((state) => state.screen)
   const hasDocument = useWorkspace((state) => state.hasDocument)
   const step = useWorkspace((state) => state.creationStep)
@@ -29,7 +33,7 @@ export const WorkspaceHeader = () => {
               if (screen === 'home') enterWorkspaceEditor()
               else cancelCreation()
             },
-            cancelLabel: hasDocument ? '返回画布' : '返回首页',
+            cancelLabel: hasDocument ? translate('returnToCanvas') : translate('returnToHome'),
           }
         : {})}
     />
@@ -37,6 +41,8 @@ export const WorkspaceHeader = () => {
 }
 
 export const CreationWorkspace = () => {
+  const { translate } = useMessages()
+
   const screen = useWorkspace((state) => state.screen)
   const step = useWorkspace((state) => state.creationStep)
   const busy = useEditor((state) => state.busy)
@@ -48,7 +54,7 @@ export const CreationWorkspace = () => {
       {lockedRecovery && (
         <div className="border-b border-border bg-background px-5 py-2 sm:px-10">
           <Button variant="outline" size="sm" disabled={busy} onClick={() => void retryRecovery()}>
-            解锁恢复记录
+            {translate('unlockRecoveryData')}
           </Button>
         </div>
       )}

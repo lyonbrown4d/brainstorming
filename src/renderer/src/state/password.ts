@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { validateFilePassword } from '@shared/fileSecurity'
 
 interface PromptRequest {
   readonly id: number
@@ -48,20 +47,6 @@ export const useFileSecurityState = create<SecurityView>(() => ({
   encrypted: false,
   lockedRecovery: false,
 }))
-let browserSession: { documentId: string; password: string | null } | null = null
-export const browserPasswordFor = (documentId: string): string | null => {
-  return browserSession?.documentId === documentId ? browserSession.password : null
-}
-export const setBrowserPassword = (
-  documentId: string,
-  password: string | null,
-  unlocking = false,
-): void => {
-  if (password !== null) validateFilePassword(password, !unlocking)
-  browserSession = { documentId, password }
-  useFileSecurityState.setState({ documentId, encrypted: password !== null })
-}
-export const resetBrowserPassword = (): void => {
-  browserSession = null
+export const resetFileSecurityState = (): void => {
   useFileSecurityState.setState({ documentId: null, encrypted: false })
 }

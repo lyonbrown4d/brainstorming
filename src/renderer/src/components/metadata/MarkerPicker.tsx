@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { lazy, Suspense, useState } from 'react'
 import { X } from 'lucide-react'
 import { loadBrandMarkers } from '@shared/markerIcons'
@@ -6,7 +8,7 @@ import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import { ScrollArea } from '@renderer/components/ui/scroll-area'
 import { MarkerIcon } from '@renderer/components/metadata/MarkerIcon'
-import { markerOptions } from '@renderer/components/metadata/markers'
+import { getMarkerOptions } from '@renderer/components/metadata/markers'
 import { MarkerStyleControls } from '@renderer/components/metadata/MarkerStyleControls'
 import type { TopicMetadata } from '@core'
 const Brands = lazy(async () => {
@@ -27,28 +29,31 @@ export const MarkerPicker = ({
   style?: TopicMetadata['markerStyle']
   onStyleChange: (style: NonNullable<TopicMetadata['markerStyle']>) => void
 }) => {
+  const { translate } = useMessages()
+  const markerOptions = getMarkerOptions(translate)
+
   const [collection, setCollection] = useState<'common' | 'brands'>('common')
   const [query, setQuery] = useState('')
   const common = markerOptions.filter((option) =>
     `${option.title} ${option.value}`.toLowerCase().includes(query.toLowerCase()),
   )
   return (
-    <div className="space-y-3" role="group" aria-label="图标选择器">
+    <div className="space-y-3" role="group" aria-label={translate('iconPicker')}>
       <MarkerStyleControls style={style} onChange={onStyleChange} />
       <div className="flex gap-2">
         <FieldSelect
-          label="图标库"
+          label={translate('iconLibrary')}
           value={collection}
           onChange={setCollection}
           className="w-32 shrink-0"
           options={[
-            { value: 'common', label: '常用图标' },
-            { value: 'brands', label: '品牌图标' },
+            { value: 'common', label: translate('commonIcons') },
+            { value: 'brands', label: translate('brandIcons') },
           ]}
         />
         <Input
-          aria-label="搜索图标"
-          placeholder="搜索图标"
+          aria-label={translate('searchIcons')}
+          placeholder={translate('searchIcons')}
           value={query}
           onChange={(event) => {
             setQuery(event.target.value)
@@ -56,14 +61,14 @@ export const MarkerPicker = ({
         />
       </div>
       {selected.length > 0 && (
-        <div className="flex flex-wrap gap-1" aria-label="已选图标">
+        <div className="flex flex-wrap gap-1" aria-label={translate('selectedIcons')}>
           {selected.map((marker) => (
             <Button
               key={marker}
               variant="secondary"
               size="sm"
               className="gap-1 px-2"
-              aria-label={`移除图标 ${marker}`}
+              aria-label={translate('removeIconValue0', { value0: marker })}
               title={marker}
               onClick={() => {
                 onToggle(marker)
@@ -77,7 +82,12 @@ export const MarkerPicker = ({
       )}
       {collection === 'common' ? (
         <ScrollArea className="h-48">
-          <div className="grid grid-cols-3 gap-1" role="group" aria-label="常用图标">
+          <div
+            className="grid grid-cols-3 gap-1"
+            role="group"
+            aria-label={translate('commonIcons')}
+            data-marker-options
+          >
             {common.map(({ value, title, Icon }) => (
               <Button
                 key={value}
@@ -96,7 +106,9 @@ export const MarkerPicker = ({
               </Button>
             ))}
             {!common.length && (
-              <p className="col-span-3 py-4 text-xs text-muted-foreground">没有匹配的图标。</p>
+              <p className="col-span-full py-4 text-xs text-muted-foreground">
+                {translate('noMatchingIcons')}
+              </p>
             )}
           </div>
         </ScrollArea>
@@ -104,7 +116,7 @@ export const MarkerPicker = ({
         <Suspense
           fallback={
             <p role="status" className="py-4 text-xs">
-              正在载入离线图标库…
+              {translate('loadingOfflineIconLibrary')}
             </p>
           }
         >
@@ -112,7 +124,8 @@ export const MarkerPicker = ({
         </Suspense>
       )}
       <p className="text-xs text-muted-foreground">
-        {selected.length}/32 个图标 · 品牌图标来自 Simple Icons
+        {selected.length}
+        {translate('32IconsBrandIconsFromSimpleIcons')}
       </p>
     </div>
   )

@@ -1,6 +1,11 @@
+import { closeDocumentTab } from '@tests/e2e/documents'
+import { nativeRecoveryContents } from '@tests/electron/recovery'
+import { nativeSession } from '@tests/electron/session'
+import { prepareNativeSave, prepareNativeOpen } from '@tests/electron/native-files'
+import { reloadWindow } from '@tests/electron/session'
 import { completeDocumentCreation, openExample } from '@tests/e2e/workspace'
 import { dockAction } from '@tests/e2e/dock'
-import { expect, test } from '@playwright/test'
+import { expect, test } from '@tests/electron/fixture'
 import { composeChinese } from '@tests/e2e/ime'
 
 test.beforeEach(async ({ page }) => {
@@ -32,19 +37,20 @@ test('新增、编辑、折叠、撤销、保存与重新打开', async ({ page 
   await expect(page.locator('.topic-title').getByText('第一阶段', { exact: true })).toHaveCount(0)
   await dockAction(page, '撤销')
   await expect(page.locator('.topic-title').getByText('第一阶段', { exact: true })).toBeVisible()
-  const downloadPromise = page.waitForEvent('download')
+  const downloadPromise = await prepareNativeSave(page)
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name: '保存导图', exact: true }).click()
-  const download = await downloadPromise
+  const download = downloadPromise
   const path = await download.path()
   if (!path) throw new Error('保存未生成文件')
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name: '新建导图', exact: true }).click()
   await completeDocumentCreation(page)
-  const picker = page.waitForEvent('filechooser')
+  await closeDocumentTab(page, 1)
+  const picker = await prepareNativeOpen(page)
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name: '打开导图', exact: true }).click()
-  await (await picker).setFiles(path)
+  await picker.selectFile(path)
   await expect(page.locator('.topic-title').getByText('项目计划', { exact: true })).toBeVisible()
   await expect(page.locator('.topic-title').getByText('第一阶段', { exact: true })).toBeVisible()
 })
@@ -60,12 +66,10 @@ test('无效文件不替换当前文档，输入法 Enter 不创建主题', asyn
   await page.locator('.react-flow__pane').click({ position: { x: 20, y: 20 } })
   await expect(title).toContainText('中文思维导图')
   page.on('dialog', (dialog) => dialog.accept())
-  const picker = page.waitForEvent('filechooser')
+  const picker = await prepareNativeOpen(page)
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name: '打开导图', exact: true }).click()
-  await (
-    await picker
-  ).setFiles({
+  await picker.selectFile({
     name: 'broken.trelyx',
     mimeType: 'application/json',
     buffer: Buffer.from('{broken'),
@@ -80,37 +84,9 @@ test('恢复文档需要用户选择，刷新后可以恢复', async ({ page }) 
   await page.getByRole('textbox', { name: '编辑主题标题' }).fill('恢复的想法')
   await page.locator('.react-flow__pane').click({ position: { x: 20, y: 20 } })
   await expect
-    .poll(() =>
-      page.evaluate(async () => {
-        const database = await new Promise<IDBDatabase>((resolve, reject) => {
-          const request = indexedDB.open('trelyx')
-          request.onsuccess = () => {
-            resolve(request.result)
-          }
-          request.onerror = () => {
-            reject(request.error ?? new Error('无法读取恢复记录'))
-          }
-        })
-        try {
-          return await new Promise<unknown>((resolve, reject) => {
-            const request = database
-              .transaction('recovery')
-              .objectStore('recovery')
-              .get('trelyx.recovery.native-v1')
-            request.onsuccess = () => {
-              resolve(request.result as unknown)
-            }
-            request.onerror = () => {
-              reject(request.error ?? new Error('无法读取恢复记录'))
-            }
-          })
-        } finally {
-          database.close()
-        }
-      }),
-    )
+    .poll(() => nativeRecoveryContents(nativeSession(page).directory))
     .toContain('恢复的想法')
-  await page.reload()
+  await reloadWindow(page)
   await expect(page.getByRole('button', { name: /恢复/ })).toBeVisible()
   await expect(page.getByTestId('topic-root')).toHaveCount(0)
   await page.getByRole('button', { name: /恢复/ }).click()
@@ -127,7 +103,7 @@ test('拖动分支更换父级、方向可撤销，帮助弹窗支持键盘关�
   await page.mouse.down()
   await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 12 })
   await page.mouse.up()
-  await page.getByRole('button', { name: '样式面板', exact: true }).click()
+  await page.getByRole('button', { name: '属性面板', exact: true }).click()
   await expect(page.getByRole('combobox', { name: '移动到父主题' })).toHaveText('核心体验')
   await dockAction(page, '撤销')
   await expect(page.getByRole('combobox', { name: '移动到父主题' })).toHaveText('产品规划')

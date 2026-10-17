@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from '@renderer/lib/queryClient'
 import { usePresentation } from '@renderer/state/presentation'
@@ -14,6 +16,8 @@ import { Button } from '@renderer/components/ui/button'
 import { TooltipProvider } from '@renderer/components/ui/tooltip'
 import { Canvas, ZoomControls } from '@renderer/components/Canvas'
 import { SheetTabs } from '@renderer/components/SheetTabs'
+import { DocumentTabs } from '@renderer/components/DocumentTabs'
+import { CanvasOverlay } from '@renderer/components/workbench/CanvasOverlay'
 import { Inspector } from '@renderer/components/Inspector'
 import { Outline } from '@renderer/components/Outline'
 import { SearchPanel } from '@renderer/components/SearchPanel'
@@ -21,7 +25,11 @@ import { PasswordPrompt } from '@renderer/components/files/PasswordPrompt'
 import { SpatialWorkspace } from '@renderer/components/SpatialWorkspace'
 import { useEditor } from '@renderer/state/editor'
 import { useSpatialView } from '@renderer/state/spatial'
-import { restoreRecovery } from '@renderer/state/files'
+import { useDocumentTabs } from '@renderer/state/documentTabs'
+import {
+  restoreWorkspaceRecovery,
+  dismissWorkspaceRecovery,
+} from '@renderer/state/documentRecovery'
 import { useFileLifecycle } from '@renderer/hooks/useFileLifecycle'
 import { useKeyboardShortcuts } from '@renderer/hooks/useKeyboardShortcuts'
 import { useWindowChrome } from '@renderer/hooks/useWindowChrome'
@@ -38,6 +46,8 @@ import '@renderer/styles/topics.css'
 import '@renderer/styles/motion.css'
 
 export const App = () => {
+  const { translate } = useMessages()
+
   useStartupScreen()
   useMCPBridge()
   useFileLifecycle()
@@ -50,7 +60,8 @@ export const App = () => {
   const activeSheetId = useEditor((state) => state.activeSheetId)
   const spatial = useSpatialView((state) => state.sheets[activeSheetId]?.mode === '3d')
   const error = useEditor((state) => state.error)
-  const recovery = useEditor((state) => state.recovery)
+  const recovery = useDocumentTabs((state) => state.recovery)
+  const activeTabId = useDocumentTabs((state) => state.activeId)
   const topics = useEditor((state) => state.history.document.topics)
   const count = useMemo(() => Object.keys(topics).length, [topics])
   return (
@@ -66,20 +77,22 @@ export const App = () => {
             {!playing && (screen === 'editor' ? <Toolbar /> : <WorkspaceHeader />)}
             <div className="app-body relative flex min-h-0 flex-1">
               <main className="workspace-main relative flex min-h-0 min-w-0 flex-1 flex-col">
-                {recovery && (
+                {recovery.length > 0 && (
                   <div className="recovery-banner" role="status">
-                    <span>发现上次的自动恢复记录，是否继续之前的思路？</span>
-                    <Button variant="ghost" size="sm" onClick={restoreRecovery}>
-                      恢复导图
+                    <span>{translate('workspaceRecoveryFound')}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => void restoreWorkspaceRecovery()}
+                    >
+                      {translate('restoreMaps', { count: recovery.length })}
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => {
-                        useEditor.setState({ recovery: null })
-                      }}
+                      onClick={() => void dismissWorkspaceRecovery()}
                     >
-                      忽略记录
+                      {translate('dismissRecovery')}
                     </Button>
                   </div>
                 )}
@@ -89,7 +102,7 @@ export const App = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label="关闭错误提示"
+                      aria-label={translate('dismissError')}
                       onClick={() => {
                         useEditor.getState().setError(null)
                       }}
@@ -102,26 +115,34 @@ export const App = () => {
                 {screen === 'editor' && !playing && <SearchPanel />}
                 <PasswordPrompt />
                 {screen !== 'editor' ? (
-                  <CreationWorkspace />
+                  <div className="relative flex min-h-0 flex-1 flex-col">
+                    <DocumentTabs />
+                    <CreationWorkspace />
+                  </div>
                 ) : (
                   <ReactFlowProvider>
                     <div className="workspace-content relative flex min-h-0 min-w-0 flex-1">
+                      {!playing && (
+                        <CanvasOverlay className="z-40">
+                          <DocumentTabs />
+                        </CanvasOverlay>
+                      )}
                       <AnimatePresence initial={false}>
                         {outline && !playing && (
                           <AnimatedPanel key="outline">
-                            <Outline />
+                            <Outline key={activeTabId} />
                           </AnimatedPanel>
                         )}
                       </AnimatePresence>
                       {spatial ? (
-                        <SpatialWorkspace key={activeSheetId} />
+                        <SpatialWorkspace key={`${activeTabId}:${activeSheetId}`} />
                       ) : (
-                        <Canvas key={activeSheetId} />
+                        <Canvas key={`${activeTabId}:${activeSheetId}`} />
                       )}
                       <AnimatePresence initial={false}>
                         {inspector && !playing && (
                           <AnimatedPanel key="inspector" side="right">
-                            <Inspector />
+                            <Inspector key={activeTabId} />
                           </AnimatedPanel>
                         )}
                       </AnimatePresence>
@@ -131,7 +152,7 @@ export const App = () => {
                       <footer className="status-bar z-[8] flex h-12 min-h-12 shrink-0 items-center gap-2 border-t border-border bg-background pr-2 text-muted-foreground lg:gap-3 lg:pr-4">
                         <SheetTabs />
                         <span className="topic-count hidden shrink-0 text-xs whitespace-nowrap lg:inline">
-                          {count} 个主题
+                          {translate('topicCount', { count })}
                         </span>
                         {!spatial && <ZoomControls />}
                         <KeyboardHelp />

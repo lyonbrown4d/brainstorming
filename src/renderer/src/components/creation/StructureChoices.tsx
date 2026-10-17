@@ -1,8 +1,10 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import type { LayoutKind } from '@core'
 import { Circle, CircleCheck } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import { StructurePreview } from '@renderer/components/documents/StructurePreview'
-import { structureOptions } from '@renderer/components/documents/structureOptions'
+import { getStructureOptions } from '@renderer/components/documents/structureOptions'
 
 export const StructureChoices = ({
   value,
@@ -13,8 +15,15 @@ export const StructureChoices = ({
   onChange: (layout: LayoutKind) => void
   disabled: boolean
 }) => {
+  const { translate } = useMessages()
+  const structureOptions = getStructureOptions(translate)
+
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3" role="group" aria-label="选择图形结构">
+    <div
+      className="grid grid-cols-2 gap-3 md:grid-cols-3"
+      role="group"
+      aria-label={translate('chooseStructure')}
+    >
       {structureOptions.map(({ value: kind, label }) => {
         const SelectedIcon = value === kind ? CircleCheck : Circle
         return (
@@ -23,7 +32,7 @@ export const StructureChoices = ({
             type="button"
             variant="outline"
             disabled={disabled}
-            aria-label={`选择${label}`}
+            aria-label={translate('chooseValue0', { value0: label })}
             aria-pressed={value === kind}
             onClick={() => {
               onChange(kind)

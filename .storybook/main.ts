@@ -4,6 +4,8 @@ import type { StorybookConfig } from '@storybook/react-vite'
 import { mergeConfig } from 'vite'
 import { resolve } from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
+import { reactCompilerPreset } from '@vitejs/plugin-react'
+import babel from '@rolldown/plugin-babel'
 const rendererOptions = JSON.parse(
   readFileSync(new URL('../config/renderer.json', import.meta.url), 'utf8'),
 ) as RendererConfig
@@ -17,7 +19,7 @@ const config: StorybookConfig = {
       cacheDir: resolve('node_modules/.vite/trelyx-storybook'),
       resolve: { tsconfigPaths: true, dedupe: ['three'] },
       optimizeDeps: rendererOptimizeDeps,
-      plugins: [tailwindcss()],
+      plugins: [babel({ presets: [reactCompilerPreset()] }), tailwindcss()],
     }),
 }
 export default config

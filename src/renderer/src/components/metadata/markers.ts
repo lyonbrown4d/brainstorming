@@ -1,3 +1,4 @@
+import type { MessageTranslator } from '@renderer/i18n'
 import {
   Star,
   Flag,
@@ -12,14 +13,57 @@ import {
 } from 'lucide-react'
 
 export const markerOptions = [
-  { value: 'star', title: '星标', Icon: Star },
-  { value: 'flag', title: '旗标', Icon: Flag },
-  { value: 'important', title: '重要', Icon: CircleAlert },
-  { value: 'idea', title: '灵感', Icon: Lightbulb },
-  { value: 'heart', title: '喜欢', Icon: Heart },
-  { value: 'approved', title: '认可', Icon: ThumbsUp },
-  { value: 'waiting', title: '等待', Icon: Timer },
-  { value: 'question', title: '疑问', Icon: CircleHelp },
-  { value: 'smile', title: '愉快', Icon: Smile },
-  { value: 'complete', title: '完成标记', Icon: CheckCircle2 },
-]
+  {
+    value: 'star',
+    titleKey: 'star',
+    Icon: Star,
+  },
+  {
+    value: 'flag',
+    titleKey: 'flag',
+    Icon: Flag,
+  },
+  {
+    value: 'important',
+    titleKey: 'important',
+    Icon: CircleAlert,
+  },
+  {
+    value: 'idea',
+    titleKey: 'idea',
+    Icon: Lightbulb,
+  },
+  {
+    value: 'heart',
+    titleKey: 'heart',
+    Icon: Heart,
+  },
+  {
+    value: 'approved',
+    titleKey: 'approved',
+    Icon: ThumbsUp,
+  },
+  {
+    value: 'waiting',
+    titleKey: 'waiting',
+    Icon: Timer,
+  },
+  {
+    value: 'question',
+    titleKey: 'question',
+    Icon: CircleHelp,
+  },
+  {
+    value: 'smile',
+    titleKey: 'smile',
+    Icon: Smile,
+  },
+  {
+    value: 'complete',
+    titleKey: 'completeMarker',
+    Icon: CheckCircle2,
+  },
+] as const
+
+export const getMarkerOptions = (translate: MessageTranslator) =>
+  markerOptions.map((option) => ({ ...option, title: translate(option.titleKey) }))

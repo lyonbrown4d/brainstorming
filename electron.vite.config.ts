@@ -1,7 +1,8 @@
 import type { RendererConfig } from '@project/config/renderer'
 import { fileURLToPath } from 'node:url'
 import { readFileSync } from 'node:fs'
-import react from '@vitejs/plugin-react'
+import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'electron-vite'
 import { resolve } from 'node:path'
@@ -34,7 +35,7 @@ export default defineConfig({
     base: './',
     resolve: { tsconfigPaths: true, dedupe: ['three'] },
     optimizeDeps: rendererOptimizeDeps,
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), babel({ presets: [reactCompilerPreset()] }), tailwindcss()],
     build: {
       minify: true,
       rollupOptions: {

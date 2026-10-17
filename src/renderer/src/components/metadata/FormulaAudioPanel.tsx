@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { lazy, Suspense, useState } from 'react'
 import { AudioLines, Sigma } from 'lucide-react'
 import type { TopicMetadata } from '@core'
@@ -8,7 +10,9 @@ import { Textarea } from '@renderer/components/ui/textarea'
 import { AudioRecorder } from '@renderer/components/metadata/AudioRecorder'
 import { setMetadataField } from '@renderer/components/metadata/commands'
 
-const FormulaPreview = lazy(() => import('@renderer/components/metadata/FormulaPreview'))
+const FormulaPreview = lazy(() => {
+  return import('@renderer/components/metadata/FormulaPreview')
+})
 export const FormulaAudioPanel = ({
   topicId,
   metadata,
@@ -16,6 +20,8 @@ export const FormulaAudioPanel = ({
   topicId: string
   metadata: TopicMetadata
 }) => {
+  const { translate } = useMessages()
+
   const [equation, setEquation] = useState(metadata.equation ?? '')
   const asset = useEditor((state) =>
     metadata.audioAssetId ? state.history.document.assets?.[metadata.audioAssetId] : undefined,
@@ -26,7 +32,7 @@ export const FormulaAudioPanel = ({
       <section className="space-y-3 border-t border-border py-4">
         <h3 className="flex items-center gap-2 text-sm font-medium">
           <Sigma className="size-4" />
-          公式
+          {translate('formula')}
         </h3>
         <form
           className="space-y-2"
@@ -36,7 +42,7 @@ export const FormulaAudioPanel = ({
           }}
         >
           <Textarea
-            aria-label="LaTeX 公式"
+            aria-label={translate('latexFormula')}
             placeholder="E = mc^2"
             value={equation}
             maxLength={10000}
@@ -45,11 +51,15 @@ export const FormulaAudioPanel = ({
             }}
           />
           <Button type="submit" size="sm">
-            保存公式
+            {translate('saveFormula')}
           </Button>
         </form>
         {metadata.equation && (
-          <Suspense fallback={<p className="text-xs text-muted-foreground">正在载入公式…</p>}>
+          <Suspense
+            fallback={
+              <p className="text-xs text-muted-foreground">{translate('loadingFormula')}</p>
+            }
+          >
             <FormulaPreview source={metadata.equation} />
           </Suspense>
         )}
@@ -57,7 +67,7 @@ export const FormulaAudioPanel = ({
       <section className="space-y-3 border-t border-border py-4">
         <h3 className="flex items-center gap-2 text-sm font-medium">
           <AudioLines className="size-4" />
-          音频
+          {translate('audio')}
         </h3>
         {asset && (
           <div className="space-y-2">
@@ -70,7 +80,7 @@ export const FormulaAudioPanel = ({
               controls
               preload="none"
               className="h-10 w-full"
-              aria-label={`播放音频 ${asset.name}`}
+              aria-label={translate('playAudioValue0', { value0: asset.name })}
               src={`data:${asset.mimeType};base64,${asset.data}`}
             />
           </div>
@@ -85,7 +95,7 @@ export const FormulaAudioPanel = ({
               void importTopicAssets(topicId, 'audio')
             }}
           >
-            {asset ? '替换音频' : '添加音频'}
+            {asset ? translate('replaceAudio') : translate('addAudio')}
           </Button>
           {metadata.audioAssetId && (
             <Button
@@ -96,7 +106,7 @@ export const FormulaAudioPanel = ({
                 setMetadataField(topicId, 'audioAssetId', undefined)
               }}
             >
-              移除音频
+              {translate('removeAudio')}
             </Button>
           )}
         </div>

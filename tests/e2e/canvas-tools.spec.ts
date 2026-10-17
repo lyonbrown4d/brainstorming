@@ -1,5 +1,8 @@
+import { tapWindow } from '@tests/electron/session'
+import { canvasProperties } from '@tests/e2e/properties'
+import { resizeWindow } from '@tests/electron/session'
 import { openExample } from '@tests/e2e/workspace'
-import { expect, test } from '@playwright/test'
+import { expect, test } from '@tests/electron/fixture'
 import { dockAction, openDock } from '@tests/e2e/dock'
 
 test.beforeEach(async ({ page }) => {
@@ -26,14 +29,14 @@ test('Dock hover、延迟收起、键盘聚焦和弹出面板保持展开', asyn
   await handle.focus()
   await page.keyboard.press('Enter')
   await expect(handle).toHaveAttribute('aria-expanded', 'true')
-  await page.getByRole('button', { name: '布局与主题', exact: true }).click()
-  const layout = page.getByRole('dialog', { name: '布局与主题', exact: true })
+  await page.getByRole('button', { name: '主题筛选', exact: true }).click()
+  const layout = page.getByRole('dialog', { name: '主题筛选', exact: true })
   await expect(layout).toBeVisible()
   await page.mouse.move(20, 200)
   // The nested portal must stay usable after the normal collapse delay.
   await page.waitForTimeout(600)
   await expect(handle).toHaveAttribute('aria-expanded', 'true')
-  await expect(page.getByRole('button', { name: '使用Trelyx配色', exact: true })).toBeVisible()
+  await expect(layout.getByRole('combobox', { name: '筛选标签', exact: true })).toBeVisible()
   const panelBounds = await layout.boundingBox()
   const dockBounds = await handle.boundingBox()
   if (!panelBounds || !dockBounds) throw new Error('Dock 或布局面板未显示')
@@ -90,7 +93,7 @@ test('多选概要和标注原位编辑；布局面板即时作用于画布', as
     page.getByRole('button', { name: '标注：先验证核心假设', exact: true }),
   ).toBeVisible()
   await openDock(page)
-  await page.getByRole('button', { name: '图形结构', exact: true }).click()
+  await canvasProperties(page, '结构')
   await page.getByRole('button', { name: '应用向下组织图', exact: true }).click()
   await expect(page.getByRole('button', { name: '应用向下组织图', exact: true })).toHaveAttribute(
     'aria-pressed',
@@ -119,19 +122,18 @@ test('三维视图也通过主题起终点创建关联并原位编辑', async ({
 })
 
 test.describe('触屏 Dock', () => {
-  test.use({ hasTouch: true })
   test('没有 hover 时点击入口展开并再次点击收起', async ({ page }) => {
     const handle = page.getByRole('button', { name: '展开浮动工具栏', exact: true })
     await expect(handle).toHaveAttribute('aria-expanded', 'false')
-    await handle.tap()
+    await tapWindow(page, '展开浮动工具栏')
     await expect(handle).toHaveAttribute('aria-expanded', 'true')
-    await handle.tap()
+    await tapWindow(page, '展开浮动工具栏')
     await expect(handle).toHaveAttribute('aria-expanded', 'false')
   })
 })
 
 test('底部 Dock 单行平铺，横向滚动可达全部工具且不盖住 Sheet', async ({ page }) => {
-  await page.setViewportSize({ width: 800, height: 600 })
+  await resizeWindow(page, { width: 800, height: 600 })
   await openDock(page)
   const toolbar = page.getByRole('toolbar', { name: '导图操作', exact: true })
   const viewport = toolbar.locator('xpath=ancestor::*[@data-slot="scroll-area-viewport"]')
@@ -145,11 +147,17 @@ test('底部 Dock 单行平铺，横向滚动可达全部工具且不盖住 Shee
   await page.mouse.wheel(600, 0)
   await expect.poll(() => viewport.evaluate((el) => el.scrollLeft)).toBeGreaterThan(100)
   await toolbar.getByRole('button', { name: 'AI 助手', exact: true }).click()
-  await expect(page.getByRole('dialog', { name: 'AI 思维导图助手' })).toContainText(
-    '需要 Trelyx 桌面版',
-  )
+  await expect(
+    page
+      .getByRole('dialog', { name: 'AI 思维导图助手' })
+      .getByRole('button', { name: '服务设置', exact: true }),
+  ).toBeEnabled()
   await page.keyboard.press('Escape')
-  await expect(page.getByRole('tab', { name: '产品总览', exact: true })).toBeVisible()
+  await expect(
+    page
+      .getByRole('tablist', { name: '文档画布', exact: true })
+      .getByRole('tab', { name: '产品总览', exact: true }),
+  ).toBeVisible()
   const dock = await toolbar.boundingBox()
   const footer = await page.locator('.status-bar').boundingBox()
   if (!dock || !footer) throw new Error('Dock 或画布标签未显示')

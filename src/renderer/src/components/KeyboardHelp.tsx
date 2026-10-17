@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { DialogContent } from '@renderer/components/DialogContent'
 import { CircleHelp } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
@@ -23,37 +25,42 @@ const shortcuts = [
   ['Delete / Backspace', '删除选中的主题分支或注解'],
   ['⌘ Z / ⇧⌘ Z', '撤销 / 重做'],
   ['⌘ S / ⌘ O / ⌘ N', '保存 / 打开 / 新建'],
+  ['Ctrl Tab / Ctrl Shift Tab', '下一份导图 / 上一份导图'],
+  ['⌘ W / ⇧⌘ W', '关闭当前导图 / 关闭窗口'],
   ['Shift + Enter', '编辑时换行'],
   ['拖动画布空白', '平移画布；按住 Shift 拖动框选主题'],
 ] as const
 
 export const KeyboardHelp = () => {
+  const { translate, translateLabel } = useMessages()
+
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" aria-label="键盘快捷键">
-          <CircleHelp size={14} /> 快捷键
+        <Button variant="ghost" size="sm" aria-label={translate('keyboardShortcuts')}>
+          <CircleHelp size={14} />
+          {translate('shortcuts')}
         </Button>
       </DialogTrigger>
-      <DialogContent closeLabel="关闭快捷键">
+      <DialogContent closeLabel={translate('closeShortcuts')}>
         <DialogHeader>
-          <DialogTitle>键盘快捷键</DialogTitle>
-          <DialogDescription>
-            单击选择主题；编辑时可选择文字，Shift + Enter 换行，Esc 取消。
-          </DialogDescription>
+          <DialogTitle>{translate('keyboardShortcuts')}</DialogTitle>
+          <DialogDescription>{translate('clickToSelectATopicWhileEditing')}</DialogDescription>
         </DialogHeader>
         <dl className="grid grid-cols-[auto_1fr] items-center gap-x-6 gap-y-4 text-xs">
           {shortcuts.map(([keys, description]) => (
             <div key={keys} className="contents">
               <dt>
-                <kbd className="rounded border border-border bg-secondary px-2 py-1">{keys}</kbd>
+                <kbd className="rounded border border-border bg-secondary px-2 py-1">
+                  {translateLabel(keys)}
+                </kbd>
               </dt>
-              <dd>{description}</dd>
+              <dd>{translateLabel(description)}</dd>
             </div>
           ))}
         </dl>
         <p className="text-xs text-muted-foreground">
-          Windows / Linux 使用 Ctrl 代替 ⌘、Alt 代替 ⌥；仅删除当前主题使用 Ctrl + Delete。
+          {translate('onWindowslinuxUseCtrlForAndAlt')}
         </p>
       </DialogContent>
     </Dialog>

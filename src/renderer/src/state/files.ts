@@ -1,33 +1,29 @@
+import { translate } from '@renderer/i18n'
 import { deserializeWorkbook } from '@core'
-import type { DesktopAPI } from '@shared/contracts'
+import { requireDesktopAPI } from '@renderer/lib/desktop'
 import { useEditor } from '@renderer/state/editor'
 import { suggestedFileName } from '@renderer/state/fileName'
-import {
-  browserOpen,
-  adoptBrowserPassword,
-  cancelBrowserPassword,
-} from '@renderer/state/browserFiles'
 import {
   activateOpenedDocument,
   cancelOpenedDocument,
   unlockOpenedDocument,
 } from '@renderer/state/lockedFiles'
-import { browserPasswordFor } from '@renderer/state/password'
 import { beginCreation } from '@renderer/state/creation'
-import { confirmDiscard } from '@renderer/state/documentDiscard'
+import {
+  findDocumentTab,
+  openDocumentTab,
+  switchDocumentTab,
+  synchronizeDocumentTab,
+  useDocumentTabs,
+} from '@renderer/state/documentTabs'
 import { serializedWorkbook } from '@renderer/state/workbookState'
 import { invalidateRecentFiles } from '@renderer/hooks/useRecentFiles'
 import { useWorkspace } from '@renderer/state/workspace'
-export { RECOVERY_KEY } from '@renderer/state/recovery'
-
-declare global {
-  interface Window {
-    trelyx?: DesktopAPI
-  }
-}
-
+import { stopPresentation } from '@renderer/state/presentation'
 const showError = (error: unknown): void => {
-  useEditor.getState().setError(error instanceof Error ? error.message : '文件操作失败，请重试。')
+  useEditor
+    .getState()
+    .setError(error instanceof Error ? error.message : translate('fileOperationFailedPleaseRetry'))
 }
 export const newDocument = (): void => {
   beginCreation('document')
@@ -36,52 +32,56 @@ export const openDocument = async (recentPath?: string, pending = false): Promis
   if (useEditor.getState().busy) return
   if (pending) {
     try {
-      if (!(await window.trelyx?.hasOpenFile())) return
+      if (!(await requireDesktopAPI().hasOpenFile())) return
     } catch (error) {
       showError(error)
       return
     }
   }
-  if (useEditor.getState().busy || !confirmDiscard()) return
-  const openedFrom = useEditor.getState()
+  if (useEditor.getState().busy) return
+  useEditor.getState().commitDraft()
+  if (useEditor.getState().editingId) return
+  stopPresentation()
+  synchronizeDocumentTab()
+  let reusedId: string | null = null
   useEditor.setState({ busy: true })
   try {
-    const bridge = window.trelyx
-    const selected = bridge
-      ? await (pending
-          ? bridge.takeOpenFile()
-          : recentPath
-            ? bridge.openRecent(recentPath)
-            : bridge.openDocument())
-      : await browserOpen()
+    const bridge = requireDesktopAPI()
+    const selected = await (pending
+      ? bridge.takeOpenFile()
+      : recentPath
+        ? bridge.openRecent(recentPath)
+        : bridge.openDocument())
     if (!selected) return
+    const existingPath = findDocumentTab(selected.path)
+    if (existingPath) {
+      await cancelOpenedDocument(selected)
+      reusedId = existingPath.id
+      return
+    }
     const result = await unlockOpenedDocument(selected)
     if (!result) return
     const document = deserializeWorkbook(result.contents)
-    const current = useEditor.getState()
-    const changedWhileReading =
-      current.workbook !== openedFrom.workbook ||
-      current.editingId !== openedFrom.editingId ||
-      current.editingSurface !== openedFrom.editingSurface ||
-      current.draft !== openedFrom.draft ||
-      current.richDraft !== openedFrom.richDraft
-    if (
-      changedWhileReading &&
-      !window.confirm('读取文件期间，当前导图又有了更改。放弃这些更改并打开文件？')
-    ) {
+    const existingDocument = findDocumentTab(result.path, document.id)
+    if (existingDocument) {
       await cancelOpenedDocument(result)
-      cancelBrowserPassword()
+      reusedId = existingDocument.id
       return
     }
+    synchronizeDocumentTab(true)
+    if (useDocumentTabs.getState().tabs.length >= 32) {
+      await cancelOpenedDocument(result)
+      throw new Error(translate('maxOpenMaps'))
+    }
     await activateOpenedDocument(result)
-    if (!bridge && result.encrypted) adoptBrowserPassword(document.id)
+    synchronizeDocumentTab(true)
     const imported = result.path === null
-    current.replace(document, result.path, imported)
-    if (bridge) void invalidateRecentFiles()
+    openDocumentTab(document, result.path, imported, true)
+    void invalidateRecentFiles()
     if (imported)
       useEditor.setState({
         importReport: {
-          sourceName: result.sourcePath?.split(/[\\/]/u).at(-1) ?? 'XMind 文件',
+          sourceName: result.sourcePath?.split(/[\\/]/u).at(-1) ?? translate('xmindFile'),
           warnings: result.warnings ?? [],
         },
       })
@@ -89,6 +89,7 @@ export const openDocument = async (recentPath?: string, pending = false): Promis
     showError(error)
   } finally {
     useEditor.setState({ busy: false })
+    if (reusedId) switchDocumentTab(reusedId)
   }
 }
 export const saveDocument = async (saveAs = false): Promise<void> => {
@@ -104,34 +105,14 @@ export const saveDocument = async (saveAs = false): Promise<void> => {
   const contents = serializedWorkbook(workbook)
   useEditor.setState({ busy: true, error: null })
   try {
-    let savedPath: string | null
-    if (window.trelyx) {
-      savedPath = await window.trelyx.saveDocument({
-        path: saveAs ? null : path,
-        contents,
-        suggestedName: suggestedFileName(workbook.title),
-      })
-    } else {
-      const password = browserPasswordFor(workbook.id)
-      const bytes =
-        password === null
-          ? (await import('@formats/trelyx')).encodeTrelyx(workbook)
-          : await (await import('@formats/encrypted')).encryptTrelyx(workbook, password, 'existing')
-      const url = URL.createObjectURL(
-        new Blob([new Uint8Array(bytes).buffer], { type: 'application/vnd.trelyx+zip' }),
-      )
-      const link = window.document.createElement('a')
-      link.href = url
-      link.download = suggestedFileName(workbook.title)
-      link.click()
-      setTimeout(() => {
-        URL.revokeObjectURL(url)
-      }, 1000)
-      savedPath = link.download
-    }
+    const savedPath = await requireDesktopAPI().saveDocument({
+      path: saveAs ? null : path,
+      contents,
+      suggestedName: suggestedFileName(workbook.title),
+    })
     if (savedPath && useEditor.getState().workbook.id === workbook.id) {
       useEditor.setState({ baseline: contents, path: savedPath })
-      if (window.trelyx) void invalidateRecentFiles()
+      void invalidateRecentFiles()
     }
   } catch (error) {
     showError(error)

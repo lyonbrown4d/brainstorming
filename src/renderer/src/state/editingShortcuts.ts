@@ -1,3 +1,4 @@
+import { translate } from '@renderer/i18n'
 import { getVisibleTopicIds } from '@core'
 import { useEditor } from '@renderer/state/editor'
 import { setSelectedTopics } from '@renderer/state/selection'
@@ -49,7 +50,9 @@ export const handleTopicNavigation = (event: KeyboardEvent, topicId?: string): b
       state.selectedId,
       undefined,
       'canvas',
-      event.key === 'F2' || title === '新主题' || title === '游离主题' ? 'all' : 'end',
+      event.key === 'F2' || title === translate('newTopic') || title === translate('floatingTopic')
+        ? 'all'
+        : 'end',
     )
   } else return false
   event.preventDefault()

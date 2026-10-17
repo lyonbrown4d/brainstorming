@@ -1,3 +1,5 @@
+import { nativeRecoveryBytes } from '@tests/electron/recovery'
+import { seedChinese } from '@tests/electron/preferences'
 import { mainWindow } from '@tests/desktop/windows'
 import { enterExampleIfHome } from '@tests/e2e/workspace'
 import {
@@ -38,6 +40,15 @@ const diskTitle = async (path: string): Promise<string> => {
     return ''
   }
 }
+const recoveryTitle = async (directory: string): Promise<string> => {
+  const bytes = await nativeRecoveryBytes(directory)
+  if (!bytes) return ''
+  try {
+    return (await decryptTrelyx(bytes, password)).sheets[0]?.document.title ?? ''
+  } catch {
+    return ''
+  }
+}
 const stop = async (app: ElectronApplication): Promise<void> => {
   const exited = new Promise<void>((resolve) => {
     app.process().once('exit', () => {
@@ -63,11 +74,12 @@ const unlock = async (page: Page, title: string, wrong = false): Promise<void> =
 test('真实 Electron 密码文件、加密历史、重启解锁与恢复记录形成闭环', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'trelyx-security-desktop-'))
   const profile = join(directory, 'profile')
+  await seedChinese(profile)
+  await seedChinese(join(directory, 'new-profile'))
   const savedPath = join(directory, 'protected.trelyx')
-  const recoveryPath = join(profile, 'recovery-v1.trelyx')
   let app: ElectronApplication | null = null
   try {
-    app = await electron.launch({ args: ['.', `--user-data-dir=${profile}`] })
+    app = await electron.launch({ colorScheme: null, args: ['.', `--user-data-dir=${profile}`] })
     let page = await mainWindow(app)
     await enterExampleIfHome(page)
     page.on('dialog', (dialog) => {
@@ -88,8 +100,10 @@ test('真实 Electron 密码文件、加密历史、重启解锁与恢复记录�
     await fileAction(page, '保存导图')
     await expect.poll(() => diskTitle(savedPath)).toBe('第一份机密内容')
     expect(await isEncryptedTrelyx(await readFile(savedPath))).toBe(true)
-    await expect.poll(() => diskTitle(recoveryPath)).toBe('第一份机密内容')
-    expect((await readFile(recoveryPath)).includes(Buffer.from(password))).toBe(false)
+    await expect.poll(() => recoveryTitle(profile)).toBe('第一份机密内容')
+    expect(
+      ((await nativeRecoveryBytes(profile)) ?? Buffer.alloc(0)).includes(Buffer.from(password)),
+    ).toBe(false)
     await editTitle(page, '第二份机密内容')
     await fileAction(page, '保存导图')
     await expect.poll(() => diskTitle(savedPath)).toBe('第二份机密内容')
@@ -102,12 +116,13 @@ test('真实 Electron 密码文件、加密历史、重启解锁与恢复记录�
     await expect(page.getByTestId('topic-root')).toContainText('第一份机密内容')
     expect(await diskTitle(savedPath)).toBe('第二份机密内容')
     await expect(page.locator('.save-status')).toContainText('未保存')
-    await expect.poll(() => diskTitle(recoveryPath)).toBe('第一份机密内容')
+    await expect.poll(() => recoveryTitle(profile)).toBe('第一份机密内容')
     await stop(app)
     app = null
 
     // A new profile proves no key is recovered from persisted settings or prior process memory.
     app = await electron.launch({
+      colorScheme: null,
       args: ['.', `--user-data-dir=${join(directory, 'new-profile')}`, savedPath],
     })
     page = await mainWindow(app)
@@ -131,16 +146,17 @@ test('真实 Electron 密码文件、加密历史、重启解锁与恢复记录�
     await stop(app)
     app = null
 
-    app = await electron.launch({ args: ['.', `--user-data-dir=${profile}`] })
+    app = await electron.launch({ colorScheme: null, args: ['.', `--user-data-dir=${profile}`] })
     page = await mainWindow(app)
     page.on('dialog', (dialog) => {
       void dialog.accept()
     })
+    await page.getByRole('button', { name: '恢复上次打开的 1 份导图', exact: true }).click()
     await unlock(page, '解锁自动恢复记录', true)
-    await expect(page.getByRole('button', { name: '恢复导图', exact: true })).toBeVisible()
-    await page.getByRole('button', { name: '恢复导图', exact: true }).click()
     await expect(page.getByTestId('topic-root')).toContainText('第一份机密内容')
-    expect(await isEncryptedTrelyx(await readFile(recoveryPath))).toBe(true)
+    expect(await isEncryptedTrelyx((await nativeRecoveryBytes(profile)) ?? Buffer.alloc(0))).toBe(
+      true,
+    )
     expect(await diskTitle(savedPath)).toBe('第二份机密内容')
   } finally {
     if (app) await stop(app)

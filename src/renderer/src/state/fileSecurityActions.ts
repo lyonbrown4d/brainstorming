@@ -1,3 +1,4 @@
+import { translate } from '@renderer/i18n'
 import { deserializeWorkbook } from '@core'
 import type { OpenedDocument } from '@shared/contracts'
 import { isDirty, useEditor } from '@renderer/state/editor'
@@ -6,29 +7,22 @@ import {
   cancelOpenedDocument,
   unlockOpenedDocument,
 } from '@renderer/state/lockedFiles'
-import {
-  browserPasswordFor,
-  setBrowserPassword,
-  useFileSecurityState,
-} from '@renderer/state/password'
-import {
-  adoptBrowserRecoveryPassword,
-  protectBrowserRecovery,
-  readBrowserRecovery,
-} from '@renderer/state/recovery'
+import { useFileSecurityState } from '@renderer/state/password'
+import { requireDesktopAPI } from '@renderer/lib/desktop'
 
 let pendingRecovery: OpenedDocument | null = null
 const showError = (error: unknown): void => {
-  useEditor.getState().setError(error instanceof Error ? error.message : '文件操作失败')
+  useEditor
+    .getState()
+    .setError(error instanceof Error ? error.message : translate('fileOperationFailed'))
 }
 export const readRecoveryContents = async (): Promise<string | null> => {
-  if (!window.trelyx) return readBrowserRecovery()
-  const opened = await window.trelyx.readLockedRecovery()
+  const opened = await requireDesktopAPI().readLockedRecovery()
   if (!opened) return null
-  const result = await unlockOpenedDocument(opened, '解锁自动恢复记录')
+  const result = await unlockOpenedDocument(opened, translate('unlockRecoveryDataLabel700'))
   if (!result) {
     useFileSecurityState.setState({ lockedRecovery: true })
-    throw new Error('加密恢复记录已保留，可稍后重试解锁')
+    throw new Error(translate('encryptedRecoveryDataIsPreservedYouCan'))
   }
   pendingRecovery = result
   useFileSecurityState.setState({ lockedRecovery: false })
@@ -38,23 +32,13 @@ export const changeFilePassword = async (password: string | null): Promise<void>
   const state = useEditor.getState()
   if (state.busy) return
   state.commitDraft()
-  if (useEditor.getState().editingId) throw new Error('请先完成当前主题编辑')
+  if (useEditor.getState().editingId)
+    throw new Error(translate('finishEditingTheCurrentTopicFirst'))
   const documentId = useEditor.getState().workbook.id
   useEditor.setState({ busy: true })
   try {
-    if (window.trelyx) {
-      const security = await window.trelyx.setFilePassword(documentId, password)
-      useFileSecurityState.setState({ documentId, encrypted: security.encrypted })
-    } else {
-      const previous = browserPasswordFor(documentId)
-      setBrowserPassword(documentId, password)
-      try {
-        await protectBrowserRecovery(documentId, previous, password)
-      } catch (error) {
-        setBrowserPassword(documentId, previous, true)
-        throw error
-      }
-    }
+    const security = await requireDesktopAPI().setFilePassword(documentId, password)
+    useFileSecurityState.setState({ documentId, encrypted: security.encrypted })
     useEditor.setState({ baseline: '', error: null })
   } finally {
     useEditor.setState({ busy: false })
@@ -64,13 +48,14 @@ export const restoreRecovery = (): void => {
   const contents = useEditor.getState().recovery
   if (!contents || useEditor.getState().busy) return
   useEditor.getState().commitDraft()
-  if (isDirty() && !window.confirm('当前导图有未保存的更改。放弃这些更改并恢复草稿？')) return
+  if (isDirty() && !window.confirm(translate('thisMapHasUnsavedChangesDiscardThemLabel703'))) return
   useEditor.setState({ busy: true })
   void (async () => {
     try {
       const workbook = deserializeWorkbook(contents)
-      if (pendingRecovery) await activateOpenedDocument(pendingRecovery)
-      else adoptBrowserRecoveryPassword(workbook.id)
+      if (pendingRecovery?.contents !== contents)
+        throw new Error(translate('recoverySessionExpiredReloadRecoveryData'))
+      await activateOpenedDocument(pendingRecovery)
       useEditor.getState().replace(workbook, null, true)
       useEditor.setState({ recovery: null })
       pendingRecovery = null
@@ -94,15 +79,14 @@ export const retryRecovery = async (): Promise<void> => {
   }
 }
 export const restoreBackup = async (id: string): Promise<void> => {
-  const bridge = window.trelyx
-  if (!bridge || useEditor.getState().busy) return
+  if (useEditor.getState().busy) return
   useEditor.getState().commitDraft()
-  if (!window.confirm('恢复此版本会替换当前导图内容；文件会在你下次保存时更新。继续？')) return
+  if (!window.confirm(translate('restoringThisVersionReplacesTheCurrentMap'))) return
   const before = useEditor.getState()
   useEditor.setState({ busy: true })
   let opened: OpenedDocument | null = null
   try {
-    opened = await unlockOpenedDocument(await bridge.restoreDocumentBackup(id))
+    opened = await unlockOpenedDocument(await requireDesktopAPI().restoreDocumentBackup(id))
     if (!opened) return
     const workbook = deserializeWorkbook(opened.contents)
     const current = useEditor.getState()
@@ -112,7 +96,7 @@ export const restoreBackup = async (id: string): Promise<void> => {
         current.editingSurface !== before.editingSurface ||
         current.draft !== before.draft ||
         current.richDraft !== before.richDraft) &&
-      !window.confirm('读取版本期间当前导图已有更改。仍要恢复？')
+      !window.confirm(translate('theMapChangedWhileLoadingTheVersion'))
     )
       return
     await activateOpenedDocument(opened)

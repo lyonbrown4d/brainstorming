@@ -1,3 +1,4 @@
+import { requireDesktopAPI } from '@renderer/lib/desktop'
 import { queryOptions, useQuery, type QueryClient } from '@tanstack/react-query'
 import type { RecentFile } from '@shared/contracts'
 import { queryClient } from '@renderer/lib/queryClient'
@@ -5,11 +6,9 @@ import { queryClient } from '@renderer/lib/queryClient'
 const recentFilesKey = ['recent-files'] as const
 
 export const recentFilesOptions = () => {
-  const bridge = window.trelyx
   return queryOptions({
-    queryKey: [...recentFilesKey, bridge ? 'desktop' : 'browser'],
-    queryFn: (): Promise<readonly RecentFile[]> =>
-      bridge ? bridge.getRecentFiles() : Promise.resolve([]),
+    queryKey: recentFilesKey,
+    queryFn: (): Promise<readonly RecentFile[]> => requireDesktopAPI().getRecentFiles(),
     retry: false,
     staleTime: 0,
     refetchOnMount: true,

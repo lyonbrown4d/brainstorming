@@ -1,3 +1,4 @@
+import { seedChinese } from '@tests/electron/preferences'
 import { mainWindow } from '@tests/desktop/windows'
 import { _electron as electron, expect, test } from '@playwright/test'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
@@ -7,8 +8,12 @@ import { decodeTrelyx } from '@formats/trelyx'
 
 test('桌面首页创建并保存后，新建独立画布沿用原文件路径，最近文件可从首页重新打开', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'trelyx-create-desktop-'))
+  await seedChinese(directory)
   const path = join(directory, '设计工作簿.trelyx')
-  const app = await electron.launch({ args: ['.', `--user-data-dir=${directory}`] })
+  const app = await electron.launch({
+    colorScheme: null,
+    args: ['.', `--user-data-dir=${directory}`],
+  })
   try {
     const page = await mainWindow(app)
     await expect(page.getByRole('button', { name: '探索示例', exact: true })).toBeVisible()
@@ -39,7 +44,9 @@ test('桌面首页创建并保存后，新建独立画布沿用原文件路径�
     await page.getByRole('button', { name: '下一步', exact: true }).click()
     await page.getByRole('textbox', { name: '画布名称', exact: true }).fill('时间安排')
     await page.getByRole('button', { name: '创建画布', exact: true }).click()
-    await expect(page.getByRole('tab')).toHaveCount(2)
+    await expect(
+      page.getByRole('tablist', { name: '文档画布', exact: true }).getByRole('tab'),
+    ).toHaveCount(2)
     await page.keyboard.press('ControlOrMeta+s')
     await expect.poll(async () => decodeTrelyx(await readFile(path)).sheets.length).toBe(2)
     const saved = decodeTrelyx(await readFile(path))
@@ -50,7 +57,15 @@ test('桌面首页创建并保存后，新建独立画布沿用原文件路径�
     const recent = page.getByRole('button', { name: /设计工作簿\.trelyx/ })
     await expect(recent).toBeVisible()
     await recent.click()
-    await expect(page.getByRole('tab')).toHaveCount(2)
+    await expect(
+      page.getByRole('tablist', { name: '文档画布', exact: true }).getByRole('tab'),
+    ).toHaveCount(2)
+    // Reopening an already open native path preserves its active Sheet.
+    await expect(page.getByTestId('topic-root')).toContainText('时间安排')
+    await page
+      .getByRole('tablist', { name: '文档画布', exact: true })
+      .getByRole('tab', { name: '桌面设计', exact: true })
+      .click()
     await expect(page.getByTestId('topic-root')).toContainText('桌面设计')
     // The native menu remains usable while a renderer dialog has focus.
     await page.keyboard.press('ControlOrMeta+f')
@@ -68,7 +83,9 @@ test('桌面首页创建并保存后，新建独立画布沿用原文件路径�
     await page.getByRole('button', { name: '返回画布', exact: true }).click()
     await expect(search).toHaveCount(0)
     await expect(page.getByTestId('topic-root')).toContainText('桌面设计')
-    await expect(page.getByRole('tab')).toHaveCount(2)
+    await expect(
+      page.getByRole('tablist', { name: '文档画布', exact: true }).getByRole('tab'),
+    ).toHaveCount(2)
   } finally {
     app.process().kill('SIGKILL')
     await rm(directory, { recursive: true, force: true })

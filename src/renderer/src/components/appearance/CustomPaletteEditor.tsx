@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { isCompositionKey } from '@renderer/state/keyboard'
 import { useId, useState } from 'react'
 import type { DocumentPalette } from '@core/extensions'
@@ -13,6 +15,8 @@ export const CustomPaletteEditor = ({
   initial: DocumentPalette
   onSave: (palette: DocumentPalette) => void
 }) => {
+  const { translate } = useMessages()
+
   const [draft, setDraft] = useState<DocumentPalette>(() => ({
     name: initial.name,
     root: initial.root,
@@ -31,7 +35,7 @@ export const CustomPaletteEditor = ({
     >
       <PalettePreview palette={draft} />
       <div className="space-y-2">
-        <Label htmlFor={id}>配色名称</Label>
+        <Label htmlFor={id}>{translate('colorSchemeName')}</Label>
         <Input
           id={id}
           onKeyDown={(event) => {
@@ -47,7 +51,12 @@ export const CustomPaletteEditor = ({
       </div>
       <div className="grid grid-cols-2 gap-3">
         {entries.map((color, index) => {
-          const label = index === 0 ? '中心主题' : index === 6 ? '画布背景' : `分支 ${index}`
+          const label =
+            index === 0
+              ? translate('centralTopic')
+              : index === 6
+                ? translate('canvasBackground')
+                : translate('branchValue0', { value0: index })
           return (
             <div key={index} className="flex items-center justify-between gap-2">
               <Label htmlFor={`${id}-${index}`} className="text-xs">
@@ -75,7 +84,7 @@ export const CustomPaletteEditor = ({
         })}
       </div>
       <Button type="submit" className="w-full" disabled={!draft.name.trim()}>
-        应用配色
+        {translate('applyColors')}
       </Button>
     </form>
   )

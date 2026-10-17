@@ -20,14 +20,11 @@ vi.mock('electron', () => ({
       mocks.notifications.set(name, handler),
   },
 }))
-vi.mock('@main/mcp/server', () => ({
-  EmbeddedMCPServer: class {
-    start = mocks.start
-    stop = mocks.stop
-    getConnection = mocks.getConnection
-  },
-}))
 import { registerMCPIPC } from '@main/mcp'
+import { MCPService } from '@main/mcp/application'
+import { MCPRendererBridge } from '@main/mcp/bridge'
+import { IPCRegistry } from '@main/application/ipcRegistry'
+import { ipcMain } from 'electron'
 
 const grant: MCPStart = { workbookId: 'workbook', includeNotes: false, allowProposals: false }
 const connection: MCPConnection = {
@@ -44,7 +41,7 @@ const setup = () => {
   })
   const typedWindow = window as unknown as BrowserWindow
   registerMCPIPC(
-    () => typedWindow,
+    new IPCRegistry(ipcMain),
     (event) => {
       if (
         event.sender !== typedWindow.webContents ||
@@ -53,6 +50,11 @@ const setup = () => {
         throw new Error('不受信任的请求')
       return window as unknown as BrowserWindow
     },
+    new MCPService(
+      () => typedWindow,
+      new MCPRendererBridge(() => typedWindow, mocks.getConnection),
+      { start: mocks.start, stop: mocks.stop, getConnection: mocks.getConnection },
+    ),
   )
   const event = {
     sender: contents,

@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import type { Topic } from '@core'
 import { useEffect, useRef } from 'react'
 import { flushSync } from 'react-dom'
@@ -29,6 +31,8 @@ export const SpatialTopicLabel = ({
   color,
   onSelect,
 }: SpatialTopicLabelProps) => {
+  const { translate } = useMessages()
+
   const label = useRef<HTMLButtonElement>(null)
   // Only this topic changes when its editor opens; draft keystrokes remain inside Lexical.
   const editing = useEditor(
@@ -73,9 +77,9 @@ export const SpatialTopicLabel = ({
       type="button"
       className="pointer-events-auto w-full cursor-text overflow-hidden rounded-sm bg-transparent text-center leading-snug text-ellipsis break-words whitespace-pre-line outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
       style={style}
-      aria-label={`选择主题 ${topic.title}`}
+      aria-label={translate('selectTopicValue0', { value0: topic.title })}
       aria-pressed={selected}
-      title={`${topic.title} · 双击编辑`}
+      title={translate('value0DoubleclickToEdit', { value0: topic.title })}
       onPointerDown={(event) => {
         event.stopPropagation()
       }}
@@ -95,7 +99,9 @@ export const SpatialTopicLabel = ({
             topic.id,
             undefined,
             'spatial',
-            topic.title === '新主题' || topic.title === '游离主题' ? 'all' : 'end',
+            topic.title === translate('newTopic') || topic.title === translate('floatingTopic')
+              ? 'all'
+              : 'end',
           )
       }}
       onKeyDown={(event) => {

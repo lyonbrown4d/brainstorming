@@ -1,3 +1,4 @@
+import { translate } from '@renderer/i18n'
 import { applyCommand, type Command, type MindMapDocument } from '@core'
 import { validateBoundedWorkbook } from '@formats/trelyx/validation'
 import {
@@ -45,16 +46,17 @@ const revisionFor = (document: MindMapDocument): string => {
 const documentFor = (sheetId: string): MindMapDocument => {
   const state = useEditor.getState()
   const sheet = state.workbook.sheets.find((entry) => entry.id === sheetId)
-  if (!sheet) throw new Error('画布不存在')
+  if (!sheet) throw new Error(translate('sheetDoesNotExist'))
   return sheet.document
 }
 const readBranch = (input: MCPRead, includeNotes: boolean): Record<string, unknown> => {
   const document = documentFor(input.sheetId)
   const revision = revisionFor(document)
-  if (input.revision && input.revision !== revision) throw new Error('画布已改变，请重新读取')
-  if (input.offset > 0 && !input.revision) throw new Error('分页读取须提供 revision')
+  if (input.revision && input.revision !== revision)
+    throw new Error(translate('theSheetChangedReadItAgain'))
+  if (input.offset > 0 && !input.revision) throw new Error(translate('paginationRequiresARevision'))
   const rootId = input.topicId ?? document.rootId
-  if (!document.topics[rootId]) throw new Error('主题不存在')
+  if (!document.topics[rootId]) throw new Error(translate('topicDoesNotExist'))
   const pending: { id: string; parentId: string | null }[] = [{ id: rootId, parentId: null }]
   const topics: Record<string, unknown>[] = []
   let index = 0
@@ -62,7 +64,7 @@ const readBranch = (input: MCPRead, includeNotes: boolean): Record<string, unkno
     const entry = pending.pop()
     if (!entry) break
     const topic = document.topics[entry.id]
-    if (!topic) throw new Error('主题不存在')
+    if (!topic) throw new Error(translate('topicDoesNotExist'))
     if (index++ >= input.offset)
       topics.push({
         id: topic.id,
@@ -102,7 +104,7 @@ export const handleMCPRequest = (request: MCPBridgeRequest): Record<string, unkn
   const action = mcpActionSchema.parse(request.action)
   const state = useEditor.getState()
   if (!useWorkspace.getState().hasDocument || state.workbook.id !== request.grant.workbookId)
-    throw new Error('共享的工作簿已关闭或切换，请在 Trelyx 中重新启用 MCP')
+    throw new Error(translate('theSharedWorkbookWasClosedOrChanged'))
   if (action.type === 'workbook')
     return {
       workbookId: state.workbook.id,
@@ -122,15 +124,17 @@ export const handleMCPRequest = (request: MCPBridgeRequest): Record<string, unkn
       .proposals.find(
         (item) => item.id === action.proposalId && item.sessionId === request.sessionId,
       )
-    if (!proposal) throw new Error('编辑草稿不存在或已过期')
+    if (!proposal) throw new Error(translate('editingDraftDoesNotExistOrHas'))
     return { proposalId: proposal.id, status: proposal.status }
   }
-  if (!request.grant.allowProposals) throw new Error('本次连接未授权提交编辑草稿')
+  if (!request.grant.allowProposals)
+    throw new Error(translate('thisConnectionDoesNotAllowEditingDrafts'))
   const document = documentFor(action.input.sheetId)
-  if (revisionFor(document) !== action.input.revision) throw new Error('画布已改变，请重新读取')
+  if (revisionFor(document) !== action.input.revision)
+    throw new Error(translate('theSheetChangedReadItAgain'))
   const proposals = useMCPProposals.getState().proposals
   if (proposals.filter((item) => item.status === 'pending').length >= MCP_LIMITS.proposals)
-    throw new Error('待确认草稿已达上限，请先在 Trelyx 中处理')
+    throw new Error(translate('tooManyPendingDraftsReviewThemIn'))
   validateEdit(action.input, document)
   const proposal: MCPProposal = {
     id: crypto.randomUUID(),
@@ -144,7 +148,7 @@ export const handleMCPRequest = (request: MCPBridgeRequest): Record<string, unkn
   return {
     proposalId: proposal.id,
     status: proposal.status,
-    message: '等待用户在 Trelyx 中确认；文档尚未修改',
+    message: translate('waitingForApprovalInTrelyxTheDocument'),
   }
 }
 export const resolveMCPProposal = (
@@ -158,7 +162,7 @@ export const resolveMCPProposal = (
   if (apply) {
     const state = useEditor.getState()
     if (state.editingId || state.busy || usePresentation.getState().playing)
-      throw new Error('请先完成当前编辑、文件操作或演示')
+      throw new Error(translate('finishEditingFileOperationsOrPresentationFirst'))
     if (
       proposal.sessionId !== sessionId ||
       state.workbook.id !== proposal.workbookId ||
@@ -175,12 +179,12 @@ export const resolveMCPProposal = (
           .getState()
           .command({ type: 'batch', commands: proposal.input.operations.map(commandFor) })
       )
-        throw new Error('无法应用编辑草稿，文档未修改')
+        throw new Error(translate('couldNotApplyEditingDraftTheDocument'))
       status = 'applied'
     }
   }
   useMCPProposals.setState(({ proposals }) => ({
     proposals: proposals.map((item) => (item.id === proposalId ? { ...item, status } : item)),
   }))
-  if (status === 'stale') throw new Error('草稿对应的连接或画布已改变，请重新提交')
+  if (status === 'stale') throw new Error(translate('theConnectionOrSheetChangedSubmitThe'))
 }

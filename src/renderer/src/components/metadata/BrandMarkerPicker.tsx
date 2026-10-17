@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual'
 import { brandMarkerNames } from '@shared/markerIcons'
@@ -14,6 +16,8 @@ export const BrandMarkerPicker = ({
 }: MarkerPickerChoices & {
   query: string
 }) => {
+  const { translate } = useMessages()
+
   const container = useRef<HTMLDivElement>(null)
   const pendingFocus = useRef<string | undefined>(undefined)
   const [active, setActive] = useState(0)
@@ -42,14 +46,14 @@ export const BrandMarkerPicker = ({
   return (
     <>
       <p className="text-xs text-muted-foreground" role="status">
-        {matches.length} 个匹配图标
+        {translate('matchingIconCount', { count: matches.length })}
       </p>
       <ScrollArea ref={container} className="h-48">
         <div
           className="relative w-full"
           style={{ height: virtualizer.getTotalSize() }}
           role="group"
-          aria-label="品牌图标"
+          aria-label={translate('brandIcons')}
         >
           {virtualizer.getVirtualItems().map((row) => (
             <div
@@ -73,7 +77,7 @@ export const BrandMarkerPicker = ({
                       variant="ghost"
                       size="icon"
                       title={marker.slice(13)}
-                      aria-label={`品牌图标 ${marker.slice(13)}`}
+                      aria-label={translate('brandIconValue0', { value0: marker.slice(13) })}
                       aria-pressed={selected.includes(marker)}
                       tabIndex={index === active ? 0 : -1}
                       className="w-full aria-pressed:bg-accent aria-disabled:opacity-50"
@@ -109,7 +113,9 @@ export const BrandMarkerPicker = ({
             </div>
           ))}
         </div>
-        {!matches.length && <p className="py-4 text-xs text-muted-foreground">没有匹配的图标。</p>}
+        {!matches.length && (
+          <p className="py-4 text-xs text-muted-foreground">{translate('noMatchingIcons')}</p>
+        )}
       </ScrollArea>
     </>
   )

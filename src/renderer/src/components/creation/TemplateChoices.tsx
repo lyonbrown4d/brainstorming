@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { Check, LayoutTemplate, Minus } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import { templateOptions } from '@renderer/components/documents/templates'
@@ -12,9 +14,15 @@ export const TemplateChoices = ({
   onChange: (template: CreationRequest['template']) => void
   disabled: boolean
 }) => {
-  const choices = [{ id: 'blank' as const, title: '不使用模板' }, ...templateOptions]
+  const { translate, translateLabel } = useMessages()
+
+  const choices = [{ id: 'blank' as const, title: translate('noTemplate') }, ...templateOptions]
   return (
-    <div className="grid gap-2 sm:grid-cols-2" role="group" aria-label="选择初始内容">
+    <div
+      className="grid gap-2 sm:grid-cols-2"
+      role="group"
+      aria-label={translate('chooseInitialContent')}
+    >
       {choices.map((template) => {
         const Icon = template.id === 'blank' ? Minus : LayoutTemplate
         return (
@@ -23,7 +31,11 @@ export const TemplateChoices = ({
             type="button"
             variant="outline"
             disabled={disabled}
-            aria-label={template.id === 'blank' ? template.title : `选择${template.title}模板`}
+            aria-label={
+              template.id === 'blank'
+                ? template.title
+                : translate('chooseValue0Template', { value0: translateLabel(template.title) })
+            }
             aria-pressed={value === template.id}
             onClick={() => {
               onChange(template.id)
@@ -31,7 +43,7 @@ export const TemplateChoices = ({
             className="h-14 justify-start rounded-lg border-border px-4 shadow-none aria-pressed:border-primary aria-pressed:bg-primary/5 aria-pressed:text-primary"
           >
             <Icon data-icon="inline-start" />
-            <span className="flex-1 text-left">{template.title}</span>
+            <span className="flex-1 text-left">{translateLabel(template.title)}</span>
             {value === template.id && <Check data-icon="inline-end" />}
           </Button>
         )

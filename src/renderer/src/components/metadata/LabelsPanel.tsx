@@ -1,11 +1,12 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import type { TopicMetadata } from '@core'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import { Badge } from '@renderer/components/ui/badge'
-import { setMetadataField, toggleTopicMarker } from '@renderer/components/metadata/commands'
-import { MarkerPicker } from '@renderer/components/metadata/MarkerPicker'
+import { setMetadataField } from '@renderer/components/metadata/commands'
 export const LabelsPanel = ({
   topicId,
   metadata,
@@ -13,12 +14,13 @@ export const LabelsPanel = ({
   topicId: string
   metadata: TopicMetadata
 }) => {
+  const { translate } = useMessages()
+
   const [label, setLabel] = useState('')
   const labels = metadata.labels ?? []
-  const currentMarkers = metadata.markers ?? []
   return (
     <section className="space-y-3 border-t border-border py-4">
-      <h3 className="text-sm font-medium">标签与图标</h3>
+      <h3 className="text-sm font-medium">{translate('labels')}</h3>
       <form
         className="flex gap-2"
         onSubmit={(event) => {
@@ -33,8 +35,8 @@ export const LabelsPanel = ({
         }}
       >
         <Input
-          aria-label="新标签"
-          placeholder="添加标签"
+          aria-label={translate('newLabel')}
+          placeholder={translate('addLabel')}
           maxLength={64}
           value={label}
           onChange={(event) => {
@@ -47,7 +49,7 @@ export const LabelsPanel = ({
           type="submit"
           disabled={!label.trim() || labels.length >= 32}
         >
-          添加
+          {translate('add')}
         </Button>
       </form>
       <div className="flex flex-wrap gap-1">
@@ -58,7 +60,7 @@ export const LabelsPanel = ({
               variant="ghost"
               size="icon"
               className="size-4"
-              aria-label={`移除标签 ${value}`}
+              aria-label={translate('removeLabelValue0', { value0: value })}
               onClick={() => {
                 setMetadataField(
                   topicId,
@@ -72,16 +74,6 @@ export const LabelsPanel = ({
           </Badge>
         ))}
       </div>
-      <MarkerPicker
-        style={metadata.markerStyle}
-        onStyleChange={(style) => {
-          setMetadataField(topicId, 'markerStyle', style)
-        }}
-        selected={currentMarkers}
-        onToggle={(marker) => {
-          toggleTopicMarker(topicId, marker)
-        }}
-      />
     </section>
   )
 }

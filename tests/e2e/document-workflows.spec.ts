@@ -1,5 +1,7 @@
+import { canvasProperties } from '@tests/e2e/properties'
+import { prepareNativeSave } from '@tests/electron/native-files'
 import { openExample } from '@tests/e2e/workspace'
-import { expect, test } from '@playwright/test'
+import { expect, test } from '@tests/electron/fixture'
 import { openDock, dockAction } from '@tests/e2e/dock'
 import { readFile } from 'node:fs/promises'
 import { decodeTrelyx } from '@formats/trelyx'
@@ -7,17 +9,18 @@ import { decodeTrelyx } from '@formats/trelyx'
 test('保存多布局、主题、游离位置和演示步骤，播放不修改保存内容', async ({ page }) => {
   await openExample(page)
   await openDock(page)
-  await page.getByRole('button', { name: '图形结构', exact: true }).click()
+  await canvasProperties(page, '结构')
   await page.getByRole('button', { name: '应用向右逻辑图', exact: true }).click()
   await page.keyboard.press('Escape')
-  await page.getByRole('button', { name: '布局与主题', exact: true }).click()
+  await canvasProperties(page)
   await page.getByRole('button', { name: '使用海洋配色', exact: true }).click()
   await page.keyboard.press('Escape')
   await page.keyboard.press('Escape')
   await page.getByTestId('topic-root').click()
   await openDock(page)
-  await page.getByRole('button', { name: '演示', exact: true }).click()
+  await page.getByRole('button', { name: '演示设置', exact: true }).click()
   await page.getByRole('button', { name: '添加所选主题步骤', exact: true }).click()
+  await page.keyboard.press('Escape')
   await page.getByRole('button', { name: '开始演示', exact: true }).click()
   const playback = page.getByRole('toolbar', { name: '演示播放控制', exact: true })
   await expect(playback).toContainText('1 / 1')
@@ -30,9 +33,9 @@ test('保存多布局、主题、游离位置和演示步骤，播放不修改�
   await page.keyboard.press('Escape')
   // Escape cancels the text change, while the explicit floating creation remains undoable.
   await expect(page.locator('.topic-title').getByText('游离主题', { exact: true })).toBeVisible()
-  const download = page.waitForEvent('download')
+  const download = await prepareNativeSave(page)
   await page.keyboard.press('ControlOrMeta+s')
-  const path = await (await download).path()
+  const path = await download.path()
   if (!path) throw new Error('没有保存文件')
   const workbook = decodeTrelyx(await readFile(path))
   const document = workbook.sheets[0]?.document

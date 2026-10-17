@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { Download, ImagePlus, Paperclip, Trash2 } from 'lucide-react'
 import type { Command } from '@core'
 import { useEditor } from '@renderer/state/editor'
@@ -17,6 +19,8 @@ const removeContent = (command: Command): void => {
 }
 
 const TopicAttachment = ({ topicId, assetId }: { topicId: string; assetId: string }) => {
+  const { translate } = useMessages()
+
   const asset = useEditor((state) => state.history.document.assets?.[assetId])
   const busy = useEditor((state) => state.busy)
   if (!asset) return null
@@ -30,7 +34,7 @@ const TopicAttachment = ({ topicId, assetId }: { topicId: string; assetId: strin
         className="h-[31px] w-[27px] shrink-0 gap-[5px] p-0 text-xs"
         variant="ghost"
         size="icon"
-        aria-label={`另存附件 ${asset.name}`}
+        aria-label={translate('saveAttachmentAsValue0', { value0: asset.name })}
         disabled={busy}
         onClick={() => {
           void exportTopicAsset(asset)
@@ -42,7 +46,7 @@ const TopicAttachment = ({ topicId, assetId }: { topicId: string; assetId: strin
         className="h-[31px] w-[27px] shrink-0 gap-[5px] p-0 text-xs"
         variant="ghost"
         size="icon"
-        aria-label={`移除附件 ${asset.name}`}
+        aria-label={translate('removeAttachmentValue0', { value0: asset.name })}
         disabled={busy}
         onClick={() => {
           removeContent({ type: 'removeTopicAttachment', topicId, assetId })
@@ -55,6 +59,8 @@ const TopicAttachment = ({ topicId, assetId }: { topicId: string; assetId: strin
 }
 
 export const TopicContentPanel = ({ topicId }: { topicId: string }) => {
+  const { translate } = useMessages()
+
   const topic = useEditor((state) => state.history.document.topics[topicId])
   const busy = useEditor((state) => state.busy)
   if (!topic) return null
@@ -62,7 +68,7 @@ export const TopicContentPanel = ({ topicId }: { topicId: string }) => {
     <div className="topic-content-panel">
       <TopicNotes topicId={topicId} />
       <section className="format-group border-t border-border py-[18px] [&_h3]:mb-2.5 [&_h3]:text-[13px] [&_h3]:font-medium [&_h3]:text-secondary-foreground first:mt-[18px]">
-        <h3>图片</h3>
+        <h3>{translate('image')}</h3>
         {topic.image && (
           <TopicImage
             image={topic.image}
@@ -79,7 +85,7 @@ export const TopicContentPanel = ({ topicId }: { topicId: string }) => {
             }}
           >
             <ImagePlus size={14} />
-            {topic.image ? '替换图片' : '添加图片'}
+            {topic.image ? translate('replaceImage') : translate('addImage')}
           </Button>
           {topic.image && <TopicImagePreview image={topic.image} />}
           {topic.image && (
@@ -87,20 +93,20 @@ export const TopicContentPanel = ({ topicId }: { topicId: string }) => {
               className="h-[31px] gap-[5px] px-[9px] text-xs"
               variant="ghost"
               disabled={busy}
-              aria-label="移除图片"
+              aria-label={translate('removeImage')}
               onClick={() => {
                 removeContent({ type: 'removeTopicImage', topicId })
               }}
             >
               <Trash2 size={14} />
-              移除
+              {translate('remove')}
             </Button>
           )}
         </div>
       </section>
       <section className="format-group border-t border-border py-[18px] [&_h3]:mb-2.5 [&_h3]:text-[13px] [&_h3]:font-medium [&_h3]:text-secondary-foreground first:mt-[18px]">
         <h3>
-          附件
+          {translate('attachments')}
           {Boolean(topic.attachments?.length) && (
             <Badge variant="secondary" className="topic-attachment-count ml-[7px] text-[10px]">
               {topic.attachments?.length}
@@ -111,7 +117,7 @@ export const TopicContentPanel = ({ topicId }: { topicId: string }) => {
           <ScrollArea
             className="topic-attachment-scroll mb-3"
             style={{ height: Math.min(topic.attachments.length * 38, 190) }}
-            aria-label="主题附件列表"
+            aria-label={translate('topicAttachmentList')}
             tabIndex={0}
           >
             <ul className="topic-attachments m-0 flex list-none flex-col gap-[7px] p-0">
@@ -122,7 +128,7 @@ export const TopicContentPanel = ({ topicId }: { topicId: string }) => {
           </ScrollArea>
         ) : (
           <p className="topic-content-empty mb-3 text-[11px] leading-relaxed text-muted-foreground">
-            尚未添加附件
+            {translate('noAttachmentsYet')}
           </p>
         )}
         <Button
@@ -134,7 +140,7 @@ export const TopicContentPanel = ({ topicId }: { topicId: string }) => {
           }}
         >
           <Paperclip size={14} />
-          添加附件
+          {translate('addAttachment')}
         </Button>
       </section>
     </div>

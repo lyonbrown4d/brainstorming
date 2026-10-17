@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { History } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import {
@@ -12,21 +14,25 @@ import { useEditor } from '@renderer/state/editor'
 import { restoreBackup } from '@renderer/state/files'
 
 export const HistoryDialog = () => {
+  const { translate } = useMessages()
+
   return (
     <Button
       variant="ghost"
       size="sm"
-      title="版本历史"
+      title={translate('versionHistory')}
       onClick={() => {
         void openHistoryDialog()
       }}
     >
       <History className="size-4" />
-      版本历史
+      {translate('versionHistory')}
     </Button>
   )
 }
 export const HistoryPanel = () => {
+  const { translate } = useMessages()
+
   const open = useFileDialogs((state) => state.history)
   const setOpen = (value: boolean): void => {
     useFileDialogs.setState({ history: value })
@@ -44,21 +50,18 @@ export const HistoryPanel = () => {
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>版本历史</DialogTitle>
-          <DialogDescription>
-            成功保存后会保留本机最近 20
-            份快照。恢复版本会先替换当前内容，直到下次保存才更新文件。已加密的历史版本保留保存时的密码。
-          </DialogDescription>
+          <DialogTitle>{translate('versionHistory')}</DialogTitle>
+          <DialogDescription>{translate('theLast20SavedSnapshotsAreKept')}</DialogDescription>
         </DialogHeader>
         {loading ? (
-          <p className="text-sm text-muted-foreground">正在读取版本…</p>
+          <p className="text-sm text-muted-foreground">{translate('loadingVersions')}</p>
         ) : error ? (
           <p role="alert" className="text-sm text-destructive">
             {error}
           </p>
         ) : backups.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            {window.trelyx ? '尚无版本快照，请先保存文件。' : '版本历史由桌面版本地保存。'}
+            {translate('noVersionSnapshotsSaveTheFileFirst')}
           </p>
         ) : (
           <ul className="grid max-h-80 gap-2 overflow-y-auto">
@@ -71,7 +74,7 @@ export const HistoryPanel = () => {
                   <p>{new Date(backup.createdAt).toLocaleString()}</p>
                   <p className="text-xs text-muted-foreground">
                     {Math.max(1, Math.round(backup.size / 1024))} KiB
-                    {backup.encrypted ? ' · 密码保护' : ''}
+                    {backup.encrypted ? translate('passwordProtected') : ''}
                   </p>
                 </div>
                 <Button
@@ -83,7 +86,7 @@ export const HistoryPanel = () => {
                     void restoreBackup(backup.id)
                   }}
                 >
-                  恢复
+                  {translate('restore')}
                 </Button>
               </li>
             ))}

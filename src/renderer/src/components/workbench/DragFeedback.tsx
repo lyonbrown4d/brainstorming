@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { MoveRight } from 'lucide-react'
 import { canvasDragMessage, useCanvasInteraction } from '@renderer/state/canvasInteraction'
@@ -5,6 +7,8 @@ import { useEditor } from '@renderer/state/editor'
 
 /** Shared screen-space feedback for both canvas projections. */
 export const DragFeedback = () => {
+  const { translate } = useMessages()
+
   const drag = useCanvasInteraction((state) => state.drag)
   const sheetId = useEditor((state) => state.activeSheetId)
   const document = useEditor((state) => state.history.document)
@@ -31,7 +35,7 @@ export const DragFeedback = () => {
             <span className="truncate">{canvasDragMessage(visible)}</span>
             {visible.roots.length > 1 && (
               <span className="shrink-0 border-l border-current/20 pl-2 opacity-80">
-                {visible.roots.length} 个主题
+                {translate('topicCount', { count: visible.roots.length })}
               </span>
             )}
           </motion.div>

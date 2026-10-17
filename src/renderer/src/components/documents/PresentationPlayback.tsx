@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { ArrowLeft, ArrowRight, Maximize, Minimize, Square } from 'lucide-react'
 import { useEditor } from '@renderer/state/editor'
 import { showPresentationStep, stopPresentation } from '@renderer/state/presentation'
@@ -5,6 +7,8 @@ import { usePresentationPlayback } from '@renderer/hooks/usePresentationPlayback
 import { Button } from '@renderer/components/ui/button'
 
 export const PresentationPlayback = () => {
+  const { translate } = useMessages()
+
   const { presentation, fullscreen, toggleFullscreen } = usePresentationPlayback()
   const title = useEditor(
     (state) =>
@@ -15,7 +19,7 @@ export const PresentationPlayback = () => {
     <div
       className="absolute inset-x-4 bottom-5 z-50 mx-auto flex w-fit max-w-[calc(100%-2rem)] flex-wrap items-center justify-center gap-2 rounded-2xl border bg-background/95 px-3 py-2 shadow-lg backdrop-blur"
       role="toolbar"
-      aria-label="演示播放控制"
+      aria-label={translate('presentationPlaybackControls')}
       data-presentation-controls
       tabIndex={-1}
     >
@@ -25,13 +29,13 @@ export const PresentationPlayback = () => {
         </p>
         <p className="text-xs text-muted-foreground">
           {presentation.index + 1} / {presentation.steps.length}
-          {presentation.generated ? ' · 自动演示' : ''}
+          {presentation.generated ? translate('automaticPresentationLabel215') : ''}
         </p>
       </div>
       <Button
         size="icon"
         variant="ghost"
-        aria-label="上一步演示"
+        aria-label={translate('previousPresentationStep')}
         disabled={presentation.index === 0}
         onClick={() => {
           showPresentationStep(presentation.index - 1)
@@ -42,7 +46,7 @@ export const PresentationPlayback = () => {
       <Button
         size="icon"
         variant="ghost"
-        aria-label="下一步演示"
+        aria-label={translate('nextPresentationStep')}
         disabled={presentation.index >= presentation.steps.length - 1}
         onClick={() => {
           showPresentationStep(presentation.index + 1)
@@ -53,17 +57,22 @@ export const PresentationPlayback = () => {
       <Button
         size="icon"
         variant="ghost"
-        aria-label={fullscreen ? '退出全屏' : '全屏演示'}
+        aria-label={fullscreen ? translate('exitFullScreen') : translate('presentFullScreen')}
         onClick={toggleFullscreen}
       >
         {fullscreen ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
       </Button>
-      <Button size="sm" variant="outline" aria-label="退出演示" onClick={stopPresentation}>
+      <Button
+        size="sm"
+        variant="outline"
+        aria-label={translate('exitPresentation')}
+        onClick={stopPresentation}
+      >
         <Square className="size-3.5" />
-        退出
+        {translate('exit')}
       </Button>
       <span className="hidden px-1 text-xs text-muted-foreground sm:inline">
-        方向键切换 · Esc 退出
+        {translate('arrowKeysToNavigateEscToExit')}
       </span>
     </div>
   )

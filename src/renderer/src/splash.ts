@@ -1,37 +1,50 @@
 import { initializeAppearance } from '@renderer/appearanceBootstrap'
 import { showStartupIssue } from '@renderer/startupStatus'
 import type { StartupPhase } from '@shared/startup'
+import { languageFromLocale, type AppLanguage } from '@shared/language'
+import { splashText } from '@renderer/splashI18n'
 
 initializeAppearance()
 
 const bridge = window.trelyxSplash
 const retry = document.getElementById('startup-retry')
-const updatePhase = (phase: StartupPhase): void => {
+const quit = document.getElementById('startup-quit')
+let language: AppLanguage = languageFromLocale(navigator.language)
+let phase: StartupPhase = 'loading'
+const render = (): void => {
+  document.documentElement.lang = language
+  document.title = splashText('title', language)
+  document
+    .getElementById('startup-screen')
+    ?.setAttribute('aria-label', splashText('screen', language))
+  quit?.setAttribute('aria-label', splashText('quit', language))
+  if (retry) retry.textContent = splashText('retry', language)
   if (phase === 'loading') {
     document.getElementById('startup-screen')?.setAttribute('aria-busy', 'true')
     document.getElementById('startup-indicator')?.removeAttribute('hidden')
     const message = document.getElementById('startup-message')
     if (message) {
-      message.textContent = '正在准备工作空间…'
+      message.textContent = splashText('loading', language)
       message.setAttribute('role', 'status')
     }
     if (retry) retry.hidden = true
   } else {
-    showStartupIssue(
-      document,
-      phase === 'failed'
-        ? '界面加载失败，请重试或退出应用。'
-        : '启动时间较长，请稍候；也可以重试。',
-      phase === 'failed',
-    )
+    showStartupIssue(document, splashText(phase, language), phase === 'failed')
     if (retry) retry.onclick = () => bridge?.retry()
   }
 }
-bridge?.onPhase(updatePhase)
-const quit = document.getElementById('startup-quit')
+bridge?.onPhase((next) => {
+  phase = next
+  render()
+})
+bridge?.onLanguage((next) => {
+  language = next
+  render()
+})
 if (quit instanceof HTMLButtonElement) {
   quit.addEventListener('click', () => bridge?.quit())
   quit.disabled = !bridge
 }
+render()
 // Subscribe first so the main process can safely resend a phase set before this page loaded.
 bridge?.mounted()

@@ -1,3 +1,4 @@
+import { seedChinese } from '@tests/electron/preferences'
 import { _electron as electron, expect, test, type ElectronApplication } from '@playwright/test'
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
 import { z } from 'zod'
@@ -11,10 +12,11 @@ import { dockAction, openDock } from '@tests/e2e/dock'
 const dataSchema = z.object({ structuredContent: z.record(z.string(), z.unknown()) })
 test('内嵌 MCP：显式授权、真实客户端读取、草稿确认、一次撤销和停止连接', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'trelyx-mcp-desktop-'))
+  await seedChinese(directory)
   let app: ElectronApplication | undefined
   const client = new Client({ name: 'trelyx-desktop-test', version: '1.0.0' })
   try {
-    app = await electron.launch({ args: ['.', `--user-data-dir=${directory}`] })
+    app = await electron.launch({ colorScheme: null, args: ['.', `--user-data-dir=${directory}`] })
     const page = await mainWindow(app)
     await enterExampleIfHome(page)
     const errors: string[] = []

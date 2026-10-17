@@ -1,4 +1,6 @@
-import { expect, test } from '@playwright/test'
+import { prepareNativeSave } from '@tests/electron/native-files'
+import { reloadWindow } from '@tests/electron/session'
+import { expect, test } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
 import { decodeTrelyx } from '@formats/trelyx'
 import { openExample } from '@tests/e2e/workspace'
@@ -9,7 +11,7 @@ for (const mode of ['2d', '3d'] as const) {
   test(`${mode} Tab / Enter 连续创建后自动聚焦并替换占位文字，保存保留主题层级`, async ({
     page,
   }) => {
-    await page.goto('/')
+    await reloadWindow(page)
     await page.getByRole('button', { name: '下一步', exact: true }).click()
     await page.getByRole('button', { name: '创建文档', exact: true }).click()
     if (mode === '3d') {
@@ -33,9 +35,9 @@ for (const mode of ['2d', '3d'] as const) {
       if (!id) throw new Error('新主题缺少 ID')
       ids.push(id)
     }
-    const download = page.waitForEvent('download')
+    const download = await prepareNativeSave(page)
     await page.keyboard.press('ControlOrMeta+s')
-    const path = await (await download).path()
+    const path = await download.path()
     if (!path) throw new Error('没有生成保存文件')
     const document = decodeTrelyx(await readFile(path)).sheets[0]?.document
     expect(document?.topics[ids[0] ?? '']?.title).toBe('Alpha')

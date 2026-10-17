@@ -1,4 +1,5 @@
-import { expect, test, type Locator, type Page } from '@playwright/test'
+import { prepareNativeSave } from '@tests/electron/native-files'
+import { expect, test, type Locator, type Page } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
 import { decodeTrelyx } from '@formats/trelyx'
 import { openExample } from '@tests/e2e/workspace'
@@ -52,9 +53,9 @@ const expectPanelAnchor = async (topic: Locator, action: () => Promise<void>) =>
 }
 
 const savedSheets = async (page: Page) => {
-  const pending = page.waitForEvent('download')
+  const pending = await prepareNativeSave(page)
   await page.keyboard.press('ControlOrMeta+s')
-  const path = await (await pending).path()
+  const path = await pending.path()
   if (!path) throw new Error('没有生成保存文件')
   return decodeTrelyx(await readFile(path)).sheets
 }
@@ -70,7 +71,7 @@ for (const mode of ['2d', '3d'] as const) {
     await expect(topic).toBeVisible()
     const outline = page.getByRole('button', { name: '文档大纲', exact: true })
     const inspector = page.getByRole('button', {
-      name: mode === '2d' ? '样式面板' : '主题面板',
+      name: '属性面板',
       exact: true,
     })
     for (const toggle of [outline, inspector])
@@ -140,7 +141,7 @@ for (const mode of ['2d', '3d'] as const) {
   test(`${mode} 适应全图尊重侧栏可见区域，底部工具不盖住侧栏`, async ({ page }) => {
     await openExample(page)
     await page.getByRole('button', { name: '文档大纲', exact: true }).click()
-    await page.getByRole('button', { name: '样式面板', exact: true }).click()
+    await page.getByRole('button', { name: '属性面板', exact: true }).click()
     if (mode === '3d') await page.getByRole('button', { name: '三维视图', exact: true }).click()
     const root =
       mode === '2d' ? page.getByTestId('topic-root') : page.locator('[data-spatial-card-id="root"]')
@@ -151,7 +152,7 @@ for (const mode of ['2d', '3d'] as const) {
     await settled(root)
     const outline = await bounds(page.getByRole('complementary', { name: '文档大纲', exact: true }))
     const inspector = await bounds(
-      page.getByRole('complementary', { name: '主题面板', exact: true }),
+      page.getByRole('complementary', { name: '属性面板', exact: true }),
     )
     const cards = page.locator(mode === '2d' ? '[data-testid^="topic-"]' : '[data-spatial-card-id]')
     for (const card of await cards.all()) {

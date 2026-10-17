@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useState } from 'react'
 import { Popover } from 'radix-ui'
 import { Paintbrush, Trash2 } from 'lucide-react'
@@ -15,6 +17,8 @@ const AnnotationStyleForm = ({
   id: string
   kind: 'relation' | 'group' | 'callout'
 }) => {
+  const { translate } = useMessages()
+
   const document = useEditor((state) => state.history.document)
   const item =
     kind === 'relation'
@@ -54,10 +58,10 @@ const AnnotationStyleForm = ({
     >
       {kind !== 'callout' && (
         <>
-          <span className="text-xs">注解颜色</span>
+          <span className="text-xs">{translate('annotationColor')}</span>
           <Input
             type="color"
-            aria-label="注解颜色"
+            aria-label={translate('annotationColor')}
             value={color}
             onChange={(event) => {
               setColor(event.target.value)
@@ -66,17 +70,17 @@ const AnnotationStyleForm = ({
           {kind === 'relation' && (
             <>
               <FieldSelect
-                label="关联线箭头"
+                label={translate('relationshipArrows')}
                 value={arrow}
                 options={[
-                  { value: 'none', label: '无箭头' },
-                  { value: 'end', label: '单向' },
-                  { value: 'both', label: '双向' },
+                  { value: 'none', label: translate('noArrows') },
+                  { value: 'end', label: translate('oneDirection') },
+                  { value: 'both', label: translate('bothDirections') },
                 ]}
                 onChange={setArrow}
               />
               <FieldSelect
-                label="关联线宽度"
+                label={translate('relationshipWidth')}
                 value={width}
                 options={[1, 2, 3, 4, 5, 6].map((value) => ({
                   value: String(value),
@@ -92,30 +96,51 @@ const AnnotationStyleForm = ({
                   setDashed(!dashed)
                 }}
               >
-                虚线
+                {translate('dashed')}
               </Button>
             </>
           )}
           <Button type="submit" size="sm">
-            应用样式
+            {translate('applyStyle')}
           </Button>
         </>
       )}
       <Button variant="ghost" type="button" className="text-destructive" onClick={remove}>
         <Trash2 className="size-4" />
-        删除所选注解
+        {translate('deleteSelectedAnnotation')}
       </Button>
     </form>
   )
 }
-export const AnnotationStyleControls = () => {
+export const AnnotationStyleControls = ({ inline = false }: { inline?: boolean }) => {
+  const { translate } = useMessages()
+
   const selection = useAnnotationInteraction((state) => state.selected)
   const sheetId = useEditor((state) => state.activeSheetId)
   if (selection?.sheetId !== sheetId) return null
+  const form = (
+    <AnnotationStyleForm
+      key={`${selection.kind}:${selection.id}`}
+      id={selection.id}
+      kind={selection.kind}
+    />
+  )
+  if (inline)
+    return (
+      <section className="space-y-3 py-4" aria-label={translate('selectedAnnotationStyle')}>
+        <h3 className="text-sm font-medium">{translate('selectedAnnotationStyle')}</h3>
+        {form}
+      </section>
+    )
   return (
     <Popover.Root>
       <Popover.Trigger asChild>
-        <Button variant="ghost" size="icon" aria-label="所选注解样式" title="所选注解样式">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={translate('selectedAnnotationStyle')}
+          title={translate('selectedAnnotationStyle')}
+        >
           <Paintbrush className="size-4" />
         </Button>
       </Popover.Trigger>
@@ -124,13 +149,9 @@ export const AnnotationStyleControls = () => {
           side="top"
           sideOffset={12}
           className="z-50 w-56 rounded-xl border bg-popover p-3 shadow-lg"
-          aria-label="所选注解样式"
+          aria-label={translate('selectedAnnotationStyle')}
         >
-          <AnnotationStyleForm
-            key={`${selection.kind}:${selection.id}`}
-            id={selection.id}
-            kind={selection.kind}
-          />
+          {form}
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>

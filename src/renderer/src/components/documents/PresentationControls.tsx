@@ -1,14 +1,12 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import type { PresentationStep } from '@core'
 import { useState } from 'react'
-import { Popover } from 'radix-ui'
-import { ArrowDown, ArrowUp, Play, Plus, Trash2 } from 'lucide-react'
+import { Popover, PopoverTrigger, PopoverContent } from '@renderer/components/ui/popover'
+import { ArrowDown, ArrowUp, ChevronDown, Plus, Trash2 } from 'lucide-react'
 import { useEditor } from '@renderer/state/editor'
 import { selectedTopicIds } from '@renderer/state/selection'
-import {
-  presentationSteps,
-  showPresentationStep,
-  usePresentation,
-} from '@renderer/state/presentation'
+import { presentationSteps, usePresentation } from '@renderer/state/presentation'
 import { useSpatialView } from '@renderer/state/spatial'
 import { runAnnotationCommand } from '@renderer/components/annotations/commands'
 import { Button } from '@renderer/components/ui/button'
@@ -18,7 +16,10 @@ export { PresentationPlayback } from '@renderer/components/documents/Presentatio
 const emptySteps: readonly PresentationStep[] = []
 
 export const PresentationControls = () => {
+  const { translate } = useMessages()
+
   const [open, setOpen] = useState(false)
+  const busy = useEditor((state) => state.busy)
   const document = useEditor((state) => state.history.document)
   const steps = document.presentation ?? emptySteps
   const add = (): void => {
@@ -45,120 +46,120 @@ export const PresentationControls = () => {
   }
   return (
     <>
-      <Popover.Root open={open} onOpenChange={setOpen}>
-        <Popover.Trigger asChild>
-          <Button variant="outline" size="sm">
-            <Play className="size-4" />
-            演示
-          </Button>
-        </Popover.Trigger>
-        <Popover.Portal>
-          <Popover.Content
-            side="top"
-            sideOffset={12}
-            onCloseAutoFocus={(event) => {
-              if (usePresentation.getState().playing) {
-                event.preventDefault()
-                requestAnimationFrame(() => {
-                  window.document.getElementById('sheet-panel')?.focus()
-                })
-              }
-            }}
-            className="z-50 max-h-[70vh] w-80 space-y-3 overflow-auto rounded-xl border bg-popover p-3 shadow-lg"
-            aria-label="演示步骤"
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            aria-label={translate('presentationSettings')}
+            title={translate('presentationSettings')}
+            disabled={busy}
           >
-            <p className="text-sm font-medium">演示步骤</p>
-            <p className="text-xs text-muted-foreground">
-              添加所选主题；三维视图会记录当前视角。未添加时按可见主题自动演示。方向键或空格切换，Esc
-              退出。
-            </p>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={add}>
-                <Plus className="size-3" />
-                添加所选主题步骤
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => {
-                  showPresentationStep(0)
-                  setOpen(false)
-                }}
+            <ChevronDown className="size-3.5" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          side="bottom"
+          align="end"
+          sideOffset={12}
+          onCloseAutoFocus={(event) => {
+            if (usePresentation.getState().playing) {
+              event.preventDefault()
+              requestAnimationFrame(() => {
+                window.document.getElementById('sheet-panel')?.focus()
+              })
+            }
+          }}
+          className="z-50 max-h-[70vh] w-80 space-y-3 overflow-auto rounded-xl border bg-popover p-3 shadow-lg"
+          aria-label={translate('presentationSteps')}
+        >
+          <p className="text-sm font-medium">{translate('presentationSteps')}</p>
+          <p className="text-xs text-muted-foreground">
+            {translate('addSelectedTopics3dViewAlsoRecords')}
+          </p>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={add} disabled={busy}>
+              <Plus className="size-3" />
+              {translate('addSelectedTopicAsStep')}
+            </Button>
+          </div>
+          <ol className="space-y-1">
+            {steps.map((step, index) => (
+              <li
+                key={`${step.topicId}:${index}`}
+                className="flex items-center gap-1 rounded border p-1"
               >
-                <Play className="size-3" />
-                开始演示
-              </Button>
-            </div>
-            <ol className="space-y-1">
-              {steps.map((step, index) => (
-                <li
-                  key={`${step.topicId}:${index}`}
-                  className="flex items-center gap-1 rounded border p-1"
-                >
-                  <span className="min-w-0 flex-1 truncate text-xs">
-                    {index + 1}. {document.topics[step.topicId]?.title}
-                    {step.camera ? ' · 3D' : ''}
-                  </span>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="size-6"
-                    disabled={index === 0}
-                    aria-label={`上移步骤 ${index + 1}`}
-                    onClick={() => {
-                      move(index, -1)
-                    }}
-                  >
-                    <ArrowUp className="size-3" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="size-6"
-                    disabled={index === steps.length - 1}
-                    aria-label={`下移步骤 ${index + 1}`}
-                    onClick={() => {
-                      move(index, 1)
-                    }}
-                  >
-                    <ArrowDown className="size-3" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="size-6"
-                    aria-label={`移除步骤 ${index + 1}`}
-                    onClick={() => {
-                      runAnnotationCommand({
-                        type: 'setPresentation',
-                        steps: steps.filter((_, item) => item !== index),
-                      })
-                    }}
-                  >
-                    <Trash2 className="size-3" />
-                  </Button>
-                </li>
-              ))}
-            </ol>
-            {!steps.length && (
-              <div className="space-y-2 text-xs text-muted-foreground">
-                <p>自动演示 {presentationSteps(document).length} 个可见主题，不修改文档。</p>
+                <span className="min-w-0 flex-1 truncate text-xs">
+                  {index + 1}. {document.topics[step.topicId]?.title}
+                  {step.camera ? ' · 3D' : ''}
+                </span>
                 <Button
-                  size="sm"
+                  size="icon"
                   variant="ghost"
+                  className="size-6"
+                  disabled={busy || index === 0}
+                  aria-label={translate('moveStepValue0Up', { value0: index + 1 })}
+                  onClick={() => {
+                    move(index, -1)
+                  }}
+                >
+                  <ArrowUp className="size-3" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-6"
+                  disabled={busy || index === steps.length - 1}
+                  aria-label={translate('moveStepValue0Down', { value0: index + 1 })}
+                  onClick={() => {
+                    move(index, 1)
+                  }}
+                >
+                  <ArrowDown className="size-3" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-6"
+                  aria-label={translate('removeStepValue0', { value0: index + 1 })}
+                  disabled={busy}
                   onClick={() => {
                     runAnnotationCommand({
                       type: 'setPresentation',
-                      steps: presentationSteps(document),
+                      steps: steps.filter((_, item) => item !== index),
                     })
                   }}
                 >
-                  生成并保存步骤
+                  <Trash2 className="size-3" />
                 </Button>
-              </div>
-            )}
-          </Popover.Content>
-        </Popover.Portal>
-      </Popover.Root>
+              </li>
+            ))}
+          </ol>
+          {!steps.length && (
+            <div className="space-y-2 text-xs text-muted-foreground">
+              <p>
+                {translate('automaticPresentation')}
+                {presentationSteps(document).length}
+                {translate('visibleTopicsTheDocumentStaysUnchanged')}
+              </p>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={busy}
+                onClick={() => {
+                  runAnnotationCommand({
+                    type: 'setPresentation',
+                    steps: presentationSteps(document),
+                  })
+                }}
+              >
+                {translate('generateAndSaveSteps')}
+              </Button>
+            </div>
+          )}
+        </PopoverContent>
+      </Popover>
     </>
   )
 }

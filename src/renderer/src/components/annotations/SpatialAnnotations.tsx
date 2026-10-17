@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { CubicBezierLine, Html, Line } from '@react-three/drei'
 import type { RefObject } from 'react'
 import type { MindMapDocument } from '@core'
@@ -27,6 +29,8 @@ export const SpatialAnnotations = ({
   layout: SpatialLayout
   labelPortal: RefObject<HTMLDivElement>
 }) => {
+  const { translate } = useMessages()
+
   const byId = new Map(layout.nodes.map((node) => [node.id, node]))
   return (
     <>
@@ -83,7 +87,7 @@ export const SpatialAnnotations = ({
                 <InlineAnnotationLabel
                   kind="relation"
                   id={relation.id}
-                  text={relation.title.trim() ? relation.title : '关联线'}
+                  text={relation.title.trim() ? relation.title : translate('relationship')}
                   color={color}
                 />
               </Html>
@@ -144,7 +148,11 @@ export const SpatialAnnotations = ({
                 kind="group"
                 id={group.id}
                 text={
-                  group.title?.trim() ? group.title : group.kind === 'summary' ? '概要' : '边界'
+                  group.title?.trim()
+                    ? group.title
+                    : group.kind === 'summary'
+                      ? translate('summary')
+                      : translate('boundary')
                 }
                 color={color}
               />

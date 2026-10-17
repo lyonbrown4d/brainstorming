@@ -1,3 +1,4 @@
+import { seedChinese } from '@tests/electron/preferences'
 import { mainWindow } from '@tests/desktop/windows'
 import { enterExampleIfHome } from '@tests/e2e/workspace'
 import { _electron as electron, expect, test } from '@playwright/test'
@@ -6,9 +7,13 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { dockAction, openDock } from '@tests/e2e/dock'
 
-test('原生自定义剪贴板跨画布复制子树，保留普通文本并一次撤销', async () => {
+test('原生剪贴板跨画布复制子树与 Lexical 文字选区分别处理，并可撤销', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'trelyx-clipboard-'))
-  const app = await electron.launch({ args: ['.', `--user-data-dir=${directory}`] })
+  await seedChinese(directory)
+  const app = await electron.launch({
+    colorScheme: null,
+    args: ['.', `--user-data-dir=${directory}`],
+  })
   let captured = false
   try {
     // Keep the complete existing clipboard in the test main process; never serialize or log it.
@@ -41,7 +46,10 @@ test('原生自定义剪贴板跨画布复制子树，保留普通文本并一�
     const payload = await page.evaluate(() => window.trelyx?.readTopicClipboard())
     expect(payload).toContain('Trelyx topics v1\n')
     await page.keyboard.press('Escape')
-    await page.getByRole('tab', { name: '用户研究', exact: true }).click()
+    await page
+      .getByRole('tablist', { name: '文档画布', exact: true })
+      .getByRole('tab', { name: '用户研究', exact: true })
+      .click()
     const before = await page.locator('.topic-count').textContent()
     await openDock(page)
     await page.getByRole('button', { name: '粘贴主题', exact: true }).click()
@@ -51,6 +59,25 @@ test('原生自定义剪贴板跨画布复制子树，保留普通文本并一�
     await dockAction(page, '撤销')
     await expect(page.locator('.topic-title').getByText('产品愿景', { exact: true })).toHaveCount(0)
     await expect(page.locator('.topic-count')).toHaveText(before ?? '')
+
+    await page.getByTestId('topic-root').dblclick()
+    const editor = page.getByRole('textbox', { name: '编辑主题标题', exact: true })
+    const original = await editor.innerText()
+    await editor.press('End')
+    await editor.press('Shift+ArrowLeft')
+    await editor.press('Shift+ArrowLeft')
+    const selected = original.slice(-2)
+    expect(await page.evaluate(() => getSelection()?.toString())).toBe(selected)
+    await editor.press('ControlOrMeta+c')
+    await expect.poll(() => app.evaluate(({ clipboard }) => clipboard.readText())).toBe(selected)
+    expect(await page.evaluate(() => window.trelyx?.readTopicClipboard())).toBe(selected)
+    await app.evaluate(({ clipboard }) => clipboard.writeText('原生纯文本粘贴'))
+    await editor.press('ControlOrMeta+v')
+    await expect(editor).toHaveText(`${original.slice(0, -2)}原生纯文本粘贴`)
+    await expect(page.locator('.topic-count')).toHaveText(before ?? '')
+    await editor.press('ControlOrMeta+z')
+    await expect(editor).toHaveText(original)
+    await editor.press('Escape')
   } finally {
     try {
       if (captured)

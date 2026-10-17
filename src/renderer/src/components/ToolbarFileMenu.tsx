@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { ChevronDown, Download, FilePlus2, FolderOpen, History, Save } from 'lucide-react'
 import { useState } from 'react'
 import { useRecentFiles } from '@renderer/hooks/useRecentFiles'
@@ -20,27 +22,33 @@ import {
 } from '@renderer/components/ui/dropdown-menu'
 
 const RecentFilesMenu = () => {
+  const { translate } = useMessages()
+
   const [open, setOpen] = useState(false)
   const recent = useRecentFiles(open)
   const busy = useEditor((state) => state.busy)
   return (
     <DropdownMenuSub onOpenChange={setOpen}>
-      <DropdownMenuSubTrigger aria-label="最近文件" disabled={busy}>
+      <DropdownMenuSubTrigger aria-label={translate('recentFiles')} disabled={busy}>
         <History />
-        最近文件
+        {translate('recentFiles')}
       </DropdownMenuSubTrigger>
       <DropdownMenuPortal>
         <DropdownMenuSubContent
           className="max-w-[min(320px,calc(100vw-24px))]"
           sideOffset={6}
           alignOffset={-6}
-          aria-label="最近文件列表"
+          aria-label={translate('recentFileList')}
         >
           <DropdownMenuGroup>
-            <DropdownMenuLabel>最近文件</DropdownMenuLabel>
-            {recent.isFetching && <DropdownMenuItem disabled>正在读取…</DropdownMenuItem>}
+            <DropdownMenuLabel>{translate('recentFiles')}</DropdownMenuLabel>
+            {recent.isFetching && (
+              <DropdownMenuItem disabled>{translate('loading')}</DropdownMenuItem>
+            )}
             {recent.isError && !recent.isFetching && (
-              <DropdownMenuItem disabled>无法读取最近文件，请重新打开此菜单。</DropdownMenuItem>
+              <DropdownMenuItem disabled>
+                {translate('couldNotLoadRecentFilesReopenThis')}
+              </DropdownMenuItem>
             )}
             {recent.isSuccess &&
               !recent.isFetching &&
@@ -57,9 +65,7 @@ const RecentFilesMenu = () => {
                   </DropdownMenuItem>
                 ))
               ) : (
-                <DropdownMenuItem disabled>
-                  {window.trelyx ? '还没有最近打开的文件。' : '桌面版会记住最近打开的文件。'}
-                </DropdownMenuItem>
+                <DropdownMenuItem disabled>{translate('noRecentlyOpenedFiles')}</DropdownMenuItem>
               ))}
           </DropdownMenuGroup>
         </DropdownMenuSubContent>
@@ -69,6 +75,8 @@ const RecentFilesMenu = () => {
 }
 
 export const ToolbarFileMenu = () => {
+  const { translate } = useMessages()
+
   const title = useEditor((state) => state.workbook.title)
   const busy = useEditor((state) => state.busy)
   const filename = title.endsWith('.trelyx') ? title : `${title}.trelyx`
@@ -78,7 +86,7 @@ export const ToolbarFileMenu = () => {
         <Button
           variant="ghost"
           className="document-menu-trigger min-w-0 shrink gap-1 px-1 sm:gap-2"
-          aria-label="文件菜单"
+          aria-label={translate('fileMenu')}
           disabled={busy}
           title={filename}
         >
@@ -86,20 +94,27 @@ export const ToolbarFileMenu = () => {
           <ChevronDown data-icon="inline-end" className="shrink-0 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="start" sideOffset={10} aria-label="文件操作">
+      <DropdownMenuContent
+        className="w-56"
+        align="start"
+        sideOffset={10}
+        aria-label={translate('fileActions')}
+      >
         <DropdownMenuGroup>
-          <DropdownMenuLabel>文件</DropdownMenuLabel>
-          <DropdownMenuItem disabled={busy} aria-label="新建导图" onSelect={newDocument}>
+          <DropdownMenuLabel>{translate('file')}</DropdownMenuLabel>
+          <DropdownMenuItem disabled={busy} aria-label={translate('newMap')} onSelect={newDocument}>
             <FilePlus2 />
-            新建导图<DropdownMenuShortcut>⌘N</DropdownMenuShortcut>
+            {translate('newMap')}
+            <DropdownMenuShortcut>⌘N</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem
             disabled={busy}
-            aria-label="打开导图"
+            aria-label={translate('openMap')}
             onSelect={() => void openDocument()}
           >
             <FolderOpen />
-            打开导图<DropdownMenuShortcut>⌘O</DropdownMenuShortcut>
+            {translate('openMap')}
+            <DropdownMenuShortcut>⌘O</DropdownMenuShortcut>
           </DropdownMenuItem>
           <RecentFilesMenu />
         </DropdownMenuGroup>
@@ -107,19 +122,21 @@ export const ToolbarFileMenu = () => {
         <DropdownMenuGroup>
           <DropdownMenuItem
             disabled={busy}
-            aria-label="保存导图"
+            aria-label={translate('saveMap')}
             onSelect={() => void saveDocument()}
           >
             <Save />
-            保存导图<DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
+            {translate('saveMap')}
+            <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem
             disabled={busy}
-            aria-label="另存为"
+            aria-label={translate('saveAs')}
             onSelect={() => void saveDocument(true)}
           >
             <Download />
-            另存为<DropdownMenuShortcut>⇧⌘S</DropdownMenuShortcut>
+            {translate('saveAs')}
+            <DropdownMenuShortcut>⇧⌘S</DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>

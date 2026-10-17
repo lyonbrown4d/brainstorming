@@ -1,3 +1,4 @@
+import { translate } from '@renderer/i18n'
 import { getParentId, searchWorkbook, type SearchMatch, type SearchOptions } from '@core'
 import { useEditor } from '@renderer/state/editor'
 import { useSpatialView } from '@renderer/state/spatial'
@@ -43,7 +44,7 @@ export const replaceSearchResults = (match?: SearchMatch): void => {
   const search = useSearch.getState()
   if (!search.query) return
   if (match && match.sheetId !== current.activeSheetId) {
-    current.setError('请先定位该结果，再替换当前画布中的内容')
+    current.setError(translate('navigateToThisResultBeforeReplacingContent'))
     return
   }
   const ids = match

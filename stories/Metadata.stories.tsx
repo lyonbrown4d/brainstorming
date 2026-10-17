@@ -3,13 +3,12 @@ import { expect, userEvent, within, waitFor } from 'storybook/test'
 import { applyCommand, createExampleDocument } from '@core'
 import { App } from '@renderer/App'
 import { useEditor } from '@renderer/state/editor'
-import { clearBrowserRecovery } from '@renderer/state/recovery'
+import { openTopicProperties } from '@stories/properties'
 const meta = {
   title: 'Trelyx/注解与富文本',
   component: App,
   parameters: { layout: 'fullscreen' },
-  beforeEach: async () => {
-    await clearBrowserRecovery()
+  beforeEach: () => {
     let document = applyCommand(createExampleDocument(), {
       type: 'setTopicMetadata',
       topicId: 'root',
@@ -48,8 +47,7 @@ type Story = StoryObj<typeof meta>
 export const MetadataAndAnnotations: Story = {}
 export const RichNotes: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const panel = within(canvas.getByRole('complementary', { name: '主题面板' }))
+    const panel = await openTopicProperties(canvasElement)
     await userEvent.click(panel.getByRole('button', { name: 'Markdown 富文本' }))
     const editor = panel.getByRole('textbox', { name: '富文本备注' })
     await userEvent.click(editor)

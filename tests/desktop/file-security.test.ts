@@ -4,7 +4,8 @@ import { tmpdir } from 'node:os'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { applyCommand, createDocument, createWorkbook, serializeWorkbook } from '@core'
 import { decryptTrelyx, encryptTrelyx, isEncryptedTrelyx } from '@formats/encrypted'
-import { DocumentFiles } from '@main/files'
+import type { DocumentFiles } from '@main/files'
+import { documentFiles, closeDocumentFiles, recoveryArchive } from '@tests/fixtures/files'
 
 let directory: string
 let files: DocumentFiles
@@ -13,10 +14,11 @@ const contents = serializeWorkbook(workbook)
 const password = 'test-secret-123'
 beforeEach(async () => {
   directory = await mkdtemp(join(tmpdir(), 'trelyx-security-'))
-  files = new DocumentFiles(join(directory, 'application'))
+  files = documentFiles(join(directory, 'application'))
   await files.initialize()
 })
 afterEach(async () => {
+  await closeDocumentFiles()
   vi.useRealTimers()
   vi.restoreAllMocks()
   await rm(directory, { recursive: true, force: true })
@@ -33,10 +35,7 @@ describe('password-protected document lifecycle', () => {
     await files.writeRecovery(contents)
     expect(await decryptTrelyx(await readFile(path), 'old')).toEqual(workbook)
     expect(
-      await decryptTrelyx(
-        await readFile(join(directory, 'application', 'recovery-v1.trelyx')),
-        'old',
-      ),
+      await decryptTrelyx(await recoveryArchive(join(directory, 'application'), files), 'old'),
     ).toEqual(workbook)
     await expect(files.setFilePassword(workbook.id, 'old')).rejects.toThrow('8 至 128')
     await expect(files.save(path, contents, 'old')).rejects.toThrow('8 至 128')
@@ -48,7 +47,7 @@ describe('password-protected document lifecycle', () => {
     const bytes = await readFile(path)
     expect(await isEncryptedTrelyx(bytes)).toBe(true)
     expect(bytes.includes(Buffer.from('unique-secret-value'))).toBe(false)
-    const restarted = new DocumentFiles(join(directory, 'application'))
+    const restarted = documentFiles(join(directory, 'application'))
     await restarted.initialize()
     const locked = await restarted.openSelected(path)
     expect(locked.contents).toBe('')
@@ -87,24 +86,24 @@ describe('password-protected document lifecycle', () => {
   it('encrypts existing and subsequent recovery records, preserves ciphertext on cancellation, and unlocks after restart', async () => {
     await files.writeRecovery(contents)
     await files.setFilePassword(workbook.id, password)
-    const recoveryPath = join(directory, 'application', 'recovery-v1.trelyx')
-    expect(await isEncryptedTrelyx(await readFile(recoveryPath))).toBe(true)
+    const recoveryPath = async () => recoveryArchive(join(directory, 'application'), files)
+    expect(await isEncryptedTrelyx(await recoveryPath())).toBe(true)
     await files.writeRecovery(contents)
-    const encrypted = await readFile(recoveryPath)
+    const encrypted = await recoveryPath()
     expect(encrypted.includes(Buffer.from('unique-secret-value'))).toBe(false)
-    const restarted = new DocumentFiles(join(directory, 'application'))
+    const restarted = documentFiles(join(directory, 'application'))
     await restarted.initialize()
     await expect(restarted.readRecovery()).rejects.toThrow('恢复文件无法读取')
     const locked = await restarted.readLockedRecovery()
     expect(locked?.lockedToken).toBeDefined()
     restarted.cancelUnlock(locked?.lockedToken)
-    expect(await readFile(recoveryPath)).toEqual(encrypted)
+    expect(await recoveryPath()).toEqual(encrypted)
     const retry = await restarted.readLockedRecovery()
     const opened = await restarted.unlockDocument(retry?.lockedToken, password)
     expect(opened.contents).toBe(contents)
     await restarted.activateUnlockedDocument(opened.sessionToken)
     await restarted.writeRecovery(contents)
-    expect(await isEncryptedTrelyx(await readFile(recoveryPath))).toBe(true)
+    expect(await isEncryptedTrelyx(await recoveryPath())).toBe(true)
   })
 
   it('encrypts earlier plaintext history when protection is enabled', async () => {
@@ -140,7 +139,7 @@ describe('password-protected document lifecycle', () => {
     await files.save(path, contents, null)
     expect(await isEncryptedTrelyx(await readFile(path))).toBe(false)
     expect(
-      await isEncryptedTrelyx(await readFile(join(directory, 'application', 'recovery-v1.trelyx'))),
+      await isEncryptedTrelyx(await recoveryArchive(join(directory, 'application'), files)),
     ).toBe(false)
     const next = createWorkbook(createDocument('New document', 'new-document'))
     const nextPath = files.authorizeSelected(join(directory, 'new.trelyx'))
@@ -193,7 +192,7 @@ describe('bounded private version history', () => {
     expect(bytes.includes(Buffer.from('unique-secret-value'))).toBe(false)
     expect(bytes.includes(Buffer.from(password))).toBe(false)
     expect(await readdir(join(directory, 'application'))).not.toContain('password')
-    const restarted = new DocumentFiles(join(directory, 'application'))
+    const restarted = documentFiles(join(directory, 'application'))
     await restarted.initialize()
     const locked = await restarted.restoreDocumentBackup(backup.id)
     const restored = await restarted.unlockDocument(locked.lockedToken, password)

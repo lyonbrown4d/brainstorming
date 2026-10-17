@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import type { ReactNode } from 'react'
 import { motion, type MotionStyle } from 'motion/react'
 import type { TopicMetadata } from '@core'
@@ -17,6 +19,8 @@ export const TopicMarkerLayout = ({
   children: ReactNode
   topicId: string
 }) => {
+  const { translate } = useMessages()
+
   const markers = metadata?.markers ?? []
   const selected = useEditor(
     (state) => state.selectedId === topicId && !state.busy && !state.editingId,
@@ -29,7 +33,12 @@ export const TopicMarkerLayout = ({
     Math.min(4, markers.length),
   )
   const { size, position } = measureTopicMarkers(metadata)
-  const positions = { top: '上方', bottom: '下方', left: '左侧', right: '右侧' }
+  const positions = {
+    top: translate('above'),
+    bottom: translate('below'),
+    left: translate('left'),
+    right: translate('right'),
+  }
   const markerStyle: MotionStyle & { '--marker-size': string } = {
     ...gesture.motionStyle,
     '--marker-size': `${size}px`,
@@ -49,7 +58,7 @@ export const TopicMarkerLayout = ({
         <motion.div
           className="nodrag nopan relative z-20 flex shrink-0 touch-none items-center justify-center text-[10px]"
           style={markerStyle}
-          aria-label="主题图标"
+          aria-label={translate('topicIcon')}
           role="group"
           data-position={position}
           onPointerMove={gesture.move}
@@ -60,8 +69,8 @@ export const TopicMarkerLayout = ({
           <Button
             variant="ghost"
             className={`h-auto touch-none gap-1 rounded-sm p-0 text-inherit hover:bg-transparent has-[>svg]:px-0 ${editable ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'}`}
-            aria-label="移动主题图标"
-            title="拖动图标到主题的上、下、左、右侧"
+            aria-label={translate('moveTopicIcon')}
+            title={translate('dragTheIconAboveBelowLeftOr')}
             tabIndex={editable ? 0 : -1}
             onPointerDown={(event) => {
               if (editable) gesture.start(event, 'move')
@@ -108,7 +117,9 @@ export const TopicMarkerLayout = ({
               className="pointer-events-none absolute bottom-full left-1/2 mb-3 -translate-x-1/2 rounded-md bg-foreground px-2 py-1 whitespace-nowrap text-background shadow-sm"
             >
               {gesture.preview.mode === 'move'
-                ? `松开放到${positions[gesture.preview.style.position ?? position]}`
+                ? translate('releaseToPlaceValue0', {
+                    value0: positions[gesture.preview.style.position ?? position],
+                  })
                 : `${gesture.preview.style.size ?? size} px`}
             </span>
           )}
@@ -119,8 +130,12 @@ export const TopicMarkerLayout = ({
                 variant="ghost"
                 size="icon"
                 className={`absolute top-1/2 z-10 size-6 -translate-y-1/2 touch-none cursor-ew-resize rounded-full p-0 hover:bg-primary/10 ${side === 'left' ? '-left-6' : '-right-6'}`}
-                aria-label={side === 'left' ? '从左侧缩放图标' : '从右侧缩放图标'}
-                title="左右拖动调整图标大小"
+                aria-label={
+                  side === 'left'
+                    ? translate('resizeIconFromLeft')
+                    : translate('resizeIconFromRight')
+                }
+                title={translate('dragHorizontallyToResizeTheIcon')}
                 onPointerDown={(event) => {
                   gesture.start(event, side)
                 }}

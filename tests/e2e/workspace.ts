@@ -1,6 +1,7 @@
+import { reloadWindow } from '@tests/electron/session'
 import { expect, type Page } from '@playwright/test'
 
-/** Allow cold Vite compilation; enter the example only after the public home is ready. */
+/** Enter the example only after the real desktop home is ready. */
 export const enterExampleIfHome = async (page: Page): Promise<void> => {
   const example = page.getByRole('button', { name: '探索示例', exact: true })
   await expect
@@ -16,7 +17,7 @@ export const enterExampleIfHome = async (page: Page): Promise<void> => {
 }
 
 export const openExample = async (page: Page): Promise<void> => {
-  await page.goto('/')
+  await reloadWindow(page)
   await enterExampleIfHome(page)
 }
 

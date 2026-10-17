@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test'
+import { reloadWindow } from '@tests/electron/session'
+import { expect, test } from '@tests/electron/fixture'
 import { openExample } from '@tests/e2e/workspace'
 import { dockAction } from '@tests/e2e/dock'
 
@@ -111,8 +112,8 @@ test('React Flow 缩略图可关闭重新打开，开关跨刷新保留且不会
   await page.getByRole('button', { name: '关闭缩略图', exact: true }).click()
   await expect(page.locator('.react-flow__minimap')).toHaveCount(0)
   await expect(page.locator('.save-status')).toContainText('本地草稿')
-  await page.reload()
-  const restore = page.getByRole('button', { name: '恢复导图', exact: true })
+  await reloadWindow(page)
+  const restore = page.getByRole('button', { name: '恢复上次打开的 1 份导图', exact: true })
   await expect
     .poll(
       async () =>
@@ -130,7 +131,7 @@ test('React Flow 缩略图可关闭重新打开，开关跨刷新保留且不会
 test('检查器普通点击保留原生光标，输入追加文字而不替换整个标题', async ({ page }) => {
   await openExample(page)
   await page.getByTestId('topic-vision').click()
-  await page.getByRole('button', { name: '样式面板', exact: true }).click()
+  await page.getByRole('button', { name: '属性面板', exact: true }).click()
   const input = page.getByRole('textbox', { name: '主题名称', exact: true })
   const box = await input.boundingBox()
   if (!box) throw new Error('主题名称输入框不可见')

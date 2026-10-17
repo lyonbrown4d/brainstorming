@@ -1,3 +1,4 @@
+import { translate } from '@renderer/i18n'
 import type { MindMapDocument } from '@core'
 import type { LayoutNode } from '@layout'
 import type { Document, Element } from '@xmldom/xmldom'
@@ -35,10 +36,16 @@ export const exportAnnotations = (
       ? [
           {
             ...bounds,
-            title: group.title ?? (group.kind === 'boundary' ? '边界' : '概要'),
+            title:
+              group.title ??
+              (group.kind === 'boundary' ? translate('boundary') : translate('summary')),
             color: group.color ?? '#8b79d9',
             kind: group.kind,
-            lines: wrap(group.title ?? (group.kind === 'boundary' ? '边界' : '概要'), 20),
+            lines: wrap(
+              group.title ??
+                (group.kind === 'boundary' ? translate('boundary') : translate('summary')),
+              20,
+            ),
           },
         ]
       : []

@@ -1,5 +1,6 @@
+import { useDocumentTabs } from '@renderer/state/documentTabs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { inactiveMCP } from '@tests/fixtures/mcp'
+import { desktop } from '@tests/fixtures/desktop'
 import {
   applyWorkbookCommand,
   createDocument,
@@ -9,48 +10,7 @@ import {
 } from '@core'
 import { isDirty, useEditor } from '@renderer/state/editor'
 import { openDocument, saveDocument } from '@renderer/state/files'
-import type { DesktopAPI, SaveRequest } from '@shared/contracts'
-
-const desktop = (overrides: Partial<DesktopAPI> = {}): DesktopAPI => {
-  return {
-    platform: 'macos',
-    ...inactiveMCP,
-    unlockDocument: () => Promise.reject(new Error('没有待解锁文件')),
-    activateUnlockedDocument: () => Promise.resolve({ encrypted: false }),
-    cancelUnlock: () => Promise.resolve(),
-    getFileSecurity: () => Promise.resolve({ encrypted: false }),
-    setFilePassword: () => Promise.resolve({ encrypted: false }),
-    readLockedRecovery: () => Promise.resolve(null),
-    listDocumentBackups: () => Promise.resolve([]),
-    restoreDocumentBackup: () => Promise.reject(new Error('没有历史版本')),
-    getAISettings: () => Promise.reject(new Error('尚未配置 AI')),
-    saveAISettings: () => Promise.reject(new Error('尚未配置 AI')),
-    generateMindMap: () => Promise.reject(new Error('尚未配置 AI')),
-    cancelAIGeneration: () => Promise.resolve(),
-    setAppearance: () => Promise.resolve(),
-    onSystemThemeChanged: () => () => undefined,
-    getWindowState: vi.fn(() => Promise.resolve({ focused: true, fullScreen: false })),
-    onWindowStateChanged: vi.fn(() => () => undefined),
-    selectAsset: () => Promise.resolve(null),
-    exportFile: () => Promise.resolve(null),
-    readTopicClipboard: () => Promise.resolve(''),
-    writeTopicClipboard: () => Promise.resolve(),
-    openExternal: () => Promise.resolve(),
-    exportAsset: () => Promise.resolve(false),
-    hasOpenFile: () => Promise.resolve(false),
-    takeOpenFile: () => Promise.resolve(null),
-    onOpenFile: () => () => undefined,
-    openDocument: vi.fn(() => Promise.resolve(null)),
-    saveDocument: vi.fn(() => Promise.resolve('/workbook.trelyx')),
-    readRecovery: vi.fn(() => Promise.resolve(null)),
-    writeRecovery: vi.fn(() => Promise.resolve()),
-    setDirty: vi.fn(),
-    getRecentFiles: vi.fn(() => Promise.resolve([])),
-    openRecent: vi.fn(() => Promise.resolve(null)),
-    onMenuAction: vi.fn(() => () => undefined),
-    ...overrides,
-  }
-}
+import type { SaveRequest } from '@shared/contracts'
 
 const renameRoot = (title: string): void => {
   useEditor.getState().command({ type: 'renameTopic', topicId: 'root', title })
@@ -61,6 +21,7 @@ const titleOf = (id: string): string | undefined => {
 }
 
 beforeEach(() => {
+  useDocumentTabs.setState({ tabs: [], activeId: null, recovery: [] })
   const workbook = applyWorkbookCommand(
     createWorkbook(createDocument('第一页', 'first'), '工作簿'),
     {

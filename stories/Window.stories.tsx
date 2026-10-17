@@ -18,6 +18,8 @@ const installRecentBridge = (getRecentFiles: DesktopAPI['getRecentFiles']) => {
   const previous = window.trelyx
   window.trelyx = {
     platform: 'macos',
+    getLanguage: () => Promise.resolve('zh-CN'),
+    setLanguage: (language) => Promise.resolve(language),
     ...inactiveMCP,
     unlockDocument: () => Promise.reject(new Error('没有待解锁文件')),
     activateUnlockedDocument: () => Promise.resolve({ encrypted: false }),
@@ -25,6 +27,8 @@ const installRecentBridge = (getRecentFiles: DesktopAPI['getRecentFiles']) => {
     getFileSecurity: () => Promise.resolve({ encrypted: false }),
     setFilePassword: () => Promise.resolve({ encrypted: false }),
     readLockedRecovery: () => Promise.resolve(null),
+    readWorkspaceRecovery: () => Promise.resolve([]),
+    writeWorkspaceRecovery: () => Promise.resolve(),
     listDocumentBackups: () => Promise.resolve([]),
     restoreDocumentBackup: () => Promise.reject(new Error('没有历史版本')),
     getAISettings: () => Promise.reject(new Error('尚未配置 AI')),

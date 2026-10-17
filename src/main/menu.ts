@@ -1,7 +1,12 @@
+import type { AppLanguage } from '@shared/language'
 import { Menu, type MenuItemConstructorOptions } from 'electron'
 import type { MenuAction } from '@shared/contracts'
 
-export const installMenu = (send: (action: MenuAction) => void): void => {
+export const installMenu = (
+  send: (action: MenuAction) => void,
+  language: AppLanguage = 'zh-CN',
+): void => {
+  const label = (zh: string, en: string) => (language === 'zh-CN' ? zh : en)
   const action = (label: string, value: MenuAction, accelerator: string) => ({
     label,
     accelerator,
@@ -11,36 +16,41 @@ export const installMenu = (send: (action: MenuAction) => void): void => {
   })
   const template: MenuItemConstructorOptions[] = [
     {
-      label: '文件',
+      label: label('文件', 'File'),
       submenu: [
-        action('新建', 'new', 'CmdOrCtrl+N'),
-        action('打开…', 'open', 'CmdOrCtrl+O'),
-        action('保存', 'save', 'CmdOrCtrl+S'),
-        action('另存为…', 'saveAs', 'CmdOrCtrl+Shift+S'),
+        action(label('新建', 'New'), 'new', 'CmdOrCtrl+N'),
+        action(label('打开…', 'Open…'), 'open', 'CmdOrCtrl+O'),
+        action(label('保存', 'Save'), 'save', 'CmdOrCtrl+S'),
+        action(label('另存为…', 'Save As…'), 'saveAs', 'CmdOrCtrl+Shift+S'),
         { type: 'separator' },
-        { role: 'close', label: '关闭窗口' },
+        action(label('关闭导图', 'Close map'), 'closeTab', 'CmdOrCtrl+W'),
+        {
+          role: 'close',
+          label: label('关闭窗口', 'Close window'),
+          accelerator: 'CmdOrCtrl+Shift+W',
+        },
       ],
     },
     {
-      label: '编辑',
+      label: label('编辑', 'Edit'),
       submenu: [
-        action('撤销', 'undo', 'CmdOrCtrl+Z'),
-        action('重做', 'redo', 'CmdOrCtrl+Shift+Z'),
+        action(label('撤销', 'Undo'), 'undo', 'CmdOrCtrl+Z'),
+        action(label('重做', 'Redo'), 'redo', 'CmdOrCtrl+Shift+Z'),
         { type: 'separator' },
-        { role: 'cut', label: '剪切' },
-        { role: 'copy', label: '复制' },
-        { role: 'paste', label: '粘贴' },
-        { role: 'selectAll', label: '全选' },
+        { role: 'cut', label: label('剪切', 'Cut') },
+        { role: 'copy', label: label('复制', 'Copy') },
+        { role: 'paste', label: label('粘贴', 'Paste') },
+        { role: 'selectAll', label: label('全选', 'Select All') },
       ],
     },
     {
-      label: '视图',
+      label: label('视图', 'View'),
       submenu: [
-        action('放大', 'zoomIn', 'CmdOrCtrl+Plus'),
-        action('缩小', 'zoomOut', 'CmdOrCtrl+-'),
-        action('实际大小', 'actualSize', 'CmdOrCtrl+0'),
-        action('前往中心主题', 'centerRoot', 'CmdOrCtrl+R'),
-        { role: 'togglefullscreen', label: '全屏' },
+        action(label('放大', 'Zoom In'), 'zoomIn', 'CmdOrCtrl+Plus'),
+        action(label('缩小', 'Zoom Out'), 'zoomOut', 'CmdOrCtrl+-'),
+        action(label('实际大小', 'Actual Size'), 'actualSize', 'CmdOrCtrl+0'),
+        action(label('前往中心主题', 'Go to Central Topic'), 'centerRoot', 'CmdOrCtrl+R'),
+        { role: 'togglefullscreen', label: label('全屏', 'Full Screen') },
       ],
     },
   ]
@@ -48,9 +58,9 @@ export const installMenu = (send: (action: MenuAction) => void): void => {
     template.unshift({
       label: 'Trelyx',
       submenu: [
-        { role: 'about', label: '关于 Trelyx' },
+        { role: 'about', label: label('关于 Trelyx', 'About Trelyx') },
         { type: 'separator' },
-        { role: 'quit', label: '退出 Trelyx' },
+        { role: 'quit', label: label('退出 Trelyx', 'Quit Trelyx') },
       ],
     })
   }

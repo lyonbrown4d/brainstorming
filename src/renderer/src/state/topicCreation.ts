@@ -1,3 +1,4 @@
+import { translate } from '@renderer/i18n'
 import { getParentId, type Command } from '@core'
 import { useEditor } from '@renderer/state/editor'
 
@@ -24,7 +25,7 @@ export const addTopic = (kind: 'child' | 'sibling'): void => {
     kind === 'sibling' && selectedId !== document.rootId
       ? parent.children.indexOf(selectedId) + 1
       : parent.children.length
-  const add: Command = { type: 'addTopic', parentId, id, title: '新主题', side, index }
+  const add: Command = { type: 'addTopic', parentId, id, title: translate('newTopic'), side, index }
   const command: Command = parent.collapsed
     ? { type: 'batch', commands: [{ type: 'toggleCollapse', topicId: parentId }, add] }
     : add

@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { DialogContent } from '@renderer/components/DialogContent'
 import { useId, useRef, useState } from 'react'
 import { useEditor } from '@renderer/state/editor'
@@ -27,6 +29,8 @@ export const SheetDialog = ({
   busy: boolean
   onClose: () => void
 }) => {
+  const { translate } = useMessages()
+
   const [name, setName] = useState(action.name)
   const nameId = useId()
   const submitting = useRef(false)
@@ -41,11 +45,11 @@ export const SheetDialog = ({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{rename ? '重命名画布' : '删除画布'}</DialogTitle>
+          <DialogTitle>{rename ? translate('renameSheet') : translate('deleteSheet')}</DialogTitle>
           <DialogDescription>
             {rename
-              ? '画布名称只用于底部标签，不会更改中心主题。'
-              : `将删除“${action.name}”及其中的全部主题。`}
+              ? translate('theSheetNameIsUsedInThe')
+              : translate('deleteValue0AndAllItsTopics', { value0: action.name })}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -61,7 +65,7 @@ export const SheetDialog = ({
         >
           {rename && (
             <Label className="sheet-name-label items-stretch" htmlFor={nameId}>
-              画布名称
+              {translate('sheetName')}
               <Input
                 id={nameId}
                 value={name}
@@ -86,11 +90,11 @@ export const SheetDialog = ({
           <div className="sheet-dialog-actions">
             <DialogClose asChild>
               <Button type="button" variant="ghost">
-                取消
+                {translate('cancel')}
               </Button>
             </DialogClose>
             <Button type="submit" disabled={busy || (rename && !name.trim())}>
-              {rename ? '确认重命名' : '确认删除'}
+              {rename ? translate('confirmRename') : translate('confirmDeletion')}
             </Button>
           </div>
         </form>

@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useEditor } from '@renderer/state/editor'
 import { defaultSpatialView, useSpatialView, type ViewMode } from '@renderer/state/spatial'
 import { ToggleGroup, ToggleGroupItem } from '@renderer/components/ui/toggle-group'
@@ -11,6 +13,8 @@ export const changeViewMode = (mode: ViewMode): boolean => {
 }
 
 export const ViewModeSwitch = () => {
+  const { translate } = useMessages()
+
   const sheetId = useEditor((state) => state.activeSheetId)
   const busy = useEditor((state) => state.busy)
   const mode = useSpatialView((state) => state.sheets[sheetId]?.mode ?? defaultSpatialView.mode)
@@ -23,7 +27,7 @@ export const ViewModeSwitch = () => {
         if (value === '2d' || value === '3d') changeViewMode(value)
       }}
       role="group"
-      aria-label="画布维度"
+      aria-label={translate('canvasDimension')}
       data-no-drag
       className="shrink-0 rounded-lg border border-border bg-background p-0.5"
     >
@@ -34,7 +38,7 @@ export const ViewModeSwitch = () => {
           role="button"
           aria-checked={undefined}
           size="sm"
-          aria-label={value === '2d' ? '二维视图' : '三维视图'}
+          aria-label={value === '2d' ? translate('2dView') : translate('3dView')}
           aria-pressed={mode === value}
           className="h-8 min-w-10 px-2 sm:min-w-12 sm:px-3"
         >

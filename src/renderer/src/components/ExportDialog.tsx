@@ -1,9 +1,11 @@
+import type { MessageTranslator } from '@renderer/i18n'
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useRef, useState } from 'react'
 import type { MindMapWorkbook } from '@core'
 import { Download } from 'lucide-react'
 import {
   createExport,
-  downloadExport,
   exportNotice,
   type ExportFormat,
   type ExportRequest,
@@ -22,15 +24,39 @@ import {
   DialogTrigger,
 } from '@renderer/components/ui/dialog'
 import { FieldSelect } from '@renderer/components/FieldSelect'
+import { requireDesktopAPI } from '@renderer/lib/desktop'
 
-const formats: readonly { value: ExportFormat; label: string }[] = [
-  { value: 'png', label: 'PNG 图片' },
-  { value: 'svg', label: 'SVG 矢量图' },
-  { value: 'pdf', label: 'PDF 文档' },
-  { value: 'md', label: 'Markdown 大纲' },
-  { value: 'opml', label: 'OPML 大纲' },
-  { value: 'txt', label: '纯文本大纲' },
-  { value: 'xmind', label: 'XMind 工作簿' },
+const getFormats = (
+  translate: MessageTranslator,
+): readonly { value: ExportFormat; label: string }[] => [
+  {
+    value: 'png',
+    label: translate('pngImage'),
+  },
+  {
+    value: 'svg',
+    label: translate('svgVector'),
+  },
+  {
+    value: 'pdf',
+    label: translate('pdfDocument'),
+  },
+  {
+    value: 'md',
+    label: translate('markdownOutline'),
+  },
+  {
+    value: 'opml',
+    label: translate('opmlOutline'),
+  },
+  {
+    value: 'txt',
+    label: translate('plainTextOutline'),
+  },
+  {
+    value: 'xmind',
+    label: translate('xmindWorkbook'),
+  },
 ]
 export interface ExportDialogProps {
   workbook: MindMapWorkbook
@@ -41,9 +67,12 @@ export interface ExportDialogProps {
 export const ExportDialog = ({
   workbook,
   currentSheetId,
-  onExport = downloadExport,
+  onExport = (request) => requireDesktopAPI().exportFile(request),
   defaultOpen = false,
 }: ExportDialogProps) => {
+  const { translate, translateLabel } = useMessages()
+  const formats = getFormats(translate)
+
   const [open, setOpen] = useState(defaultOpen)
   const [format, setFormat] = useState<ExportFormat>('png')
   const [scope, setScope] = useState<'sheet' | 'workbook'>('sheet')
@@ -66,7 +95,7 @@ export const ExportDialog = ({
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm">
           <Download className="size-4" />
-          导出
+          {translate('export')}
         </Button>
       </DialogTrigger>
       <DialogContent
@@ -79,8 +108,10 @@ export const ExportDialog = ({
         }}
       >
         <DialogHeader>
-          <DialogTitle>导出导图</DialogTitle>
-          <DialogDescription>导出副本不会改变当前文档或保存路径。</DialogDescription>
+          <DialogTitle>{translate('exportMap')}</DialogTitle>
+          <DialogDescription>
+            {translate('exportingACopyKeepsTheCurrentDocument')}
+          </DialogDescription>
         </DialogHeader>
         <form
           className="grid gap-4"
@@ -99,10 +130,16 @@ export const ExportDialog = ({
             })
               .then(onExport)
               .then((path) => {
-                setMessage(path === null ? '已取消导出' : `已导出：${path}`)
+                setMessage(
+                  path === null
+                    ? translate('exportCancelled')
+                    : translate('exportedValue0', { value0: path }),
+                )
               })
               .catch((error: unknown) => {
-                setMessage(error instanceof Error ? error.message : '导出失败，请重试')
+                setMessage(
+                  error instanceof Error ? error.message : translate('exportFailedPleaseRetry'),
+                )
               })
               .finally(() => {
                 submitting.current = false
@@ -111,18 +148,23 @@ export const ExportDialog = ({
           }}
         >
           <Label className="grid gap-2">
-            文件格式
-            <FieldSelect label="导出格式" value={format} options={formats} onChange={setFormat} />
+            {translate('fileFormat')}
+            <FieldSelect
+              label={translate('exportFormat')}
+              value={format}
+              options={formats}
+              onChange={setFormat}
+            />
           </Label>
           {!diagram && (
             <Label className="grid gap-2">
-              导出范围
+              {translate('exportScope')}
               <FieldSelect
-                label="导出范围"
+                label={translate('exportScope')}
                 value={scope}
                 options={[
-                  { value: 'sheet', label: '当前画布' },
-                  { value: 'workbook', label: '全部画布' },
+                  { value: 'sheet', label: translate('currentSheet') },
+                  { value: 'workbook', label: translate('allSheetsLabel508') },
                 ]}
                 onChange={setScope}
               />
@@ -130,13 +172,13 @@ export const ExportDialog = ({
           )}
           {diagram && (
             <Label className="grid gap-2">
-              折叠分支
+              {translate('collapsedBranches')}
               <FieldSelect
-                label="折叠分支"
+                label={translate('collapsedBranches')}
                 value={collapsed}
                 options={[
-                  { value: 'visible', label: '保留当前折叠状态' },
-                  { value: 'all', label: '展开全部主题' },
+                  { value: 'visible', label: translate('keepCollapsedState') },
+                  { value: 'all', label: translate('expandAllTopics') },
                 ]}
                 onChange={setCollapsed}
               />
@@ -144,21 +186,21 @@ export const ExportDialog = ({
           )}
           {(format === 'png' || format === 'pdf') && (
             <Label className="grid gap-2">
-              图片倍率
+              {translate('imageScale')}
               <FieldSelect
-                label="图片倍率"
+                label={translate('imageScale')}
                 value={scale}
                 options={[
-                  { value: '0.5', label: '0.5 倍' },
-                  { value: '1', label: '1 倍' },
-                  { value: '2', label: '2 倍' },
+                  { value: '0.5', label: translate('05') },
+                  { value: '1', label: translate('1') },
+                  { value: '2', label: translate('2') },
                 ]}
                 onChange={setScale}
               />
             </Label>
           )}
           <p className="rounded-lg bg-muted p-3 text-xs leading-5 text-muted-foreground">
-            {exportNotice[format]}
+            {translateLabel(exportNotice[format])}
           </p>
           {message && (
             <p role="status" className="break-all text-sm">
@@ -175,7 +217,7 @@ export const ExportDialog = ({
                   if (submitting.current) return
                   const sheet = workbook.sheets.find((entry) => entry.id === currentSheetId)
                   if (!sheet) {
-                    setMessage('打印的画布不存在')
+                    setMessage(translate('sheetToPrintDoesNotExist'))
                     return
                   }
                   submitting.current = true
@@ -183,10 +225,12 @@ export const ExportDialog = ({
                   setMessage('')
                   void printSheet(sheet.document, collapsed === 'all')
                     .then(() => {
-                      setMessage('已打开系统打印窗口，可选择打印机、纸张或另存为 PDF')
+                      setMessage(translate('printDialogOpenedChooseAPrinterPaper'))
                     })
                     .catch((error: unknown) => {
-                      setMessage(error instanceof Error ? error.message : '打印失败')
+                      setMessage(
+                        error instanceof Error ? error.message : translate('printingFailed'),
+                      )
                     })
                     .finally(() => {
                       submitting.current = false
@@ -194,16 +238,16 @@ export const ExportDialog = ({
                     })
                 }}
               >
-                打印当前画布
+                {translate('printCurrentSheet')}
               </Button>
             )}
             <DialogClose asChild>
               <Button type="button" variant="ghost" disabled={busy}>
-                关闭
+                {translate('close')}
               </Button>
             </DialogClose>
             <Button type="submit" disabled={busy}>
-              {busy ? '正在导出…' : '导出文件'}
+              {busy ? translate('exporting') : translate('exportFile')}
             </Button>
           </DialogFooter>
         </form>

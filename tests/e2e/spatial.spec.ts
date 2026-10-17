@@ -1,6 +1,10 @@
+import { closeDocumentTab } from '@tests/e2e/documents'
+import { prepareNativeSave, prepareNativeOpen } from '@tests/electron/native-files'
+import { resizeWindow } from '@tests/electron/session'
+import { reloadWindow } from '@tests/electron/session'
 import { completeDocumentCreation, enterExampleIfHome, openExample } from '@tests/e2e/workspace'
 import { dockAction } from '@tests/e2e/dock'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page } from '@tests/electron/fixture'
 
 const fileAction = async (page: Page, name: string) => {
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
@@ -46,18 +50,19 @@ test('三维聚焦、折叠、中文编辑与二维共享历史，整份文档�
   await expect(notes).toHaveText('')
   await dockAction(page, '重做')
   await page.getByRole('button', { name: '三维视图', exact: true }).click()
-  const download = page.waitForEvent('download')
+  const download = await prepareNativeSave(page)
   await fileAction(page, '保存导图')
-  const saved = await (await download).path()
+  const saved = await download.path()
   if (!saved) throw new Error('没有保存文件')
   await fileAction(page, '新建导图')
+  await closeDocumentTab(page)
   await expect(page.getByRole('button', { name: '二维视图' })).toHaveAttribute(
     'aria-pressed',
     'true',
   )
-  const chooser = page.waitForEvent('filechooser')
+  const chooser = await prepareNativeOpen(page)
   await fileAction(page, '打开导图')
-  await (await chooser).setFiles(saved)
+  await chooser.selectFile(saved)
   await page.getByRole('button', { name: '三维视图', exact: true }).click()
   await page.getByRole('button', { name: '选择主题 三维中文体验', exact: true }).click()
   await page.getByRole('button', { name: '聚焦主题 三维中文体验', exact: true }).click()
@@ -74,12 +79,18 @@ test('各 Sheet 记住维度和聚焦，缩放与重置可用，窄窗可以收�
   const before = await zoom.textContent()
   await page.getByRole('button', { name: '放大 3D 画布', exact: true }).click()
   await expect(zoom).not.toHaveText(before ?? '')
-  await page.getByRole('tab', { name: '用户研究', exact: true }).click()
+  await page
+    .getByRole('tablist', { name: '文档画布', exact: true })
+    .getByRole('tab', { name: '用户研究', exact: true })
+    .click()
   await expect(page.getByRole('button', { name: '二维视图' })).toHaveAttribute(
     'aria-pressed',
     'true',
   )
-  await page.getByRole('tab', { name: '产品总览', exact: true }).click()
+  await page
+    .getByRole('tablist', { name: '文档画布', exact: true })
+    .getByRole('tab', { name: '产品总览', exact: true })
+    .click()
   await expect(page.getByRole('button', { name: '三维视图' })).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -88,8 +99,8 @@ test('各 Sheet 记住维度和聚焦，缩放与重置可用，窄窗可以收�
   await page.getByRole('button', { name: '重置视角', exact: true }).click()
   await page.keyboard.press('Escape')
   await expect(page.getByRole('button', { name: '返回全图', exact: true })).toHaveCount(0)
-  await page.setViewportSize({ width: 800, height: 600 })
-  await page.getByRole('button', { name: '关闭主题面板', exact: true }).click()
+  await resizeWindow(page, { width: 800, height: 600 })
+  await page.getByRole('button', { name: '关闭属性面板', exact: true }).click()
   await expect(page.getByRole('button', { name: '二维视图' })).toBeInViewport()
   await expect(page.getByRole('button', { name: '适应全图' })).toBeInViewport()
 })
@@ -105,7 +116,7 @@ test('图形能力不可用时说明原因并能返回二维继续编辑', async
       },
     })
   })
-  await page.reload()
+  await reloadWindow(page)
   await enterExampleIfHome(page)
   await page.getByRole('button', { name: '三维视图', exact: true }).click()
   await expect(page.getByRole('alert')).toContainText('WebGL 2')

@@ -5,14 +5,13 @@ import { App } from '@renderer/App'
 import { useEditor } from '@renderer/state/editor'
 import { setSelectedTopics } from '@renderer/state/selection'
 import { useSearch } from '@renderer/state/search'
-import { clearBrowserRecovery } from '@renderer/state/recovery'
+import { openTopicProperties } from '@stories/properties'
 
 const meta = {
   title: 'Trelyx/批量编辑与查找',
   component: App,
   parameters: { layout: 'fullscreen' },
-  beforeEach: async () => {
-    await clearBrowserRecovery()
+  beforeEach: () => {
     useEditor.getState().replace(createExampleDocument())
     useEditor.setState({ recovery: null, outlineOpen: false, inspectorOpen: false })
     useSearch.setState({
@@ -39,11 +38,8 @@ export const MultipleSelection: Story = {
     const page = within(canvasElement.ownerDocument.body)
     const tools = within(await page.findByRole('group', { name: '多选主题操作' }))
     await waitFor(() => expect(tools.getByText('已选择 2 个主题')).toBeVisible())
-    await userEvent.click(
-      within(canvas.getByRole('toolbar', { name: '主题格式' })).getByRole('button', {
-        name: '加粗',
-      }),
-    )
+    const panel = await openTopicProperties(canvasElement)
+    await userEvent.click(panel.getByRole('button', { name: '加粗' }))
     await waitFor(async () => {
       await expect(useEditor.getState().history.document.topics.vision?.style?.bold).toBe(false)
       await expect(useEditor.getState().history.document.topics.experience?.style?.bold).toBe(false)

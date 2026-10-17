@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { ChevronDown, Smile } from 'lucide-react'
 import type { Command, TopicMetadata } from '@core'
 import { useEditor } from '@renderer/state/editor'
@@ -40,6 +42,8 @@ const toggleSelectedMarker = (marker: string): void => {
   if (commands.length) current.command({ type: 'batch', commands })
 }
 export const SelectionMarkers = ({ ids }: { ids: readonly string[] }) => {
+  const { translate } = useMessages()
+
   const document = useEditor((state) => state.history.document)
   const busy = useEditor((state) => state.busy)
   const first = document.topics[ids[0] ?? '']?.metadata?.markers ?? []
@@ -47,8 +51,11 @@ export const SelectionMarkers = ({ ids }: { ids: readonly string[] }) => {
     ids.every((id) => document.topics[id]?.metadata?.markers?.includes(marker)),
   )
   return (
-    <section className="space-y-3 border-t border-border py-4" aria-label="主题标记">
-      <h3 className="text-sm font-medium">标记</h3>
+    <section
+      className="space-y-3 border-t border-border py-4"
+      aria-label={translate('topicMarkers')}
+    >
+      <h3 className="text-sm font-medium">{translate('markers')}</h3>
       <Popover>
         <PopoverTrigger asChild>
           <Button
@@ -57,14 +64,23 @@ export const SelectionMarkers = ({ ids }: { ids: readonly string[] }) => {
             disabled={busy}
           >
             <Smile className="size-4 text-muted-foreground" />
-            {shared.length ? `${shared.length} 个共同标记` : '添加标记'}
+            {shared.length
+              ? translate('value0SharedMarkers', { value0: shared.length })
+              : translate('addMarker')}
             <ChevronDown className="ml-auto size-4 text-muted-foreground" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent side="left" align="start" className="w-80" aria-label="所选主题标记">
+        <PopoverContent
+          side="left"
+          align="start"
+          className="w-80"
+          aria-label={translate('selectedTopicMarkers')}
+        >
           {ids.length > 1 && (
             <p className="mb-3 text-xs text-muted-foreground">
-              图标应用到全部 {ids.length} 个主题；再次点击共同图标可移除。
+              {translate('iconsApplyToAll')}
+              {ids.length}
+              {translate('topicsClickASharedIconAgainTo')}
             </p>
           )}
           <MarkerPicker

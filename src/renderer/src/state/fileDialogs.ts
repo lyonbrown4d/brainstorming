@@ -1,3 +1,5 @@
+import { translate } from '@renderer/i18n'
+import { requireDesktopAPI } from '@renderer/lib/desktop'
 import { create } from 'zustand'
 import type { DocumentBackup } from '@shared/fileSecurity'
 import { useEditor } from '@renderer/state/editor'
@@ -21,15 +23,16 @@ export const openHistoryDialog = async (): Promise<void> => {
   const documentId = useEditor.getState().workbook.id
   useFileDialogs.setState({ history: true, historyLoading: true, historyError: null, backups: [] })
   try {
-    const backups = (await window.trelyx?.listDocumentBackups(documentId)) ?? []
+    const backups = await requireDesktopAPI().listDocumentBackups(documentId)
     if (request !== historyRequest) return
     if (useEditor.getState().workbook.id !== documentId)
-      throw new Error('当前文档已更改，请重新打开版本历史')
+      throw new Error(translate('theDocumentChangedReopenVersionHistory'))
     useFileDialogs.setState({ backups })
   } catch (error) {
     if (request !== historyRequest) return
     useFileDialogs.setState({
-      historyError: error instanceof Error ? error.message : '无法读取版本历史',
+      historyError:
+        error instanceof Error ? error.message : translate('couldNotLoadVersionHistory'),
     })
   } finally {
     if (request === historyRequest) useFileDialogs.setState({ historyLoading: false })

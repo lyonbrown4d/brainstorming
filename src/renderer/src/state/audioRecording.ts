@@ -1,3 +1,4 @@
+import { translate } from '@renderer/i18n'
 export const MAX_RECORDING_SECONDS = 120
 export const MAX_RECORDING_BYTES = 8 * 1024 * 1024
 
@@ -23,7 +24,7 @@ export class AudioRecordingSession {
       !Reflect.has(navigator, 'mediaDevices') ||
       typeof navigator.mediaDevices.getUserMedia !== 'function'
     )
-      throw new Error('当前环境不支持录音，可以导入本地音频文件')
+      throw new Error(translate('recordingIsUnavailableYouCanImportA'))
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     if (this.discarded) {
       stream.getTracks().forEach((track) => {
@@ -45,14 +46,14 @@ export class AudioRecordingSession {
         if (this.discarded || !event.data.size) return
         this.bytes += event.data.size
         if (this.bytes > MAX_RECORDING_BYTES) {
-          this.callbacks.onError('录音超过 8 MiB，未替换现有音频')
+          this.callbacks.onError(translate('recordingExceeds8MibExistingAudioIs'))
           this.cancel()
           return
         }
         this.chunks.push(event.data)
       }
       recorder.onerror = () => {
-        this.callbacks.onError('录音失败，请检查麦克风后重试')
+        this.callbacks.onError(translate('recordingFailedCheckYourMicrophoneAndRetry'))
         this.cancel()
       }
       recorder.onstop = () => {
@@ -61,7 +62,7 @@ export class AudioRecordingSession {
         const blob = new Blob(this.chunks, { type: recorder.mimeType })
         this.chunks = []
         if (blob.size) this.callbacks.onComplete(blob)
-        else this.callbacks.onError('没有录到音频，请检查麦克风后重试')
+        else this.callbacks.onError(translate('noAudioRecordedCheckYourMicrophoneAnd'))
       }
       recorder.start(1000)
       this.timer = setTimeout(() => {

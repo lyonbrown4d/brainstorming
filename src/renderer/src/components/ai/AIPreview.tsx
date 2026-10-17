@@ -1,7 +1,14 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { AI_LIMITS, type AITree } from '@shared/ai'
 export const AIPreview = ({ tree }: { tree: AITree }) => {
+  const { translate } = useMessages()
+
   return (
-    <ul className="grid gap-1 border-l border-border pl-4 text-sm" aria-label="AI 生成预览">
+    <ul
+      className="grid gap-1 border-l border-border pl-4 text-sm"
+      aria-label={translate('aiGenerationPreview')}
+    >
       <PreviewNode tree={tree} depth={1} />
     </ul>
   )

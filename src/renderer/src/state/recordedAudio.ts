@@ -1,3 +1,4 @@
+import { translate } from '@renderer/i18n'
 import { applyCommand } from '@core'
 import { useEditor } from '@renderer/state/editor'
 
@@ -11,7 +12,8 @@ export const persistRecordedAudio = async (
   target: RecordingTarget,
   isCurrent: () => boolean,
 ): Promise<boolean> => {
-  if (!blob.size || blob.size > 8 * 1024 * 1024) throw new Error('录音为空或超过 8 MiB')
+  if (!blob.size || blob.size > 8 * 1024 * 1024)
+    throw new Error(translate('recordingIsEmptyOrExceeds8Mib'))
   const [{ createAsset }, { encodeTrelyx }, buffer] = await Promise.all([
     import('@assets'),
     import('@formats/trelyx'),
@@ -40,7 +42,7 @@ export const persistRecordedAudio = async (
     `录音-${Date.now()}.${extensions[mime] ?? 'webm'}`,
   )
   if (!asset.mimeType.startsWith('audio/'))
-    throw new Error('录音格式无法识别，可以导入本地音频文件')
+    throw new Error(translate('unrecognizedRecordingFormatYouCanImportA'))
   const command = { type: 'setTopicAudio' as const, topicId: target.topicId, asset }
   const candidate = applyCommand(current.history.document, command)
   encodeTrelyx({

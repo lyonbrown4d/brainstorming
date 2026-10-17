@@ -1,3 +1,4 @@
+import { desktop } from '@tests/fixtures/desktop'
 import { QueryClient, QueryObserver } from '@tanstack/react-query'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { invalidateRecentFiles, recentFilesOptions } from '@renderer/hooks/useRecentFiles'
@@ -24,7 +25,7 @@ describe('recent-file IPC query', () => {
   it('exposes loading, then resolves the external recent-file list', async () => {
     const files = [{ path: '/planning.trelyx', name: 'planning.trelyx' }]
     const getRecentFiles = vi.fn(() => Promise.resolve(files))
-    vi.stubGlobal('window', { trelyx: { getRecentFiles } })
+    vi.stubGlobal('window', { trelyx: desktop({ getRecentFiles }) })
     const observer = observe()
     expect(observer.getCurrentResult().isPending).toBe(true)
     await vi.waitFor(() => {
@@ -39,7 +40,7 @@ describe('recent-file IPC query', () => {
       .fn()
       .mockRejectedValueOnce(new Error('IPC unavailable'))
       .mockResolvedValueOnce([{ path: '/recovered.trelyx', name: 'recovered.trelyx' }])
-    vi.stubGlobal('window', { trelyx: { getRecentFiles } })
+    vi.stubGlobal('window', { trelyx: desktop({ getRecentFiles }) })
     const observer = observe()
     await vi.waitFor(() => {
       expect(observer.getCurrentResult().isError).toBe(true)
@@ -55,7 +56,7 @@ describe('recent-file IPC query', () => {
 
   it('shares concurrent reads and refreshes after open/save invalidation and remount', async () => {
     const getRecentFiles = vi.fn().mockResolvedValue([])
-    vi.stubGlobal('window', { trelyx: { getRecentFiles } })
+    vi.stubGlobal('window', { trelyx: desktop({ getRecentFiles }) })
     const first = observe()
     const second = observe()
     await vi.waitFor(() => {
@@ -76,7 +77,7 @@ describe('recent-file IPC query', () => {
 
   it('defers the menu read until opened and reloads when reopened', async () => {
     const getRecentFiles = vi.fn().mockResolvedValue([])
-    vi.stubGlobal('window', { trelyx: { getRecentFiles } })
+    vi.stubGlobal('window', { trelyx: desktop({ getRecentFiles }) })
     const options = recentFilesOptions()
     const observer = new QueryObserver(client, { ...options, enabled: false })
     subscriptions.push(observer.subscribe(() => undefined))
@@ -92,12 +93,12 @@ describe('recent-file IPC query', () => {
     })
   })
 
-  it('returns an empty list in the browser without sharing desktop cached paths', async () => {
-    client.setQueryData(['recent-files', 'desktop'], [{ path: '/private.trelyx', name: 'private' }])
+  it('fails without the desktop bridge instead of presenting browser data', async () => {
     const observer = observe()
     await vi.waitFor(() => {
-      expect(observer.getCurrentResult().isSuccess).toBe(true)
+      expect(observer.getCurrentResult().isError).toBe(true)
     })
-    expect(observer.getCurrentResult().data).toEqual([])
+    expect(observer.getCurrentResult().data).toBeUndefined()
+    expect(observer.getCurrentResult().error?.message).toContain('Electron')
   })
 })

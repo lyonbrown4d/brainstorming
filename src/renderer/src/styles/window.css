@@ -13,7 +13,7 @@
   > .toolbar {
   padding-inline: 24px;
 }
-.app-shell:not([data-platform='browser']) > .toolbar {
+.app-shell > .toolbar {
   -webkit-app-region: drag;
   user-select: none;
 }
@@ -29,10 +29,10 @@
   opacity: 0.65;
 }
 @media (max-width: 1000px) {
-  .app-shell:not([data-platform='browser']) .document-breadcrumb {
+  .app-shell .document-breadcrumb {
     display: none;
   }
-  .app-shell:not([data-platform='browser']) .document-title h1 {
+  .app-shell .document-title h1 {
     max-width: 160px;
     font-size: 14px;
   }

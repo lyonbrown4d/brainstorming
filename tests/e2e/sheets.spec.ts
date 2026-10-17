@@ -1,6 +1,9 @@
+import { closeDocumentTab } from '@tests/e2e/documents'
+import { prepareNativeSave, prepareNativeOpen } from '@tests/electron/native-files'
+import { resizeWindow } from '@tests/electron/session'
 import { completeDocumentCreation, openExample } from '@tests/e2e/workspace'
 import { dockAction, openDock } from '@tests/e2e/dock'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page } from '@tests/electron/fixture'
 
 const fileAction = async (page: Page, name: string) => {
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
@@ -14,7 +17,11 @@ const renameSheet = async (page: Page, current: string, name: string) => {
   const dialog = page.getByRole('dialog', { name: '重命名画布', exact: true })
   await dialog.getByRole('textbox', { name: '画布名称', exact: true }).fill(name)
   await dialog.getByRole('button', { name: '确认重命名', exact: true }).click()
-  await expect(page.getByRole('tab', { name, exact: true })).toBeVisible()
+  await expect(
+    page
+      .getByRole('tablist', { name: '文档画布', exact: true })
+      .getByRole('tab', { name, exact: true }),
+  ).toBeVisible()
 }
 
 const renameTopic = async (page: Page, title: string) => {
@@ -42,7 +49,10 @@ test('文件与画布菜单支持键盘导航、禁用项跳过、选择关闭�
   await expect(fileTrigger).toBeFocused()
 
   await fileAction(page, '新建导图')
-  const sheetName = await page.getByRole('tab', { selected: true }).innerText()
+  const sheetName = await page
+    .getByRole('tablist', { name: '文档画布', exact: true })
+    .getByRole('tab', { selected: true })
+    .innerText()
   const sheetTrigger = page.getByRole('button', { name: `画布菜单 ${sheetName}`, exact: true })
   await sheetTrigger.focus()
   await page.keyboard.press('ArrowDown')
@@ -61,19 +71,26 @@ test('文件与画布菜单支持键盘导航、禁用项跳过、选择关闭�
   await expect(page.getByRole('menuitem', { name: '复制画布', exact: true })).toBeFocused()
   await page.keyboard.press('Enter')
   await expect(page.getByRole('menu')).toHaveCount(0)
-  await expect(page.getByRole('tab')).toHaveCount(2)
+  await expect(
+    page.getByRole('tablist', { name: '文档画布', exact: true }).getByRole('tab'),
+  ).toHaveCount(2)
   await dockAction(page, '撤销')
-  await expect(page.getByRole('tab')).toHaveCount(1)
+  await expect(
+    page.getByRole('tablist', { name: '文档画布', exact: true }).getByRole('tab'),
+  ).toHaveCount(1)
 })
 
 test('多个画布保留独立内容与撤销，并在同一文件保存后重新打开', async ({ page }) => {
   await fileAction(page, '新建导图')
-  const firstName = await page.getByRole('tab', { selected: true }).innerText()
+  const firstName = await page
+    .getByRole('tablist', { name: '文档画布', exact: true })
+    .getByRole('tab', { selected: true })
+    .innerText()
   await renameSheet(page, firstName, '产品总览')
   await renameTopic(page, '产品内容')
-  const styleToggle = page.getByRole('button', { name: '样式面板', exact: true })
+  const styleToggle = page.getByRole('button', { name: '属性面板', exact: true })
   if ((await styleToggle.getAttribute('aria-pressed')) !== 'true') await styleToggle.click()
-  const stylePanel = page.getByRole('complementary', { name: '主题面板', exact: true })
+  const stylePanel = page.getByRole('complementary', { name: '属性面板', exact: true })
   await stylePanel.getByRole('combobox', { name: '字号', exact: true }).click()
   await page.getByRole('option', { name: '20', exact: true }).click()
   await stylePanel.getByRole('button', { name: '填充：珊瑚', exact: true }).click()
@@ -85,88 +102,130 @@ test('多个画布保留独立内容与撤销，并在同一文件保存后重�
   await page.getByRole('button', { name: '新建画布', exact: true }).click()
   await page.getByRole('button', { name: '下一步', exact: true }).click()
   await page.getByRole('button', { name: '创建画布', exact: true }).click()
-  const secondName = await page.getByRole('tab', { selected: true }).innerText()
+  const secondName = await page
+    .getByRole('tablist', { name: '文档画布', exact: true })
+    .getByRole('tab', { selected: true })
+    .innerText()
   await renameSheet(page, secondName, '用户研究')
   await expect(stylePanel.getByRole('combobox', { name: '字号', exact: true })).toHaveText('24')
   await renameTopic(page, '研究内容')
   await dockAction(page, '撤销')
   await expect(page.getByTestId('topic-root')).not.toContainText('研究内容')
-  await page.getByRole('tab', { name: '产品总览', exact: true }).click()
+  await page
+    .getByRole('tablist', { name: '文档画布', exact: true })
+    .getByRole('tab', { name: '产品总览', exact: true })
+    .click()
   await expect(page.getByTestId('topic-root')).toContainText('产品内容')
   await expect(stylePanel.getByRole('combobox', { name: '字号', exact: true })).toHaveText('20')
   await expect(stylePanel.getByRole('button', { name: '填充：珊瑚', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
   )
-  await page.getByRole('tab', { name: '用户研究', exact: true }).click()
+  await page
+    .getByRole('tablist', { name: '文档画布', exact: true })
+    .getByRole('tab', { name: '用户研究', exact: true })
+    .click()
   await dockAction(page, '重做')
   await expect(page.getByTestId('topic-root')).toContainText('研究内容')
   await page.getByTestId('topic-root').dblclick()
   await page.getByRole('textbox', { name: '编辑主题标题' }).fill('已提交的研究草稿')
-  await page.getByRole('tab', { name: '产品总览', exact: true }).click()
+  await page
+    .getByRole('tablist', { name: '文档画布', exact: true })
+    .getByRole('tab', { name: '产品总览', exact: true })
+    .click()
   await expect(page.getByTestId('topic-root')).toContainText('产品内容')
-  const downloadPromise = page.waitForEvent('download')
+  const downloadPromise = await prepareNativeSave(page)
   await fileAction(page, '保存导图')
-  const savedPath = await (await downloadPromise).path()
+  const savedPath = await downloadPromise.path()
   if (!savedPath) throw new Error('保存没有生成文件')
   await fileAction(page, '新建导图')
-  await expect(page.getByRole('tab')).toHaveCount(1)
-  const picker = page.waitForEvent('filechooser')
+  await closeDocumentTab(page, 1)
+  await expect(
+    page.getByRole('tablist', { name: '文档画布', exact: true }).getByRole('tab'),
+  ).toHaveCount(1)
+  const picker = await prepareNativeOpen(page)
   await fileAction(page, '打开导图')
-  await (await picker).setFiles(savedPath)
-  await expect(page.getByRole('tab')).toHaveCount(2)
-  await page.getByRole('tab', { name: '产品总览', exact: true }).click()
+  await picker.selectFile(savedPath)
+  await expect(
+    page.getByRole('tablist', { name: '文档画布', exact: true }).getByRole('tab'),
+  ).toHaveCount(2)
+  await page
+    .getByRole('tablist', { name: '文档画布', exact: true })
+    .getByRole('tab', { name: '产品总览', exact: true })
+    .click()
   await expect(page.getByTestId('topic-root')).toContainText('产品内容')
   await expect(page.getByTestId('topic-root').locator('.topic-title')).toHaveCSS(
     'font-size',
     '20px',
   )
-  await page.getByRole('tab', { name: '用户研究', exact: true }).click()
+  await page
+    .getByRole('tablist', { name: '文档画布', exact: true })
+    .getByRole('tab', { name: '用户研究', exact: true })
+    .click()
   await expect(page.getByTestId('topic-root')).toContainText('已提交的研究草稿')
 })
 
 test('画布支持键盘切换、菜单排序、复制和删除，并保护最后一个画布', async ({ page }) => {
   await fileAction(page, '新建导图')
-  const initial = await page.getByRole('tab', { selected: true }).innerText()
+  const initial = await page
+    .getByRole('tablist', { name: '文档画布', exact: true })
+    .getByRole('tab', { selected: true })
+    .innerText()
   await renameSheet(page, initial, '第一张')
   await renameTopic(page, '复制前的内容')
   await page.getByRole('button', { name: '画布菜单 第一张', exact: true }).click()
   await expect(page.getByRole('menuitem', { name: '删除画布', exact: true })).toBeDisabled()
   await expect(page.getByRole('menuitem', { name: '向左移动', exact: true })).toBeDisabled()
   await page.getByRole('menuitem', { name: '复制画布', exact: true }).click()
-  await expect(page.getByRole('tab')).toHaveCount(2)
+  await expect(
+    page.getByRole('tablist', { name: '文档画布', exact: true }).getByRole('tab'),
+  ).toHaveCount(2)
   await expect(page.getByTestId('topic-root')).toContainText('复制前的内容')
-  const duplicate = await page.getByRole('tab', { selected: true }).innerText()
+  const duplicate = await page
+    .getByRole('tablist', { name: '文档画布', exact: true })
+    .getByRole('tab', { selected: true })
+    .innerText()
   await renameSheet(page, duplicate, '第二张')
   await renameTopic(page, '副本独立修改')
   await page.getByRole('button', { name: '画布菜单 第二张', exact: true }).click()
   await page.getByRole('menuitem', { name: '向左移动', exact: true }).click()
-  await expect(page.getByRole('tab').first()).toHaveText('第二张')
-  await page.getByRole('tab', { name: '第二张', exact: true }).focus()
+  await expect(
+    page.getByRole('tablist', { name: '文档画布', exact: true }).getByRole('tab').first(),
+  ).toHaveText('第二张')
+  await page
+    .getByRole('tablist', { name: '文档画布', exact: true })
+    .getByRole('tab', { name: '第二张', exact: true })
+    .focus()
   await page.keyboard.press('ArrowRight')
-  await expect(page.getByRole('tab', { name: '第一张', exact: true })).toHaveAttribute(
-    'aria-selected',
-    'true',
-  )
+  await expect(
+    page
+      .getByRole('tablist', { name: '文档画布', exact: true })
+      .getByRole('tab', { name: '第一张', exact: true }),
+  ).toHaveAttribute('aria-selected', 'true')
   await expect(page.getByTestId('topic-root')).toContainText('复制前的内容')
   await page.getByRole('button', { name: '画布菜单 第二张', exact: true }).click()
   await page.getByRole('menuitem', { name: '删除画布', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: '删除画布', exact: true })
   await expect(dialog).toContainText('第二张')
   await dialog.getByRole('button', { name: '取消', exact: true }).click()
-  await expect(page.getByRole('tab')).toHaveCount(2)
+  await expect(
+    page.getByRole('tablist', { name: '文档画布', exact: true }).getByRole('tab'),
+  ).toHaveCount(2)
   await page.getByRole('button', { name: '画布菜单 第二张', exact: true }).click()
   await page.getByRole('menuitem', { name: '删除画布', exact: true }).click()
   await page.getByRole('button', { name: '确认删除', exact: true }).click()
-  await expect(page.getByRole('tab')).toHaveCount(1)
-  await expect(page.getByRole('tab', { name: '第一张', exact: true })).toHaveAttribute(
-    'aria-selected',
-    'true',
-  )
+  await expect(
+    page.getByRole('tablist', { name: '文档画布', exact: true }).getByRole('tab'),
+  ).toHaveCount(1)
+  await expect(
+    page
+      .getByRole('tablist', { name: '文档画布', exact: true })
+      .getByRole('tab', { name: '第一张', exact: true }),
+  ).toHaveAttribute('aria-selected', 'true')
 })
 
 test('切换保留平移与缩放，标签支持拖动排序，窄窗口仍可收起两侧面板', async ({ page }, testInfo) => {
-  await page.setViewportSize({ width: 1440, height: 1024 })
+  await resizeWindow(page, { width: 1440, height: 1024 })
   await page.getByTestId('topic-experience').click()
   await page.screenshot({ path: testInfo.outputPath('focus-canvas.png') })
   await expect(page.locator('.zoom-value')).toHaveText('120%')
@@ -182,16 +241,22 @@ test('切换保留平移与缩放，标签支持拖动排序，窄窗口仍可�
   await expect(page.getByTestId('topic-experience')).not.toBeInViewport()
   const zoom = await page.locator('.zoom-value').innerText()
   const transform = await viewport.getAttribute('style')
-  await page.getByRole('tab', { name: '用户研究', exact: true }).click()
-  await page.getByRole('tab', { name: '产品总览', exact: true }).click()
+  await page
+    .getByRole('tablist', { name: '文档画布', exact: true })
+    .getByRole('tab', { name: '用户研究', exact: true })
+    .click()
+  await page
+    .getByRole('tablist', { name: '文档画布', exact: true })
+    .getByRole('tab', { name: '产品总览', exact: true })
+    .click()
   await expect(page.locator('.zoom-value')).toHaveText(zoom)
   await expect(viewport).toHaveAttribute('style', transform ?? '')
   await page.getByRole('button', { name: '文档大纲', exact: true }).click()
-  await page.getByRole('button', { name: '样式面板', exact: true }).click()
+  await page.getByRole('button', { name: '属性面板', exact: true }).click()
   await page.screenshot({ path: testInfo.outputPath('focus-panels.png') })
-  await page.setViewportSize({ width: 800, height: 600 })
+  await resizeWindow(page, { width: 800, height: 600 })
   await expect(page.getByRole('button', { name: '关闭大纲', exact: true })).toBeVisible()
-  await expect(page.getByRole('button', { name: '关闭样式面板', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: '关闭属性面板', exact: true })).toBeVisible()
   await openDock(page)
   // The tool row intentionally overflows horizontally; its visible Dock stays inside the canvas.
   const bar = await page.locator('[data-slot=canvas-dock]').boundingBox()
@@ -200,15 +265,20 @@ test('切换保留平移与缩放，标签支持拖动排序，窄窗口仍可�
   expect(bar.x).toBeGreaterThanOrEqual(canvas.x)
   expect(bar.x + bar.width).toBeLessThanOrEqual(canvas.x + canvas.width)
   await page.getByRole('button', { name: '关闭大纲', exact: true }).click()
-  await page.getByRole('button', { name: '关闭样式面板', exact: true }).click()
+  await page.getByRole('button', { name: '关闭属性面板', exact: true }).click()
   await expect(page.getByRole('button', { name: '新建画布', exact: true })).toBeVisible()
   const handle = page.getByRole('button', { name: '拖动画布 迭代计划', exact: true })
   const from = await handle.boundingBox()
-  const to = await page.getByRole('tab', { name: '产品总览', exact: true }).boundingBox()
+  const to = await page
+    .getByRole('tablist', { name: '文档画布', exact: true })
+    .getByRole('tab', { name: '产品总览', exact: true })
+    .boundingBox()
   if (!from || !to) throw new Error('缺少画布标签')
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
   await page.mouse.down()
   await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 12 })
   await page.mouse.up()
-  await expect(page.getByRole('tab').first()).toHaveText('迭代计划')
+  await expect(
+    page.getByRole('tablist', { name: '文档画布', exact: true }).getByRole('tab').first(),
+  ).toHaveText('迭代计划')
 })

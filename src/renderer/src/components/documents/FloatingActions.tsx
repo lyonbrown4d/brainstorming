@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useState } from 'react'
 import { Popover } from 'radix-ui'
 import { CirclePlus, CornerDownRight } from 'lucide-react'
@@ -9,6 +11,8 @@ import { Button } from '@renderer/components/ui/button'
 import { FieldSelect } from '@renderer/components/FieldSelect'
 
 export const FloatingActions = () => {
+  const { translate } = useMessages()
+
   const document = useEditor((state) => state.history.document)
   const selectedId = useEditor((state) => state.selectedId)
   const armed = useAnnotationInteraction((state) => state.floating)
@@ -28,7 +32,7 @@ export const FloatingActions = () => {
       <Button
         variant="outline"
         size="sm"
-        aria-label="新增游离主题"
+        aria-label={translate('addFloatingTopic')}
         aria-pressed={armed}
         onClick={() => {
           armFloatingTopic()
@@ -36,14 +40,14 @@ export const FloatingActions = () => {
         }}
       >
         <CirclePlus className="size-4" />
-        游离主题
+        {translate('floatingTopic')}
       </Button>
       {floating && (
         <Popover.Root>
           <Popover.Trigger asChild>
             <Button variant="outline" size="sm">
               <CornerDownRight className="size-4" />
-              接入分支
+              {translate('attachBranch')}
             </Button>
           </Popover.Trigger>
           <Popover.Portal>
@@ -51,15 +55,22 @@ export const FloatingActions = () => {
               side="top"
               sideOffset={12}
               className="z-50 w-64 space-y-3 rounded-xl border bg-popover p-3 shadow-lg"
-              aria-label="接入分支"
+              aria-label={translate('attachBranch')}
             >
-              <p className="text-xs">将「{document.topics[selectedId]?.title}」接入主题：</p>
+              <p className="text-xs">
+                {translate('attach')}
+                {document.topics[selectedId]?.title}
+                {translate('toTopic')}
+              </p>
               <FieldSelect
-                label="接入父主题"
+                label={translate('attachToParentTopic')}
                 value={parentId}
                 options={Object.values(document.topics)
                   .filter((topic) => !forbidden.has(topic.id))
-                  .map((topic) => ({ value: topic.id, label: topic.title || '未命名主题' }))}
+                  .map((topic) => ({
+                    value: topic.id,
+                    label: topic.title || translate('untitledTopic'),
+                  }))}
                 onChange={setParentId}
               />
               <Button
@@ -72,7 +83,7 @@ export const FloatingActions = () => {
                   })
                 }}
               >
-                接入分支
+                {translate('attachBranch')}
               </Button>
             </Popover.Content>
           </Popover.Portal>

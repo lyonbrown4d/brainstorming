@@ -1,7 +1,8 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { CopyPlus, PlusSquare, Redo2, Undo2 } from 'lucide-react'
 import { DockToolbar } from '@renderer/components/DockToolbar'
 import { DockAction } from '@renderer/components/DockAction'
-import { TopicFormatting } from '@renderer/components/TopicFormatting'
 import { SelectionToolbar } from '@renderer/components/SelectionToolbar'
 import { AIAssistant } from '@renderer/components/ai/AIAssistant'
 import { MCPDialog } from '@renderer/components/mcp/MCPDialog'
@@ -12,17 +13,10 @@ import {
   AnnotationActions,
   AnnotationModeHint,
 } from '@renderer/components/annotations/AnnotationActions'
-import { AnnotationStyleControls } from '@renderer/components/annotations/AnnotationStyleControls'
-import { MarkerAction } from '@renderer/components/metadata/MarkerAction'
-import { LinkAction } from '@renderer/components/metadata/LinkAction'
 import { EditActions } from '@renderer/components/EditActions'
 import { ImportTextDialog } from '@renderer/components/ImportTextDialog'
 import { ExportDialog } from '@renderer/components/ExportDialog'
-import { StructurePicker } from '@renderer/components/documents/StructurePicker'
-import { DocumentSettingsPanel } from '@renderer/components/documents/DocumentSettingsPanel'
-import { TemplateDialog } from '@renderer/components/documents/TemplateDialog'
 import { OutlineEditor } from '@renderer/components/documents/OutlineEditor'
-import { PresentationControls } from '@renderer/components/documents/PresentationControls'
 import { FloatingActions } from '@renderer/components/documents/FloatingActions'
 import { isDirty, useEditor } from '@renderer/state/editor'
 import { Separator } from '@renderer/components/ui/separator'
@@ -61,6 +55,8 @@ const DockGroup = ({ children, label }: { children: ReactNode; label: string }) 
 }
 
 export const FloatingToolbar = () => {
+  const { translate } = useMessages()
+
   const canUndo = useEditor(
     (state) =>
       state.history.past.length > 0 || state.structurePast.length > 0 || state.editingId !== null,
@@ -75,13 +71,13 @@ export const FloatingToolbar = () => {
       <div
         className="flex h-12 w-max flex-nowrap items-center gap-1 whitespace-nowrap"
         role="toolbar"
-        aria-label="导图操作"
+        aria-label={translate('mapActions')}
       >
-        <DockGroup label="创建与关联">
+        <DockGroup label={translate('createAndConnect')}>
           <Action
-            label="添加同级主题"
-            hint="添加同级主题 Enter"
-            caption="主题"
+            label={translate('addSiblingTopic')}
+            hint={translate('addSiblingTopicEnter')}
+            caption={translate('topic')}
             onClick={() => {
               useEditor.getState().add('sibling')
             }}
@@ -89,9 +85,9 @@ export const FloatingToolbar = () => {
             <PlusSquare size={19} />
           </Action>
           <Action
-            label="添加子主题"
-            hint="添加子主题 Tab"
-            caption="子主题"
+            label={translate('addChildTopic')}
+            hint={translate('addChildTopicTab')}
+            caption={translate('childTopic')}
             onClick={() => {
               useEditor.getState().add('child')
             }}
@@ -99,18 +95,13 @@ export const FloatingToolbar = () => {
             <CopyPlus size={19} />
           </Action>
           <AnnotationActions />
-          <LinkAction />
-          <MarkerAction />
         </DockGroup>
         <Separator orientation="vertical" className="mx-1 h-7 opacity-70" />
-        <TopicFormatting compact />
-        <AnnotationStyleControls />
-        <Separator orientation="vertical" className="mx-1 h-7 opacity-70" />
-        <DockGroup label="历史与编辑">
+        <DockGroup label={translate('historyAndEditing')}>
           <Action
-            label="撤销"
-            hint="撤销 ⌘Z"
-            caption="撤销"
+            label={translate('undo')}
+            hint={translate('undoZ')}
+            caption={translate('undo')}
             disabled={!canUndo}
             onClick={() => {
               useEditor.getState().undo()
@@ -119,9 +110,9 @@ export const FloatingToolbar = () => {
             <Undo2 size={19} />
           </Action>
           <Action
-            label="重做"
-            hint="重做 ⇧⌘Z"
-            caption="重做"
+            label={translate('redo')}
+            hint={translate('redoZ')}
+            caption={translate('redo')}
             disabled={!canRedo}
             onClick={() => {
               useEditor.getState().redo()
@@ -133,37 +124,25 @@ export const FloatingToolbar = () => {
           <SelectionToolbar />
         </DockGroup>
         <Separator orientation="vertical" className="mx-1 h-7 opacity-70" />
-        <DockGroup label="画布与结构">
-          <StructurePicker />
-          <DocumentSettingsPanel />
+        <DockGroup label={translate('canvasActions')}>
           <TopicFilter />
-          <TemplateDialog />
           <FloatingActions />
           <OutlineEditor />
-          <PresentationControls />
         </DockGroup>
         <Separator orientation="vertical" className="mx-1 h-7 opacity-70" />
-        <DockGroup label="文件与助手">
+        <DockGroup label={translate('filesAndAssistant')}>
           <ImportTextDialog
             onImport={(document) => {
               const state = useEditor.getState()
               state.commitDraft()
               if (useEditor.getState().editingId || state.busy) return false
-              if (isDirty() && !window.confirm('放弃当前更改并导入大纲？')) return false
+              if (isDirty() && !window.confirm(translate('discardCurrentChangesAndImportOutline')))
+                return false
               state.replace(document, null, true)
               return true
             }}
           />
-          <ExportDialog
-            workbook={workbook}
-            currentSheetId={sheetId}
-            {...(window.trelyx
-              ? {
-                  onExport: (request) =>
-                    window.trelyx ? window.trelyx.exportFile(request) : Promise.resolve(null),
-                }
-              : {})}
-          />
+          <ExportDialog workbook={workbook} currentSheetId={sheetId} />
           <FileSecurity />
           <HistoryDialog />
           <AIAssistant onAddSheet={(document) => useEditor.getState().addDocumentSheet(document)} />

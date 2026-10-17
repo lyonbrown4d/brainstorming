@@ -1,53 +1,15 @@
+import { useDocumentTabs, switchDocumentTab } from '@renderer/state/documentTabs'
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
-import { inactiveMCP } from '@tests/fixtures/mcp'
+import { desktop } from '@tests/fixtures/desktop'
 import { applyCommand, createDocument, createWorkbook, serializeWorkbook } from '@core'
 import { isDirty, useEditor } from '@renderer/state/editor'
 import { newDocument, openDocument, saveDocument } from '@renderer/state/files'
-import type { DesktopAPI, OpenedDocument, SaveRequest } from '@shared/contracts'
+import type { OpenedDocument, SaveRequest } from '@shared/contracts'
 import { suggestedFileName } from '@renderer/state/fileName'
 import { getNavigationTarget } from '@renderer/state/keyboard'
 
-const desktop = (overrides: Partial<DesktopAPI> = {}): DesktopAPI => {
-  return {
-    platform: 'macos',
-    ...inactiveMCP,
-    unlockDocument: () => Promise.reject(new Error('没有待解锁文件')),
-    activateUnlockedDocument: () => Promise.resolve({ encrypted: false }),
-    cancelUnlock: () => Promise.resolve(),
-    getFileSecurity: () => Promise.resolve({ encrypted: false }),
-    setFilePassword: () => Promise.resolve({ encrypted: false }),
-    readLockedRecovery: () => Promise.resolve(null),
-    listDocumentBackups: () => Promise.resolve([]),
-    restoreDocumentBackup: () => Promise.reject(new Error('没有历史版本')),
-    getAISettings: () => Promise.reject(new Error('尚未配置 AI')),
-    saveAISettings: () => Promise.reject(new Error('尚未配置 AI')),
-    generateMindMap: () => Promise.reject(new Error('尚未配置 AI')),
-    cancelAIGeneration: () => Promise.resolve(),
-    setAppearance: () => Promise.resolve(),
-    onSystemThemeChanged: () => () => undefined,
-    getWindowState: vi.fn(() => Promise.resolve({ focused: true, fullScreen: false })),
-    onWindowStateChanged: vi.fn(() => () => undefined),
-    selectAsset: () => Promise.resolve(null),
-    exportFile: () => Promise.resolve(null),
-    readTopicClipboard: () => Promise.resolve(''),
-    writeTopicClipboard: () => Promise.resolve(),
-    openExternal: () => Promise.resolve(),
-    exportAsset: () => Promise.resolve(false),
-    hasOpenFile: () => Promise.resolve(false),
-    takeOpenFile: () => Promise.resolve(null),
-    onOpenFile: () => () => undefined,
-    openDocument: vi.fn(() => Promise.resolve(null)),
-    saveDocument: vi.fn(() => Promise.resolve('/map.trelyx')),
-    readRecovery: vi.fn(() => Promise.resolve(null)),
-    writeRecovery: vi.fn(() => Promise.resolve()),
-    setDirty: vi.fn(),
-    getRecentFiles: vi.fn(() => Promise.resolve([])),
-    openRecent: vi.fn(() => Promise.resolve(null)),
-    onMenuAction: vi.fn(() => () => undefined),
-    ...overrides,
-  }
-}
 beforeEach(() => {
+  useDocumentTabs.setState({ tabs: [], activeId: null, recovery: [] })
   useEditor.getState().replace(createDocument('起点'))
   useEditor.setState({ busy: false, recovery: null })
   vi.stubGlobal('window', { trelyx: desktop(), confirm: vi.fn(() => true) })
@@ -171,7 +133,7 @@ describe('文件边界', () => {
 })
 
 describe('读取期间的更改保护', () => {
-  it('取消第二次确认时完整保留新增历史和未提交草稿', async () => {
+  it('打开新标签时完整保留读取期间原标签的新增历史和未提交草稿', async () => {
     let finish: ((result: OpenedDocument) => void) | undefined
     window.trelyx = desktop({
       openDocument: vi.fn(
@@ -195,14 +157,23 @@ describe('读取期间的更改保护', () => {
       contents: serializeWorkbook(createWorkbook(createDocument('其他文件'))),
     })
     await operation
-    expect(confirm).toHaveBeenCalledOnce()
+    expect(confirm).not.toHaveBeenCalled()
+    expect(useEditor.getState().history.document.title).toBe('其他文件')
+    const original = useDocumentTabs
+      .getState()
+      .tabs.find((tab) => tab.editor.workbook.id === before.workbook.id)
+    expect(original?.editor.history).toBe(before.history)
+    expect(original?.editor.draft).toBe('读取期间继续写下的想法')
+    expect(original?.editor.editingId).toBe('root')
+    expect(original?.editor.path).toBeNull()
+    if (!original) throw new Error('Reading replaced the previous tab')
+    switchDocumentTab(original.id)
     expect(useEditor.getState().history).toBe(before.history)
     expect(useEditor.getState().draft).toBe('读取期间继续写下的想法')
     expect(useEditor.getState().editingId).toBe('root')
-    expect(useEditor.getState().path).toBeNull()
     expect(useEditor.getState().busy).toBe(false)
   })
-  it('明确放弃读取期间的更改后才切换文档；无并发更改时不重复确认', async () => {
+  it('不确认放弃当前文档，重复打开同一路径复用标签且保留原草稿', async () => {
     let finish: ((result: OpenedDocument) => void) | undefined
     window.trelyx = desktop({
       openDocument: vi.fn(
@@ -222,10 +193,12 @@ describe('读取期间的更改保护', () => {
       contents: serializeWorkbook(createWorkbook(createDocument('其他文件'))),
     })
     await operation
-    expect(confirm).toHaveBeenCalledOnce()
+    expect(confirm).not.toHaveBeenCalled()
     expect(useEditor.getState().history.document.title).toBe('其他文件')
     expect(useEditor.getState().draft).toBe('')
     expect(useEditor.getState().path).toBe('/other.trelyx')
+    expect(useDocumentTabs.getState().tabs[0]?.editor.draft).toBe('等待期间的编辑')
+    expect(useDocumentTabs.getState().tabs).toHaveLength(2)
     confirm.mockClear()
     window.trelyx = desktop({
       openDocument: vi.fn(() =>
@@ -237,6 +210,8 @@ describe('读取期间的更改保护', () => {
     })
     await openDocument()
     expect(confirm).not.toHaveBeenCalled()
+    expect(useDocumentTabs.getState().tabs).toHaveLength(2)
+    expect(useDocumentTabs.getState().tabs[0]?.editor.draft).toBe('等待期间的编辑')
   })
 })
 

@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { TopicMarkerLayout } from '@renderer/components/metadata/TopicMarkerLayout'
 import { cn } from '@renderer/lib/utils'
 import { memo } from 'react'
@@ -28,6 +30,8 @@ export type TopicFlowNode = Node<
   'topic'
 >
 export const TopicNode = memo(({ data, id }: NodeProps<TopicFlowNode>) => {
+  const { translate } = useMessages()
+
   const primary = useEditor((state) => state.selectedId === id)
   const selected = useTopicSelected(id)
   const dropTarget = useEditor((state) => state.dropTargetId === id)
@@ -122,7 +126,9 @@ export const TopicNode = memo(({ data, id }: NodeProps<TopicFlowNode>) => {
                 id,
                 undefined,
                 'canvas',
-                topic.title === '新主题' || topic.title === '游离主题' ? 'all' : 'end',
+                topic.title === translate('newTopic') || topic.title === translate('floatingTopic')
+                  ? 'all'
+                  : 'end',
               )
           }}
         >
@@ -145,7 +151,7 @@ export const TopicNode = memo(({ data, id }: NodeProps<TopicFlowNode>) => {
           size="icon"
           type="button"
           className={`fold-button nodrag absolute z-[2] size-[18px] rounded-full border border-[#d9d3e9] bg-white p-0 text-[9px] ${root ? 'text-[#8070c6]' : 'text-[var(--branch-color)]'} ${foldPosition}`}
-          aria-label={`${topic.collapsed ? '展开' : '折叠'} ${topic.title}`}
+          aria-label={`${topic.collapsed ? translate('expand') : translate('collapse')} ${topic.title}`}
           onClick={(event) => {
             event.stopPropagation()
             useEditor.getState().commitDraft()

@@ -1,3 +1,4 @@
+import { desktop } from '@tests/fixtures/desktop'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { applyCommand, createDocument, createTopicClipboard } from '@core'
 import { useEditor } from '@renderer/state/editor'
@@ -49,10 +50,10 @@ beforeEach(() => {
   useEditor.setState({ busy: false })
   setSelectedTopics(['a'])
   vi.stubGlobal('window', {
-    trelyx: {
+    trelyx: desktop({
       writeTopicClipboard: writeClipboard,
       readTopicClipboard: readClipboard,
-    },
+    }),
   })
 })
 afterEach(() => vi.unstubAllGlobals())
@@ -79,6 +80,20 @@ describe('系统主题剪贴板', () => {
     expect(state.history.past).toHaveLength(1)
     state.undo()
     expect(Object.keys(useEditor.getState().history.document.topics)).toEqual(['root'])
+  })
+  it('缺少桌面桥接时不使用浏览器剪贴板，也不删除选中的主题', async () => {
+    vi.stubGlobal('window', {})
+    const browserRead = vi.fn(() => Promise.resolve(contents))
+    const browserWrite = vi.fn(() => Promise.resolve())
+    vi.stubGlobal('navigator', { clipboard: { readText: browserRead, writeText: browserWrite } })
+    const before = useEditor.getState().history
+    await copySelectedTopics(true)
+    expect(useEditor.getState().history).toBe(before)
+    expect(useEditor.getState().error).toContain('Electron')
+    await pasteSelectedTopics()
+    expect(useEditor.getState().history).toBe(before)
+    expect(browserRead).not.toHaveBeenCalled()
+    expect(browserWrite).not.toHaveBeenCalled()
   })
   it('写入失败不剪切，异步读取期间切换文档不覆盖当前内容', async () => {
     const before = useEditor.getState().history.document

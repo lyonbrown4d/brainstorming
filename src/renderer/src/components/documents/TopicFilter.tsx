@@ -1,9 +1,11 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { Popover } from 'radix-ui'
 import { Filter } from 'lucide-react'
 import { useEditor } from '@renderer/state/editor'
 import { revealSearchMatch } from '@renderer/state/search'
 import { useSpatialView } from '@renderer/state/spatial'
-import { markerOptions } from '@renderer/components/metadata/markers'
+import { getMarkerOptions } from '@renderer/components/metadata/markers'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import { FieldSelect } from '@renderer/components/FieldSelect'
@@ -16,6 +18,9 @@ import {
 const ALL = `trelyx:any:${'0'.repeat(65)}`
 
 export const TopicFilter = () => {
+  const { translate } = useMessages()
+  const markerOptions = getMarkerOptions(translate)
+
   const document = useEditor((state) => state.history.document)
   const selectedId = useEditor((state) => state.selectedId)
   const sheetId = useEditor((state) => state.activeSheetId)
@@ -38,7 +43,7 @@ export const TopicFilter = () => {
       <Popover.Trigger asChild>
         <Button variant="outline" size="sm" aria-pressed={Boolean(filtered)}>
           <Filter className="size-4" />
-          主题筛选
+          {translate('filterTopics')}
         </Button>
       </Popover.Trigger>
       <Popover.Portal>
@@ -46,15 +51,17 @@ export const TopicFilter = () => {
           side="top"
           sideOffset={12}
           className="z-50 max-h-[75vh] w-80 space-y-3 overflow-auto rounded-xl border bg-popover p-3 shadow-lg"
-          aria-label="主题筛选"
+          aria-label={translate('filterTopics')}
         >
-          <p className="text-sm font-medium">主题筛选</p>
-          <p className="text-xs text-muted-foreground">按标签、图标或任务定位当前画布中的主题。</p>
+          <p className="text-sm font-medium">{translate('filterTopics')}</p>
+          <p className="text-xs text-muted-foreground">
+            {translate('findTopicsOnThisSheetByLabel')}
+          </p>
           <FieldSelect
-            label="筛选标签"
+            label={translate('filterLabels')}
             value={filters.label || ALL}
             options={[
-              { value: ALL, label: '全部标签' },
+              { value: ALL, label: translate('allLabels') },
               ...labels.map((label) => ({ value: label, label })),
             ]}
             onChange={(value) => {
@@ -62,10 +69,10 @@ export const TopicFilter = () => {
             }}
           />
           <FieldSelect
-            label="筛选图标"
+            label={translate('filterIcons')}
             value={filters.marker || ALL}
             options={[
-              { value: ALL, label: '全部图标' },
+              { value: ALL, label: translate('allIcons') },
               ...markers.map((value) => ({
                 value,
                 label: markerOptions.find((option) => option.value === value)?.title ?? value,
@@ -76,34 +83,34 @@ export const TopicFilter = () => {
             }}
           />
           <FieldSelect
-            label="筛选任务状态"
+            label={translate('filterTaskStatus')}
             value={filters.task}
             options={[
-              { value: 'all', label: '全部主题' },
-              { value: 'open', label: '未完成任务' },
-              { value: 'done', label: '已完成任务' },
-              { value: 'overdue', label: '已逾期任务' },
+              { value: 'all', label: translate('allTopics') },
+              { value: 'open', label: translate('incompleteTasks') },
+              { value: 'done', label: translate('completedTasks') },
+              { value: 'overdue', label: translate('overdueTasks') },
             ]}
             onChange={(task) => {
               useTopicFilters.setState({ task })
             }}
           />
           <FieldSelect
-            label="筛选优先级"
+            label={translate('filterPriority')}
             value={filters.priority}
             options={[
-              { value: 'all', label: '全部优先级' },
-              { value: '1', label: '高优先级' },
-              { value: '2', label: '中优先级' },
-              { value: '3', label: '低优先级' },
+              { value: 'all', label: translate('allPriorities') },
+              { value: '1', label: translate('highPriority') },
+              { value: '2', label: translate('mediumPriority') },
+              { value: '3', label: translate('lowPriority') },
             ]}
             onChange={(priority) => {
               useTopicFilters.setState({ priority })
             }}
           />
           <Input
-            aria-label="筛选负责人"
-            placeholder="负责人"
+            aria-label={translate('filterAssignee')}
+            placeholder={translate('assignee')}
             value={filters.assignee}
             onChange={(event) => {
               useTopicFilters.setState({ assignee: event.target.value })
@@ -111,7 +118,7 @@ export const TopicFilter = () => {
           />
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground" role="status">
-              {results.length} 个匹配主题
+              {translate('matchingTopicCount', { count: results.length })}
             </span>
             <Button
               variant="ghost"
@@ -120,16 +127,16 @@ export const TopicFilter = () => {
                 useTopicFilters.setState(defaultTopicFilters)
               }}
             >
-              清空筛选
+              {translate('clearFilters')}
             </Button>
           </div>
-          <div className="max-h-56 space-y-1 overflow-auto" aria-label="筛选结果">
+          <div className="max-h-56 space-y-1 overflow-auto" aria-label={translate('filterResults')}>
             {results.map((topic) => (
               <Button
                 key={topic.id}
                 variant="ghost"
                 className="h-auto w-full justify-start truncate px-2 py-2 text-xs"
-                aria-label={`筛选结果：${topic.title}`}
+                aria-label={translate('filterResultValue0', { value0: topic.title })}
                 aria-pressed={topic.id === selectedId}
                 onClick={() => {
                   revealSearchMatch({

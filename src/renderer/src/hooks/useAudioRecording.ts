@@ -1,3 +1,4 @@
+import { translate } from '@renderer/i18n'
 import { useEffect, useRef, useState } from 'react'
 import { persistRecordedAudio } from '@renderer/state/recordedAudio'
 import { AudioRecordingSession } from '@renderer/state/audioRecording'
@@ -76,7 +77,7 @@ export const useAudioRecording = (topicId: string) => {
         finish()
       },
       onLimit: () => {
-        if (alive.current) setMessage('已达到 2 分钟上限，正在保存录音')
+        if (alive.current) setMessage(translate('recordingReachedThe2minuteLimitSaving'))
       },
       onComplete: (blob) => {
         if (!valid() || session.current !== recording) {
@@ -91,7 +92,9 @@ export const useAudioRecording = (topicId: string) => {
         )
           .catch((error: unknown) => {
             if (alive.current && session.current === recording)
-              setMessage(error instanceof Error ? error.message : '录音保存失败')
+              setMessage(
+                error instanceof Error ? error.message : translate('couldNotSaveRecording'),
+              )
           })
           .finally(finish)
       },
@@ -101,7 +104,7 @@ export const useAudioRecording = (topicId: string) => {
       if (!valid() || (current.clock === 0 && current.history !== previous.history)) {
         recording.cancel()
         finish()
-        if (alive.current) setMessage('主题或画布已改变，录音已取消')
+        if (alive.current) setMessage(translate('theTopicOrSheetChangedRecordingCancelled'))
       }
     })
     try {
@@ -113,12 +116,12 @@ export const useAudioRecording = (topicId: string) => {
       if (alive.current)
         setMessage(
           missing
-            ? '未检测到麦克风，可以连接设备或导入本地音频'
+            ? translate('noMicrophoneFoundConnectOneOrImport')
             : denied
-              ? '未获得麦克风权限，可允许访问后重试，或导入本地音频'
+              ? translate('microphoneAccessDeniedAllowAccessAndRetry')
               : error instanceof Error
                 ? error.message
-                : '无法访问麦克风',
+                : translate('couldNotAccessMicrophone'),
         )
       finish()
     }

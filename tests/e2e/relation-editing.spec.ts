@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page } from '@tests/electron/fixture'
 import { dockAction } from '@tests/e2e/dock'
 import { openExample } from '@tests/e2e/workspace'
 

@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { FileText, Paperclip } from 'lucide-react'
 import { useEditor } from '@renderer/state/editor'
 import { Button } from '@renderer/components/ui/button'
@@ -12,6 +14,8 @@ export const TopicContentIndicators = ({
   hasNotes: boolean
   attachmentCount: number
 }) => {
+  const { translate } = useMessages()
+
   if (!hasNotes && attachmentCount === 0) return null
   const openInspector = (): void => {
     useEditor.getState().select(topicId)
@@ -24,7 +28,7 @@ export const TopicContentIndicators = ({
           <Button
             variant="ghost"
             size="icon"
-            aria-label="查看主题备注"
+            aria-label={translate('viewTopicNotes')}
             onClick={(event) => {
               event.stopPropagation()
               openInspector()
@@ -38,7 +42,7 @@ export const TopicContentIndicators = ({
         <Badge variant="outline" asChild>
           <Button
             variant="ghost"
-            aria-label={`查看 ${attachmentCount} 个附件`}
+            aria-label={translate('viewValue0Attachments', { value0: attachmentCount })}
             onClick={(event) => {
               event.stopPropagation()
               openInspector()

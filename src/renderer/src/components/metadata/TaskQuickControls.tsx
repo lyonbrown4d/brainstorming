@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import type { TopicTask } from '@core'
 import { useEditor } from '@renderer/state/editor'
 import { Button } from '@renderer/components/ui/button'
@@ -11,6 +13,8 @@ export const TaskQuickControls = ({
   topicId: string
   task: TopicTask | undefined
 }) => {
+  const { translate } = useMessages()
+
   const update = (patch: Partial<TopicTask>): void => {
     const current = useEditor.getState().history.document.topics[topicId]?.metadata?.task ?? {
       done: false,
@@ -30,16 +34,16 @@ export const TaskQuickControls = ({
   const steps = [0, 25, 50, 75, 100]
   if (!steps.includes(progress)) steps.push(progress)
   return (
-    <section className="space-y-2 border-b pb-3" aria-label="任务标记">
+    <section className="space-y-2 border-b pb-3" aria-label={translate('taskMarkers')}>
       <div className="flex items-center gap-2">
-        <span className="w-12 text-xs">优先级</span>
-        <div className="flex gap-1" role="group" aria-label="快捷优先级">
+        <span className="w-12 text-xs">{translate('priority')}</span>
+        <div className="flex gap-1" role="group" aria-label={translate('quickPriority')}>
           {([1, 2, 3] as const).map((priority) => (
             <Button
               key={priority}
               variant="outline"
               size="sm"
-              aria-label={`优先级 ${priority}`}
+              aria-label={translate('priorityValue0Label755', { value0: priority })}
               aria-pressed={task?.priority === priority}
               className="h-8 px-2 aria-pressed:border-primary aria-pressed:bg-accent"
               onClick={() => {
@@ -52,9 +56,9 @@ export const TaskQuickControls = ({
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <span className="w-12 text-xs">进度</span>
+        <span className="w-12 text-xs">{translate('progressLabel115')}</span>
         <FieldSelect
-          label="快捷任务进度"
+          label={translate('quickTaskProgress')}
           value={String(progress)}
           className="flex-1"
           options={steps
@@ -67,13 +71,13 @@ export const TaskQuickControls = ({
         <Button
           variant="outline"
           size="sm"
-          aria-label="任务已完成"
+          aria-label={translate('taskCompleted')}
           aria-pressed={task?.done ?? false}
           onClick={() => {
             update({ done: !task?.done, progress: task?.done ? 0 : 100 })
           }}
         >
-          {task?.done ? '已完成' : '完成'}
+          {task?.done ? translate('completed') : translate('complete')}
         </Button>
       </div>
       {task && (
@@ -85,7 +89,7 @@ export const TaskQuickControls = ({
             setMetadataField(topicId, 'task', undefined)
           }}
         >
-          移除任务标记
+          {translate('removeTaskMarkers')}
         </Button>
       )}
     </section>

@@ -1,3 +1,4 @@
+import { translate } from '@renderer/i18n'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { MindMapDocument } from '@core'
 import { assertAITree, type AIAPI, type AIMode, type AIResult, type AISettings } from '@shared/ai'
@@ -42,7 +43,7 @@ export const useAIController = (
     try {
       setSettings(await api.getAISettings())
     } catch {
-      setError('无法读取 AI 设置，请重新保存配置')
+      setError(translate('couldNotLoadAiSettingsSaveYour'))
     } finally {
       loadingSettings.current = false
       setLoading(false)
@@ -74,7 +75,11 @@ export const useAIController = (
       setPreview({ result, snapshot, mode })
     } catch (cause) {
       if (request.current === id)
-        setError(cause instanceof Error ? cause.message : 'AI 生成失败，请检查服务配置')
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : translate('aiGenerationFailedCheckYourServiceSettings'),
+        )
     } finally {
       if (request.current === id) {
         request.current = null
@@ -87,12 +92,12 @@ export const useAIController = (
     if (!api || !id) return
     request.current = null
     canceling.current = true
-    setStatus('正在取消 AI 请求…')
+    setStatus(translate('cancellingAiRequest'))
     try {
       await api.cancelAIGeneration(id)
-      setStatus('已取消 AI 请求；已提交的服务请求可能仍计费')
+      setStatus(translate('aiRequestCancelledYourProviderMayStill'))
     } catch {
-      setError('无法确认服务端取消状态；结果不会应用到文档')
+      setError(translate('serverCancellationCouldNotBeConfirmedResults'))
     } finally {
       canceling.current = false
       setBusy(false)
@@ -104,11 +109,13 @@ export const useAIController = (
       if (applyAIResult(preview.snapshot, preview.result.tree, preview.mode, onAddSheet)) {
         setPreview(null)
         setStatus(
-          preview.mode === 'generate' ? '已添加 AI 画布，可撤销' : '已添加生成分支，可一次撤销',
+          preview.mode === 'generate'
+            ? translate('aiSheetAddedYouCanUndoThis')
+            : translate('generatedBranchAddedYouCanUndoThis'),
         )
-      } else setError('无法添加生成结果，请完成当前编辑后重试')
+      } else setError(translate('finishEditingBeforeAddingGeneratedResults'))
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : '无法应用生成结果')
+      setError(cause instanceof Error ? cause.message : translate('couldNotApplyGeneratedResults'))
     }
   }
   return {

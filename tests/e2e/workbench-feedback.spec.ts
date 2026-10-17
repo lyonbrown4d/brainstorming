@@ -1,4 +1,5 @@
-import { expect, test, type Locator, type Page } from '@playwright/test'
+import { prepareNativeSave } from '@tests/electron/native-files'
+import { expect, test, type Locator, type Page } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
 import { decodeTrelyx } from '@formats/trelyx'
 import { openExample } from '@tests/e2e/workspace'
@@ -22,7 +23,7 @@ const openCanvas = async (page: Page, mode: Mode) => {
     await page.getByRole('button', { name: '三维视图', exact: true }).click()
     await expect(topic(page, mode, 'root')).toBeVisible()
   }
-  const close = page.getByRole('button', { name: '关闭主题面板', exact: true })
+  const close = page.getByRole('button', { name: '关闭属性面板', exact: true })
   if (await close.isVisible()) await close.click()
   await expect(card(page, mode, 'vision-0')).toBeInViewport()
 }
@@ -37,9 +38,9 @@ const startDrag = async (page: Page, mode: Mode) => {
 }
 
 const saveWorkbook = async (page: Page) => {
-  const download = page.waitForEvent('download')
+  const download = await prepareNativeSave(page)
   await page.keyboard.press('ControlOrMeta+s')
-  const path = await (await download).path()
+  const path = await download.path()
   if (!path) throw new Error('没有生成保存文件')
   return decodeTrelyx(await readFile(path))
 }
@@ -51,7 +52,7 @@ for (const mode of ['2d', '3d'] as const) {
     await topic(page, mode, 'vision-1').click({ modifiers: ['ControlOrMeta'] })
     const target = await box(card(page, mode, 'users'))
     await startDrag(page, mode)
-    await expect(feedback(page)).toContainText('2 个主题')
+    await expect(feedback(page)).toContainText(/2\s*个主题/)
     await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2, { steps: 20 })
     await expect(feedback(page)).toHaveAttribute('data-drop-target', 'users')
     await expect(feedback(page)).toContainText('移入「目标用户」')
@@ -81,16 +82,23 @@ for (const mode of ['2d', '3d'] as const) {
     await page.mouse.up()
 
     await startDrag(page, mode)
-    await page.getByRole('tab', { name: '产品总览', exact: true }).focus()
+    await page
+      .getByRole('tablist', { name: '文档画布', exact: true })
+      .getByRole('tab', { name: '产品总览', exact: true })
+      .focus()
     await page.keyboard.press('ArrowRight')
-    await expect(page.getByRole('tab', { name: '用户研究', exact: true })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    )
+    await expect(
+      page
+        .getByRole('tablist', { name: '文档画布', exact: true })
+        .getByRole('tab', { name: '用户研究', exact: true }),
+    ).toHaveAttribute('aria-selected', 'true')
     await expect(feedback(page)).toHaveCount(0)
     await page.mouse.up()
     expect((await saveWorkbook(page)).sheets).toEqual(before.sheets)
-    await page.getByRole('tab', { name: '产品总览', exact: true }).click()
+    await page
+      .getByRole('tablist', { name: '文档画布', exact: true })
+      .getByRole('tab', { name: '产品总览', exact: true })
+      .click()
     await expect(feedback(page)).toHaveCount(0)
   })
 }

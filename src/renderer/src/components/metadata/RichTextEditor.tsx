@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useState } from 'react'
 import { defineExtension } from 'lexical'
 import { RichTextExtension } from '@lexical/rich-text'
@@ -21,6 +23,8 @@ export const RichTextEditor = ({
   source: string
   title?: boolean
 }) => {
+  const { translate } = useMessages()
+
   const [extension] = useState(() =>
     defineExtension({
       name: `trelyx/rich-${title ? 'title' : 'notes'}-${topicId}`,
@@ -40,7 +44,9 @@ export const RichTextEditor = ({
         $convertFromMarkdownString(source, richTransformers, undefined, true)
       },
       onError: (error: Error) => {
-        useEditor.getState().setError(`富文本编辑失败：${error.message}`)
+        useEditor
+          .getState()
+          .setError(translate('couldNotEditRichTextValue0', { value0: error.message }))
       },
     }),
   )
@@ -50,7 +56,7 @@ export const RichTextEditor = ({
         <RichTextToolbar title={title} />
         <ContentEditable
           className={`nodrag nopan nowheel max-h-72 w-full overflow-auto px-2.5 py-2 text-sm leading-relaxed whitespace-pre-wrap outline-none [&_p]:my-1 ${title ? 'min-h-12' : 'min-h-28'}`}
-          aria-label={title ? '富文本主题名称' : '富文本备注'}
+          aria-label={title ? translate('richTopicTitle') : translate('richNotes')}
           aria-multiline
           spellCheck={false}
         />

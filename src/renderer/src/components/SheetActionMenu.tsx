@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { ChevronDown } from 'lucide-react'
 import { useEditor } from '@renderer/state/editor'
 import type { SheetDialogAction } from '@renderer/components/SheetDialog'
@@ -20,6 +22,8 @@ interface SheetActionMenuProps {
 }
 
 export const SheetActionMenu = ({ sheet, index, count, busy, onDialog }: SheetActionMenuProps) => {
+  const { translate } = useMessages()
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -27,7 +31,7 @@ export const SheetActionMenu = ({ sheet, index, count, busy, onDialog }: SheetAc
           variant="ghost"
           size="icon"
           className="sheet-menu-trigger h-7 w-6 shrink-0 rounded-md p-0 text-inherit"
-          aria-label={`画布菜单 ${sheet.name}`}
+          aria-label={translate('sheetMenuValue0', { value0: sheet.name })}
           disabled={busy}
         >
           <ChevronDown />
@@ -38,7 +42,7 @@ export const SheetActionMenu = ({ sheet, index, count, busy, onDialog }: SheetAc
         side="top"
         align="start"
         sideOffset={8}
-        aria-label={`画布操作 ${sheet.name}`}
+        aria-label={translate('sheetActionsValue0', { value0: sheet.name })}
       >
         <DropdownMenuGroup>
           <DropdownMenuItem
@@ -47,7 +51,7 @@ export const SheetActionMenu = ({ sheet, index, count, busy, onDialog }: SheetAc
               onDialog({ kind: 'rename', ...sheet })
             }}
           >
-            重命名画布
+            {translate('renameSheet')}
           </DropdownMenuItem>
           <DropdownMenuItem
             disabled={busy}
@@ -55,7 +59,7 @@ export const SheetActionMenu = ({ sheet, index, count, busy, onDialog }: SheetAc
               useEditor.getState().duplicateSheet(sheet.id)
             }}
           >
-            复制画布
+            {translate('duplicateSheet')}
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
@@ -66,7 +70,7 @@ export const SheetActionMenu = ({ sheet, index, count, busy, onDialog }: SheetAc
               useEditor.getState().moveSheet(sheet.id, index - 1)
             }}
           >
-            向左移动
+            {translate('moveLeft')}
           </DropdownMenuItem>
           <DropdownMenuItem
             disabled={busy || index === count - 1}
@@ -74,7 +78,7 @@ export const SheetActionMenu = ({ sheet, index, count, busy, onDialog }: SheetAc
               useEditor.getState().moveSheet(sheet.id, index + 1)
             }}
           >
-            向右移动
+            {translate('moveRight')}
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
@@ -86,7 +90,7 @@ export const SheetActionMenu = ({ sheet, index, count, busy, onDialog }: SheetAc
               onDialog({ kind: 'delete', ...sheet })
             }}
           >
-            删除画布
+            {translate('deleteSheet')}
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>

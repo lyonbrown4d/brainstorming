@@ -1,3 +1,4 @@
+import { translate } from '@renderer/i18n'
 import { prepareMarkerIcons } from '@shared/markerIcons'
 import type { MindMapDocument } from '@core'
 import { renderSheetSvg } from '@renderer/export/svg'
@@ -11,7 +12,7 @@ export const printSheet = async (
   const source = renderSheetSvg(document, includeCollapsed)
   const url = URL.createObjectURL(new Blob([source.svg], { type: 'image/svg+xml;charset=utf-8' }))
   const frame = window.document.createElement('iframe')
-  frame.title = 'Trelyx 完整导图打印'
+  frame.title = translate('trelyxFullMapPrint')
   frame.setAttribute('aria-hidden', 'true')
   frame.setAttribute('sandbox', 'allow-same-origin allow-modals')
   frame.tabIndex = -1
@@ -32,7 +33,7 @@ export const printSheet = async (
     window.document.body.appendChild(frame)
     const target = frame.contentDocument
     const targetWindow = frame.contentWindow
-    if (!target || !targetWindow) throw new Error('当前环境无法创建打印文档')
+    if (!target || !targetWindow) throw new Error(translate('couldNotCreatePrintDocument'))
     target.title = document.title
     const style = target.createElement('style')
     const landscape = source.width > source.height
@@ -53,6 +54,6 @@ export const printSheet = async (
     targetWindow.print()
   } catch (cause) {
     cleanup()
-    throw new Error('无法打开打印窗口，请使用 PDF 导出后打印', { cause })
+    throw new Error(translate('couldNotOpenPrintDialogExportPdf'), { cause })
   }
 }

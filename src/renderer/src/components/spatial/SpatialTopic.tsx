@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { TopicMarkerLayout } from '@renderer/components/metadata/TopicMarkerLayout'
 /* eslint react/no-unknown-property: "off" -- React Three Fiber uses Three.js JSX properties. */
 import { Billboard, Html, RoundedBox } from '@react-three/drei'
@@ -49,6 +51,8 @@ export const SpatialTopic = memo(
     onFocus,
     onCollapse,
   }: SpatialTopicProps) => {
+    const { translate } = useMessages()
+
     const cardFill = fill
     const width = node.width
     const height = node.height
@@ -102,7 +106,10 @@ export const SpatialTopic = memo(
                   topic.id,
                   undefined,
                   'spatial',
-                  topic.title === '新主题' || topic.title === '游离主题' ? 'all' : 'end',
+                  topic.title === translate('newTopic') ||
+                    topic.title === translate('floatingTopic')
+                    ? 'all'
+                    : 'end',
                 )
             }}
           >
@@ -161,7 +168,10 @@ export const SpatialTopic = memo(
                     topic.id,
                     undefined,
                     'spatial',
-                    topic.title === '新主题' || topic.title === '游离主题' ? 'all' : 'end',
+                    topic.title === translate('newTopic') ||
+                      topic.title === translate('floatingTopic')
+                      ? 'all'
+                      : 'end',
                   )
               }}
             >
@@ -192,8 +202,8 @@ export const SpatialTopic = memo(
                   variant="outline"
                   size="icon-xs"
                   className="pointer-events-auto absolute -top-3 right-1 size-6 rounded-full border-border/70 bg-background text-muted-foreground shadow-sm"
-                  aria-label={`聚焦主题 ${topic.title}`}
-                  title="聚焦此主题分支"
+                  aria-label={translate('focusTopicValue0', { value0: topic.title })}
+                  title={translate('focusThisBranch')}
                   onPointerDown={(event) => {
                     event.stopPropagation()
                   }}
@@ -207,7 +217,9 @@ export const SpatialTopic = memo(
               )}
               {content && (
                 <span className="flex h-4 items-center justify-center gap-2 opacity-65">
-                  {topic.notes && <FileText className="size-3" aria-label="含备注" />}
+                  {topic.notes && (
+                    <FileText className="size-3" aria-label={translate('hasNotes')} />
+                  )}
                   {Boolean(topic.attachments?.length) && (
                     <span className="flex items-center gap-0.5 text-[10px]">
                       <Paperclip className="size-3" />
@@ -222,7 +234,7 @@ export const SpatialTopic = memo(
                   variant="outline"
                   size="icon-xs"
                   className={`pointer-events-auto absolute top-1/2 size-5 -translate-y-1/2 rounded-full border-border/70 bg-background text-muted-foreground shadow-sm ${topic.side === 'left' && !root ? '-left-2.5' : '-right-2.5'}`}
-                  aria-label={`${topic.collapsed ? '展开' : '折叠'} ${topic.title}`}
+                  aria-label={`${topic.collapsed ? translate('expand') : translate('collapse')} ${topic.title}`}
                   onPointerDown={(event) => {
                     event.stopPropagation()
                   }}

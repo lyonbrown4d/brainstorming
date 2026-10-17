@@ -1,3 +1,4 @@
+import { translate } from '@renderer/i18n'
 import {
   createHistory,
   createWorkbook,
@@ -23,12 +24,12 @@ export const loadWorkbook = (
 ): StructureSnapshot & { history: HistoryState; selectedId: string } => {
   const workbook = document.version === 1 ? createWorkbook(document) : document
   const first = workbook.sheets[0]
-  if (!first) throw new Error('工作簿至少需要一个画布')
+  if (!first) throw new Error(translate('aWorkbookNeedsAtLeastOneSheet'))
   const sessions = Object.fromEntries(
     workbook.sheets.map((sheet) => [sheet.id, sessionFor(sheet.document)]),
   )
   const session = sessions[first.id]
-  if (!session) throw new Error('无法初始化画布')
+  if (!session) throw new Error(translate('couldNotInitializeSheet'))
   return {
     workbook,
     activeSheetId: first.id,
@@ -85,7 +86,7 @@ export const restoreStructure = (
     ]),
   )
   const active = sessions[target.activeSheetId]
-  if (!active) throw new Error('无法恢复画布')
+  if (!active) throw new Error(translate('couldNotRestoreSheet'))
   return {
     workbook: {
       ...target.workbook,

@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { topicAppearance, documentAppearance } from '@shared/appearance'
 import { useEditor } from '@renderer/state/editor'
 import { CanvasOverlay } from '@renderer/components/workbench/CanvasOverlay'
@@ -15,6 +17,8 @@ import { Button } from '@renderer/components/ui/button'
 
 /** Use React Flow's viewport projection and interaction, without duplicating the graph. */
 export const CanvasMinimap = memo(() => {
+  const { translate } = useMessages()
+
   const document = useEditor((state) => state.history.document)
   const visible = useCanvasPreferences((state) => state.minimap)
   const setVisible = useCanvasPreferences((state) => state.setMinimap)
@@ -24,7 +28,7 @@ export const CanvasMinimap = memo(() => {
         <Panel position="bottom-left" className="pointer-events-auto !m-4 @max-[640px]:!bottom-32">
           <MiniMap
             position="bottom-left"
-            ariaLabel="画布缩略图"
+            ariaLabel={translate('canvasMinimap')}
             pannable
             zoomable
             nodeColor={nodeColor}
@@ -37,8 +41,8 @@ export const CanvasMinimap = memo(() => {
             variant="ghost"
             size="icon"
             className="absolute top-1 right-1 z-10 size-6 rounded-md bg-background/90"
-            aria-label="关闭缩略图"
-            title="关闭缩略图"
+            aria-label={translate('hideMinimap')}
+            title={translate('hideMinimap')}
             onClick={() => {
               setVisible(false)
             }}
@@ -51,8 +55,8 @@ export const CanvasMinimap = memo(() => {
           <Button
             variant="outline"
             size="icon"
-            aria-label="显示缩略图"
-            title="显示缩略图"
+            aria-label={translate('showMinimap')}
+            title={translate('showMinimap')}
             onClick={() => {
               setVisible(true)
             }}

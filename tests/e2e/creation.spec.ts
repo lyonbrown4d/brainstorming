@@ -1,50 +1,24 @@
-import { expect, test, type Page } from '@playwright/test'
+import { openDocumentTabs } from '@tests/e2e/documents'
+import { recoveryBytes } from '@tests/electron/native-files'
+import { prepareNativeSave, prepareNativeOpen } from '@tests/electron/native-files'
+import { reloadWindow } from '@tests/electron/session'
+import { expect, test, type Page } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
 import { decodeTrelyx } from '@formats/trelyx'
 import { dockAction } from '@tests/e2e/dock'
 import { openExample } from '@tests/e2e/workspace'
 
 const save = async (page: Page) => {
-  const download = page.waitForEvent('download')
+  const download = await prepareNativeSave(page)
   await page.keyboard.press('ControlOrMeta+s')
-  const path = await (await download).path()
+  const path = await download.path()
   if (!path) throw new Error('保存没有生成文件')
   return decodeTrelyx(await readFile(path))
 }
-const recoveryContents = async (page: Page): Promise<unknown> => {
-  return page.evaluate(async () => {
-    if (!(await indexedDB.databases()).some((database) => database.name === 'trelyx')) return null
-    return new Promise<unknown>((resolve, reject) => {
-      const request = indexedDB.open('trelyx')
-      request.onerror = () => {
-        reject(new Error('读取恢复记录失败'))
-      }
-      request.onsuccess = () => {
-        const database = request.result
-        if (!database.objectStoreNames.contains('recovery')) {
-          database.close()
-          resolve(null)
-          return
-        }
-        const read = database
-          .transaction('recovery', 'readonly')
-          .objectStore('recovery')
-          .get('trelyx.recovery.native-v1')
-        read.onsuccess = () => {
-          database.close()
-          resolve(read.result ?? null)
-        }
-        read.onerror = () => {
-          database.close()
-          reject(new Error('读取恢复记录失败'))
-        }
-      }
-    })
-  })
-}
+const recoveryContents = async (page: Page) => recoveryBytes(page)
 
 test('启动首页不加载或自动保存示例，模板与指定结构创建独立文档', async ({ page }, testInfo) => {
-  await page.goto('/')
+  await reloadWindow(page)
   await expect(page.getByRole('button', { name: '探索示例', exact: true })).toBeEnabled()
   await expect(page.getByTestId('topic-root')).toHaveCount(0)
   await expect(page.getByRole('button', { name: '文件菜单', exact: true })).toHaveCount(0)
@@ -80,7 +54,9 @@ test('启动首页不加载或自动保存示例，模板与指定结构创建�
   await page.screenshot({ path: testInfo.outputPath('trelyx-creation-guide.png') })
   await page.getByRole('button', { name: '创建文档', exact: true }).click()
   await expect(page.getByTestId('topic-root')).toContainText('发布准备')
-  await expect(page.getByRole('tab')).toHaveCount(1)
+  await expect(
+    page.getByRole('tablist', { name: '文档画布', exact: true }).getByRole('tab'),
+  ).toHaveCount(1)
   await expect(page.locator('.status-bar')).toContainText('13 个主题')
   const workbook = await save(page)
   expect(workbook.sheets[0]?.document.settings?.layout).toBe('brace-right')
@@ -90,7 +66,7 @@ test('启动首页不加载或自动保存示例，模板与指定结构创建�
 })
 
 test('新建画布保留原文档内容，独立结构和种子内容可以整次撤销', async ({ page }) => {
-  await page.goto('/')
+  await reloadWindow(page)
   await page.getByRole('button', { name: '选择向下树形图', exact: true }).click()
   await page.getByRole('button', { name: '下一步', exact: true }).click()
   await page.getByRole('textbox', { name: '文档名称', exact: true }).fill('产品设计')
@@ -104,14 +80,20 @@ test('新建画布保留原文档内容，独立结构和种子内容可以整�
   await page.getByRole('button', { name: '下一步', exact: true }).click()
   await page.getByRole('textbox', { name: '画布名称', exact: true }).fill('交付排期')
   await page.getByRole('button', { name: '创建画布', exact: true }).click()
-  await expect(page.getByRole('tab')).toHaveCount(2)
+  await expect(
+    page.getByRole('tablist', { name: '文档画布', exact: true }).getByRole('tab'),
+  ).toHaveCount(2)
   await expect(page.getByTestId('topic-root')).toContainText('交付排期')
   await expect(page.locator('.status-bar')).toContainText('1 个主题')
   await dockAction(page, '撤销')
-  await expect(page.getByRole('tab')).toHaveCount(1)
+  await expect(
+    page.getByRole('tablist', { name: '文档画布', exact: true }).getByRole('tab'),
+  ).toHaveCount(1)
   await expect(page.getByTestId('topic-root')).toContainText('产品设计')
   await dockAction(page, '重做')
-  await expect(page.getByRole('tab')).toHaveCount(2)
+  await expect(
+    page.getByRole('tablist', { name: '文档画布', exact: true }).getByRole('tab'),
+  ).toHaveCount(2)
   const after = await save(page)
   expect(after.id).toBe(before.id)
   expect(after.sheets[0]).toEqual(before.sheets[0])
@@ -119,7 +101,7 @@ test('新建画布保留原文档内容，独立结构和种子内容可以整�
   expect(after.sheets[1]?.document.title).toBe('交付排期')
 })
 
-test('打开引导页和返回首页保留未保存编辑，拒绝放弃后仍可返回原画布', async ({ page }) => {
+test('打开引导页和返回首页保留未保存编辑，新建导图标签保留原画布', async ({ page }) => {
   await openExample(page)
   const dialogs: string[] = []
   page.on('dialog', (dialog) => {
@@ -143,36 +125,38 @@ test('打开引导页和返回首页保留未保存编辑，拒绝放弃后仍�
   await page.getByRole('button', { name: '下一步', exact: true }).click()
   await page.getByRole('textbox', { name: '文档名称', exact: true }).fill('不应替换的文档')
   await page.getByRole('button', { name: '创建文档', exact: true }).click()
-  expect(dialogs).toHaveLength(1)
-  await expect(page.getByRole('textbox', { name: '文档名称', exact: true })).toHaveValue(
-    '不应替换的文档',
-  )
-  await page.getByRole('button', { name: '返回画布', exact: true }).click()
+  expect(dialogs).toHaveLength(0)
+  await expect(page.getByTestId('topic-root')).toContainText('不应替换的文档')
+  const documents = await openDocumentTabs(page)
+  await expect(documents.getByRole('tab')).toHaveCount(2)
+  await documents.getByRole('tab').first().click()
   await expect(page.getByTestId('topic-root')).toContainText('保留未保存的内容')
   await expect(page.locator('.save-status')).toContainText('未保存')
 })
 
 test('首页打开损坏文件或取消选择仍保留首页', async ({ page }) => {
-  await page.goto('/')
+  await reloadWindow(page)
   const open = page.getByRole('button', { name: '打开本地文件', exact: true })
-  const invalid = page.waitForEvent('filechooser')
+  const invalid = await prepareNativeOpen(page)
   await open.click()
-  await (
-    await invalid
-  ).setFiles({ name: '损坏.trelyx', mimeType: 'application/zip', buffer: Buffer.from('broken') })
+  await invalid.selectFile({
+    name: '损坏.trelyx',
+    mimeType: 'application/zip',
+    buffer: Buffer.from('broken'),
+  })
   await expect(page.getByRole('alert')).toBeVisible()
   await expect(page.getByTestId('topic-root')).toHaveCount(0)
   await expect(open).toBeEnabled()
-  const cancel = page.waitForEvent('filechooser')
+  const cancel = await prepareNativeOpen(page)
   await open.click()
-  await (await cancel).setFiles([])
+  await cancel.selectFile([])
   await expect(open).toBeEnabled()
   await expect(page.getByRole('button', { name: '探索示例', exact: true })).toBeVisible()
   await expect(page.getByTestId('topic-root')).toHaveCount(0)
 })
 
 test('创建名称支持中文组词，候选确认不会提前创建文档', async ({ page }) => {
-  await page.goto('/')
+  await reloadWindow(page)
   await page.getByRole('button', { name: '下一步', exact: true }).click()
   const name = page.getByRole('textbox', { name: '文档名称', exact: true })
   await name.focus()

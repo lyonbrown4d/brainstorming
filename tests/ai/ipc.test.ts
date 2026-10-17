@@ -26,15 +26,10 @@ vi.mock('electron', () => ({
       mocks.handlers.set(channel, handler),
   },
 }))
-vi.mock('../../src/main/ai/settings', () => ({
-  AISettingsStore: class {
-    get = mocks.get
-    save = mocks.save
-    privateSettings = mocks.privateSettings
-  },
-}))
-vi.mock('../../src/main/ai/service', () => ({ generateMindMap: mocks.generate }))
 import { registerAIIPC } from '@main/ai'
+import { AIService } from '@main/ai/application'
+import { IPCRegistry } from '@main/application/ipcRegistry'
+import { ipcMain } from 'electron'
 
 const settings: AISettings = {
   baseURL: 'http://localhost:11434/v1',
@@ -53,7 +48,8 @@ const result: AIResult = {
 }
 const request = { requestId: 'request-one', mode: 'generate', prompt: '计划', context: [] }
 const frame = {}
-const windows = new Map<number, EventEmitter>()
+let service: AIService
+const windows = new Map<number, EventEmitter & { webContents: EventEmitter }>()
 const event = (id = 1): IpcMainInvokeEvent => {
   return { sender: { id }, senderFrame: frame } as unknown as IpcMainInvokeEvent
 }
@@ -77,12 +73,21 @@ beforeEach(() => {
     apiKey: '',
     structuredOutputs: false,
   })
-  for (const id of [1, 2]) windows.set(id, new EventEmitter())
-  registerAIIPC((requestEvent) => {
-    const window = windows.get(requestEvent.sender.id)
-    if (!window || requestEvent.senderFrame !== frame) throw new Error('不受信任的 AI 请求')
-    return window as unknown as BrowserWindow
-  })
+  for (const id of [1, 2])
+    windows.set(id, Object.assign(new EventEmitter(), { webContents: new EventEmitter() }))
+  service = new AIService(
+    { get: mocks.get, save: mocks.save, privateSettings: mocks.privateSettings },
+    mocks.generate,
+  )
+  registerAIIPC(
+    new IPCRegistry(ipcMain),
+    (requestEvent) => {
+      const window = windows.get(requestEvent.sender.id)
+      if (!window || requestEvent.senderFrame !== frame) throw new Error('不受信任的 AI 请求')
+      return window as unknown as BrowserWindow
+    },
+    service,
+  )
 })
 describe('AI IPC trust and request ownership', () => {
   it('acknowledges cancellation only after a configuration-loading request has released its slot', async () => {
@@ -167,4 +172,40 @@ describe('AI IPC trust and request ownership', () => {
     mocks.generate.mockResolvedValue(result)
     expect(await invoke('ai:generate', event(), request)).toEqual(result)
   })
+  it.each(['reload', 'crash', 'dispose'] as const)(
+    'aborts pending work and removes owner listeners on %s',
+    async (reason) => {
+      let signal: AbortSignal | undefined
+      mocks.generate.mockImplementation((_settings, _request, active) => {
+        signal = active
+        return new Promise((_resolve, reject) => {
+          active.addEventListener(
+            'abort',
+            () => {
+              reject(new Error('canceled'))
+            },
+            { once: true },
+          )
+        })
+      })
+      const operation = invoke('ai:generate', event(), request)
+      const rejected = expect(operation).rejects.toThrow('canceled')
+      await vi.waitFor(() => {
+        expect(signal).toBeDefined()
+      })
+      const window = windows.get(1)
+      if (!window) throw new Error('Missing owner')
+      if (reason === 'reload')
+        window.webContents.emit('did-start-navigation', {}, 'file://renderer', false, true)
+      else if (reason === 'crash') window.webContents.emit('render-process-gone')
+      else await service.dispose()
+      await rejected
+      expect(signal?.aborted).toBe(true)
+      expect(window.listenerCount('closed')).toBe(0)
+      expect(window.webContents.listenerCount('did-start-navigation')).toBe(0)
+      expect(window.webContents.listenerCount('render-process-gone')).toBe(0)
+      if (reason === 'dispose')
+        await expect(invoke('ai:generate', event(), request)).rejects.toThrow('已关闭')
+    },
+  )
 })

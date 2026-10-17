@@ -1,3 +1,5 @@
+import type { AppLanguage } from '@shared/language'
+
 export type StartupPhase = 'loading' | 'slow' | 'failed'
 
 export interface StartupAPI {
@@ -10,6 +12,7 @@ export interface SplashAPI {
   retry(): void
   quit(): void
   onPhase(callback: (phase: StartupPhase) => void): () => void
+  onLanguage(callback: (language: AppLanguage) => void): () => void
 }
 
 declare global {

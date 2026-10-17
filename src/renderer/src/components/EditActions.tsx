@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { Copy, CopyPlus, Scissors, ClipboardPaste, Search } from 'lucide-react'
 import {
   copySelectedTopics,
@@ -8,18 +10,39 @@ import { useSearch } from '@renderer/state/search'
 import { DockAction } from '@renderer/components/DockAction'
 
 export const EditActions = () => {
+  const { translate } = useMessages()
+
   return (
-    <div className="flex items-center gap-0.5" role="group" aria-label="主题编辑操作">
+    <div
+      className="flex items-center gap-0.5"
+      role="group"
+      aria-label={translate('topicEditingActions')}
+    >
       {[
-        { title: '复制主题', caption: '复制', Icon: Copy, action: () => copySelectedTopics() },
         {
-          title: '剪切主题',
-          caption: '剪切',
+          title: translate('copyTopic'),
+          caption: translate('copy'),
+          Icon: Copy,
+          action: () => copySelectedTopics(),
+        },
+        {
+          title: translate('cutTopic'),
+          caption: translate('cut'),
           Icon: Scissors,
           action: () => copySelectedTopics(true),
         },
-        { title: '粘贴主题', caption: '粘贴', Icon: ClipboardPaste, action: pasteSelectedTopics },
-        { title: '创建主题副本', caption: '副本', Icon: CopyPlus, action: duplicateSelectedTopics },
+        {
+          title: translate('pasteTopic'),
+          caption: translate('paste'),
+          Icon: ClipboardPaste,
+          action: pasteSelectedTopics,
+        },
+        {
+          title: translate('duplicateTopic'),
+          caption: translate('duplicate'),
+          Icon: CopyPlus,
+          action: duplicateSelectedTopics,
+        },
       ].map(({ title, caption, Icon, action }) => (
         <DockAction
           key={title}
@@ -32,9 +55,9 @@ export const EditActions = () => {
         </DockAction>
       ))}
       <DockAction
-        caption="查找"
-        aria-label="查找与替换"
-        title="查找与替换"
+        caption={translate('find')}
+        aria-label={translate('findAndReplace')}
+        title={translate('findAndReplace')}
         onClick={() => {
           useSearch.setState({ open: true })
         }}

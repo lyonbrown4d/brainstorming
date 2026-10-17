@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useEffect } from 'react'
 import { ArrowDown, ArrowUp, ListTree, Plus, Trash2 } from 'lucide-react'
 import { getParentId } from '@core'
@@ -15,6 +17,8 @@ import {
 } from '@renderer/components/ui/dialog'
 
 const OutlineEditorRow = ({ id, depth }: { id: string; depth: number }) => {
+  const { translate } = useMessages()
+
   const document = useEditor((state) => state.history.document)
   const active = useEditor((state) => state.editingId === id && state.editingSurface === 'outline')
   const topic = document.topics[id]
@@ -42,7 +46,7 @@ const OutlineEditorRow = ({ id, depth }: { id: string; depth: number }) => {
         variant="ghost"
         className="size-7"
         disabled={!parent || index === 0}
-        aria-label={`上移大纲 ${topic.title}`}
+        aria-label={translate('moveOutlineValue0Up', { value0: topic.title })}
         onClick={() => {
           move(-1)
         }}
@@ -54,7 +58,7 @@ const OutlineEditorRow = ({ id, depth }: { id: string; depth: number }) => {
         variant="ghost"
         className="size-7"
         disabled={!parent || index >= parent.children.length - 1}
-        aria-label={`下移大纲 ${topic.title}`}
+        aria-label={translate('moveOutlineValue0Down', { value0: topic.title })}
         onClick={() => {
           move(1)
         }}
@@ -65,7 +69,7 @@ const OutlineEditorRow = ({ id, depth }: { id: string; depth: number }) => {
         size="icon"
         variant="ghost"
         className="size-7"
-        aria-label={`添加大纲子主题 ${topic.title}`}
+        aria-label={translate('addOutlineChildValue0', { value0: topic.title })}
         onClick={() => {
           const state = useEditor.getState()
           state.select(id)
@@ -81,7 +85,7 @@ const OutlineEditorRow = ({ id, depth }: { id: string; depth: number }) => {
         variant="ghost"
         className="size-7"
         disabled={id === document.rootId}
-        aria-label={`删除大纲 ${topic.title}`}
+        aria-label={translate('deleteOutlineValue0', { value0: topic.title })}
         onClick={() => {
           const state = useEditor.getState()
           state.select(id)
@@ -94,6 +98,8 @@ const OutlineEditorRow = ({ id, depth }: { id: string; depth: number }) => {
   )
 }
 export const OutlineEditor = () => {
+  const { translate } = useMessages()
+
   const document = useEditor((state) => state.history.document)
   const rows: { id: string; depth: number }[] = [],
     stack = [document.rootId, ...(document.floatingIds ?? [])]
@@ -111,17 +117,15 @@ export const OutlineEditor = () => {
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <ListTree className="size-4" />
-          大纲编辑
+          {translate('editOutline')}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-auto sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>大纲编辑</DialogTitle>
-          <DialogDescription>
-            直接编辑主题。Enter 添加同级，Tab 添加子主题；中文输入由 Lexical 处理。
-          </DialogDescription>
+          <DialogTitle>{translate('editOutline')}</DialogTitle>
+          <DialogDescription>{translate('editTopicsDirectlyEnterAddsASibling')}</DialogDescription>
         </DialogHeader>
-        <div aria-label="可编辑大纲">
+        <div aria-label={translate('editableOutline')}>
           {rows.map((row) => (
             <OutlineEditorRow key={row.id} {...row} />
           ))}

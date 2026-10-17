@@ -1,3 +1,4 @@
+import { seedChinese } from '@tests/electron/preferences'
 import { mainWindow } from '@tests/desktop/windows'
 import { enterExampleIfHome } from '@tests/e2e/workspace'
 import { _electron as electron, expect, test } from '@playwright/test'
@@ -7,7 +8,11 @@ import { join } from 'node:path'
 
 test('自定义标题栏保留操作、窄窗布局与原生全屏状态', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'trelyx-window-'))
-  const app = await electron.launch({ args: ['.', `--user-data-dir=${directory}`] })
+  await seedChinese(directory)
+  const app = await electron.launch({
+    colorScheme: null,
+    args: ['.', `--user-data-dir=${directory}`],
+  })
   try {
     const page = await mainWindow(app)
     await enterExampleIfHome(page)
@@ -55,19 +60,25 @@ test('自定义标题栏保留操作、窄窗布局与原生全屏状态', async
     const fileMenu = page.getByRole('button', { name: '文件菜单', exact: true })
     await expect(fileMenu).toBeVisible()
     const layout = await toolbar.evaluate((element) => {
-      const titleElement = element.querySelector('h1')
+      const titleElement = element.querySelector('[aria-label="返回首页"]')
       const actionsElement = element.querySelector('.toolbar-actions')
-      if (!titleElement || !actionsElement) throw new Error('Missing toolbar content')
+      const dimensionElement = element.querySelector('[aria-label="画布维度"]')
+      if (!titleElement || !actionsElement || !dimensionElement)
+        throw new Error('Missing toolbar content')
       const title = titleElement.getBoundingClientRect()
       const actions = actionsElement.getBoundingClientRect()
+      const dimension = dimensionElement.getBoundingClientRect()
       return {
         titleRight: title.right,
+        dimensionLeft: dimension.left,
+        dimensionRight: dimension.right,
         actionsLeft: actions.left,
         actionsRight: actions.right,
         width: innerWidth,
       }
     })
-    expect(layout.titleRight).toBeLessThanOrEqual(layout.actionsLeft)
+    expect(layout.titleRight).toBeLessThanOrEqual(layout.dimensionLeft)
+    expect(layout.dimensionRight).toBeLessThanOrEqual(layout.actionsLeft)
     expect(layout.actionsRight).toBeLessThanOrEqual(layout.width)
     await app.evaluate(({ app, BrowserWindow }) => {
       const window = BrowserWindow.getAllWindows()[0]

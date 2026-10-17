@@ -1,5 +1,14 @@
+import { documentFiles, closeDocumentFiles } from '@tests/fixtures/files'
+import { mkdtempSync } from 'node:fs'
+import { rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { IPCRegistry } from '@main/application/ipcRegistry'
+import { WindowSession } from '@main/application/session'
+import { OpenFileRequests } from '@main/openFiles'
+import { ipcMain, dialog } from 'electron'
 import type { BrowserWindow, IpcMainInvokeEvent, IpcMainEvent } from 'electron'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   handlers: new Map<string, (event: IpcMainInvokeEvent, input?: unknown) => unknown>(),
@@ -10,7 +19,6 @@ const mocks = vi.hoisted(() => ({
   showOpenDialog: vi.fn(),
   showSaveDialog: vi.fn(),
 }))
-vi.mock('../../src/main/ai', () => ({ registerAIIPC: vi.fn() }))
 vi.mock('electron', () => ({
   app: { on: vi.fn() },
   dialog: { showOpenDialog: mocks.showOpenDialog, showSaveDialog: mocks.showSaveDialog },
@@ -26,11 +34,19 @@ vi.mock('electron', () => ({
   },
 }))
 
-import { DocumentFiles } from '@main/files'
 import { registerIPC } from '@main/ipc'
 import { createDocument, createWorkbook, serializeWorkbook } from '@core'
 
+const directories: string[] = []
+afterEach(async () => {
+  await closeDocumentFiles()
+  await Promise.all(
+    directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })),
+  )
+})
 const setup = () => {
+  const directory = mkdtempSync(join(tmpdir(), 'trelyx-ipc-'))
+  directories.push(directory)
   const frame = {}
   const webContents = { mainFrame: frame }
   const window = {
@@ -41,15 +57,11 @@ const setup = () => {
     isFullScreen: () => true,
   } as unknown as BrowserWindow
   const event = { sender: webContents, senderFrame: frame } as unknown as IpcMainInvokeEvent
-  const files = new DocumentFiles('/unused-test-storage')
-  const setDirty = vi.fn()
-  registerIPC(
-    () => window,
-    files,
-    setDirty,
-    () => Promise.resolve(null),
-    () => false,
-  )
+  const files = documentFiles(directory)
+  const session = new WindowSession()
+  session.window = window
+  const setDirty = vi.spyOn(session, 'setDirty').mockImplementation(() => undefined)
+  registerIPC(new IPCRegistry(ipcMain), session, files, new OpenFileRequests(), dialog)
   return { event, files, setDirty }
 }
 

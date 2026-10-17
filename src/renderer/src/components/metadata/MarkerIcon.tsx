@@ -1,7 +1,9 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { lazy, Suspense } from 'react'
 import { CircleHelp } from 'lucide-react'
 import { loadBrandMarkers } from '@shared/markerIcons'
-import { markerOptions } from '@renderer/components/metadata/markers'
+import { getMarkerOptions } from '@renderer/components/metadata/markers'
 
 const BrandIcon = lazy(async () => {
   await loadBrandMarkers()
@@ -15,9 +17,14 @@ export const MarkerIcon = ({
   marker: string
   className?: string
 }) => {
+  const { translate } = useMessages()
+  const markerOptions = getMarkerOptions(translate)
+
   const known = markerOptions.find((option) => option.value === marker)
   if (known) return <known.Icon className={className} aria-label={known.title} />
-  const fallback = <CircleHelp className={className} aria-label={`图标 ${marker}`} />
+  const fallback = (
+    <CircleHelp className={className} aria-label={translate('iconValue0', { value0: marker })} />
+  )
   return marker.startsWith('simple-icons:') ? (
     <Suspense fallback={fallback}>
       <BrandIcon marker={marker} className={className} />

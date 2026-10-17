@@ -1,21 +1,23 @@
+import { translate } from '@renderer/i18n'
 import { useEffect } from 'react'
 import { $getRoot, getNearestEditorFromDOMNode, REDO_COMMAND, UNDO_COMMAND } from 'lexical'
-import { applyCommand, serializeWorkbook } from '@core'
 import { $convertToMarkdownString } from '@lexical/markdown'
 import { richTransformers } from '@renderer/components/metadata/richTransformers'
-import { draftCommand } from '@renderer/state/editorDraft'
-import { isDirty, useEditor } from '@renderer/state/editor'
-import {
-  newDocument,
-  openDocument,
-  saveDocument,
-  readRecoveryContents,
-} from '@renderer/state/files'
-import { writeBrowserRecovery } from '@renderer/state/recovery'
+import { useEditor } from '@renderer/state/editor'
+import { newDocument, openDocument, saveDocument } from '@renderer/state/files'
+import { requireDesktopAPI } from '@renderer/lib/desktop'
 import { requestViewport } from '@renderer/state/viewport'
 import { usePresentation } from '@renderer/state/presentation'
 import { useSpatialView } from '@renderer/state/spatial'
 import { createRecoveryWriter } from '@renderer/lib/recoveryWriter'
+import {
+  anyDocumentDirty,
+  closeActiveDocument,
+  isSwitchingDocument,
+  synchronizeDocumentTab,
+  useDocumentTabs,
+} from '@renderer/state/documentTabs'
+import { workspaceRecoveryContents } from '@renderer/state/documentRecovery'
 import { useWorkspace } from '@renderer/state/workspace'
 
 export const useFileLifecycle = (): void => {
@@ -25,108 +27,146 @@ export const useFileLifecycle = (): void => {
     let recoveryRead = false
     let pendingOpen = true
     let nativeStatus = ''
-    const bridge = window.trelyx
-    const openPending = (): void => {
-      const state = useEditor.getState()
-      if (!bridge || !recoveryRead || !pendingOpen || state.busy || state.recovery) return
-      pendingOpen = false
-      void openDocument(undefined, true)
+    let emptyWorkspaceQueued = false
+    let hadWorkspace = useDocumentTabs.getState().tabs.length > 0
+    const bridge = requireDesktopAPI()
+    const reportError = (error: unknown): void => {
+      if (alive)
+        useEditor
+          .getState()
+          .setError(
+            error instanceof Error ? error.message : translate('fileOperationFailedPleaseRetry'),
+          )
     }
-    const removeOpenFile = bridge?.onOpenFile(() => {
+    const runFileAction = (operation: () => Promise<void>): void => {
+      void operation().catch(reportError)
+    }
+    const openPending = (): void => {
+      if (
+        !alive ||
+        isSwitchingDocument() ||
+        !recoveryRead ||
+        !pendingOpen ||
+        useEditor.getState().busy
+      )
+        return
+      pendingOpen = false
+      runFileAction(() => openDocument(undefined, true))
+    }
+    const removeOpenFile = bridge.onOpenFile(() => {
       pendingOpen = true
       openPending()
     })
+    const canWriteRecovery = (): boolean =>
+      alive &&
+      ready &&
+      !isSwitchingDocument() &&
+      !useEditor.getState().busy &&
+      useDocumentTabs.getState().recovery.length === 0 &&
+      hadWorkspace
+    const writeRecovery = async (): Promise<void> => {
+      if (!canWriteRecovery()) return
+      await bridge.writeWorkspaceRecovery(workspaceRecoveryContents())
+    }
+    const reportRecoveryError = (error: unknown): void => {
+      if (alive)
+        useEditor.getState().setError(
+          translate('couldNotWriteRecoveryDataValue0', {
+            value0: error instanceof Error ? error.message : translate('pleaseSaveTheFileManually'),
+          }),
+        )
+    }
+    const recoveryWriter = createRecoveryWriter(writeRecovery, reportRecoveryError)
     const synchronize = (): void => {
+      if (!alive || isSwitchingDocument()) return
       const state = useEditor.getState()
       const workspace = useWorkspace.getState()
-      const dirty = workspace.hasDocument && isDirty()
-      const protectedRecovery = !ready || Boolean(state.recovery)
+      const tabs = useDocumentTabs.getState()
+      hadWorkspace ||= tabs.tabs.length > 0
+      const dirty = anyDocumentDirty()
+      const protectedRecovery = !ready || tabs.recovery.length > 0
       const status = `${dirty}:${protectedRecovery}`
       if (status !== nativeStatus) {
-        bridge?.setDirty(dirty, protectedRecovery)
-        nativeStatus = status
+        try {
+          bridge.setDirty(dirty, protectedRecovery)
+          nativeStatus = status
+        } catch (error) {
+          recoveryWriter.cancel()
+          reportError(error)
+          return
+        }
       }
       window.document.title =
         workspace.screen === 'editor'
           ? `${dirty ? '• ' : ''}${state.workbook.title} — Trelyx`
           : 'Trelyx'
-      if (!ready || state.recovery || state.busy || !workspace.hasDocument) recoveryWriter.cancel()
-      else recoveryWriter.schedule()
-    }
-    const recoveryWriter = createRecoveryWriter(
-      async () => {
-        const current = useEditor.getState()
-        if (
-          !alive ||
-          !ready ||
-          current.recovery ||
-          current.busy ||
-          !useWorkspace.getState().hasDocument
-        )
-          return
-        let document = current.history.document
-        try {
-          const command = draftCommand(current)
-          if (command) document = applyCommand(document, command)
-        } catch {
-          return
-        }
-        const contents = serializeWorkbook({
-          ...current.workbook,
-          sheets: current.workbook.sheets.map((sheet) =>
-            sheet.id === current.activeSheetId ? { ...sheet, document } : sheet,
-          ),
+      if (tabs.tabs.length > 0 || tabs.recovery.length > 0) emptyWorkspaceQueued = false
+      if (!canWriteRecovery()) recoveryWriter.cancel()
+      else if (tabs.tabs.length > 0) recoveryWriter.schedule()
+      else {
+        recoveryWriter.cancel()
+        if (emptyWorkspaceQueued) return
+        // Closing the last tab must not leave its recovery behind if the app quits immediately.
+        emptyWorkspaceQueued = true
+        void writeRecovery().catch((error: unknown) => {
+          emptyWorkspaceQueued = false
+          reportRecoveryError(error)
         })
-        await (bridge ? bridge.writeRecovery(contents) : writeBrowserRecovery(contents))
-      },
-      (error) => {
-        if (alive)
-          useEditor
-            .getState()
-            .setError(
-              `自动恢复写入失败：${error instanceof Error ? error.message : '请手动保存文件。'}`,
-            )
-      },
-    )
-    const read = readRecoveryContents()
+      }
+    }
+    const read = Promise.resolve().then(() => bridge.readWorkspaceRecovery())
     void read
       .then((recovery) => {
         if (!alive) return
-        useEditor.setState({ recovery })
         ready = true
         recoveryRead = true
+        hadWorkspace ||= recovery.length > 0
+        useDocumentTabs.setState({ recovery })
         synchronize()
         openPending()
       })
       .catch((error: unknown) => {
         if (!alive) return
-        // Permit explicit OS opens while keeping a damaged recovery protected from writes.
+        // Explicit OS opens may create new tabs while damaged recovery stays protected.
+        ready = false
         recoveryRead = true
-        useEditor
-          .getState()
-          .setError(
-            error instanceof Error ? error.message : '无法读取自动恢复记录。请先手动保存当前导图。',
-          )
+        reportError(
+          error instanceof Error ? error : new Error(translate('couldNotLoadRecoveryDataSaveThe')),
+        )
+        synchronize()
         openPending()
       })
     const unsubscribe = useEditor.subscribe((state, previous) => {
-      if (previous.recovery !== null && state.recovery === null) ready = true
+      if (isSwitchingDocument()) return
       if (
         state.busy !== previous.busy ||
         state.workbook !== previous.workbook ||
         state.draft !== previous.draft ||
         state.richDraft !== previous.richDraft ||
         state.editingId !== previous.editingId ||
+        state.editingSurface !== previous.editingSurface ||
+        state.activeSheetId !== previous.activeSheetId ||
         state.baseline !== previous.baseline ||
-        state.recovery !== previous.recovery
-      )
+        state.path !== previous.path
+      ) {
+        synchronizeDocumentTab()
         synchronize()
-      if (state.busy !== previous.busy || state.recovery !== previous.recovery) openPending()
+      }
+      if (state.busy !== previous.busy) openPending()
+    })
+    const unsubscribeTabs = useDocumentTabs.subscribe(() => {
+      if (isSwitchingDocument()) return
+      // Capturing the editor here would recursively update this store.
+      synchronize()
+      openPending()
     })
     const unsubscribeWorkspace = useWorkspace.subscribe(synchronize)
-    const removeMenu = bridge?.onMenuAction((action) => {
+    const removeMenu = bridge.onMenuAction((action) => {
       if (usePresentation.getState().playing) return
-      if (useWorkspace.getState().screen !== 'editor' && action !== 'new' && action !== 'open')
+      if (
+        useWorkspace.getState().screen !== 'editor' &&
+        !['new', 'open', 'closeTab'].includes(action)
+      )
         return
       const state = useEditor.getState()
       const target = window.document.activeElement
@@ -173,13 +213,16 @@ export const useFileLifecycle = (): void => {
           newDocument()
           break
         case 'open':
-          void openDocument()
+          runFileAction(() => openDocument())
           break
         case 'save':
-          void saveDocument()
+          runFileAction(() => saveDocument())
           break
         case 'saveAs':
-          void saveDocument(true)
+          runFileAction(() => saveDocument(true))
+          break
+        case 'closeTab':
+          closeActiveDocument()
           break
         case 'undo':
           state.undo()
@@ -189,19 +232,16 @@ export const useFileLifecycle = (): void => {
           break
       }
     })
-    const beforeUnload = (event: BeforeUnloadEvent): void => {
-      if (!bridge && isDirty()) event.preventDefault()
-    }
-    window.addEventListener('beforeunload', beforeUnload)
+    synchronizeDocumentTab()
     synchronize()
     return () => {
       alive = false
       recoveryWriter.dispose()
       unsubscribe()
       unsubscribeWorkspace()
-      removeMenu?.()
-      removeOpenFile?.()
-      window.removeEventListener('beforeunload', beforeUnload)
+      unsubscribeTabs()
+      removeMenu()
+      removeOpenFile()
     }
   }, [])
 }

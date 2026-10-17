@@ -1,3 +1,4 @@
+import { translate } from '@renderer/i18n'
 import { create } from 'zustand'
 import type { MindMapDocument } from '@core'
 import type { CanvasDrop } from '@renderer/lib/canvasDrop'
@@ -48,12 +49,15 @@ export const canvasDragMessage = (drag: CanvasDragInteraction): string => {
   const { document, roots, drop } = drag
   if (!drop)
     return roots.every((id) => document.floatingIds?.includes(id))
-      ? `移动 ${roots.length} 个游离主题`
-      : '拖到主题以移动 · Esc 取消'
+      ? translate('moveValue0FloatingTopics', { value0: roots.length })
+      : translate('dragToATopicToMoveEsc')
   const title = document.topics[drop.targetId]?.title ?? ''
-  if (drop.index === undefined) return `移入「${title}」`
+  if (drop.index === undefined) return translate('moveIntoValue0', { value0: title })
   // CanvasDrop indexes the remaining children after all dragged roots are removed.
   const remaining = document.topics[drop.parentId]?.children.filter((id) => !roots.includes(id))
   const targetIndex = remaining?.indexOf(drop.targetId) ?? -1
-  return `插入到「${title}」${drop.index > targetIndex ? '之后' : '之前'}`
+  return translate('insertValue1Value0', {
+    value0: title,
+    value1: drop.index > targetIndex ? translate('after') : translate('before'),
+  })
 }

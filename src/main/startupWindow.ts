@@ -1,6 +1,15 @@
-import { BrowserWindow, dialog, ipcMain, type IpcMainEvent } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, type IpcMainEvent } from 'electron'
 import { join } from 'node:path'
 import type { StartupPhase } from '@shared/startup'
+import { isAppLanguage, languageFromLocale, type AppLanguage } from '@shared/language'
+
+const systemLanguage = (): AppLanguage => {
+  try {
+    return languageFromLocale(app.getLocale())
+  } catch {
+    return 'en'
+  }
+}
 
 /** Owns the native splash and the first-paint handoff; it never accesses document storage. */
 export class StartupWindow {
@@ -16,6 +25,8 @@ export class StartupWindow {
     rendererURL: string | undefined,
     private readonly cancel: () => void,
     private readonly complete: () => void,
+    private readonly readLanguage: () => Promise<AppLanguage> = () =>
+      Promise.resolve(systemLanguage()),
   ) {
     this.splash = new BrowserWindow({
       width: 440,
@@ -118,7 +129,15 @@ export class StartupWindow {
   }
 
   private readonly mounted = (event: IpcMainEvent): void => {
-    if (this.trusted(event, this.splash)) this.publish(this.phase)
+    if (!this.trusted(event, this.splash)) return
+    this.publish(this.phase)
+    void this.publishLanguage()
+  }
+
+  private publishLanguage = async (): Promise<void> => {
+    const language = await Promise.resolve().then(this.readLanguage).catch(systemLanguage)
+    if (!this.disposed && !this.splash.isDestroyed() && isAppLanguage(language))
+      this.splash.webContents.send('startup:language', language)
   }
 
   private readonly failed = (event: IpcMainEvent): void => {

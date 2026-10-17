@@ -1,5 +1,8 @@
+import { closeDocumentTab } from '@tests/e2e/documents'
+import { canvasProperties } from '@tests/e2e/properties'
+import { prepareNativeSave, prepareNativeOpen } from '@tests/electron/native-files'
 import { completeDocumentCreation, openExample } from '@tests/e2e/workspace'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
 import { applyCommand, createExampleDocument, createWorkbook } from '@core'
 import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
@@ -12,13 +15,13 @@ const fileAction = async (page: Page, name: string) => {
   if (name === '新建导图') await completeDocumentCreation(page)
 }
 const openPicker = async (page: Page) => {
-  await dockAction(page, '图形结构')
-  return page.getByRole('dialog', { name: '图形结构', exact: true })
+  await canvasProperties(page, '结构')
+  return page.getByRole('region', { name: '图形结构', exact: true })
 }
 const save = async (page: Page) => {
-  const download = page.waitForEvent('download')
+  const download = await prepareNativeSave(page)
   await page.keyboard.press('ControlOrMeta+s')
-  const path = await (await download).path()
+  const path = await download.path()
   if (!path) throw new Error('保存未生成原生文件')
   return { path, workbook: decodeTrelyx(await readFile(path)) }
 }
@@ -102,14 +105,14 @@ test('当前画布清除根覆盖，保留批量分支结构；重置可撤销�
     Object.values(document.topics).map((topic) => [topic.id, topic.title]),
   )
   await openExample(page)
-  const chooser = page.waitForEvent('filechooser')
+  const chooser = await prepareNativeOpen(page)
   await fileAction(page, '打开导图')
-  await (
-    await chooser
-  ).setFiles({
+  await chooser.selectFile({
     name: '混合结构.trelyx',
     mimeType: 'application/octet-stream',
-    buffer: Buffer.from(encodeTrelyx(createWorkbook(document))),
+    buffer: Buffer.from(
+      encodeTrelyx({ ...createWorkbook(document), id: 'mixed-structure-workbook' }),
+    ),
   })
   let picker = await openPicker(page)
   await expect(picker.getByRole('button', { name: '应用向左逻辑图', exact: true })).toHaveAttribute(
@@ -151,9 +154,10 @@ test('当前画布清除根覆盖，保留批量分支结构；重置可撤销�
     ),
   ).toEqual(originalTitles)
   await fileAction(page, '新建导图')
-  const reopen = page.waitForEvent('filechooser')
+  await closeDocumentTab(page, 1)
+  const reopen = await prepareNativeOpen(page)
   await fileAction(page, '打开导图')
-  await (await reopen).setFiles(saved.path)
+  await reopen.selectFile(saved.path)
   await page.getByTestId('topic-vision').click()
   picker = await openPicker(page)
   await picker.getByRole('button', { name: '所选分支', exact: true }).click()
@@ -168,7 +172,10 @@ test('同一文件的画布独立保存结构与撤销历史', async ({ page }) 
   let picker = await openPicker(page)
   await picker.getByRole('button', { name: '应用向右括号图', exact: true }).click()
   await page.keyboard.press('Escape')
-  await page.getByRole('tab', { name: '用户研究', exact: true }).click()
+  await page
+    .getByRole('tablist', { name: '文档画布', exact: true })
+    .getByRole('tab', { name: '用户研究', exact: true })
+    .click()
   picker = await openPicker(page)
   await expect(picker.getByRole('button', { name: '应用左右导图', exact: true })).toHaveAttribute(
     'aria-pressed',
@@ -176,7 +183,10 @@ test('同一文件的画布独立保存结构与撤销历史', async ({ page }) 
   )
   await picker.getByRole('button', { name: '应用向上树形图', exact: true }).click()
   await page.keyboard.press('Escape')
-  await page.getByRole('tab', { name: '产品总览', exact: true }).click()
+  await page
+    .getByRole('tablist', { name: '文档画布', exact: true })
+    .getByRole('tab', { name: '产品总览', exact: true })
+    .click()
   await dockAction(page, '撤销')
   picker = await openPicker(page)
   await expect(picker.getByRole('button', { name: '应用左右导图', exact: true })).toHaveAttribute(
@@ -184,7 +194,10 @@ test('同一文件的画布独立保存结构与撤销历史', async ({ page }) 
     'true',
   )
   await page.keyboard.press('Escape')
-  await page.getByRole('tab', { name: '用户研究', exact: true }).click()
+  await page
+    .getByRole('tablist', { name: '文档画布', exact: true })
+    .getByRole('tab', { name: '用户研究', exact: true })
+    .click()
   picker = await openPicker(page)
   await expect(picker.getByRole('button', { name: '应用向上树形图', exact: true })).toHaveAttribute(
     'aria-pressed',

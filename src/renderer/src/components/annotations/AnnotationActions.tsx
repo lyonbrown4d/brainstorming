@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useEffect } from 'react'
 import { CornerDownRight, Group, Link2, MessageSquareText } from 'lucide-react'
 import { useEditor } from '@renderer/state/editor'
@@ -11,6 +13,8 @@ import { isCompositionKey } from '@renderer/state/keyboard'
 import { DockAction } from '@renderer/components/DockAction'
 
 export const AnnotationActions = () => {
+  const { translate } = useMessages()
+
   const fromId = useAnnotationInteraction((state) => state.fromId)
   const sheetId = useEditor((state) => state.activeSheetId)
   useEffect(() => {
@@ -47,9 +51,9 @@ export const AnnotationActions = () => {
   return (
     <>
       <DockAction
-        caption="关联"
-        aria-label="关联线"
-        title="关联线：选中起点后点击目标主题"
+        caption={translate('relation')}
+        aria-label={translate('relationship')}
+        title={translate('relationshipSelectAStartTopicThenClick')}
         aria-pressed={Boolean(fromId)}
         className="aria-pressed:bg-accent"
         onClick={toggleRelationMode}
@@ -57,9 +61,9 @@ export const AnnotationActions = () => {
         <Link2 className="size-4" />
       </DockAction>
       <DockAction
-        caption="边界"
-        aria-label="添加边界"
-        title="为所选主题添加边界"
+        caption={translate('boundary')}
+        aria-label={translate('addBoundary')}
+        title={translate('addBoundaryAroundSelectedTopics')}
         onClick={() => {
           addSelectionGroup('boundary')
         }}
@@ -67,9 +71,9 @@ export const AnnotationActions = () => {
         <Group className="size-4" />
       </DockAction>
       <DockAction
-        caption="概要"
-        aria-label="添加概要"
-        title="为所选主题添加概要"
+        caption={translate('summary')}
+        aria-label={translate('addSummary')}
+        title={translate('addSummaryForSelectedTopics')}
         onClick={() => {
           addSelectionGroup('summary')
         }}
@@ -77,9 +81,9 @@ export const AnnotationActions = () => {
         <CornerDownRight className="size-4" />
       </DockAction>
       <DockAction
-        caption="标注"
-        aria-label="添加标注"
-        title="为所选主题添加标注"
+        caption={translate('callout')}
+        aria-label={translate('addCallout')}
+        title={translate('addCalloutToSelectedTopic')}
         onClick={addSelectionCallout}
       >
         <MessageSquareText className="size-4" />
@@ -89,6 +93,8 @@ export const AnnotationActions = () => {
 }
 
 export const AnnotationModeHint = () => {
+  const { translate } = useMessages()
+
   const fromId = useAnnotationInteraction((state) => state.fromId)
   const floating = useAnnotationInteraction((state) => state.floating)
   if (!fromId && !floating) return null
@@ -97,7 +103,9 @@ export const AnnotationModeHint = () => {
       className="block rounded-xl border bg-background/95 px-3 py-2 text-center text-xs shadow-sm"
       role="status"
     >
-      {floating ? '点击画布空白添加游离主题 · Esc 取消' : '点击目标主题建立关联线 · Esc 取消'}
+      {floating
+        ? translate('clickEmptyCanvasToAddAFloating')
+        : translate('clickATargetTopicToConnectEsc')}
     </span>
   )
 }

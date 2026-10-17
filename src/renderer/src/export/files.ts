@@ -1,3 +1,4 @@
+import { translate } from '@renderer/i18n'
 import { prepareMarkerIcons } from '@shared/markerIcons'
 import type { MindMapWorkbook } from '@core'
 import {
@@ -22,15 +23,6 @@ export interface ExportOptions {
   includeCollapsed?: boolean
   scale?: number
 }
-const mimeTypes: Record<ExportFormat, string> = {
-  png: 'image/png',
-  svg: 'image/svg+xml',
-  pdf: 'application/pdf',
-  md: 'text/markdown',
-  opml: 'text/xml',
-  txt: 'text/plain',
-  xmind: 'application/zip',
-}
 export const exportNotice: Record<ExportFormat, string> = {
   png: '导出当前画布的完整二维导图。图片、标题和内容标记可见，备注正文与附件文件不在图中。',
   svg: '导出完整二维矢量导图，嵌入图片。字体使用查看设备的本地系统字体；备注正文与附件文件不在图中。',
@@ -43,7 +35,7 @@ export const exportNotice: Record<ExportFormat, string> = {
 }
 const rasterize = async (source: SheetSvg, scale: number): Promise<HTMLCanvasElement> => {
   if (!Number.isFinite(scale) || scale < 0.25 || scale > 3)
-    throw new Error('图片倍率须为 0.25 至 3')
+    throw new Error(translate('imageScaleMustBeBetween025And'))
   const width = Math.ceil(source.width * scale)
   const height = Math.ceil(source.height * scale)
   checkRasterSize(width, height)
@@ -57,7 +49,7 @@ const rasterize = async (source: SheetSvg, scale: number): Promise<HTMLCanvasEle
     canvas.width = width
     canvas.height = height
     const context = canvas.getContext('2d')
-    if (!context) throw new Error('当前环境无法创建图片画布')
+    if (!context) throw new Error(translate('couldNotCreateAnImageCanvas'))
     context.drawImage(image, 0, 0, width, height)
     return canvas
   } finally {
@@ -68,7 +60,7 @@ const canvasPng = async (canvas: HTMLCanvasElement): Promise<Uint8Array> => {
   const blob = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((result) => {
       if (result) resolve(result)
-      else reject(new Error('PNG 编码失败'))
+      else reject(new Error(translate('pngEncodingFailed')))
     }, 'image/png')
   })
   return new Uint8Array(await blob.arrayBuffer())
@@ -78,7 +70,7 @@ export const createExport = async (
   options: ExportOptions,
 ): Promise<ExportRequest> => {
   const sheet = workbook.sheets.find((entry) => entry.id === options.sheetId)
-  if (!sheet) throw new Error('导出的画布不存在')
+  if (!sheet) throw new Error(translate('sheetToExportDoesNotExist'))
   const selected = exportSheets(workbook, options.wholeWorkbook ? undefined : sheet.id)
   const encoder = new TextEncoder()
   let bytes: Uint8Array
@@ -146,20 +138,4 @@ export const createExport = async (
       .replace(/[\p{Cc}<>:"/\\|?*]/gu, '_')
       .slice(0, 100) || 'Trelyx'
   return { format: options.format, suggestedName: `${name}.${options.format}`, bytes }
-}
-export const downloadExport = (request: ExportRequest): Promise<string> => {
-  const url = URL.createObjectURL(
-    new Blob([new Uint8Array(request.bytes)], { type: mimeTypes[request.format] }),
-  )
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = request.suggestedName
-  document.body.appendChild(anchor)
-  anchor.click()
-  anchor.remove()
-  // Downloads start asynchronously; releasing on the next task can cancel Safari's download.
-  setTimeout(() => {
-    URL.revokeObjectURL(url)
-  }, 60_000)
-  return Promise.resolve(request.suggestedName)
 }

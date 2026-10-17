@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useState } from 'react'
 import {
   $createParagraphNode,
@@ -30,6 +32,8 @@ export const TopicEditor = ({
   title: string
   surface?: EditingSurface
 }) => {
+  const { translate } = useMessages()
+
   const active = useEditor((state) => state.editingId === id && state.editingSurface === surface)
   const committedTitle = useEditor((state) => {
     const topic = state.history.document.topics[id]
@@ -59,7 +63,9 @@ export const TopicEditor = ({
           COMMAND_PRIORITY_HIGH,
         ),
       onError: (error: Error) => {
-        useEditor.getState().setError(`主题编辑失败：${error.message}`)
+        useEditor
+          .getState()
+          .setError(translate('couldNotEditTopicValue0', { value0: error.message }))
       },
       $initialEditorState: () => {
         const state = useEditor.getState()
@@ -87,14 +93,14 @@ export const TopicEditor = ({
           className={`${surface === 'canvas' ? 'topic-input' : surface === 'spatial' ? 'min-h-[1.5em] max-h-[inherit] w-full overflow-y-auto border-0 bg-transparent p-0 text-center text-inherit leading-[1.5] whitespace-pre-wrap [font:inherit] [overflow-wrap:anywhere] outline-none [&_p]:m-0' : surface === 'notes' ? 'topic-notes-input min-h-28 max-h-[280px] px-2.5 py-[9px] text-[13px] leading-relaxed' : 'topic-name-input min-h-[38px] max-h-[180px] px-2.5 py-2 text-sm leading-normal'} ${surface === 'canvas' || surface === 'spatial' ? '' : 'w-full overflow-y-auto rounded-[7px] border border-border bg-background text-foreground whitespace-pre-wrap [overflow-wrap:anywhere] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&_p]:m-0'} select-text nodrag nopan nowheel`}
           aria-label={
             surface === 'outline'
-              ? '大纲主题名称'
+              ? translate('outlineTopicTitle')
               : surface === 'notes'
-                ? '主题备注'
+                ? translate('topicNotes')
                 : surface === 'inspector'
-                  ? '主题名称'
+                  ? translate('topicTitle')
                   : active || surface === 'spatial'
-                    ? '编辑主题标题'
-                    : '主题内容'
+                    ? translate('editTopicTitle')
+                    : translate('topicContent')
           }
           aria-multiline
           spellCheck={false}
@@ -113,7 +119,9 @@ export const TopicEditor = ({
                 id,
                 undefined,
                 surface,
-                title === '新主题' || title === '游离主题' ? 'all' : 'end',
+                title === translate('newTopic') || title === translate('floatingTopic')
+                  ? 'all'
+                  : 'end',
               )
           }}
         />

@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useId, useState } from 'react'
 import { LockKeyhole } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
@@ -16,21 +18,25 @@ import { useFileDialogs } from '@renderer/state/fileDialogs'
 import { useFileSecurityState } from '@renderer/state/password'
 
 export const FileSecurity = () => {
+  const { translate } = useMessages()
+
   return (
     <Button
       variant="ghost"
       size="sm"
-      title="文件密码"
+      title={translate('filePassword')}
       onClick={() => {
         useFileDialogs.setState({ security: true })
       }}
     >
       <LockKeyhole className="size-4" />
-      文件密码
+      {translate('filePassword')}
     </Button>
   )
 }
 export const FileSecurityPanel = () => {
+  const { translate } = useMessages()
+
   const open = useFileDialogs((state) => state.security)
   const setOpen = (value: boolean): void => {
     useFileDialogs.setState({ security: value })
@@ -47,7 +53,7 @@ export const FileSecurityPanel = () => {
   const apply = async (value: string | null): Promise<void> => {
     if (busy) return
     if (value !== null && (value.length < 8 || value.length > 128 || value !== confirmation)) {
-      setError('请输入 8 至 128 个字符的密码，并确保两次输入相同。')
+      setError(translate('enter8128CharactersAndMakeSureBoth'))
       return
     }
     setError(null)
@@ -57,7 +63,7 @@ export const FileSecurityPanel = () => {
       setConfirmation('')
       setOpen(false)
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : '密码设置失败')
+      setError(failure instanceof Error ? failure.message : translate('couldNotUpdatePassword'))
     }
   }
   return (
@@ -81,16 +87,16 @@ export const FileSecurityPanel = () => {
           }}
         >
           <DialogHeader>
-            <DialogTitle>文件密码</DialogTitle>
+            <DialogTitle>{translate('filePassword')}</DialogTitle>
             <DialogDescription>
               {encrypted
-                ? '当前文件已启用 AES-256 密码保护。'
-                : '启用密码后，文件、自动恢复和版本快照都将加密。'}
-              密码仅保留在当前会话中，请妥善保存；忘记后无法恢复。
+                ? translate('thisFileIsProtectedWithAes256Encryption')
+                : translate('enablingAPasswordEncryptsTheFileRecovery')}
+              {translate('keepYourPasswordSafeItIsStored')}
             </DialogDescription>
           </DialogHeader>
           <label htmlFor={passwordId} className="grid gap-2 text-sm">
-            {encrypted ? '新密码' : '密码'}
+            {encrypted ? translate('newPassword') : translate('password')}
             <Input
               id={passwordId}
               type="password"
@@ -105,7 +111,7 @@ export const FileSecurityPanel = () => {
             />
           </label>
           <label htmlFor={confirmationId} className="grid gap-2 text-sm">
-            确认密码
+            {translate('confirmPassword')}
             <Input
               id={confirmationId}
               type="password"
@@ -133,11 +139,11 @@ export const FileSecurityPanel = () => {
                 void retryRecovery()
               }}
             >
-              解锁已保留的自动恢复记录
+              {translate('unlockSavedRecoveryData')}
             </Button>
           )}
           <p className="text-xs text-muted-foreground">
-            设置会立即保护现有恢复记录；请保存文件以完成磁盘文件更新。
+            {translate('existingRecoveryDataIsProtectedImmediatelySave')}
           </p>
           <DialogFooter>
             {encrypted && (
@@ -149,11 +155,11 @@ export const FileSecurityPanel = () => {
                   void apply(null)
                 }}
               >
-                移除密码
+                {translate('removePassword')}
               </Button>
             )}
             <Button disabled={busy || !password || !confirmation} type="submit">
-              {encrypted ? '更改密码' : '启用密码'}
+              {encrypted ? translate('changePassword') : translate('enablePassword')}
             </Button>
           </DialogFooter>
         </form>

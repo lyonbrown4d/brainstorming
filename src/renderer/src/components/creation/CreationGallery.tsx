@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useId, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, BookOpen } from 'lucide-react'
 import type { LayoutKind } from '@core'
@@ -5,7 +7,7 @@ import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import { Label } from '@renderer/components/ui/label'
 import { StructurePreview } from '@renderer/components/documents/StructurePreview'
-import { structureOptions } from '@renderer/components/documents/structureOptions'
+import { getStructureOptions } from '@renderer/components/documents/structureOptions'
 import { templateOptions } from '@renderer/components/documents/templates'
 import { StructureChoices } from '@renderer/components/creation/StructureChoices'
 import { TemplateChoices } from '@renderer/components/creation/TemplateChoices'
@@ -20,7 +22,7 @@ export const CreationGallery = ({
   mode,
   onCreate,
   onCancel,
-  cancelLabel = '返回画布',
+  cancelLabel: suppliedCancelLabel,
   onOpen,
   onExample,
   busy = false,
@@ -30,6 +32,10 @@ export const CreationGallery = ({
   sidebar,
   showHeader = true,
 }: CreationGalleryProps) => {
+  const { translate } = useMessages()
+  const structureOptions = getStructureOptions(translate)
+  const cancelLabel = suppliedCancelLabel ?? translate('returnToCanvas')
+
   const nameId = useId()
   const [localStep, setLocalStep] = useState<1 | 2>(1)
   const step = controlledStep ?? localStep
@@ -39,15 +45,15 @@ export const CreationGallery = ({
   const [accepted, setAccepted] = useState(false)
   const submitting = useRef(false)
   const { headingRef, scrollRef } = useCreationStepFocus(step)
-  const noun = mode === 'document' ? '文档' : '画布'
+  const noun = mode === 'document' ? translate('document') : translate('sheet')
   const disabled = busy || accepted
   const selectedLabel = structureOptions.find((option) => option.value === layout)?.label ?? layout
   const resolvedTitle =
     template === 'blank'
       ? mode === 'document'
-        ? '新的想法'
-        : '新画布'
-      : (templateOptions.find((option) => option.id === template)?.title ?? '新的想法')
+        ? translate('newIdea')
+        : translate('newSheetLabel402')
+      : (templateOptions.find((option) => option.id === template)?.title ?? translate('newIdea'))
   const changeStep = (next: 1 | 2) => {
     if (disabled) return
     setLocalStep(next)
@@ -55,7 +61,7 @@ export const CreationGallery = ({
   }
   return (
     <section
-      aria-label={`新建${noun}`}
+      aria-label={translate('newValue0', { value0: noun })}
       className="flex h-full min-h-0 flex-1 flex-col bg-secondary/25 text-foreground"
     >
       {showHeader && (
@@ -93,7 +99,7 @@ export const CreationGallery = ({
                 tabIndex={-1}
                 className="mb-5 text-[28px] leading-9 font-semibold tracking-tight outline-none"
               >
-                新建{noun}
+                {translate('newValue0', { value0: noun })}
               </h1>
               {step === 1 ? (
                 <StructureChoices value={layout} onChange={setLayout} disabled={disabled} />
@@ -101,7 +107,7 @@ export const CreationGallery = ({
                 <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_14rem]">
                   <div className="flex flex-col gap-8">
                     <div className="flex flex-col gap-3">
-                      <Label htmlFor={nameId}>{noun}名称</Label>
+                      <Label htmlFor={nameId}>{translate('entityName', { name: noun })}</Label>
                       <Input
                         id={nameId}
                         value={title}
@@ -119,8 +125,11 @@ export const CreationGallery = ({
                         }}
                       />
                     </div>
-                    <section aria-label="内容模板" className="flex flex-col gap-3">
-                      <h2 className="text-sm font-medium">内容模板</h2>
+                    <section
+                      aria-label={translate('contentTemplate')}
+                      className="flex flex-col gap-3"
+                    >
+                      <h2 className="text-sm font-medium">{translate('contentTemplate')}</h2>
                       <TemplateChoices
                         value={template}
                         onChange={setTemplate}
@@ -150,7 +159,7 @@ export const CreationGallery = ({
                 onClick={onExample}
               >
                 <BookOpen data-icon="inline-start" />
-                探索示例
+                {translate('exploreExample')}
               </Button>
             )}
           </div>
@@ -173,7 +182,7 @@ export const CreationGallery = ({
                 }}
               >
                 <ArrowLeft data-icon="inline-start" />
-                上一步
+                {translate('backLabel451')}
               </Button>
             )}
             {step === 1 ? (
@@ -186,7 +195,7 @@ export const CreationGallery = ({
                   changeStep(2)
                 }}
               >
-                下一步
+                {translate('next')}
                 <ArrowRight data-icon="inline-end" />
               </Button>
             ) : (
@@ -196,7 +205,7 @@ export const CreationGallery = ({
                 disabled={disabled}
                 className="h-11 min-w-32 sm:min-w-56"
               >
-                {busy ? '正在创建…' : `创建${noun}`}
+                {busy ? translate('creating') : translate('createValue0', { value0: noun })}
                 <ArrowRight data-icon="inline-end" />
               </Button>
             )}

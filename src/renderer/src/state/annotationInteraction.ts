@@ -1,3 +1,4 @@
+import { translate } from '@renderer/i18n'
 import { create } from 'zustand'
 import { usePresentation } from '@renderer/state/presentation'
 import { useEditor } from '@renderer/state/editor'
@@ -100,7 +101,7 @@ export const connectAnnotation = (from: string, to: string): boolean => {
   if (
     !runAnnotationCommand({
       type: 'upsertRelation',
-      relation: { id, from, to, title: '关联线', arrow: 'end' },
+      relation: { id, from, to, title: translate('relationship'), arrow: 'end' },
     })
   )
     return false
@@ -127,7 +128,12 @@ export const addSelectionGroup = (kind: 'boundary' | 'summary'): void => {
   if (
     runAnnotationCommand({
       type: 'upsertGroup',
-      group: { id, topicIds, kind, title: kind === 'boundary' ? '边界' : '概要' },
+      group: {
+        id,
+        topicIds,
+        kind,
+        title: kind === 'boundary' ? translate('boundary') : translate('summary'),
+      },
     })
   )
     selectAnnotation('group', id, true)
@@ -137,7 +143,7 @@ export const addSelectionCallout = (): void => {
   if (
     runAnnotationCommand({
       type: 'upsertCallout',
-      callout: { id, topicId: useEditor.getState().selectedId, text: '标注' },
+      callout: { id, topicId: useEditor.getState().selectedId, text: translate('callout') },
     })
   )
     selectAnnotation('callout', id, true)
@@ -158,7 +164,9 @@ export const armFloatingTopic = (): void => {
 export const createFloatingAt = (x: number, y: number): boolean => {
   if (!useAnnotationInteraction.getState().floating) return false
   const id = crypto.randomUUID()
-  if (runAnnotationCommand({ type: 'addFloatingTopic', id, title: '游离主题', x, y })) {
+  if (
+    runAnnotationCommand({ type: 'addFloatingTopic', id, title: translate('floatingTopic'), x, y })
+  ) {
     useAnnotationInteraction.setState({ floating: false })
     useEditor.getState().startEdit(id)
   }

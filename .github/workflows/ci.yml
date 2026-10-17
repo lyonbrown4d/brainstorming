@@ -23,19 +23,10 @@ jobs:
           cache: pnpm
       - run: node --version && pnpm --version
       - run: pnpm install --frozen-lockfile
-      - run: pnpm ci-gate
       - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm ci-gate
       - run: pnpm build-storybook
       - run: pnpm test:storybook
-      - run: pnpm test:e2e
-      - run: pnpm test:perf
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: browser-reports-node-${{ matrix.node }}
-          path: |
-            playwright-report/
-            test-results/
   desktop:
     name: Desktop (macOS)
     runs-on: macos-latest
@@ -48,14 +39,18 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - run: pnpm test:desktop
+      - run: pnpm test:e2e
+      - run: pnpm test:perf
       - run: pnpm package --dir
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - run: pnpm test:packaged
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: trelyx-macos-preview
           path: |
             release/
+            playwright-report/
+            test-results/
             test-results-desktop/

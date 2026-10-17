@@ -1,10 +1,11 @@
-import { expect, test } from '@playwright/test'
+import { topicProperties } from '@tests/e2e/properties'
+import { expect, test } from '@tests/electron/fixture'
 import { openExample } from '@tests/e2e/workspace'
 import { dockAction } from '@tests/e2e/dock'
 test('Dock 图标和任务标记即时应用，并可撤销', async ({ page }) => {
   await openExample(page)
   await page.getByTestId('topic-vision').click()
-  await dockAction(page, '图标与任务标记')
+  await topicProperties(page)
   await page.getByRole('button', { name: '优先级 1', exact: true }).click()
   await expect(page.getByTestId('topic-vision')).toContainText('P1')
   await page.getByRole('button', { name: '星标', exact: true }).click()
@@ -24,7 +25,7 @@ test('Simple Icons 本地图标可搜索选择，三维视图仍显示图标', a
   })
   await openExample(page)
   await page.getByTestId('topic-vision').click()
-  await dockAction(page, '图标与任务标记')
+  await topicProperties(page)
   await page.getByRole('combobox', { name: '图标库', exact: true }).click()
   await page.getByRole('option', { name: '品牌图标', exact: true }).click()
   await page.getByRole('textbox', { name: '搜索图标', exact: true }).fill('github')
@@ -43,7 +44,7 @@ test('画布图标可用两侧手柄缩放、拖动换位，取消与撤销不�
   const titleHeight = await title.evaluate(
     (element) => element.querySelector('p')?.getBoundingClientRect().height,
   )
-  await dockAction(page, '图标与任务标记')
+  await topicProperties(page)
   await page.getByRole('button', { name: '星标', exact: true }).click()
   await page.keyboard.press('Escape')
   await expect
@@ -127,7 +128,7 @@ test('画布图标可用两侧手柄缩放、拖动换位，取消与撤销不�
 test('品牌图标虚拟滚动可直达末尾、键盘选择，搜索重置滚动且节点数量有界', async ({ page }) => {
   await openExample(page)
   await page.getByTestId('topic-vision').click()
-  await dockAction(page, '图标与任务标记')
+  await topicProperties(page)
   await page.getByRole('combobox', { name: '图标库', exact: true }).click()
   await page.getByRole('option', { name: '品牌图标', exact: true }).click()
   const grid = page.getByRole('group', { name: '品牌图标', exact: true })

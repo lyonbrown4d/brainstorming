@@ -1,60 +1,91 @@
+import { seedChinese } from '@tests/electron/preferences'
 import { _electron as electron, expect, test } from '@playwright/test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { mainWindow } from '@tests/desktop/windows'
 import { startupServer } from '@tests/desktop/startup-server'
+import { storageOperation } from '@tests/electron/storage'
 
-test('独立原生启动窗口先显示，编辑器失败后重试，首帧就绪才显示主窗并销毁启动窗', async () => {
-  const testInfo = test.info()
-  const directory = await mkdtemp(join(tmpdir(), 'trelyx-splash-'))
-  const server = await startupServer()
-  const app = await electron.launch({
-    args: ['.', `--user-data-dir=${directory}`],
-    env: { ...process.env, ELECTRON_RENDERER_URL: server.url },
-  })
-  try {
-    const splash = await app.firstWindow()
-    await expect(splash.getByRole('region', { name: '启动 Trelyx', exact: true })).toBeVisible()
-    await server.editorRequested
-    const windows = () =>
-      app.evaluate(({ BrowserWindow }) =>
-        BrowserWindow.getAllWindows().map((window) => ({
-          splash: window.webContents.getURL().includes('/splash.html'),
-          visible: window.isVisible(),
-        })),
+for (const language of ['zh-CN', 'en'] as const) {
+  test(`独立原生启动窗口使用 ${language}，失败后重试，首帧就绪才显示主窗并销毁启动窗`, async () => {
+    const testInfo = test.info()
+    const directory = await mkdtemp(join(tmpdir(), 'trelyx-splash-'))
+    await seedChinese(directory)
+    await storageOperation('language:set', directory, language)
+    const server = await startupServer()
+    const app = await electron.launch({
+      colorScheme: null,
+      args: ['.', `--user-data-dir=${directory}`],
+      env: { ...process.env, ELECTRON_RENDERER_URL: server.url },
+    })
+    try {
+      const splash = await app.firstWindow()
+      const english = language === 'en'
+      await expect(
+        splash.getByRole('region', {
+          name: english ? 'Starting Trelyx' : '启动 Trelyx',
+          exact: true,
+        }),
+      ).toBeVisible()
+      await expect(splash.locator('html')).toHaveAttribute('lang', language)
+      await expect(splash.getByRole('status')).toContainText(
+        english ? 'Preparing your workspace' : '正在准备工作空间',
       )
-    await expect.poll(windows).toEqual(
-      expect.arrayContaining([
-        { splash: true, visible: true },
-        { splash: false, visible: false },
-      ]),
-    )
-    expect(await splash.evaluate(() => typeof window.trelyx)).toBe('undefined')
-    // The splash never receives the document renderer's ready capability.
-    expect(await splash.evaluate(() => typeof window.trelyxStartup)).toBe('undefined')
-    await splash.evaluate(() => window.trelyxSplash?.mounted())
-    expect(await windows()).toContainEqual({ splash: false, visible: false })
-    await splash.screenshot({ path: testInfo.outputPath('trelyx-native-splash.png') })
-    server.release()
-    await expect(splash.getByRole('alert')).toContainText('界面加载失败')
-    expect(await windows()).toContainEqual({ splash: false, visible: false })
-    await splash.getByRole('button', { name: '重新加载', exact: true }).click()
-    const page = await mainWindow(app)
-    await expect(page.getByRole('button', { name: '下一步', exact: true })).toBeEnabled()
-    await expect.poll(windows).toEqual([{ splash: false, visible: true }])
-    await expect(page.locator('#startup-screen')).toHaveCount(0)
-  } finally {
-    app.process().kill('SIGKILL')
-    await server.close()
-    await rm(directory, { recursive: true, force: true })
-  }
-})
+      await expect(
+        splash.getByRole('button', {
+          name: english ? 'Quit Trelyx' : '退出 Trelyx',
+          exact: true,
+        }),
+      ).toBeEnabled()
+      await server.editorRequested
+      const windows = () =>
+        app.evaluate(({ BrowserWindow }) =>
+          BrowserWindow.getAllWindows().map((window) => ({
+            splash: window.webContents.getURL().includes('/splash.html'),
+            visible: window.isVisible(),
+          })),
+        )
+      await expect.poll(windows).toEqual(
+        expect.arrayContaining([
+          { splash: true, visible: true },
+          { splash: false, visible: false },
+        ]),
+      )
+      expect(await splash.evaluate(() => typeof window.trelyx)).toBe('undefined')
+      // The splash never receives the document renderer's ready capability.
+      expect(await splash.evaluate(() => typeof window.trelyxStartup)).toBe('undefined')
+      await splash.evaluate(() => window.trelyxSplash?.mounted())
+      expect(await windows()).toContainEqual({ splash: false, visible: false })
+      await splash.screenshot({ path: testInfo.outputPath('trelyx-native-splash.png') })
+      server.release()
+      await expect(splash.getByRole('alert')).toContainText(
+        english ? 'The interface could not load' : '界面加载失败',
+      )
+      expect(await windows()).toContainEqual({ splash: false, visible: false })
+      await splash
+        .getByRole('button', { name: english ? 'Reload' : '重新加载', exact: true })
+        .click()
+      const page = await mainWindow(app)
+      await expect(
+        page.getByRole('button', { name: english ? 'Next' : '下一步', exact: true }),
+      ).toBeEnabled()
+      await expect.poll(windows).toEqual([{ splash: false, visible: true }])
+      await expect(page.locator('#startup-screen')).toHaveCount(0)
+    } finally {
+      app.process().kill('SIGKILL')
+      await server.close()
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+}
 
 test('启动期间退出会关闭隐藏主窗口并结束进程', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'trelyx-splash-quit-'))
+  await seedChinese(directory)
   const server = await startupServer()
   const app = await electron.launch({
+    colorScheme: null,
     args: ['.', `--user-data-dir=${directory}`],
     env: { ...process.env, ELECTRON_RENDERER_URL: server.url },
   })

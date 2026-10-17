@@ -1,3 +1,5 @@
+import { translate } from '@renderer/i18n'
+import { requireDesktopAPI } from '@renderer/lib/desktop'
 import {
   applyCommand,
   createTopicClipboard,
@@ -15,21 +17,23 @@ let pending = false
 
 export const parseTopicClipboard = (contents: string): TopicClipboard => {
   if (new TextEncoder().encode(contents).byteLength > MAX_CLIPBOARD_BYTES)
-    throw new Error('剪贴板内容过大')
+    throw new Error(translate('clipboardContentIsTooLarge'))
   if (!contents.startsWith(TOPIC_CLIPBOARD_PREFIX))
-    throw new Error('剪贴板中没有 Trelyx 主题，请先复制主题分支')
+    throw new Error(translate('noTrelyxTopicsInTheClipboardCopy'))
   const value: unknown = JSON.parse(contents.slice(TOPIC_CLIPBOARD_PREFIX.length))
   validateTopicClipboard(value)
   if (
     new TextEncoder().encode(JSON.stringify({ ...value, assets: undefined })).byteLength >
     MAX_TOPIC_BYTES
   )
-    throw new Error('剪贴板主题内容超过 10 MiB')
+    throw new Error(translate('clipboardTopicContentExceeds10Mib'))
   return value
 }
 
 const report = (error: unknown): void => {
-  useEditor.getState().setError(error instanceof Error ? error.message : '剪贴板操作失败')
+  useEditor
+    .getState()
+    .setError(error instanceof Error ? error.message : translate('clipboardOperationFailed'))
 }
 const capture = () => {
   const state = useEditor.getState()
@@ -48,7 +52,7 @@ const unchanged = (before: NonNullable<ReturnType<typeof capture>>): boolean => 
     state.editingId !== null ||
     state.busy
   ) {
-    state.setError('剪贴板操作期间画布或选择已改变，请重试')
+    state.setError(translate('theSheetOrSelectionChangedDuringClipboard'))
     return false
   }
   return true
@@ -128,7 +132,9 @@ const pastePayload = async (
     if (omittedLinks)
       useEditor
         .getState()
-        .setError(`已粘贴主题；目标文档中不存在的跨画布链接已移除（${omittedLinks} 项）`)
+        .setError(
+          translate('topicsPastedRemovedValue0CrosssheetLinksMissing', { value0: omittedLinks }),
+        )
   }
 }
 
@@ -138,7 +144,7 @@ export const copySelectedTopics = async (cut = false): Promise<void> => {
   if (!before) return
   const ids = selectedTopicIds(before)
   if (cut && ids.includes(before.history.document.rootId)) {
-    before.setError('中心主题不能剪切；可以复制整个导图')
+    before.setError(translate('theCentralTopicCannotBeCutYou'))
     return
   }
   pending = true
@@ -146,8 +152,7 @@ export const copySelectedTopics = async (cut = false): Promise<void> => {
     const clipboard = createTopicClipboard(before.history.document, ids)
     const contents = TOPIC_CLIPBOARD_PREFIX + JSON.stringify(clipboard)
     parseTopicClipboard(contents)
-    if (window.trelyx) await window.trelyx.writeTopicClipboard(contents, plainText(clipboard))
-    else await navigator.clipboard.writeText(contents)
+    await requireDesktopAPI().writeTopicClipboard(contents, plainText(clipboard))
     if (!unchanged(before)) return
     if (cut) {
       const parent = getParentId(before.history.document, clipboard.roots[0] ?? '')
@@ -168,9 +173,7 @@ export const pasteSelectedTopics = async (): Promise<void> => {
   if (!before) return
   pending = true
   try {
-    const contents = window.trelyx
-      ? await window.trelyx.readTopicClipboard()
-      : await navigator.clipboard.readText()
+    const contents = await requireDesktopAPI().readTopicClipboard()
     if (!unchanged(before)) return
     await pastePayload(parseTopicClipboard(contents), before, before.selectedId)
   } catch (error) {

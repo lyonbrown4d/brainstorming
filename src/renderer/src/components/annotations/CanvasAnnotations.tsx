@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { ViewportPortal } from '@xyflow/react'
 import type { MindMapDocument } from '@core'
 import type { LayoutNode } from '@layout'
@@ -11,10 +13,15 @@ export const CanvasAnnotations = ({
   document: MindMapDocument
   nodes: readonly LayoutNode[]
 }) => {
+  const { translate } = useMessages()
+
   const byId = new Map(nodes.map((node) => [node.id, node]))
   return (
     <ViewportPortal>
-      <div className="pointer-events-none absolute inset-0" aria-label="画布注解">
+      <div
+        className="pointer-events-none absolute inset-0"
+        aria-label={translate('canvasAnnotations')}
+      >
         {(document.groups ?? []).map((group) => {
           const bounds = groupBounds(
             group.topicIds.flatMap((id) => {
@@ -48,7 +55,11 @@ export const CanvasAnnotations = ({
                   kind="group"
                   id={group.id}
                   text={
-                    group.title?.trim() ? group.title : group.kind === 'boundary' ? '边界' : '概要'
+                    group.title?.trim()
+                      ? group.title
+                      : group.kind === 'boundary'
+                        ? translate('boundary')
+                        : translate('summary')
                   }
                   color={group.color}
                 />

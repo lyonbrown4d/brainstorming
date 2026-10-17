@@ -1,3 +1,4 @@
+import { translate } from '@renderer/i18n'
 import { getParentId } from '@core'
 import { useEditor } from '@renderer/state/editor'
 
@@ -18,7 +19,14 @@ export const insertParentTopic = (): void => {
   if (!selection) return
   const { state, topic } = selection
   const id = crypto.randomUUID()
-  if (state.command({ type: 'insertParentTopic', topicId: topic.id, id, title: '新主题' }))
+  if (
+    state.command({
+      type: 'insertParentTopic',
+      topicId: topic.id,
+      id,
+      title: translate('newTopic'),
+    })
+  )
     useEditor.getState().startEdit(id)
 }
 

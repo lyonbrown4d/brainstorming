@@ -1,3 +1,5 @@
+import { useMessages } from '@renderer/i18n/useMessages'
+
 import { useState } from 'react'
 import type { TopicMetadata, TopicTask } from '@core'
 import { useEditor } from '@renderer/state/editor'
@@ -7,6 +9,8 @@ import { FieldSelect } from '@renderer/components/FieldSelect'
 import { setMetadataField } from '@renderer/components/metadata/commands'
 
 export const TaskPanel = ({ topicId, metadata }: { topicId: string; metadata: TopicMetadata }) => {
+  const { translate } = useMessages()
+
   const document = useEditor((state) => state.history.document)
   const task = metadata.task
   const [done, setDone] = useState(task?.done ?? false)
@@ -31,7 +35,7 @@ export const TaskPanel = ({ topicId, metadata }: { topicId: string; metadata: To
   }
   return (
     <section className="space-y-3 border-t border-border py-4">
-      <h3 className="text-sm font-medium">任务</h3>
+      <h3 className="text-sm font-medium">{translate('task')}</h3>
       <form
         className="space-y-3"
         onSubmit={(event) => {
@@ -49,27 +53,27 @@ export const TaskPanel = ({ topicId, metadata }: { topicId: string; metadata: To
             if (!done) setProgress('100')
           }}
         >
-          {done ? '已完成' : '未完成'}
+          {done ? translate('completed') : translate('incomplete')}
         </Button>
         <div className="grid gap-1.5 text-xs">
-          优先级
+          {translate('priority')}
           <FieldSelect
-            label="任务优先级"
+            label={translate('taskPriority')}
             value={priority}
             options={[
-              { value: 'none', label: '无优先级' },
-              { value: '1', label: '高' },
-              { value: '2', label: '中' },
-              { value: '3', label: '低' },
+              { value: 'none', label: translate('noPriority') },
+              { value: '1', label: translate('high') },
+              { value: '2', label: translate('medium') },
+              { value: '3', label: translate('low') },
             ]}
             onChange={setPriority}
           />
         </div>
         <label htmlFor={`task-progress-${topicId}`} className="grid gap-1.5 text-xs">
-          进度（%）
+          {translate('progress')}
           <Input
             id={`task-progress-${topicId}`}
-            aria-label="任务进度"
+            aria-label={translate('taskProgress')}
             type="number"
             min={0}
             max={100}
@@ -81,10 +85,10 @@ export const TaskPanel = ({ topicId, metadata }: { topicId: string; metadata: To
           />
         </label>
         <label htmlFor={`task-start-${topicId}`} className="grid gap-1.5 text-xs">
-          开始日期
+          {translate('startDate')}
           <Input
             id={`task-start-${topicId}`}
-            aria-label="任务开始日期"
+            aria-label={translate('taskStartDate')}
             type="date"
             value={start}
             onChange={(event) => {
@@ -93,10 +97,10 @@ export const TaskPanel = ({ topicId, metadata }: { topicId: string; metadata: To
           />
         </label>
         <label htmlFor={`task-due-${topicId}`} className="grid gap-1.5 text-xs">
-          截止日期
+          {translate('dueDate')}
           <Input
             id={`task-due-${topicId}`}
-            aria-label="任务截止日期"
+            aria-label={translate('taskDueDate')}
             type="date"
             min={start || undefined}
             value={due}
@@ -106,10 +110,10 @@ export const TaskPanel = ({ topicId, metadata }: { topicId: string; metadata: To
           />
         </label>
         <label htmlFor={`task-assignee-${topicId}`} className="grid gap-1.5 text-xs">
-          负责人
+          {translate('assignee')}
           <Input
             id={`task-assignee-${topicId}`}
-            aria-label="任务负责人"
+            aria-label={translate('taskAssignee')}
             maxLength={120}
             value={assignee}
             onChange={(event) => {
@@ -118,15 +122,18 @@ export const TaskPanel = ({ topicId, metadata }: { topicId: string; metadata: To
           />
         </label>
         <div className="grid gap-1.5 text-xs">
-          <span>前置任务</span>
+          <span>{translate('predecessors')}</span>
           <div className="flex gap-1">
             <FieldSelect
-              label="前置任务"
+              label={translate('predecessors')}
               className="flex-1"
               value={dependency}
               options={Object.values(document.topics)
                 .filter((topic) => topic.id !== topicId && !dependencies.includes(topic.id))
-                .map((topic) => ({ value: topic.id, label: topic.title || '未命名主题' }))}
+                .map((topic) => ({
+                  value: topic.id,
+                  label: topic.title || translate('untitledTopic'),
+                }))}
               onChange={setDependency}
             />
             <Button
@@ -139,7 +146,7 @@ export const TaskPanel = ({ topicId, metadata }: { topicId: string; metadata: To
                 setDependency('')
               }}
             >
-              添加
+              {translate('add')}
             </Button>
           </div>
           <div className="flex flex-wrap gap-1">
@@ -150,7 +157,9 @@ export const TaskPanel = ({ topicId, metadata }: { topicId: string; metadata: To
                 size="sm"
                 variant="secondary"
                 className="max-w-full truncate"
-                aria-label={`移除前置任务 ${document.topics[id]?.title ?? id}`}
+                aria-label={translate('removePredecessorValue0', {
+                  value0: document.topics[id]?.title ?? id,
+                })}
                 onClick={() => {
                   setDependencies(dependencies.filter((item) => item !== id))
                 }}
@@ -162,7 +171,7 @@ export const TaskPanel = ({ topicId, metadata }: { topicId: string; metadata: To
         </div>
         <div className="flex gap-2">
           <Button size="sm" type="submit">
-            保存任务
+            {translate('saveTask')}
           </Button>
           {task && (
             <Button
@@ -173,7 +182,7 @@ export const TaskPanel = ({ topicId, metadata }: { topicId: string; metadata: To
                 setMetadataField(topicId, 'task', undefined)
               }}
             >
-              移除任务
+              {translate('removeTask')}
             </Button>
           )}
         </div>

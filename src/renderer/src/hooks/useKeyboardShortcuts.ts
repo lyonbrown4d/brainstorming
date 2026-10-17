@@ -7,6 +7,7 @@ import { handleTopicNavigation, handleTopicShortcut } from '@renderer/state/edit
 import { useWorkspace } from '@renderer/state/workspace'
 import { handleAnnotationKey } from '@renderer/state/annotationInteraction'
 import { cancelCreation } from '@renderer/state/creation'
+import { closeActiveDocument, nextDocumentTab } from '@renderer/state/documentTabs'
 
 export const useKeyboardShortcuts = (): void => {
   useEffect(() => {
@@ -21,6 +22,16 @@ export const useKeyboardShortcuts = (): void => {
       const state = useEditor.getState()
       const modifier = event.metaKey || event.ctrlKey
       const key = event.key.toLowerCase()
+      if (event.ctrlKey && event.key === 'Tab') {
+        event.preventDefault()
+        nextDocumentTab(event.shiftKey ? -1 : 1)
+        return
+      }
+      if (modifier && key === 'w' && !event.shiftKey) {
+        event.preventDefault()
+        closeActiveDocument()
+        return
+      }
       if (modifier && ['s', 'o', 'n'].includes(key)) {
         event.preventDefault()
         if (key === 's') void saveDocument(event.shiftKey)

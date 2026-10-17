@@ -1,13 +1,14 @@
-import { expect, test, type Page } from '@playwright/test'
+import { prepareNativeSave } from '@tests/electron/native-files'
+import { expect, test, type Page } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
 import { decodeTrelyx } from '@formats/trelyx'
 import { openExample } from '@tests/e2e/workspace'
 import { dockAction } from '@tests/e2e/dock'
 
 const savedDocument = async (page: Page) => {
-  const pending = page.waitForEvent('download')
+  const pending = await prepareNativeSave(page)
   await page.keyboard.press('ControlOrMeta+s')
-  const path = await (await pending).path()
+  const path = await pending.path()
   if (!path) throw new Error('没有生成保存文件')
   const document = decodeTrelyx(await readFile(path)).sheets[0]?.document
   if (!document) throw new Error('保存文件缺少画布')
