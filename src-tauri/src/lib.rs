@@ -3,6 +3,8 @@ pub mod storage;
 pub mod transport;
 
 #[cfg(feature = "native-ui")]
+mod application;
+#[cfg(feature = "native-ui")]
 mod media;
 #[cfg(feature = "native-ui")]
 mod platform;
@@ -14,3 +16,7 @@ mod runtime;
 pub fn run() {
     platform::run();
 }
+
+#[cfg(all(test, feature = "native-ui"))]
+#[path = "../tests/document_fixture.rs"]
+mod document_fixture;

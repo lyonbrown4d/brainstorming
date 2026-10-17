@@ -45,7 +45,6 @@
     "build:e2e": "cross-env VITE_NATIVE_E2E=1 tauri build --debug --no-bundle --features e2e --config src-tauri/tauri.e2e.conf.json"
   },
   "dependencies": {
-    "@dagrejs/dagre": "3.1.1",
     "@dnd-kit/core": "6.3.1",
     "@dnd-kit/sortable": "10.0.0",
     "@dnd-kit/utilities": "3.2.2",

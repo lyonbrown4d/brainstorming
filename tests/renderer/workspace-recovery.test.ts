@@ -32,11 +32,12 @@ afterEach(() => {
 })
 
 describe('workspace recovery coordination', () => {
-  it('serializes every workbook with the active draft, excluding paths and sessions without mutating history', () => {
+  it('serializes named workbooks with the active draft, excluding paths and sessions without mutating history', () => {
     openDocumentTab(workbook('alpha'), '/private/alpha.brainstorming')
     useEditor
       .getState()
       .command({ type: 'setTopicNotes', topicId: 'root', notes: 'Saved Alpha notes' })
+    openDocumentTab(workbook('memory'))
     openDocumentTab(workbook('beta'), '/private/beta.brainstorming')
     useEditor.setState({ views: { beta: { x: 19, y: 23, zoom: 2 } } })
     useEditor.getState().startEdit('root', undefined, 'notes')

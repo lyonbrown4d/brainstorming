@@ -1,5 +1,5 @@
 use super::{catalog::Catalog, import::Importer};
-use crate::{runtime::AppState, transport::ResourceBackend};
+use crate::{application::Backend, transport::ResourceBackend};
 use base64::Engine;
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
@@ -9,11 +9,10 @@ fn png() -> Vec<u8> {
 #[tokio::test]
 async fn imported_original_and_derivatives_are_distinct_authorized_objects() {
     let directory = tempfile::tempdir().unwrap();
-    let state = Arc::new(
-        AppState::new(directory.path().join("native"))
-            .await
-            .unwrap(),
-    );
+    let backend = Backend::start(directory.path().join("native"), None)
+        .await
+        .unwrap();
+    let state = backend.state.clone();
     let catalog = Arc::new(Catalog::new(state.clone()));
     let importer = Importer::new(state.clone(), catalog.clone());
     let bytes = png();
@@ -36,15 +35,15 @@ async fn imported_original_and_derivatives_are_distinct_authorized_objects() {
     );
     let tile = catalog.tile(&expected, 0, 0, 0).await.unwrap().unwrap();
     assert_eq!(catalog.info(&tile).await.unwrap().mime_type, "image/webp");
+    backend.shutdown().await.unwrap();
 }
 #[tokio::test]
 async fn failed_decode_cannot_authorize_partial_staged_objects() {
     let directory = tempfile::tempdir().unwrap();
-    let state = Arc::new(
-        AppState::new(directory.path().join("native"))
-            .await
-            .unwrap(),
-    );
+    let backend = Backend::start(directory.path().join("native"), None)
+        .await
+        .unwrap();
+    let state = backend.state.clone();
     let catalog = Arc::new(Catalog::new(state.clone()));
     let importer = Importer::new(state.clone(), catalog.clone());
     let mut broken = png();
@@ -56,16 +55,16 @@ async fn failed_decode_cannot_authorize_partial_staged_objects() {
     if output.exists() {
         assert_eq!(std::fs::read_dir(output).unwrap().count(), 0);
     }
+    backend.shutdown().await.unwrap();
 }
 #[tokio::test]
 #[ignore = "101 MiB native streaming smoke; run explicitly"]
 async fn hundred_megabyte_original_is_imported_with_native_chunks() {
     let directory = tempfile::tempdir().unwrap();
-    let state = Arc::new(
-        AppState::new(directory.path().join("native"))
-            .await
-            .unwrap(),
-    );
+    let backend = Backend::start(directory.path().join("native"), None)
+        .await
+        .unwrap();
+    let state = backend.state.clone();
     let catalog = Arc::new(Catalog::new(state.clone()));
     let importer = Importer::new(state.clone(), catalog);
     let path = directory.path().join("large.png");
@@ -89,6 +88,7 @@ async fn hundred_megabyte_original_is_imported_with_native_chunks() {
             .unwrap(),
         vec![0; 16]
     );
+    backend.shutdown().await.unwrap();
 }
 
 #[test]

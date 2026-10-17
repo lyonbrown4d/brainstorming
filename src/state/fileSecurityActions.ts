@@ -9,6 +9,7 @@ import {
 } from '@renderer/state/lockedFiles'
 import { useFileSecurityState } from '@renderer/state/password'
 import { requireDesktopAPI } from '@renderer/lib/desktop'
+import { queueDocumentWrite } from '@renderer/lib/documentWriteQueue'
 
 let pendingRecovery: OpenedDocument | null = null
 const showError = (error: unknown): void => {
@@ -34,10 +35,15 @@ export const changeFilePassword = async (password: string | null): Promise<void>
   state.commitDraft()
   if (useEditor.getState().editingId)
     throw new Error(translate('finishEditingTheCurrentTopicFirst'))
-  const documentId = useEditor.getState().workbook.id
+  const { workbook, path } = useEditor.getState()
+  const documentId = workbook.id
   useEditor.setState({ busy: true })
   try {
-    const security = await requireDesktopAPI().setFilePassword(documentId, password)
+    const security = await queueDocumentWrite(path, () =>
+      requireDesktopAPI().setFilePassword(documentId, password),
+    )
+    const current = useEditor.getState()
+    if (current.workbook.id !== documentId || current.path !== path) return
     useFileSecurityState.setState({ documentId, encrypted: security.encrypted })
     useEditor.setState({ baseline: '', error: null })
   } finally {
@@ -86,10 +92,13 @@ export const restoreBackup = async (id: string): Promise<void> => {
   useEditor.setState({ busy: true })
   let opened: OpenedDocument | null = null
   try {
-    opened = await unlockOpenedDocument(await requireDesktopAPI().restoreDocumentBackup(id))
+    opened = await queueDocumentWrite(before.path, async () =>
+      unlockOpenedDocument(await requireDesktopAPI().restoreDocumentBackup(id)),
+    )
     if (!opened) return
     const workbook = deserializeWorkbook(opened.contents)
     const current = useEditor.getState()
+    if (current.workbook.id !== before.workbook.id || current.path !== before.path) return
     if (
       (current.workbook !== before.workbook ||
         current.editingId !== before.editingId ||
@@ -100,7 +109,9 @@ export const restoreBackup = async (id: string): Promise<void> => {
     )
       return
     await activateOpenedDocument(opened)
-    current.replace(workbook, current.path, true)
+    const accepted = useEditor.getState()
+    if (accepted.workbook.id !== before.workbook.id || accepted.path !== before.path) return
+    accepted.replace(workbook, before.path, true)
   } catch (error) {
     showError(error)
   } finally {

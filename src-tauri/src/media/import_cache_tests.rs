@@ -1,5 +1,5 @@
 use super::{catalog::Catalog, import::Importer};
-use crate::{runtime::AppState, transport::ResourceBackend};
+use crate::{application::Backend, transport::ResourceBackend};
 use base64::Engine;
 use std::{path::Path, sync::Arc};
 use tokio_util::sync::CancellationToken;
@@ -16,15 +16,14 @@ fn png(variant: bool) -> Vec<u8> {
         .decode(encoded)
         .unwrap()
 }
-async fn fixture() -> (tempfile::TempDir, Arc<AppState>, Importer) {
+async fn fixture() -> (tempfile::TempDir, Backend, Importer) {
     let directory = tempfile::tempdir().unwrap();
-    let state = Arc::new(
-        AppState::new(directory.path().join("native"))
-            .await
-            .unwrap(),
-    );
+    let backend = Backend::start(directory.path().join("native"), None)
+        .await
+        .unwrap();
+    let state = backend.state.clone();
     let importer = Importer::new(state.clone(), Arc::new(Catalog::new(state.clone())));
-    (directory, state, importer)
+    (directory, backend, importer)
 }
 async fn block_generation(directory: &Path) {
     let work = directory.join("image-work");
@@ -37,7 +36,8 @@ async fn block_generation(directory: &Path) {
 }
 #[tokio::test]
 async fn file_cache_hit_keeps_new_identity_and_reauthorizes_resources() {
-    let (directory, state, mut importer) = fixture().await;
+    let (directory, backend, mut importer) = fixture().await;
+    let state = backend.state.clone();
     let original = directory.path().join("original.png");
     let renamed = directory.path().join("different name.png");
     tokio::fs::write(&original, png(false)).await.unwrap();
@@ -73,10 +73,12 @@ async fn file_cache_hit_keeps_new_identity_and_reauthorizes_resources() {
             .unwrap_err()
             .contains("取消")
     );
+    backend.shutdown().await.unwrap();
 }
 #[tokio::test]
 async fn changed_content_misses_failures_retry_and_importer_instances_are_isolated() {
-    let (directory, state, importer) = fixture().await;
+    let (directory, backend, importer) = fixture().await;
+    let state = backend.state.clone();
     let path = directory.path().join("image.png");
     tokio::fs::write(&path, png(false)).await.unwrap();
     let first = importer.file(&path, "image").await.unwrap();
@@ -95,10 +97,12 @@ async fn changed_content_misses_failures_retry_and_importer_instances_are_isolat
     assert_ne!(hit["id"], changed["id"]);
     let isolated = Importer::new(state.clone(), Arc::new(Catalog::new(state)));
     assert!(isolated.file(&path, "image").await.is_err());
+    backend.shutdown().await.unwrap();
 }
 #[tokio::test]
 async fn bytes_and_native_files_share_only_completed_derivative_metadata() {
-    let (directory, state, importer) = fixture().await;
+    let (directory, backend, importer) = fixture().await;
+    let state = backend.state.clone();
     let first = importer
         .bytes(png(false), "raw.png", "image")
         .await
@@ -117,4 +121,5 @@ async fn bytes_and_native_files_share_only_completed_derivative_metadata() {
     assert_eq!(third["name"], "native.png");
     assert_ne!(first["id"], second["id"]);
     assert_ne!(second["id"], third["id"]);
+    backend.shutdown().await.unwrap();
 }

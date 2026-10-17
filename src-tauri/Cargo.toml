@@ -3,7 +3,7 @@ name = "brainstorming-native"
 version = "0.2.0"
 description = "Local-first cross-platform mind mapping"
 edition = "2024"
-rust-version = "1.95"
+rust-version = "1.99.1"
 license = "UNLICENSED"
 
 [[bin]]
@@ -17,7 +17,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [features]
 default = ["native-ui"]
-native-ui = ["dep:tauri", "dep:tauri-plugin-dialog", "dep:tauri-plugin-opener", "dep:tauri-plugin-clipboard-manager", "dep:tauri-plugin-fs", "dep:tauri-plugin-deep-link", "dep:tauri-plugin-os", "dep:tauri-plugin-brainstorming-native", "dep:tauri-plugin-single-instance", "dep:tauri-plugin-macos-fps"]
+native-ui = ["dep:fluxdi", "dep:tauri", "dep:tauri-plugin-dialog", "dep:tauri-plugin-opener", "dep:tauri-plugin-clipboard-manager", "dep:tauri-plugin-fs", "dep:tauri-plugin-deep-link", "dep:tauri-plugin-os", "dep:tauri-plugin-brainstorming-native", "dep:tauri-plugin-single-instance", "dep:tauri-plugin-macos-fps"]
 e2e = ["native-ui", "dep:tauri-plugin-wdio", "dep:tauri-plugin-wdio-webdriver"]
 
 [build-dependencies]
@@ -69,6 +69,7 @@ base64 = "0.23.1"
 rmcp = { version = "3.5.1", default-features = false, features = ["server", "transport-streamable-http-server"] }
 tower = { version = "0.5.3", features = ["util"] }
 moka = { version = "0.12.16", default-features = false, features = ["future"] }
+fluxdi = { version = "=2.0.0", optional = true, default-features = false, features = ["thread-safe", "async-factory", "lifecycle", "macros"] }
 
 [target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
 tauri-plugin-single-instance = { version = "2.5.4", optional = true }

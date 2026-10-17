@@ -41,6 +41,7 @@ export interface SaveRequest {
   path: string | null
   contents: string
   suggestedName: string
+  readonly openDocumentIds?: readonly string[]
   password?: string | null
 }
 export interface DesktopAPI extends FileSecurityAPI, AIAPI, MCPAPI, LanguageAPI {

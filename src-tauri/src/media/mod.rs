@@ -32,7 +32,7 @@ pub struct MediaState {
     state: Arc<AppState>,
     importer: Arc<Importer>,
     previews: Arc<preview::PreviewQueue>,
-    server: ResourceServer,
+    server: Mutex<Option<ResourceServer>>,
     grants: Mutex<HashMap<PathBuf, Instant>>,
     raw_documents: tokio::sync::Mutex<Vec<temporary::Directory>>,
 }
@@ -53,13 +53,19 @@ impl MediaState {
         };
         let server = ResourceServer::start(catalog, origin).await?;
         state.set_resource_origin(server.origin.clone());
-        let previews = preview::PreviewQueue::new(app.clone(), importer.clone()).await?;
+        let previews = match preview::PreviewQueue::new(app.clone(), importer.clone()).await {
+            Ok(previews) => previews,
+            Err(error) => {
+                server.shutdown().await;
+                return Err(error);
+            }
+        };
         Ok(Self {
             app,
             state,
             importer,
             previews,
-            server,
+            server: Mutex::new(Some(server)),
             grants: Mutex::new(HashMap::new()),
             raw_documents: Default::default(),
         })
@@ -79,12 +85,20 @@ impl MediaState {
         }
     }
     pub fn revoke(&self) {
-        self.server.revoke();
+        if let Ok(server) = self.server.lock()
+            && let Some(server) = &*server
+        {
+            server.revoke();
+        }
         self.previews.revoke();
     }
     pub async fn shutdown(&self) {
         self.revoke();
         self.previews.shutdown().await;
+        let server = self.server.lock().ok().and_then(|mut server| server.take());
+        if let Some(server) = server {
+            server.shutdown().await;
+        }
         for directory in std::mem::take(&mut *self.raw_documents.lock().await) {
             let _ = directory.close().await;
         }

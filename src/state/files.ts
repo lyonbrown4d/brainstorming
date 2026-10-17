@@ -18,6 +18,7 @@ import {
   useDocumentTabs,
 } from '@renderer/state/documentTabs'
 import { serializedWorkbook } from '@renderer/state/workbookState'
+import { queueDocumentWrite } from '@renderer/lib/documentWriteQueue'
 import { invalidateRecentFiles } from '@renderer/hooks/useRecentFiles'
 import { useWorkspace } from '@renderer/state/workspace'
 import { stopPresentation } from '@renderer/state/presentation'
@@ -113,11 +114,14 @@ export const saveDocument = async (saveAs = false): Promise<void> => {
   const contents = serializedWorkbook(workbook)
   useEditor.setState({ busy: true, error: null })
   try {
-    const savedPath = await requireDesktopAPI().saveDocument({
-      path: saveAs ? null : path,
-      contents,
-      suggestedName: suggestedFileName(workbook.title),
-    })
+    const savedPath = await queueDocumentWrite(path, () =>
+      requireDesktopAPI().saveDocument({
+        path: saveAs ? null : path,
+        contents,
+        suggestedName: suggestedFileName(workbook.title),
+        openDocumentIds: useDocumentTabs.getState().tabs.map((tab) => tab.editor.workbook.id),
+      }),
+    )
     if (savedPath && useEditor.getState().workbook.id === workbook.id) {
       useEditor.setState({ baseline: contents, path: savedPath })
       void invalidateRecentFiles()

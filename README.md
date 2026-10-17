@@ -2,11 +2,11 @@
 
 基于 React、TypeScript 与 Tauri 2 / Rust 的本地优先思维导图应用。使用单个 pnpm package，面向 macOS、Windows、Linux、iOS 和 Android，不提供独立 Web 产品。
 
-支持多文档标签、多 Sheet、15 种图形结构、2D / 3D 原位编辑、Lexical 中文输入、主题与任务标记、图片和附件、大纲、演示、XMind 导入导出。原生 `.brainstorming` 使用 SQLite / SQLCipher，支持密码保护、资源分块、文件内版本与恢复。AI 与 MCP 由用户主动启用，不包含云端协作、评论或分享链接。
+支持多文档标签、多 Sheet、15 种图形结构、2D / 3D 原位编辑、Lexical 中文输入、主题与任务标记、图片和附件、大纲、演示、XMind 导入导出。原生 `.brainstorming` 使用 SQLite / SQLCipher，支持自动保存、密码保护、资源分块、文件内版本与恢复。未选择路径的导图只在内存保留，关闭后丢失。AI 与 MCP 由用户主动启用，不包含云端协作、评论或分享链接。
 
 ## 开发
 
-需要 Node.js 24 或更新版本、pnpm、Rust 和目标平台的 Tauri 系统依赖。工具链优先使用 Homebrew 安装；macOS 开发先运行 `brew install pkgconf vips`，移动端还需要 Xcode 或 Android SDK / NDK。
+需要 Node.js 24 或更新版本、pnpm、Rust 1.99.1 或更新版本和目标平台的 Tauri 系统依赖。工具链优先使用 Homebrew 安装；macOS 开发先运行 `brew install pkgconf vips`，移动端还需要 Xcode 或 Android SDK / NDK。
 
 ```sh
 pnpm install --frozen-lockfile

@@ -10,6 +10,8 @@ import { requestViewport } from '@renderer/state/viewport'
 import { usePresentation } from '@renderer/state/presentation'
 import { useSpatialView } from '@renderer/state/spatial'
 import { createRecoveryWriter } from '@renderer/lib/recoveryWriter'
+import { queueDocumentWrite } from '@renderer/lib/documentWriteQueue'
+import { startDocumentAutosave } from '@renderer/state/documentAutosave'
 import {
   anyDocumentDirty,
   closeActiveDocument,
@@ -36,6 +38,7 @@ export const useFileLifecycle = (): void => {
         .filter((path): path is string => path !== null),
     )
     const bridge = requireDesktopAPI()
+    const stopAutosave = startDocumentAutosave()
     const reportError = (error: unknown): void => {
       if (alive)
         useEditor
@@ -92,7 +95,11 @@ export const useFileLifecycle = (): void => {
         tabs.tabs.map((tab) => tab.editor.path).filter((path): path is string => path !== null),
       )
       for (const path of retainedPaths)
-        if (!paths.has(path)) void bridge.releaseDocument(path).catch(reportError)
+        if (!paths.has(path))
+          void queueDocumentWrite(path, async () => {
+            if (!useDocumentTabs.getState().tabs.some((tab) => tab.editor.path === path))
+              await bridge.releaseDocument(path)
+          }).catch(reportError)
       retainedPaths = paths
       hadWorkspace ||= tabs.tabs.length > 0
       const dirty = anyDocumentDirty()
@@ -249,6 +256,7 @@ export const useFileLifecycle = (): void => {
     return () => {
       alive = false
       recoveryWriter.dispose()
+      stopAutosave()
       unsubscribe()
       unsubscribeWorkspace()
       unsubscribeTabs()

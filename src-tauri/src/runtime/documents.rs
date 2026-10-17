@@ -5,6 +5,7 @@ use super::{
 use crate::document::{self, CompositeSource, ResourceSource};
 use serde_json::{Value, json};
 use std::{
+    collections::HashSet,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -85,6 +86,48 @@ pub async fn save(state: &AppState, path: PathBuf, request: &Value) -> Result<Va
     let mut session = state.session.lock().await;
     if !session.authorized.contains(&path) {
         return Err("请先通过文件对话框选择保存位置".into());
+    }
+    // Renderer sessions disappear on reload, while native resource sources may
+    // remain available for recovery. This list describes live tabs, never grants paths.
+    let open_ids = if let Some(value) = request.get("openDocumentIds") {
+        let values = value
+            .as_array()
+            .filter(|items| items.len() <= 32)
+            .ok_or("打开的导图列表无效")?;
+        let mut ids = HashSet::new();
+        for value in values {
+            let value = value.as_str().ok_or("打开的导图标识无效")?;
+            input::identifier(value)?;
+            if !ids.insert(value) {
+                return Err("打开的导图列表包含重复标识".into());
+            }
+        }
+        if !ids.contains(id.as_str()) {
+            return Err("保存的导图不在当前标签列表中".into());
+        }
+        Some(ids)
+    } else {
+        None
+    };
+    // Save As must not give two open workbooks ownership of the same file.
+    // Resolve aliases at the native boundary; renderer path strings are not authority.
+    let destination = tokio::fs::canonicalize(&path)
+        .await
+        .unwrap_or_else(|_| path.clone());
+    for (other_id, source) in &session.sources {
+        if other_id == &id
+            || open_ids
+                .as_ref()
+                .is_some_and(|ids| !ids.contains(other_id.as_str()))
+        {
+            continue;
+        }
+        let canonical = tokio::fs::canonicalize(source)
+            .await
+            .unwrap_or_else(|_| source.clone());
+        if source == &path || canonical == destination {
+            return Err("目标文件已在其他导图标签中打开，请选择其他保存位置".into());
+        }
     }
     let previous = session.password_for(&id).map(str::to_string);
     let key = match request.get("password") {

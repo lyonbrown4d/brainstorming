@@ -28,7 +28,7 @@ impl DocumentStore {
         })
         .await
         .map_err(|_| DocumentError::Worker)??;
-        let (path, entry) = pool::lock(&path).await?;
+        let (path, entry) = self.registry.lock(&path).await?;
         // Validation and queued requests remain cancellable before I/O starts.
         // Keep the gate, connections and temporary files owned by the operation
         // if the caller drops its IPC future; async native close must complete.
@@ -47,7 +47,7 @@ impl DocumentStore {
         let path = path.as_ref().to_owned();
         let previous = Zeroizing::new(previous.unwrap_or_default().to_owned());
         let password = Zeroizing::new(password.unwrap_or_default().to_owned());
-        let (path, mut entry) = pool::lock(&path).await?;
+        let (path, mut entry) = self.registry.lock(&path).await?;
         tokio::spawn(async move {
             if previous.as_str() == password.as_str() {
                 return entry

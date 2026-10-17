@@ -3,12 +3,16 @@ use std::sync::Arc;
 use tauri::{AppHandle, Emitter, Manager};
 
 pub fn install(app: &AppHandle) -> tauri::Result<()> {
+    let chinese = app
+        .try_state::<Arc<AppState>>()
+        .is_some_and(|state| state.language.read().is_ok_and(|v| v.as_str() == "zh-CN"));
+    install_with_language(app, if chinese { "zh-CN" } else { "en" })
+}
+pub fn install_with_language(app: &AppHandle, language: &str) -> tauri::Result<()> {
     #[cfg(desktop)]
     {
         use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
-        let chinese = app
-            .try_state::<Arc<AppState>>()
-            .is_some_and(|state| state.language.read().is_ok_and(|v| v.as_str() == "zh-CN"));
+        let chinese = language == "zh-CN";
         let text = |zh: &'static str, en: &'static str| if chinese { zh } else { en };
         let action = |id: &str, title: &str, accelerator: &str| {
             MenuItem::with_id(app, id, title, true, Some(accelerator))
@@ -72,7 +76,7 @@ pub fn install(app: &AppHandle) -> tauri::Result<()> {
         app.set_menu(menu)?;
     }
     #[cfg(mobile)]
-    let _ = app;
+    let _ = (app, language);
     Ok(())
 }
 

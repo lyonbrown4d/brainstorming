@@ -1,14 +1,18 @@
-use super::{AppState, documents, recovery};
+use super::{documents, recovery};
+use crate::application::Backend;
+use crate::document_fixture as fixture;
 use serde_json::json;
-#[path = "../../tests/document_fixture.rs"]
-mod fixture;
 
 #[tokio::test]
 async fn save_requires_a_native_selected_destination() {
     let directory = tempfile::tempdir().unwrap();
-    let state = AppState::new(directory.path().join("state")).await.unwrap();
+    let backend = Backend::start(directory.path().join("state"), None)
+        .await
+        .unwrap();
+    let state = backend.state.clone();
     let destination = directory.path().join("unauthorized.brainstorming");
-    let request = json!({"contents":fixture::workbook().to_string()});
+    let request =
+        json!({"contents":fixture::workbook().to_string(),"openDocumentIds":["workbook"]});
     assert!(
         documents::save(&state, destination.clone(), &request)
             .await
@@ -25,15 +29,75 @@ async fn save_requires_a_native_selected_destination() {
         .await
         .unwrap();
     assert_eq!(
-        state.documents.read(destination, None).await.unwrap()["id"],
+        state.documents.read(&destination, None).await.unwrap()["id"],
         "workbook"
     );
+    let mut other = fixture::workbook();
+    other["id"] = json!("other-workbook");
+    other["title"] = json!("Must never replace the first tab");
+    let other_request = json!({"contents":other.to_string()});
+    let destination = directory.path().join("unauthorized.brainstorming");
+    assert!(
+        documents::save(&state, destination.clone(), &other_request)
+            .await
+            .unwrap_err()
+            .contains("其他导图标签")
+    );
+    #[cfg(unix)]
+    {
+        let alias = directory.path().join("alias.brainstorming");
+        std::os::unix::fs::symlink(&destination, &alias).unwrap();
+        state.session.lock().await.authorized.insert(alias.clone());
+        assert!(
+            documents::save(&state, alias, &other_request)
+                .await
+                .unwrap_err()
+                .contains("其他导图标签")
+        );
+    }
+    assert_eq!(
+        state.documents.read(&destination, None).await.unwrap(),
+        fixture::workbook()
+    );
+    for ids in [
+        json!(null),
+        json!([]),
+        json!([1]),
+        json!(["wrong"]),
+        json!(["other-workbook", "other-workbook"]),
+        json!((0..33).map(|i| format!("id-{i}")).collect::<Vec<_>>()),
+    ] {
+        let malformed = json!({"contents":other.to_string(),"openDocumentIds":ids});
+        assert!(
+            documents::save(&state, destination.clone(), &malformed)
+                .await
+                .is_err()
+        );
+    }
+    assert_eq!(
+        state.documents.read(&destination, None).await.unwrap(),
+        fixture::workbook()
+    );
+    // A page reload may leave native resource handles for the previous renderer,
+    // but those handles must not falsely claim ownership of closed tabs.
+    let live = json!({"contents":other.to_string(),"openDocumentIds":["other-workbook"]});
+    documents::save(&state, destination.clone(), &live)
+        .await
+        .unwrap();
+    assert_eq!(
+        state.documents.read(destination, None).await.unwrap(),
+        other
+    );
+    backend.shutdown().await.unwrap();
 }
 
 #[tokio::test]
 async fn failed_workspace_write_keeps_the_previous_generation() {
     let directory = tempfile::tempdir().unwrap();
-    let state = AppState::new(directory.path().to_path_buf()).await.unwrap();
+    let backend = Backend::start(directory.path().to_path_buf(), None)
+        .await
+        .unwrap();
+    let state = backend.state.clone();
     let workbook = fixture::workbook();
     recovery::write(&state, &json!([workbook.to_string()]))
         .await
@@ -53,12 +117,16 @@ async fn failed_workspace_write_keeps_the_previous_generation() {
     let contents: serde_json::Value =
         serde_json::from_str(opened[0]["contents"].as_str().unwrap()).unwrap();
     assert_eq!(contents["title"], workbook["title"]);
+    backend.shutdown().await.unwrap();
 }
 
 #[tokio::test]
 async fn encrypted_recovery_requires_unlock_activation_and_tracks_password_changes() {
     let directory = tempfile::tempdir().unwrap();
-    let state = AppState::new(directory.path().to_path_buf()).await.unwrap();
+    let backend = Backend::start(directory.path().to_path_buf(), None)
+        .await
+        .unwrap();
+    let state = backend.state.clone();
     let contents = fixture::workbook().to_string();
     state
         .session
@@ -116,12 +184,16 @@ async fn encrypted_recovery_requires_unlock_activation_and_tracks_password_chang
             .await
             .is_err()
     );
+    backend.shutdown().await.unwrap();
 }
 
 #[tokio::test]
 async fn resource_preparation_failure_rolls_back_recovery_password() {
     let directory = tempfile::tempdir().unwrap();
-    let state = AppState::new(directory.path().to_path_buf()).await.unwrap();
+    let backend = Backend::start(directory.path().to_path_buf(), None)
+        .await
+        .unwrap();
+    let state = backend.state.clone();
     let contents = fixture::workbook().to_string();
     recovery::write(&state, &json!([contents])).await.unwrap();
     let destination = directory.path().join("never-created.brainstorming");
@@ -159,12 +231,16 @@ async fn resource_preparation_failure_rolls_back_recovery_password() {
             .is_none()
     );
     assert!(tokio::fs::metadata(destination).await.is_err());
+    backend.shutdown().await.unwrap();
 }
 
 #[tokio::test]
 async fn failed_unlock_activation_keeps_credentials_unpublished_and_token_retryable() {
     let directory = tempfile::tempdir().unwrap();
-    let state = AppState::new(directory.path().to_path_buf()).await.unwrap();
+    let backend = Backend::start(directory.path().to_path_buf(), None)
+        .await
+        .unwrap();
+    let state = backend.state.clone();
     state
         .session
         .lock()
@@ -196,4 +272,6 @@ async fn failed_unlock_activation_keeps_credentials_unpublished_and_token_retrya
     let session = state.session.lock().await;
     assert!(session.password_for("workbook").is_none());
     assert!(session.pending.contains_key(token));
+    drop(session);
+    backend.shutdown().await.unwrap();
 }

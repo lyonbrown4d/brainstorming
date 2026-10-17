@@ -4,7 +4,7 @@
 
 ## 本机准备
 
-安装 pnpm、Rust stable 和目标平台的 Tauri 官方系统依赖。macOS / iOS 需要 Xcode；Android 需要 JDK 21、Android SDK / NDK，并配置 `JAVA_HOME`、`ANDROID_HOME` 和 `NDK_HOME`。移动设备构建还需要相应签名。原生图片处理需要目标平台的 libvips，不能用宿主机库交叉链接。
+安装 pnpm、Rust 1.99.1 或更新版本和目标平台的 Tauri 官方系统依赖。macOS / iOS 需要 Xcode；Android 需要 JDK 21、Android SDK / NDK，并配置 `JAVA_HOME`、`ANDROID_HOME` 和 `NDK_HOME`。移动设备构建还需要相应签名。原生图片处理需要目标平台的 libvips，不能用宿主机库交叉链接。
 
 ```sh
 pnpm install --frozen-lockfile
@@ -64,6 +64,24 @@ macOS 默认注册 [tauri-plugin-macos-fps](https://github.com/userFRM/tauri-plu
 修改后运行相关 Vitest / Rust 测试，以及格式、lint、typecheck 和构建。涉及平台 API 时补充对应原生验证，并在交付中区分编译、模拟器运行、真机及签名发布的结果。
 
 原生库准备与 codec 边界见 [原生图片库](native-libraries.md)，旧测试到 Rust / 原生 UI 的对应见 [测试迁移](testing-migration.md)。
+
+## 后端模块与依赖注入
+
+`src-tauri/src/application` 是原生服务的装配入口，使用 FluxDI 2.0.0 的 `static_module!` 声明类型化依赖图。存储、文档、AI/MCP、媒体和平台按职责维护 Module；缺失依赖、循环及工厂类型由宏检查。启用 `thread-safe`、`async-factory`、`lifecycle`、`macros`，共享句柄使用 `Arc`。
+
+`StorageServices` 提供本机元数据库与加密资源暂存库；`DocumentServices` 导入存储服务并提供文档连接池及会话；`IntegrationServices` 提供 AI 与 MCP；`CoreServices` 汇总这些服务，`BackendServices` 将这个类型化容器注入 `AppState::from_container`，再装配媒体服务。Tauri 继续挂载类型明确的 service；`AppState` 构造函数不再接收逐项服务参数。所有生命周期钩子使用同一个最外层依赖图及其共享上下文，避免导入模块时重复创建数据库或队列。业务方法接收类型明确的依赖，不从全局容器查找服务。
+
+FluxDI `Application` 按平台、存储、文档、集成、媒体的顺序异步启动，正常退出及启动失败清理按相反顺序执行。资源初始化失败须在工厂内关闭尚未交给生命周期管理的资源。文件与资源关闭流程不使用会中断清理的超时；保存任务、SQLx 连接和临时文件继续由原生任务持有，直至关闭完成。
+
+Tauri 命令使用服务访问租约。退出先撤销媒体访问、取消 AI/MCP，再等待已进入的命令结束，随后清理会话、关闭文档连接池和本机数据库。启动任务由共享 future 持有，调用者取消不会中断原生初始化；启动页退出和主窗口销毁也等待初始化与清理。启动失败时不发布半初始化的 Tauri 状态，重试创建新的服务图。
+
+文档连接池注册表由注入的 `DocumentStore` 持有；同一应用中的 Tab 通过共享实例及规范路径复用连接池。`DocumentStore::clone()` 共享注册表，`DocumentStore::new()` 创建独立服务，关闭一个实例不会永久关闭其他实例或阻止启动重试。
+
+## 自动保存
+
+`useFileLifecycle` 启动按 Tab 管理的自动保存。已有路径的文档通过 RxJS 合并连续编辑并串行写入；后台 Tab 不需要切为当前文档。保存快照投影当前文本草稿，不提交编辑历史、不改变 Lexical 选区或输入法状态。保存完成只更新该 Tab 的对应基线，保存期间的新修改继续保持未保存状态。
+
+手动保存、另存为、密码变更、版本读取和文档释放共用按路径的写入队列。失败保留未保存状态与错误提示，并在服务仍可用时重试。`path === null` 的新建、导入或恢复副本不进入自动保存，也不进入新的工作区恢复快照；关闭或重载后丢失，需通过手动保存选择路径。媒体暂存仍使用原生加密临时资源库，退出时清理。
 
 ## 原生缓存
 

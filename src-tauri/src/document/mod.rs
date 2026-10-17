@@ -34,16 +34,18 @@ use std::{io::Cursor, path::Path, sync::Arc};
 pub use validation::validate_workbook;
 
 #[derive(Clone, Default)]
-pub struct DocumentStore;
+pub struct DocumentStore {
+    registry: Arc<pool::Registry>,
+}
 impl DocumentStore {
     pub fn new() -> Self {
-        Self
+        Self::default()
     }
     pub async fn shutdown(&self) -> Result<()> {
-        pool::shutdown().await
+        self.registry.shutdown().await
     }
     pub async fn read(&self, path: impl AsRef<Path>, password: Option<&str>) -> Result<Value> {
-        let (path, mut entry) = pool::lock(path.as_ref()).await?;
+        let (path, mut entry) = self.registry.lock(path.as_ref()).await?;
         entry
             .run(path, password, false, |db| Box::pin(structure::read(db)))
             .await
@@ -53,7 +55,7 @@ impl DocumentStore {
         path: impl AsRef<Path>,
         password: Option<&str>,
     ) -> Result<Vec<Revision>> {
-        let (path, mut entry) = pool::lock(path.as_ref()).await?;
+        let (path, mut entry) = self.registry.lock(path.as_ref()).await?;
         entry
             .run(path, password, false, |db| {
                 Box::pin(maintenance::revisions(db))
@@ -66,7 +68,7 @@ impl DocumentStore {
         id: &str,
         password: Option<&str>,
     ) -> Result<Value> {
-        let (path, mut entry) = pool::lock(path.as_ref()).await?;
+        let (path, mut entry) = self.registry.lock(path.as_ref()).await?;
         let id = id.to_owned();
         entry
             .run(path, password, false, move |db| {
@@ -80,7 +82,7 @@ impl DocumentStore {
         id: &str,
         password: Option<&str>,
     ) -> Result<Value> {
-        let (path, mut entry) = pool::lock(path.as_ref()).await?;
+        let (path, mut entry) = self.registry.lock(path.as_ref()).await?;
         let id = id.to_owned();
         entry
             .run(path, password, false, move |db| {
@@ -99,7 +101,7 @@ impl DocumentStore {
         length: Option<u64>,
         password: Option<&str>,
     ) -> Result<Vec<u8>> {
-        let (path, mut entry) = pool::lock(path.as_ref()).await?;
+        let (path, mut entry) = self.registry.lock(path.as_ref()).await?;
         let id = id.to_owned();
         entry
             .run(path, password, false, move |db| {
@@ -113,7 +115,7 @@ impl DocumentStore {
         id: &str,
         password: Option<&str>,
     ) -> Result<ResourceObject> {
-        let (path, mut entry) = pool::lock(path.as_ref()).await?;
+        let (path, mut entry) = self.registry.lock(path.as_ref()).await?;
         let id = id.to_owned();
         entry
             .run(path, password, false, move |db| {
@@ -132,7 +134,7 @@ impl DocumentStore {
         id: &str,
         password: Option<&str>,
     ) -> Result<Derivatives> {
-        let (path, mut entry) = pool::lock(path.as_ref()).await?;
+        let (path, mut entry) = self.registry.lock(path.as_ref()).await?;
         let id = id.to_owned();
         entry
             .run(path, password, false, move |db| {
@@ -149,7 +151,7 @@ impl DocumentStore {
         y: u32,
         password: Option<&str>,
     ) -> Result<Option<String>> {
-        let (path, mut entry) = pool::lock(path.as_ref()).await?;
+        let (path, mut entry) = self.registry.lock(path.as_ref()).await?;
         let id = id.to_owned();
         entry
             .run(path, password, false, move |db| {
@@ -172,7 +174,7 @@ impl DocumentStore {
         mut reader: resources::ResourceReader,
         password: Option<&str>,
     ) -> Result<ResourceObject> {
-        let (path, mut entry) = pool::lock(path.as_ref()).await?;
+        let (path, mut entry) = self.registry.lock(path.as_ref()).await?;
         entry
             .run(path, password, false, move |db| {
                 Box::pin(async move {
@@ -193,7 +195,7 @@ impl DocumentStore {
         pinned: Vec<String>,
         password: Option<&str>,
     ) -> Result<u64> {
-        let (path, mut entry) = pool::lock(path.as_ref()).await?;
+        let (path, mut entry) = self.registry.lock(path.as_ref()).await?;
         entry
             .run(path, password, false, move |db| {
                 Box::pin(async move { maintenance::compact(db, &pinned).await })
@@ -201,7 +203,7 @@ impl DocumentStore {
             .await
     }
     pub async fn retain(&self, path: impl AsRef<Path>, password: Option<&str>) -> Result<()> {
-        let (path, mut entry) = pool::lock(path.as_ref()).await?;
+        let (path, mut entry) = self.registry.lock(path.as_ref()).await?;
         entry
             .run(path, password, false, |_| Box::pin(async { Ok(()) }))
             .await?;
@@ -212,7 +214,7 @@ impl DocumentStore {
         Ok(())
     }
     pub async fn release(&self, path: impl AsRef<Path>) -> Result<()> {
-        let (_, mut entry) = pool::lock(path.as_ref()).await?;
+        let (_, mut entry) = self.registry.lock(path.as_ref()).await?;
         entry.references = entry.references.saturating_sub(1);
         if entry.references == 0 {
             entry.close().await?;

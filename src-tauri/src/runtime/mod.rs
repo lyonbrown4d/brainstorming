@@ -1,4 +1,4 @@
-mod ai;
+pub(crate) mod ai;
 mod ai_transport;
 mod ai_validation;
 mod atomic;
@@ -9,7 +9,7 @@ pub mod documents;
 pub mod input;
 #[cfg(target_os = "ios")]
 mod ios_save;
-mod mcp;
+pub(crate) mod mcp;
 mod mcp_tools;
 mod mcp_transport;
 mod mcp_validation;

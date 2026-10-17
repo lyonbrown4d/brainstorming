@@ -133,7 +133,7 @@ pub fn run() {
                 if let Some(splash) = window.app_handle().get_webview_window("splash") {
                     let _ = splash.destroy();
                 }
-                window.app_handle().exit(0);
+                super::initialization::exit(window.app_handle(), 0);
             }
         })
         .build(tauri::generate_context!())
@@ -156,17 +156,19 @@ pub fn run() {
                 }
             });
         }
-        RunEvent::ExitRequested { api, .. } => {
-            let Some(state) = app.try_state::<Arc<AppState>>() else {
+        RunEvent::ExitRequested { api, code, .. } => {
+            if super::initialization::exit_ready(app) {
                 return;
-            };
-            if app.get_webview_window("main").is_some()
-                && !state.session.try_lock().is_ok_and(|s| s.close_allowed)
-            {
-                api.prevent_exit();
-                if let Some(main) = app.get_webview_window("main") {
-                    let _ = main.close();
-                }
+            }
+            api.prevent_exit();
+            let state = app.try_state::<Arc<AppState>>();
+            let confirmed = state
+                .as_ref()
+                .is_some_and(|state| state.session.try_lock().is_ok_and(|s| s.close_allowed));
+            if state.is_none() || confirmed || app.get_webview_window("main").is_none() {
+                super::initialization::exit(app, code.unwrap_or(0));
+            } else if let Some(main) = app.get_webview_window("main") {
+                let _ = main.close();
             }
         }
         RunEvent::Exit => {

@@ -69,11 +69,14 @@ impl MCPService {
         }
         Ok(connection)
     }
-    pub async fn stop(&self, app: &AppHandle) {
+    pub async fn shutdown(&self) {
         if let Some(active) = self.active.lock().await.take() {
             active.cancel.cancel();
             active.pending.lock().await.clear();
         }
+    }
+    pub async fn stop(&self, app: &AppHandle) {
+        self.shutdown().await;
         let _ = app.emit_to("main", "native:mcp-connection", Value::Null);
     }
     pub async fn reply(&self, value: &Value) -> Result<()> {

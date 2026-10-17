@@ -55,6 +55,7 @@ pub async fn native_request(
         return Err("此窗口无权访问编辑器数据".into());
     }
     let state = super::initialization::ready(&app).await?;
+    let _lease = super::initialization::acquire(&app).await?;
     let media = app.state::<Arc<MediaState>>();
     if let Some(result) = media.dispatch(&method, args.clone()).await {
         return result;

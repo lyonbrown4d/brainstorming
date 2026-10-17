@@ -1,4 +1,4 @@
-import { applyCommand, deserializeWorkbook, serializeWorkbook } from '@core'
+import { deserializeWorkbook } from '@core'
 import { requireDesktopAPI } from '@renderer/lib/desktop'
 import {
   useDocumentTabs,
@@ -8,7 +8,7 @@ import {
   switchDocumentTab,
 } from '@renderer/state/documentTabs'
 import { useEditor } from '@renderer/state/editor'
-import { draftCommand } from '@renderer/state/editorDraft'
+import { serializedDocumentSnapshot } from '@renderer/state/documentSnapshot'
 import {
   activateOpenedDocument,
   unlockOpenedDocument,
@@ -20,16 +20,9 @@ import { stopPresentation } from '@renderer/state/presentation'
 
 export const workspaceRecoveryContents = (): readonly string[] => {
   const { tabs, activeId } = useDocumentTabs.getState()
-  return tabs.map((tab) => {
+  return tabs.flatMap((tab) => {
     const state = tab.id === activeId ? useEditor.getState() : tab.editor
-    const draft = draftCommand(state)
-    const document = draft ? applyCommand(state.history.document, draft) : state.history.document
-    return serializeWorkbook({
-      ...state.workbook,
-      sheets: state.workbook.sheets.map((sheet) =>
-        sheet.id === state.activeSheetId ? { ...sheet, document } : sheet,
-      ),
-    })
+    return state.path === null ? [] : [serializedDocumentSnapshot(state)]
   })
 }
 

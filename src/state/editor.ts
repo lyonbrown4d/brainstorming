@@ -22,6 +22,7 @@ import { usePresentation } from '@renderer/state/presentation'
 import { useSpatialView } from '@renderer/state/spatial'
 import { enterWorkspaceEditor } from '@renderer/state/workspace'
 import { draftCommand } from '@renderer/state/editorDraft'
+import { serializedDocumentSnapshot } from '@renderer/state/documentSnapshot'
 import { deleteSelectedTopics, useSelection } from '@renderer/state/selection'
 import { addTopic } from '@renderer/state/topicCreation'
 
@@ -284,7 +285,11 @@ export const useEditor = create<EditorState>((set, get) => ({
 }))
 
 export const editorIsDirty = (state: EditorState): boolean => {
-  return serializedWorkbook(state.workbook) !== state.baseline || draftCommand(state) !== null
+  try {
+    return serializedDocumentSnapshot(state) !== state.baseline
+  } catch {
+    return true
+  }
 }
 
 export const isDirty = (): boolean => {

@@ -495,6 +495,7 @@ dependencies = [
  "bytes",
  "chrono",
  "clipboard-rs",
+ "fluxdi",
  "futures-util",
  "hex",
  "http-range",
@@ -1556,6 +1557,28 @@ dependencies = [
  "futures-core",
  "futures-sink",
  "spin",
+]
+
+[[package]]
+name = "fluxdi"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e7cf44aac31316a8582042eb5585e6207bd035e9d9f333c60b0403ca200b2e92"
+dependencies = [
+ "fluxdi-macros",
+ "futures",
+ "tokio",
+]
+
+[[package]]
+name = "fluxdi-macros"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "55481167b7ebf90b949553775a9be9e87a10ba048b6e5b953c2776ad24f6df05"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.9",
 ]
 
 [[package]]

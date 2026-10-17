@@ -77,27 +77,6 @@ pub fn handle_window_event(window: &Window, event: &WindowEvent) {
                 close(&app).await;
             });
         }
-        WindowEvent::Destroyed => {
-            let app = window.app_handle().clone();
-            tauri::async_runtime::spawn(async move {
-                if let Some(state) = app.try_state::<std::sync::Arc<AppState>>() {
-                    state.mcp.stop(&app).await;
-                    state.ai.cancel_all().await;
-                    let retained = {
-                        let mut session = state.session.lock().await;
-                        let retained = session.retained.drain().collect::<Vec<_>>();
-                        session.passwords.clear();
-                        session.pending.clear();
-                        session.sources.clear();
-                        session.authorized.clear();
-                        retained
-                    };
-                    for path in retained {
-                        let _ = state.documents.release(path).await;
-                    }
-                }
-            });
-        }
         _ => (),
     }
 }
@@ -122,9 +101,11 @@ async fn close(app: &AppHandle) {
         {
             let _guard = state.recovery.lock().await;
         }
-        state.mcp.stop(app).await;
-        state.ai.cancel_all().await;
-        crate::platform::finish_shutdown(app).await?;
+        if let Err(error) = crate::platform::finish_shutdown(app).await {
+            // Teardown is terminal: all modules have already been attempted.
+            // Keep the confirmed exit instead of leaving a closed backend in the UI.
+            tracing::error!("Native service shutdown failed: {error}");
+        }
         Ok::<bool, String>(true)
     }
     .await;

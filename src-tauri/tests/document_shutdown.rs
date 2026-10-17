@@ -88,8 +88,9 @@ async fn shutdown_closes_file_handles_and_prevents_new_native_operations() {
     let (entered, waiting) = oneshot::channel();
     let (release, blocked) = oneshot::channel();
     let active_path = path.clone();
+    let active_store = store.clone();
     let active = tokio::spawn(async move {
-        DocumentStore::new()
+        active_store
             .import_reader(
                 &active_path,
                 Box::new(HeldReader {
@@ -101,7 +102,8 @@ async fn shutdown_closes_file_handles_and_prevents_new_native_operations() {
             .await
     });
     waiting.await.unwrap();
-    let mut shutdown = tokio::spawn(async { DocumentStore::new().shutdown().await });
+    let closing_store = store.clone();
+    let mut shutdown = tokio::spawn(async move { closing_store.shutdown().await });
     let unknown = folder.path().join("not-created.brainstorming");
     loop {
         let error = store.read(&unknown, None).await.unwrap_err();

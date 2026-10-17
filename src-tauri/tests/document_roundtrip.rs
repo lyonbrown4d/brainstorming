@@ -44,7 +44,7 @@ async fn concurrent_handles_share_canonical_file_and_closing_one_keeps_other_usa
     let folder = tempfile::tempdir().unwrap();
     let path = folder.path().join("same.brainstorming");
     let first = DocumentStore::new();
-    let second = DocumentStore::new();
+    let second = first.clone();
     first
         .write(&path, fixture::workbook(), None, None, None)
         .await

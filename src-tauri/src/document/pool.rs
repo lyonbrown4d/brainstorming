@@ -5,17 +5,20 @@ use sqlx::{SqliteConnection, SqlitePool, sqlite::SqlitePoolOptions};
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
-    sync::{Arc, OnceLock},
+    sync::Arc,
 };
 use tokio::sync::{Mutex, OwnedMutexGuard};
 use zeroize::Zeroizing;
 
 #[derive(Default)]
-struct Registry {
+struct RegistryState {
     entries: HashMap<PathBuf, Arc<Mutex<Entry>>>,
     closed: bool,
 }
-static REGISTRY: OnceLock<Mutex<Registry>> = OnceLock::new();
+#[derive(Default)]
+pub(crate) struct Registry {
+    state: Mutex<RegistryState>,
+}
 
 #[derive(Default)]
 pub(crate) struct Entry {
@@ -43,28 +46,49 @@ pub(crate) fn canonical(path: &Path) -> Result<PathBuf> {
     Ok(parent.join(name))
 }
 
-pub(crate) async fn lock(path: &Path) -> Result<(PathBuf, OwnedMutexGuard<Entry>)> {
-    let path = path.to_owned();
-    let canonical = tokio::task::spawn_blocking(move || canonical(&path))
-        .await
-        .map_err(|_| super::DocumentError::Worker)??;
-    let gate = {
-        let mut registry = REGISTRY.get_or_init(Default::default).lock().await;
-        if registry.closed {
+impl Registry {
+    pub(crate) async fn lock(&self, path: &Path) -> Result<(PathBuf, OwnedMutexGuard<Entry>)> {
+        let path = path.to_owned();
+        let canonical = tokio::task::spawn_blocking(move || canonical(&path))
+            .await
+            .map_err(|_| super::DocumentError::Worker)??;
+        let gate = {
+            let mut registry = self.state.lock().await;
+            if registry.closed {
+                return Err(invalid("原生文档服务已关闭"));
+            }
+            registry
+                .entries
+                .entry(canonical.clone())
+                .or_default()
+                .clone()
+        };
+        let entry = gate.lock_owned().await;
+        // Shutdown can start while this caller is queued behind an active lease.
+        if self.state.lock().await.closed {
             return Err(invalid("原生文档服务已关闭"));
         }
-        registry
-            .entries
-            .entry(canonical.clone())
-            .or_default()
-            .clone()
-    };
-    let entry = gate.lock_owned().await;
-    // Shutdown can start while this caller is queued behind an active lease.
-    if REGISTRY.get_or_init(Default::default).lock().await.closed {
-        return Err(invalid("原生文档服务已关闭"));
+        Ok((canonical, entry))
     }
-    Ok((canonical, entry))
+
+    pub(crate) async fn shutdown(&self) -> Result<()> {
+        let gates = {
+            let mut registry = self.state.lock().await;
+            registry.closed = true;
+            registry.entries.values().cloned().collect::<Vec<_>>()
+        };
+        let mut failure = None;
+        for gate in gates {
+            if let Err(error) = gate.lock_owned().await.close().await {
+                failure = Some(error);
+            }
+        }
+        self.state.lock().await.entries.clear();
+        match failure {
+            Some(error) => Err(error),
+            None => Ok(()),
+        }
+    }
 }
 
 impl Entry {
@@ -131,29 +155,5 @@ impl Entry {
             self.close().await?;
         }
         result
-    }
-}
-
-pub(crate) async fn shutdown() -> Result<()> {
-    let gates = {
-        let mut registry = REGISTRY.get_or_init(Default::default).lock().await;
-        registry.closed = true;
-        registry.entries.values().cloned().collect::<Vec<_>>()
-    };
-    let mut failure = None;
-    for gate in gates {
-        if let Err(error) = gate.lock_owned().await.close().await {
-            failure = Some(error);
-        }
-    }
-    REGISTRY
-        .get_or_init(Default::default)
-        .lock()
-        .await
-        .entries
-        .clear();
-    match failure {
-        Some(error) => Err(error),
-        None => Ok(()),
     }
 }

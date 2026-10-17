@@ -55,8 +55,9 @@ async fn cancelled_callers_keep_save_and_rekey_owners_alive_until_files_are_clos
         });
         let worker_source = source.clone();
         let worker_path = path.clone();
+        let worker_store = store.clone();
         let pending = tokio::spawn(async move {
-            DocumentStore::new()
+            worker_store
                 .write(
                     worker_path,
                     workbook,

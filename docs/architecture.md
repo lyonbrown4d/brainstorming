@@ -7,26 +7,29 @@ Brainstorming 使用共享 React / TypeScript 编辑器和 Tauri 2 原生宿主�
 | 目录                                     | 职责                                                        |
 | ---------------------------------------- | ----------------------------------------------------------- |
 | `src/core`                               | 纯 TypeScript 文档模型、不可变命令、校验、撤销和多 Sheet    |
-| `src/layout`                             | 复用 D3 / Dagre 的纯几何布局                                |
+| `src/layout`                             | 复用 D3 的纯几何布局                                        |
 | `src/formats`                            | XMind、Markdown、OPML 等交换格式与转换报告                  |
 | `src/assets`                             | 有界内联资源校验与前端导出适配                              |
 | `src`                                    | React Flow、Lexical、Three.js / R3F / Drei、shadcn 组件组合 |
 | `src/shared`                             | 类型明确的平台能力契约                                      |
+| `src-tauri/src/application`              | FluxDI 宏依赖图、领域 Module 和异步生命周期                 |
 | `src-tauri/src/document`                 | 原生文件、SQLCipher、资源块、版本、显式 SQL 迁移            |
-| `src-tauri/src/storage`                  | 本机索引、加密临时资源及 Deadpool 连接管理                  |
+| `src-tauri/src/storage`                  | 本机索引、加密临时资源及 SQLx 连接管理                      |
 | `src-tauri/src/runtime`                  | 文档会话、系统文件、恢复、剪贴板、AI 和 MCP                 |
 | `src-tauri/src/media`                    | 资源导入、libvips 预览 / 瓦片和网页截图队列                 |
 | `src-tauri/src/transport`                | 受令牌和来源约束的资源流式读取服务                          |
 | `src-tauri/src/platform`                 | Tauri 生命周期、菜单、窗口和命令入口                        |
 | `src-tauri/plugins/brainstorming-native` | Swift / Kotlin 文件授权、密钥、剪贴板和原生截图             |
 
-`AppState` 显式组合原生服务，不维护 Node sidecar。前端通过 `native_request` 白名单访问平台能力；Rust 再校验参数、来源窗口、文件授权和资源范围。Storybook 和契约测试可显式注入平台 API，正式应用不能回退到浏览器本地文件或恢复存储。
+原生服务由 FluxDI `static_module!` 宏声明依赖，按领域 Module 启动和关闭，再将类型化服务组合为 `AppState`。装配与退出顺序见 [后端模块与依赖注入](development.md#后端模块与依赖注入)。不维护 Node sidecar。前端通过 `native_request` 白名单访问平台能力；Rust 再校验参数、来源窗口、文件授权和资源范围。Storybook 和契约测试可显式注入平台 API，正式应用不能回退到浏览器本地文件或恢复存储。
 
 ## 编辑与会话
 
-React Flow 的节点与边是文档投影。2D 和 3D 共享主题命令、选择、Lexical 标题编辑和 Sheet 内容。每次用户操作对应一次撤销；拖动中间坐标、相机、视口、面板和文本草稿不写入正式文件。
+React Flow 的节点与边是文档投影。2D 和 3D 共享主题命令、选择、Lexical 标题编辑和 Sheet 内容。每次用户操作对应一次撤销；拖动中间坐标、相机、视口和面板不写入正式文件。已有保存路径的导图会自动保存当前文本草稿的内容快照，编辑器内部选区、组合输入状态和历史不进入文件。
 
 每个文档标签保留独立的路径、脏状态、历史和 Sheet；每个 Sheet 可以选择自己的结构和配色。关闭标签只释放对应文档会话。连接池按规范文件路径复用，操作期间持有租约，应用退出等待进行中的事务和恢复写入结束。
+
+已有路径的导图按 Tab 自动保存，连续编辑会合并写入；后台 Tab 也会保存。自动保存、手动保存、另存为、密码变更、版本读取和释放按路径排队，完成结果只更新对应文档的保存基线。无路径导图只保留内存工作簿，不进入自动保存或恢复快照；关闭或页面重载后丢失，关闭确认仍检查未保存修改。
 
 ## 原生文件
 
