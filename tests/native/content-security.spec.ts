@@ -13,6 +13,7 @@ import {
   native,
   openSaved,
   recovery,
+  reloadNativePage,
   rootHasText,
   textContains,
   save,
@@ -119,7 +120,7 @@ describe('native content and password protection', () => {
     await browser.waitUntil(async () =>
       (await recovery()).some((item) => item.encrypted && item.lockedToken),
     )
-    await browser.refresh()
+    await reloadNativePage()
     await expect(named('恢复上次打开的 1 份导图')).toBeDisplayed()
     await named('恢复上次打开的 1 份导图').click()
     await expect(unlock).toHaveText(expect.stringContaining('解锁自动恢复记录'))

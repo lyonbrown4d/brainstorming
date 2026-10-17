@@ -45,10 +45,28 @@ export const shortcut = async (key: string): Promise<void> => {
   await browser.keys([process.platform === 'darwin' ? Key.Command : Key.Control, key])
   // WebdriverIO keys() releases actions; the embedded driver treats Key.NULL as text.
 }
+export const reloadNativePage = async (): Promise<void> => {
+  const previousDocument = await browser.execute(() => performance.timeOrigin)
+  await browser.refresh()
+  // Embedded refresh returns before navigation; startupReady later focuses the window.
+  await browser.waitUntil(async () => {
+    try {
+      const page = await browser.execute(() => ({
+        epoch: performance.timeOrigin,
+        ready: document.readyState,
+      }))
+      return page.epoch !== previousDocument && page.ready === 'complete'
+    } catch {
+      return false
+    }
+  })
+  await expect(browser.$('#startup-screen')).not.toExist()
+  await browser.tauri.switchWindow('main')
+}
 export const home = async (): Promise<void> => {
   await browser.tauri.switchWindow('main')
   await native('setLanguage', { language: 'zh-CN' })
-  await browser.refresh()
+  await reloadNativePage()
   await expect(named('探索示例')).toBeDisplayed()
   await expect(named('下一步')).toBeEnabled()
   if ((await recovery()).length > 0) {
@@ -110,8 +128,11 @@ export const openSaved = async (name: string): Promise<void> => {
   await named('打开本地文件').click()
 }
 export const ensureProperties = async (): Promise<void> => {
-  if (!(await browser.$('[role="complementary"][aria-label="属性面板"]').isDisplayed()))
-    await named('属性面板').click()
+  const panel = browser.$('aside[aria-label="属性面板"]')
+  const toggle = browser.$('button[aria-label="属性面板"]')
+  if ((await toggle.getAttribute('aria-pressed')) !== 'true') await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+  await expect(panel).toBeDisplayed()
 }
 export const recovery = async (): Promise<OpenedDocument[]> => {
   const items = await native<OpenedDocument[]>('readWorkspaceRecovery')

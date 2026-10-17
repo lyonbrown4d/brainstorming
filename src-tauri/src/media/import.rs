@@ -1,6 +1,7 @@
-use super::{catalog::Catalog, vips};
+use super::{catalog::Catalog, derivative_cache::DerivativeCache, vips};
 use crate::runtime::AppState;
-use serde_json::{Value, json};
+use serde_json::Value;
+use sha2::{Digest, Sha256};
 use std::{io::Read, path::Path, sync::Arc};
 use tokio::sync::Mutex;
 
@@ -9,6 +10,7 @@ pub struct Importer {
     pub state: Arc<AppState>,
     pub catalog: Arc<Catalog>,
     serial: Mutex<()>,
+    derivatives: DerivativeCache,
 }
 impl Importer {
     pub fn new(state: Arc<AppState>, catalog: Arc<Catalog>) -> Self {
@@ -16,6 +18,7 @@ impl Importer {
             state,
             catalog,
             serial: Mutex::new(()),
+            derivatives: DerivativeCache::default(),
         }
     }
     pub async fn file(&self, path: &Path, kind: &str) -> Result<Value> {
@@ -54,7 +57,13 @@ impl Importer {
             .import_file(&path)
             .await
             .map_err(|e| e.to_string())?;
-        let image = if is_image(&mime) {
+        let cached = if is_image(&mime) {
+            self.derivatives.get(&object.object_id).await
+        } else {
+            None
+        };
+        let cache_miss = is_image(&mime) && cached.is_none();
+        let image = if cache_miss {
             let parent = self.state.directory.join("image-work");
             let path = path.clone();
             let image_cancel = cancel.clone();
@@ -70,6 +79,10 @@ impl Importer {
         } else {
             None
         };
+        let storage = match cached {
+            Some(storage) => storage,
+            None => self.storage(&object, image).await?,
+        };
         if cancel.is_cancelled() {
             return Err("资源导入已取消".into());
         }
@@ -79,38 +92,54 @@ impl Importer {
         if before.len() != after.len() || before.modified().ok() != after.modified().ok() {
             return Err("导入期间资源发生变化，请重新导入".into());
         }
-        self.finish(
-            object,
-            path.file_name()
-                .and_then(|s| s.to_str())
-                .unwrap_or("attachment"),
-            &mime,
-            image,
-        )
-        .await
+        let asset = self
+            .asset(
+                &object,
+                path.file_name()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("attachment"),
+                &mime,
+                storage.clone(),
+            )
+            .await?;
+        if cancel.is_cancelled() {
+            return Err("资源导入已取消".into());
+        }
+        if cache_miss {
+            self.derivatives.insert(&object.object_id, storage).await;
+        }
+        Ok(asset)
     }
     pub async fn bytes(&self, bytes: Vec<u8>, name: &str, kind: &str) -> Result<Value> {
         let _guard = self.serial.lock().await;
         let mime = sniff(&bytes[..bytes.len().min(4096)], kind == "audio");
         validate_kind(kind, &mime, bytes.len() as u64)?;
-        let image = if is_image(&mime) {
+        // Ownership moves through workers; the raw byte buffer is never cloned.
+        let (bytes, cached) = if is_image(&mime) {
+            let (bytes, id) = tokio::task::spawn_blocking(move || {
+                let id = hex::encode(Sha256::digest(&bytes));
+                (bytes, id)
+            })
+            .await
+            .map_err(|_| "资源摘要任务失败")?;
+            (bytes, self.derivatives.get(&id).await)
+        } else {
+            (bytes, None)
+        };
+        let cache_miss = is_image(&mime) && cached.is_none();
+        let (bytes, image) = if cache_miss {
             let parent = self.state.directory.join("image-work");
+            let image_mime = mime.clone();
             let (bytes, image) = tokio::task::spawn_blocking(move || {
-                let image = vips::ensure_codec(&sniff(&bytes[..bytes.len().min(4096)], false))
+                let image = vips::ensure_codec(&image_mime)
                     .and_then(|_| vips::prepare_bytes(&bytes, &parent));
                 (bytes, image)
             })
             .await
             .map_err(|_| "图片处理任务失败")?;
-            let object = self
-                .state
-                .vault
-                .import_bytes(bytes)
-                .await
-                .map_err(|e| e.to_string())?;
-            return self.finish(object, name, &mime, Some(image?)).await;
+            (bytes, Some(image?))
         } else {
-            None
+            (bytes, None)
         };
         let object = self
             .state
@@ -118,71 +147,15 @@ impl Importer {
             .import_bytes(bytes)
             .await
             .map_err(|e| e.to_string())?;
-        self.finish(object, name, &mime, image).await
-    }
-    async fn finish(
-        &self,
-        object: crate::document::ResourceObject,
-        name: &str,
-        mime: &str,
-        image: Option<vips::Artifacts>,
-    ) -> Result<Value> {
-        let mut storage = json!({"objectId":object.object_id,"byteLength":object.byte_length});
-        if let Some(image) = image {
-            let preview = self
-                .state
-                .vault
-                .import_file(&image.preview)
-                .await
-                .map_err(|e| e.to_string())?;
-            self.catalog
-                .register_vault(&preview.object_id, preview.byte_length, "image/webp")
-                .await;
-            let mut derivatives = crate::document::Derivatives {
-                preview: Some(crate::document::Preview {
-                    object_id: preview.object_id.clone(),
-                    mime_type: "image/webp".into(),
-                    width: image.preview_width,
-                    height: image.preview_height,
-                }),
-                tiles: Vec::new(),
-            };
-            for (level, x, y, path) in image.tiles {
-                let tile = self
-                    .state
-                    .vault
-                    .import_file(&path)
-                    .await
-                    .map_err(|e| e.to_string())?;
-                self.catalog
-                    .register_vault(&tile.object_id, tile.byte_length, "image/webp")
-                    .await;
-                derivatives.tiles.push(crate::document::Tile {
-                    object_id: tile.object_id,
-                    level,
-                    x,
-                    y,
-                });
-            }
-            self.state
-                .vault
-                .set_derivatives(&object.object_id, derivatives)
-                .await
-                .map_err(|e| e.to_string())?;
-            storage["width"] = json!(image.width);
-            storage["height"] = json!(image.height);
-            storage["preview"] = json!({"objectId":preview.object_id,"byteLength":preview.byte_length,
-                "mimeType":"image/webp","width":image.preview_width,"height":image.preview_height});
-            storage["tiles"] = json!({"tileSize":512,"overlap":1,"maxLevel":u32::BITS-(image.width.max(image.height)-1).leading_zeros(),
-                "width":image.width,"height":image.height,"format":"webp","pipelineVersion":1});
-            image.directory.close().await?;
+        let storage = match cached {
+            Some(storage) => storage,
+            None => self.storage(&object, image).await?,
+        };
+        let asset = self.asset(&object, name, &mime, storage.clone()).await?;
+        if cache_miss {
+            self.derivatives.insert(&object.object_id, storage).await;
         }
-        self.catalog
-            .register_vault(&object.object_id, object.byte_length, mime)
-            .await;
-        Ok(
-            json!({"id":uuid::Uuid::new_v4().to_string(),"name":crate::runtime::input::safe_name(name),"mimeType":mime,"storage":storage}),
-        )
+        Ok(asset)
     }
 }
 fn preferred_audio(mime: String, kind: &str) -> String {

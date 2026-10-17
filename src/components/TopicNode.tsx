@@ -3,6 +3,7 @@ import { useMessages } from '@renderer/i18n/useMessages'
 import { TopicMarkerLayout } from '@renderer/components/metadata/TopicMarkerLayout'
 import { cn } from '@renderer/lib/utils'
 import { memo } from 'react'
+import { shallow } from 'zustand/shallow'
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react'
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react'
 import type { Topic } from '@core'
@@ -29,14 +30,16 @@ export type TopicFlowNode = Node<
   },
   'topic'
 >
-export const TopicNode = memo(({ data, id }: NodeProps<TopicFlowNode>) => {
+const TopicNodeContent = ({ data, id }: NodeProps<TopicFlowNode>) => {
   const { translate } = useMessages()
 
   const primary = useEditor((state) => state.selectedId === id)
   const selected = useTopicSelected(id)
   const dropTarget = useEditor((state) => state.dropTargetId === id)
   const editing = useEditor((state) => state.editingId === id)
-  const editingSurface = useEditor((state) => state.editingSurface)
+  const editingHere = useEditor(
+    (state) => state.editingId === id && state.editingSurface === 'canvas',
+  )
   const { topic, root, branch = false, color } = data
   const direction = data.direction ?? topic.side
   const side = direction === 'left' || direction === 'right' ? direction : topic.side
@@ -69,7 +72,7 @@ export const TopicNode = memo(({ data, id }: NodeProps<TopicFlowNode>) => {
             ? 'is-selected border-[#6653af] shadow-[0_0_0_3px_#9480d919]'
             : 'is-selected border-[#9480d9] shadow-[0_0_0_2px_#9480d918]'
           : 'border-transparent',
-        editing && editingSurface === 'canvas' && 'is-editing',
+        editingHere && 'is-editing',
         dropTarget &&
           'drop-target border-dashed border-[#72a98d] text-[#48775e] shadow-[0_0_0_5px_#90bba42e]',
         `side-${side}`,
@@ -163,6 +166,12 @@ export const TopicNode = memo(({ data, id }: NodeProps<TopicFlowNode>) => {
       )}
     </div>
   )
-})
+}
+
+// React Flow owns positioning; this content only consumes identity and node data.
+export const TopicNode = memo(
+  TopicNodeContent,
+  (previous, next) => previous.id === next.id && shallow(previous.data, next.data),
+)
 
 TopicNode.displayName = 'TopicNode'

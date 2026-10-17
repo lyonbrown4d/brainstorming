@@ -14,3 +14,6 @@
 /tauri.native-vips.conf.json
 
 /gen/android/app/tauri.build.gradle.kts
+
+# Tauri regenerates ACL schemas for the selected build features.
+/gen/schemas/

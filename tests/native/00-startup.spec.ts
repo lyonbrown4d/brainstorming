@@ -1,6 +1,7 @@
 import { browser, expect } from '@wdio/globals'
 import { Key } from 'webdriverio'
 import { checkMacChrome } from '@tests/native/chrome'
+import { checkBrandAppearance } from '@tests/native/appearance'
 import { create, fixture, home, named, native, rootHasText, shortcut } from '@tests/native/driver'
 
 interface NativeWindowState {
@@ -25,6 +26,7 @@ describe('native startup, window chrome and menu shortcuts', () => {
     expect(state.focused).toBe(true)
     await checkMacChrome()
     await home()
+    await checkBrandAppearance()
     await shortcut('n')
     await expect(named('下一步')).toBeDisplayed()
     await create('快捷键窗口检查')

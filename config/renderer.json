@@ -11,6 +11,7 @@
       "@iconify/react/offline",
       "@iconify-json/simple-icons",
       "lodash-es",
+      "zustand/shallow",
       "openseadragon"
     ]
   },

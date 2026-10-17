@@ -64,3 +64,13 @@ macOS 默认注册 [tauri-plugin-macos-fps](https://github.com/userFRM/tauri-plu
 修改后运行相关 Vitest / Rust 测试，以及格式、lint、typecheck 和构建。涉及平台 API 时补充对应原生验证，并在交付中区分编译、模拟器运行、真机及签名发布的结果。
 
 原生库准备与 codec 边界见 [原生图片库](native-libraries.md)，旧测试到 Rust / 原生 UI 的对应见 [测试迁移](testing-migration.md)。
+
+## 原生缓存
+
+图片导入使用 Moka `future` 缓存已完成的派生元数据，每个 Importer 最多 256 项，TTL 为 30 分钟。缓存键由原图 SHA-256、管线版本与固定处理参数组成。命中会跳过 libvips 重复生成，仍读取原文件并校验内容、取消和文件变化，重新生成资源身份与授权。缓存不保存原始字节、临时文件、密码或失败结果；修改 libvips 参数时同步更新参数签名或管线版本。
+
+Tauri 的 `src-tauri/gen/schemas` 是按当前构建 feature 生成的权限 schema，由 CLI 重新生成，不提交到 Git。
+
+开发编译的最后一个 Rust 任务同时生成平台所需的库，Cargo 进度条可能较久不变。`profile.dev.debug = "line-tables-only"` 使用官方行号调试信息，减少完整类型符号和静态归档的磁盘写入，保留文件与行号堆栈。首次修改 profile 会重新编译依赖；需要变量级原生调试时可临时设置 `CARGO_PROFILE_DEV_DEBUG=full`。不通过清空 `target` 处理正常编译等待。
+
+macOS `build:desktop --debug`（未指定证书）或显式 `APPLE_SIGNING_IDENTITY=-` 的本地预览包会叠加 `tauri.preview.conf.json`，由 Tauri 完成 [ad-hoc 签名](https://v2.tauri.app/distribute/sign/macos/#ad-hoc-signing)。此预览配置不启用 Hardened Runtime：ad-hoc 主程序和 libvips 均没有 Team ID，无法通过其[同团队动态库校验](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.security.cs.disable-library-validation)。正式分发不使用此预览配置，需配置 Developer ID 和公证；默认发布配置仍保留 Hardened Runtime。
