@@ -1,110 +1,75 @@
-import { createHash, randomUUID } from 'node:crypto'
-import { mkdir, readdir, lstat, unlink, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { createHash } from 'node:crypto'
+import { serializeWorkbook } from '@core'
+import { NativeDocuments } from '@main/document-db'
+import type { ResourceLibrary } from '@main/resources/library'
+import type { OpenedDocument } from '@shared/contracts'
 import type { DocumentBackup } from '@shared/fileSecurity'
 import { validateSecurityDocumentId } from '@shared/fileSecurity'
-import { encryptBrainstorming } from '@formats/encrypted'
-import { decodeBrainstorming } from '@formats/brainstorming'
-import { atomicWrite } from '@main/file-security/write'
-import { readDocumentBytes } from '@main/file-security/read'
 
-const folderPattern = /^[a-f0-9]{32}$/u
-const filePattern = /^\d{13}-[a-f0-9-]{36}-[ep]\.brainstorming$/u
-const idPattern = /^[a-f0-9]{32}\/\d{13}-[a-f0-9-]{36}-[ep]\.brainstorming$/u
-const isMissing = (error: unknown): boolean => {
-  return error instanceof Error && 'code' in error && error.code === 'ENOENT'
-}
 const folderFor = (documentId: unknown): string => {
   validateSecurityDocumentId(documentId)
   return createHash('sha256').update(documentId).digest('hex').slice(0, 32)
 }
+const idPattern = /^[a-f0-9]{32}\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/u
+interface DocumentSource {
+  readonly documentId: string
+  readonly path: string
+  password: string | null
+}
+/** Version metadata and shared immutable objects live inside each native document. */
 export class DocumentBackups {
-  private queue: Promise<void> = Promise.resolve()
-  constructor(private readonly directory: string) {}
-  private secureDirectory = async (path: string): Promise<void> => {
-    await mkdir(path, { recursive: true, mode: 0o700 })
-    const info = await lstat(path)
-    if (!info.isDirectory() || info.isSymbolicLink()) throw new Error('版本历史目录无效')
+  private readonly sources = new Map<string, DocumentSource>()
+  constructor(
+    _directory: string,
+    private readonly native = new NativeDocuments(),
+    private readonly resources?: ResourceLibrary,
+  ) {}
+  register = (documentId: string, path: string, password: string | null): void => {
+    this.sources.set(folderFor(documentId), { documentId, path, password })
   }
-  write = (documentId: string, bytes: Uint8Array, encrypted: boolean): Promise<void> => {
-    const task = this.queue.then(() => this.writeNow(documentId, bytes, encrypted))
-    this.queue = task.catch(() => undefined)
-    return task
+  write = (documentId: string, path: string, encrypted: boolean): Promise<void> => {
+    const previous = this.sources.get(folderFor(documentId))
+    this.register(documentId, path, encrypted ? (previous?.password ?? null) : null)
+    return Promise.resolve()
   }
-  private writeNow = async (
-    documentId: string,
-    bytes: Uint8Array,
-    encrypted: boolean,
-  ): Promise<void> => {
-    await this.secureDirectory(this.directory)
+  list = async (documentId: unknown): Promise<DocumentBackup[]> => {
     const folder = folderFor(documentId)
-    const directory = join(this.directory, folder)
-    await this.secureDirectory(directory)
-    const name = `${Date.now()}-${randomUUID()}-${encrypted ? 'e' : 'p'}.brainstorming`
-    await writeFile(join(directory, name), bytes, { flag: 'wx', mode: 0o600 })
-    const all: DocumentBackup[] = []
-    for (const entry of await readdir(this.directory)) {
-      if (!folderPattern.test(entry)) continue
-      const info = await lstat(join(this.directory, entry))
-      if (!info.isDirectory() || info.isSymbolicLink()) continue
-      all.push(...(await this.listFolder(entry)))
-    }
-    all.sort((a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id))
-    await Promise.all(all.slice(20).map(({ id }) => unlink(join(this.directory, id))))
+    const source = this.sources.get(folder)
+    if (!source) return []
+    const entries = await this.native.listRevisions(
+      source.path,
+      source.password ? { password: source.password } : {},
+    )
+    return entries.map(({ id, createdAt }) => ({
+      id: `${folder}/${id}`,
+      createdAt: Date.parse(createdAt),
+      size: 0,
+      encrypted: source.password !== null,
+    }))
   }
-  protect = (documentId: string, password: string | null): Promise<void> => {
-    if (password === null) return Promise.resolve()
-    const task = this.queue.then(async () => {
-      for (const backup of await this.list(documentId)) {
-        if (backup.encrypted) continue
-        const path = join(this.directory, backup.id)
-        const workbook = decodeBrainstorming(await this.read(backup.id))
-        if (workbook.id !== documentId) throw new Error('版本文件与文档不一致')
-        const protectedPath = path.replace(/-p\.brainstorming$/u, '-e.brainstorming')
-        await atomicWrite(protectedPath, await encryptBrainstorming(workbook, password, 'existing'))
-        await unlink(path)
-      }
-    })
-    this.queue = task.catch(() => undefined)
-    return task
-  }
-  private listFolder = async (folder: string): Promise<DocumentBackup[]> => {
-    const result: DocumentBackup[] = []
-    const directory = join(this.directory, folder)
-    try {
-      const root = await lstat(this.directory)
-      if (!root.isDirectory() || root.isSymbolicLink()) throw new Error('版本历史目录无效')
-      const info = await lstat(directory)
-      if (!info.isDirectory() || info.isSymbolicLink()) throw new Error('版本历史目录无效')
-      for (const name of await readdir(directory)) {
-        if (!filePattern.test(name)) continue
-        const stat = await lstat(join(directory, name))
-        if (stat.isFile() && !stat.isSymbolicLink())
-          result.push({
-            id: `${folder}/${name}`,
-            createdAt: Number(name.slice(0, 13)),
-            size: stat.size,
-            encrypted: name.endsWith('-e.brainstorming'),
-          })
-      }
-    } catch (error) {
-      if (!isMissing(error)) throw error
-    }
-    return result.sort((a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id))
-  }
-  list = (documentId: unknown): Promise<DocumentBackup[]> => {
-    return this.listFolder(folderFor(documentId))
-  }
-  read = async (id: unknown): Promise<Uint8Array> => {
+  read = async (id: unknown): Promise<OpenedDocument> => {
     if (typeof id !== 'string' || !idPattern.test(id)) throw new Error('版本标识无效')
-    const root = await lstat(this.directory)
-    if (!root.isDirectory() || root.isSymbolicLink()) throw new Error('版本历史目录无效')
-    const [folder] = id.split('/')
-    if (!folder) throw new Error('版本标识无效')
-    const parent = await lstat(join(this.directory, folder))
-    const info = await lstat(join(this.directory, id))
-    if (!parent.isDirectory() || parent.isSymbolicLink() || !info.isFile() || info.isSymbolicLink())
-      throw new Error('版本文件无效')
-    return readDocumentBytes(join(this.directory, id))
+    const [folder, revision] = id.split('/')
+    const source = folder ? this.sources.get(folder) : undefined
+    if (!source || !revision) throw new Error('版本文档尚未打开，请先打开原生文件')
+    const workbook = await this.native.readRevision(
+      source.path,
+      revision,
+      source.password ? { password: source.password } : {},
+    )
+    if (workbook.id !== source.documentId) throw new Error('版本文件与文档不一致')
+    this.resources?.register(workbook, source.path, source.password ?? undefined)
+    return {
+      path: null,
+      contents: serializeWorkbook(workbook),
+      encrypted: source.password !== null,
+    }
+  }
+  protect = async (documentId: string, password: string | null): Promise<void> => {
+    const source = this.sources.get(folderFor(documentId))
+    if (!source || source.password === password) return
+    await this.native.rekey(source.path, source.password, password)
+    source.password = password
+    this.resources?.updatePassword(source.path, password)
   }
 }

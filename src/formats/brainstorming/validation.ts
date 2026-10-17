@@ -1,6 +1,5 @@
 import { validateWorkbook } from '@core/workbook'
 import type { MindMapWorkbook } from '@core/types'
-import { decodeAssets } from '@formats/brainstorming/assets'
 
 export const DOCUMENT_LIMITS = { topics: 20_000, depth: 128, sheets: 128 } as const
 
@@ -40,86 +39,4 @@ export const validateBoundedWorkbook: (value: unknown) => asserts value is MindM
       for (const id of topic.children) pending.push({ id, depth: item.depth + 1 })
     }
   }
-}
-
-export const nativeWorkbook = (
-  value: unknown,
-  entries: ReadonlyMap<string, Uint8Array>,
-  used: Set<string>,
-): MindMapWorkbook => {
-  const content = record(value)
-  onlyKeys(content, ['id', 'title', 'sheets'])
-  if (!Array.isArray(content.sheets)) throw new Error('Brainstorming 文档缺少画布')
-  const budget = { bytes: 0 }
-  const sheets = content.sheets.map((value: unknown, index: number) => {
-    const sheet = record(value)
-    onlyKeys(sheet, ['id', 'name', 'document'])
-    const document = record(sheet.document)
-    onlyKeys(document, [
-      'id',
-      'title',
-      'rootId',
-      'topics',
-      'assets',
-      'settings',
-      'relations',
-      'groups',
-      'callouts',
-      'floatingIds',
-      'floatingPositions',
-      'presentation',
-    ])
-    const topics = record(document.topics)
-    for (const value of Object.values(topics)) {
-      const topic = record(value)
-      onlyKeys(topic, [
-        'id',
-        'title',
-        'children',
-        'collapsed',
-        'side',
-        'style',
-        'notes',
-        'image',
-        'attachments',
-        'metadata',
-        'structure',
-      ])
-      if (Object.hasOwn(topic, 'image'))
-        onlyKeys(record(topic.image), ['assetId', 'width', 'height'])
-      if (Object.hasOwn(topic, 'style')) {
-        onlyKeys(record(topic.style), [
-          'fill',
-          'color',
-          'fontSize',
-          'bold',
-          'italic',
-          'shape',
-          'lineStyle',
-          'lineWidth',
-        ])
-      }
-    }
-    return {
-      id: sheet.id,
-      name: sheet.name,
-      document: {
-        ...document,
-        format: 'brainstorming',
-        version: 1,
-        ...(document.assets === undefined
-          ? {}
-          : { assets: decodeAssets(document.assets, index, entries, used, budget) }),
-      },
-    }
-  })
-  const workbook = {
-    format: 'brainstorming',
-    version: 2,
-    id: content.id,
-    title: content.title,
-    sheets,
-  }
-  validateBoundedWorkbook(workbook)
-  return workbook
 }

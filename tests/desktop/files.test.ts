@@ -3,7 +3,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createDocument, createWorkbook, serializeWorkbook } from '@core'
-import { encodeBrainstorming } from '@formats/brainstorming'
 import { decodeFile } from '@formats'
 import { zipSync, strToU8 } from 'fflate'
 import { OpenFileRequests } from '@main/openFiles'
@@ -48,7 +47,7 @@ describe('桌面文件服务', () => {
     await expect(files.save(join(directory, 'other.brainstorming'), contents)).rejects.toThrow(
       '选择保存位置',
     )
-    expect(decodeFile(await readFile(path), path).workbook).toEqual(workbook)
+    expect((await decodeFile(await readFile(path), path)).workbook).toEqual(workbook)
     expect(await readdir(directory)).not.toContain('other.brainstorming')
   })
 
@@ -85,7 +84,7 @@ describe('桌面文件服务', () => {
     await files.writeRecovery(contents)
     const entry = (await recoveryIndexFor(files).read())[0]
     if (!entry) throw new Error('Missing recovery fixture')
-    const path = join(directory, 'application', 'recovery-v2', entry.fileName)
+    const path = join(directory, 'application', 'recovery-sqlite-v1', entry.fileName)
     await writeFile(path, 'broken')
     await expect(files.readRecovery()).rejects.toThrow('恢复文件无法读取')
     expect(await readFile(path, 'utf8')).toBe('broken')
@@ -115,8 +114,9 @@ describe('桌面文件服务', () => {
     const nativePath = join(directory, 'old.brainstorming')
     await writeFile(nativePath, contents)
     await expect(files.openSelected(nativePath)).rejects.toThrow()
-    await writeFile(nativePath, Buffer.alloc(MAX_FILE_BYTES + 1))
-    await expect(files.openSelected(nativePath)).rejects.toThrow('32 MiB')
+    const oversizedImport = join(directory, 'oversized.xmind')
+    await writeFile(oversizedImport, Buffer.alloc(MAX_FILE_BYTES + 1))
+    await expect(files.openSelected(oversizedImport)).rejects.toThrow('32 MiB')
     expect(files.getRecentFiles()).toEqual([])
   })
 
@@ -125,7 +125,8 @@ describe('桌面文件服务', () => {
     expect(await files.readRecovery()).toBeNull()
     await files.writeRecovery(contents)
     const bytes = await recoveryArchive(join(directory, 'application'), files)
-    expect(bytes).toEqual(Buffer.from(encodeBrainstorming(workbook)))
+    expect(Buffer.from(bytes).subarray(0, 16).toString()).toBe('SQLite format 3\0')
+    expect((await decodeFile(bytes, 'recovery.brainstorming')).workbook).toEqual(workbook)
   })
 
   it('系统打开请求仅消费绝对路径，并通过相同文件校验', async () => {

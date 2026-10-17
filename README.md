@@ -46,7 +46,9 @@ pnpm dev
 
 拖动分支到目标主题附近可更换父级，右侧面板支持上下排序和切换一级分支方向。修改通过命令记录，⌘/Ctrl+Z 撤销，Shift+⌘/Ctrl+Z 重做。
 
-主题面板提供 Lexical 局部标题格式、Markdown 富文本备注、标签、图标、链接、任务、公式、音频、一张主题图片和多个附件。图片支持 PNG/JPEG/GIF/WebP，嵌入画布并可预览；附件嵌入文件，可另存和移除。内容操作参与撤销，复制 Sheet 保留内容并可独立修改。
+主题面板提供 Lexical 局部标题格式、Markdown 富文本备注、标签、图标、链接、任务、公式、音频、一张主题图片和多个附件。图片支持 PNG/JPEG/GIF/WebP，使用预览图和分级瓦片查看，原图保留在原生文件中；附件可另存和移除。拖入原生文档或 XMind 会打开标签，图片、音频和其他文件可添加到目标主题；一次资源拖入可一次撤销。复制 Sheet 保留内容并可独立修改。
+
+网页链接会自动进入后台截图队列，同一 URL 去重，截图任务串行执行。预览使用隔离 Electron 会话，只访问通过校验的公网 HTTP(S) 地址；打开或导入包含链接的导图可能触发这些网络请求。预览缓存不改主题图片；链接面板可显式将截图设为主题图片。
 
 右侧主题属性中的“图标与任务标记”可即时设置 P1–P3 优先级、完成状态和进度，搜索常用图标或 Simple Icons 品牌图标。二维、三维、原生保存及图片/矢量导出共用标记；品牌图标按需加载随包资源，无需联网，每个主题最多 32 个图标。未知标记保留并显示回退图形。选中画布主题后，可拖动图标两侧手柄调整为 12–48 px，拖动图标本身切换到文字的上、下、左、右侧；松手提交一次撤销，Esc 取消预览。缩放手柄位于图标外侧，命中区域为 24 px；缩放和移动通过浮动预览反馈尺寸与目标位置，保持标题布局，松手后再重排。小于 4 px 的指针移动视为点击。面板可精确选择位置与尺寸，品牌图标库使用虚拟滚动连续浏览。
 
@@ -68,7 +70,7 @@ pnpm dev
 
 最近文件使用 TanStack Query 共享异步 IPC 缓存，打开和保存后失效刷新。RxJS 合并自动恢复事件并串行写入，单次失败后仍继续接收后续恢复请求。文档树、草稿、选择和撤销历史仍由现有命令及 Zustand 管理。
 
-主进程通过 Inversify 显式模块组装服务；界面语言、最近文件和恢复索引使用 Drizzle + better-sqlite3，存入 `userData/brainstorming.sqlite`。恢复正文仍是 `userData/recovery-v2` 下的 ZIP，最多保留 32 份文档；恢复时作为未保存副本打开，不恢复正式文件路径。启用密码同时保护已有恢复记录、历史和残留恢复文件，密钥仅留在主进程内存。
+主进程通过 Inversify 显式模块组装服务；界面语言、最近文件和恢复索引使用 Kysely + better-sqlite3，存入 `userData/brainstorming-local.sqlite`。原生文档与 `userData/recovery-sqlite-v1` 下的恢复正文都是 SQLite 文件，使用显式 Kysely 迁移；资源分块存储，连接由 Effect Pool 按规范路径与凭据共享。工作区最多恢复 32 份文档，恢复时作为未保存副本打开。SQLCipher 保护正文、资源和文件内版本，密钥仅留在主进程内存。
 
 package scripts 直接调用 CLI，多任务依赖和缓存交给 Moon。
 
@@ -90,7 +92,8 @@ pnpm moon run brainstorming:package
 ## 目录与组件
 
 - `src/core`：主题树、命令、历史和版本化 JSON，独立于 UI 框架。
-- `src/formats`：原生 ZIP/AES 容器、XMind 与大纲转换及导入报告。
+- `src/formats`：原生 SQLite 有界工具适配、XMind 与大纲转换及导入报告。
+- `src/main/document-db`、`src/main/resources`、`src/main/media`：原生关系表、连接池、分块资源、图片派生和网页预览。
 - `src/layout`：基于 d3-hierarchy 的多结构、分支混合布局与派生空间布局。
 - `src/renderer/index.html`、`src/renderer/src`：React Flow 画布、Zustand 状态和 shadcn/ui 通用组件。
 - `src/main`：窗口、菜单、受信任 IPC、本地文件和恢复。
@@ -104,9 +107,9 @@ UI 通用组件使用官方 shadcn 源码，业务差异通过组合和 Tailwind
 
 ## 当前限制
 
-原生格式为 ZIP + JSON，协议版本 1；不读取旧 JSON `.brainstorming` 或旧恢复记录。XMind 第三方扩展、特殊结构与部分样式仍可能丢失或转换，不能保证与 XMind 无损往返或视觉一致。Brainstorming 自有扩展可在导出 XMind 后由 Brainstorming 恢复。文件协议和格式损失说明见 [原生格式与 XMind 支持范围](docs/file-format.md)。
+原生格式为 SQLite，协议版本 1；不读取旧 ZIP/JSON `.brainstorming`、旧本机数据库或旧恢复记录，不提供自动迁移。XMind 第三方扩展、特殊结构与部分样式仍可能丢失或转换，不能保证与 XMind 无损往返或视觉一致。Brainstorming 自有扩展可在导出 XMind 后由 Brainstorming 恢复。文件协议和格式损失说明见 [原生格式与 XMind 支持范围](docs/file-format.md)。
 
-PNG/SVG/PDF 和打印输出当前 Sheet 的完整二维布局；不会导出三维截图。Markdown/OPML/文本仅保留大纲内容。密码只保护原生文件、自动恢复和版本历史；导出副本是普通文件。修改密码后旧加密快照仍需原密码。
+PNG/SVG/PDF 和打印输出当前 Sheet 的完整二维布局；不会导出三维截图。Markdown/OPML/文本仅保留大纲内容。密码只保护原生文件、自动恢复和版本历史；导出副本是普通文件。文件内最近 20 个版本随文档复制，并随文件密码一起更新；撤销栈只保留在会话中。
 
 AI 需用户自行配置服务；没有默认密钥。界面支持简体中文和英文，首次按系统语言选择，后续在本机保存；切换不翻译用户内容。部分底层错误仍可能显示中文。多人协作、评论和分享链接本次不包含。macOS 打包尚未配置正式签名与公证；系统文件关联和麦克风权限需安装产物后按平台验证。
 

@@ -1,3 +1,5 @@
+import { ResourceLifecycle } from '@main/resources/lifecycle'
+import { resourcesModule } from '@main/di/resources'
 import { OpenFileRequests } from '@main/openFiles'
 import { storageModule } from '@main/di/storage'
 import { Container } from 'inversify'
@@ -13,7 +15,16 @@ import { lifecycleModule } from '@main/di/lifecycle'
 export const createApplicationContainer = (options: ApplicationOptions): Container => {
   const container = new Container()
   container.bind<ApplicationOptions>(applicationOptions).toConstantValue(options)
-  container.load(storageModule, filesModule, systemModule, aiModule, mcpModule, lifecycleModule)
+  container.load(
+    storageModule,
+    resourcesModule,
+    filesModule,
+    systemModule,
+    aiModule,
+    mcpModule,
+    lifecycleModule,
+  )
+  container.get(ResourceLifecycle)
   return container
 }
 

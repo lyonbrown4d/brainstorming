@@ -3,7 +3,7 @@ import { reloadWindow } from '@tests/electron/session'
 import { completeDocumentCreation, openExample } from '@tests/e2e/workspace'
 import { expect, test, type Page } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
-import { decodeBrainstorming } from '@formats/brainstorming'
+import { decodeBrainstorming } from '@tests/electron/codec'
 import { legacyXmind, modernXmind } from '@tests/fixtures/xmind/archive'
 import { openDocumentTabs } from '@tests/e2e/documents'
 
@@ -71,7 +71,7 @@ for (const variant of [
     expect((await file.path()).split('/').at(-1)).toMatch(/\.brainstorming$/u)
     const path = await file.path()
     if (!path) throw new Error('没有生成原生文件')
-    expect(decodeBrainstorming(await readFile(path)).sheets[0]?.document.title).toBe(
+    expect((await decodeBrainstorming(await readFile(path))).sheets[0]?.document.title).toBe(
       '导入后继续编辑',
     )
     await fileAction(page, '新建导图')

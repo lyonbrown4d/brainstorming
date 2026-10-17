@@ -5,7 +5,7 @@ import { reloadWindow } from '@tests/electron/session'
 import { completeDocumentCreation, openExample } from '@tests/e2e/workspace'
 import { expect, test, type Page } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
-import { isEncryptedBrainstorming, decryptBrainstorming } from '@formats/encrypted'
+import { isEncryptedBrainstorming, decryptBrainstorming } from '@tests/electron/codec'
 import { openDock } from '@tests/e2e/dock'
 
 const password = 'native-test-password'

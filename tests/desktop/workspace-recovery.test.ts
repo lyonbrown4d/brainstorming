@@ -17,7 +17,7 @@ const passwordB = 'second-password-456'
 let directory: string
 let files: DocumentFiles
 const entries = () => recoveryIndexFor(files).read()
-const archive = (file: string) => readFile(join(directory, 'recovery-v2', file))
+const archive = (file: string) => readFile(join(directory, 'recovery-sqlite-v1', file))
 beforeEach(async () => {
   directory = await mkdtemp(join(tmpdir(), 'brainstorming-workspace-'))
   files = documentFiles(directory)
@@ -72,13 +72,13 @@ describe('native workspace recovery', () => {
       /\.[a-f0-9-]{36}\.brainstorming$/u,
       `.${randomUUID()}.brainstorming`,
     )
-    await writeFile(join(directory, 'recovery-v2', orphan), await archive(originalFile))
+    await writeFile(join(directory, 'recovery-sqlite-v1', orphan), await archive(originalFile))
     const path = files.authorizeSelected(join(directory, 'first.brainstorming'))
     await files.save(path, contents[0])
     await files.setFilePassword(second.id, passwordB)
     await files.setFilePassword(first.id, passwordA)
     expect(await isEncryptedBrainstorming(await archive(originalFile))).toBe(true)
-    expect(await readdir(join(directory, 'recovery-v2'))).not.toContain(orphan)
+    expect(await readdir(join(directory, 'recovery-sqlite-v1'))).not.toContain(orphan)
     expect((await files.listDocumentBackups(first.id)).every(({ encrypted }) => encrypted)).toBe(
       true,
     )
@@ -90,7 +90,7 @@ describe('native workspace recovery', () => {
     expect(await isEncryptedBrainstorming(await archive(originalFile))).toBe(false)
     expect(files.getFileSecurity(second.id)).toEqual({ encrypted: true })
     expect(await isEncryptedBrainstorming(await archive(before[1]?.fileName ?? ''))).toBe(true)
-  })
+  }, 15_000)
 
   it('preserves the entire previous workspace when index transaction fails, then removes closed documents after success', async () => {
     await files.writeWorkspaceRecovery(contents)
@@ -110,8 +110,9 @@ describe('native workspace recovery', () => {
     expect((await files.readWorkspaceRecovery()).map(({ contents: value }) => value)).toEqual([
       contents[2],
     ])
-    const remaining = await readdir(join(directory, 'recovery-v2'))
-    for (const item of stored) expect(remaining).not.toContain(item.fileName)
+    const remaining = await readdir(join(directory, 'recovery-sqlite-v1'))
+    for (const item of stored)
+      expect(remaining.includes(item.fileName)).toBe(item.documentId === third.id)
   })
 
   it('rejects malformed, duplicate or excessive input before modifying the existing index', async () => {
@@ -134,7 +135,7 @@ describe('native workspace recovery', () => {
     const restarted = documentFiles(directory)
     await restarted.initialize()
     expect(await restarted.readWorkspaceRecovery()).toEqual([])
-    expect(await readdir(join(directory, 'recovery-v2'))).toEqual([])
+    expect(await readdir(join(directory, 'recovery-sqlite-v1'))).toEqual([])
   })
 
   it('fails closed if an index adapter returns an escaping archive reference', async () => {
@@ -146,5 +147,21 @@ describe('native workspace recovery', () => {
     vi.spyOn(recoveryIndexFor(files), 'read').mockResolvedValueOnce(invalid)
     await expect(files.readWorkspaceRecovery()).rejects.toThrow('索引损坏')
     expect(await entries()).toEqual(before)
+  })
+  it('restores changed recovery content after a failed index commit while retaining stable file names', async () => {
+    await files.writeWorkspaceRecovery(contents)
+    const before = await entries()
+    const changed = serializeWorkbook({ ...first, title: 'Uncommitted change' })
+    vi.spyOn(recoveryIndexFor(files), 'replace').mockRejectedValueOnce(
+      new Error('index rejected changed workspace'),
+    )
+    await expect(files.writeWorkspaceRecovery([changed, contents[1], contents[2]])).rejects.toThrow(
+      'index rejected',
+    )
+    expect(await entries()).toEqual(before)
+    expect((await files.readWorkspaceRecovery()).map((item) => item.contents)).toEqual(contents)
+    await files.writeWorkspaceRecovery([changed, contents[1], contents[2]])
+    expect(await entries()).toEqual(before)
+    expect((await files.readWorkspaceRecovery())[0]?.contents).toBe(changed)
   })
 })

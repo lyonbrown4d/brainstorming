@@ -1,7 +1,19 @@
-import { app, dialog } from 'electron'
+import { app, dialog, protocol } from 'electron'
 import { desktopConfig } from '@main/config'
 import { createApplication } from '@main/di/container'
 
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'brainstorming-resource',
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+      stream: true,
+    },
+  },
+])
 app.setName('Brainstorming')
 if (!app.requestSingleInstanceLock()) app.quit()
 else {

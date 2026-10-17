@@ -12,7 +12,7 @@ import {
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { decryptBrainstorming, isEncryptedBrainstorming } from '@formats/encrypted'
+import { decryptBrainstorming, isEncryptedBrainstorming } from '@tests/electron/codec'
 import { openDock } from '@tests/e2e/dock'
 
 const password = 'desktop-security-test'
@@ -114,7 +114,6 @@ test('真实 Electron 密码文件、加密历史、重启解锁与恢复记录�
     const history = page.getByRole('dialog', { name: '版本历史', exact: true })
     await expect(history.getByRole('button', { name: '恢复', exact: true })).toHaveCount(2)
     await history.getByRole('button', { name: '恢复', exact: true }).last().click()
-    await unlock(page, '解锁思维导图')
     await expect(page.getByTestId('topic-root')).toContainText('第一份机密内容')
     expect(await diskTitle(savedPath)).toBe('第二份机密内容')
     await expect(page.locator('.save-status')).toContainText('未保存')

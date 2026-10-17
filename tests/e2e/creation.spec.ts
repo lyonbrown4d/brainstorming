@@ -4,7 +4,7 @@ import { prepareNativeSave, prepareNativeOpen } from '@tests/electron/native-fil
 import { reloadWindow } from '@tests/electron/session'
 import { expect, test, type Page } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
-import { decodeBrainstorming } from '@formats/brainstorming'
+import { decodeBrainstorming } from '@tests/electron/codec'
 import { dockAction } from '@tests/e2e/dock'
 import { openExample } from '@tests/e2e/workspace'
 
@@ -13,7 +13,7 @@ const save = async (page: Page) => {
   await page.keyboard.press('ControlOrMeta+s')
   const path = await download.path()
   if (!path) throw new Error('保存没有生成文件')
-  return decodeBrainstorming(await readFile(path))
+  return await decodeBrainstorming(await readFile(path))
 }
 const recoveryContents = async (page: Page) => recoveryBytes(page)
 

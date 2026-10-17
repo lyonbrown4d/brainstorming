@@ -77,3 +77,6 @@ export {
   validatePresentationStep,
 } from '@core/annotation-validation'
 export { AUDIO_MIME_TYPES, validateAudioAsset } from '@core/topic-content'
+
+export type { AssetStorage, AssetPreview, AssetTiles } from '@core/asset-storage'
+export { assetSize } from '@core/topic-content'

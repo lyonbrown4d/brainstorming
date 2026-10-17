@@ -2,7 +2,7 @@
 
 Brainstorming 是本地优先的桌面思维导图应用，使用 React Flow、Electron、Vite、Moon、TypeScript 和 shadcn/ui。当前版本为 V0.1，项目采用单 package。
 
-功能包含多文档标签、多 Sheet、多种布局、二维与三维编辑、大纲、撤销重做、备注/图片/附件和自动恢复。本机语言、最近文件和恢复索引使用 SQLite，文档使用 `.brainstorming` ZIP 原生格式保存，支持现代和旧版 `.xmind` 导入；当前不提供云端协作或账户。
+功能包含多文档标签、多 Sheet、多种布局、二维与三维编辑、大纲、撤销重做、备注/图片/附件和自动恢复。本机语言、最近文件和恢复索引使用 SQLite，文档使用 `.brainstorming` SQLite 原生格式保存，二进制资源按对象去重和分块存储，支持现代和旧版 `.xmind` 导入；当前不提供云端协作或账户。
 
 权威正文维护在代码仓库，Wiki 只提供导航，避免两份说明分别修改：
 

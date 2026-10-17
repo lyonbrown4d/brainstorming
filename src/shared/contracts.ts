@@ -28,6 +28,10 @@ export interface OpenedDocument {
   sessionToken?: string
   encrypted?: boolean
 }
+export interface DroppedFilesResult {
+  readonly documents: readonly OpenedDocument[]
+  readonly assets: readonly DocumentAsset[]
+}
 export interface RecentFile {
   path: string
   name: string
@@ -39,6 +43,13 @@ export interface SaveRequest {
   password?: string | null
 }
 export interface DesktopAPI extends FileSecurityAPI, AIAPI, MCPAPI, LanguageAPI {
+  readonly resourceOrigin: string
+  importDroppedFiles(files: readonly File[]): Promise<DroppedFilesResult>
+  generateLinkPreview(url: string): Promise<DocumentAsset>
+  queueLinkPreviews(urls: readonly string[]): Promise<void>
+  getLinkPreview(url: string): Promise<DocumentAsset | null>
+  onLinkPreview(callback: (url: string) => void): () => void
+  releaseDocument(path: string): Promise<void>
   readonly platform: DesktopPlatform
   getWindowState(): Promise<WindowState>
   setAppearance(theme: 'light' | 'dark'): Promise<void>

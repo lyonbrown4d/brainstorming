@@ -60,10 +60,13 @@ export const createAsset = (
 
 export const assetBytes = (asset: DocumentAsset): Uint8Array => {
   validateDocumentAsset(asset)
+  if (asset.storage) throw new Error('存储资源必须通过桌面资源服务读取')
   return base64.decode(asset.data)
 }
 
 export const imageDimensions = (asset: DocumentAsset): { width: number; height: number } => {
+  if (asset.storage?.width && asset.storage.height)
+    return { width: asset.storage.width, height: asset.storage.height }
   const bytes = assetBytes(asset)
   if (!rasterMime(bytes) || rasterMime(bytes) !== asset.mimeType)
     throw new Error('图片仅支持有效的 PNG、JPEG、GIF 或 WebP')

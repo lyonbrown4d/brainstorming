@@ -29,12 +29,19 @@ export const test = base.extend<{ electronApp: ElectronApplication; profileDirec
       colorScheme: null,
       env: environment,
     })
+    const child = app.process()
     try {
       await use(app)
     } finally {
-      const closed = app.waitForEvent('close').catch(() => undefined)
-      app.process().kill('SIGKILL')
-      await closed
+      if (child.exitCode === null && child.signalCode === null) {
+        const closed = new Promise<void>((resolve) => {
+          child.once('exit', () => {
+            resolve()
+          })
+        })
+        child.kill('SIGKILL')
+        await closed
+      }
     }
   },
   context: async ({ electronApp }, use) => {

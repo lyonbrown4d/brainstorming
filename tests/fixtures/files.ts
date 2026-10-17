@@ -39,7 +39,7 @@ export const recoveryArchive = async (
 ): Promise<Buffer> => {
   const entry = (await recoveryIndexFor(files).read())[index]
   if (!entry) throw new Error('Missing recovery archive')
-  return readFile(join(directory, 'recovery-v2', entry.fileName))
+  return readFile(join(directory, 'recovery-sqlite-v1', entry.fileName))
 }
 
 export const closeDocumentFiles = async (): Promise<void> => {

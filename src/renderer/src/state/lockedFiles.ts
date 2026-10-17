@@ -32,7 +32,10 @@ export const activateOpenedDocument = async (opened: OpenedDocument): Promise<vo
   const bridge = requireDesktopAPI()
   const state = opened.sessionToken
     ? await bridge.activateUnlockedDocument(opened.sessionToken)
-    : await bridge.setFilePassword(id, null)
+    : opened.encrypted
+      ? await bridge.getFileSecurity(id)
+      : await bridge.setFilePassword(id, null)
+  if (opened.encrypted && !state.encrypted) throw new Error(translate('unlockFailedPleaseRetry'))
   useFileSecurityState.setState({ documentId: id, encrypted: state.encrypted })
 }
 export const cancelOpenedDocument = async (opened: OpenedDocument): Promise<void> => {

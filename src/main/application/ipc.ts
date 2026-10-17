@@ -1,3 +1,5 @@
+import type { ResourceBridge } from '@main/resources/bridge'
+import type { ResourceProtocol } from '@main/resources/protocol'
 import type { NativeMenu } from '@main/application/nativeMenu'
 import { isAppLanguage } from '@shared/language'
 import type { dialog } from 'electron'
@@ -28,11 +30,15 @@ export class ApplicationIPC {
     private readonly mcp: MCPService,
     private readonly menu: NativeMenu,
     private readonly dialogs: Pick<typeof dialog, 'showOpenDialog' | 'showSaveDialog'>,
+    private readonly resources?: ResourceBridge,
+    private readonly resourceProtocol?: ResourceProtocol,
   ) {}
 
   register = (): void => {
     if (this.registered) return
     try {
+      this.resourceProtocol?.register()
+      this.resources?.register(this.ipc, this.session)
       this.ipc.handle('app:language:get', (event) => {
         this.session.trusted(event)
         return this.menu.language.get()
@@ -55,6 +61,7 @@ export class ApplicationIPC {
   }
 
   dispose = (): void => {
+    this.resourceProtocol?.dispose()
     this.ipc.dispose()
     this.registered = false
   }

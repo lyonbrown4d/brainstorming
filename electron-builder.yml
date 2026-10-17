@@ -10,7 +10,7 @@ asar: true
 fileAssociations:
   - ext: brainstorming
     name: Brainstorming 思维导图
-    mimeType: application/vnd.brainstorming+zip
+    mimeType: application/vnd.brainstorming+sqlite3
     role: Editor
   - ext: xmind
     name: XMind 思维导图

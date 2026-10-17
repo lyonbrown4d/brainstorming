@@ -127,7 +127,7 @@ describe('full-page document and sheet creation', () => {
     )
   })
 
-  it('adds a Sheet in one undo with independent structure, preserving path, password and native reopen values', () => {
+  it('adds a Sheet in one undo with independent structure, preserving path, password and native reopen values', async () => {
     useEditor.getState().command({ type: 'setDocumentSettings', settings: { layout: 'tree-up' } })
     const original = useEditor.getState().workbook
     useFileSecurityState.setState({ documentId: original.id, encrypted: true })
@@ -145,7 +145,9 @@ describe('full-page document and sheet creation', () => {
       documentId: original.id,
       encrypted: true,
     })
-    expect(decodeBrainstorming(encodeBrainstorming(state.workbook))).toEqual(state.workbook)
+    expect(await decodeBrainstorming(await encodeBrainstorming(state.workbook))).toEqual(
+      state.workbook,
+    )
     state.undo()
     expect(useEditor.getState().workbook).toEqual(original)
     state.redo()

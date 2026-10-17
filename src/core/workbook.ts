@@ -2,7 +2,7 @@ import { validateWorkbookLinks } from '@core/workbook-links'
 import { createDocument, documentData } from '@core/document'
 import type { MindMapDocument, MindMapSheet, MindMapWorkbook } from '@core/types'
 import { assertId, validateDocument } from '@core/validation'
-import { MAX_DOCUMENT_ASSET_BYTES, referencedAssetIds } from '@core/topic-content'
+import { MAX_DOCUMENT_ASSET_BYTES, referencedAssetIds, assetSize } from '@core/topic-content'
 
 const nameSegmenter = new Intl.Segmenter('zh-CN', { granularity: 'grapheme' })
 
@@ -58,15 +58,22 @@ export const validateWorkbook: (value: unknown) => asserts value is MindMapWorkb
   const ids = new Set<string>()
   const validatedSheets: MindMapSheet[] = []
   let assetBytes = 0
+  const binarySizes = new Map<string, number>()
   for (const sheet of sheets) {
     validateSheet(sheet)
     validatedSheets.push(sheet)
     if (ids.has(sheet.id)) throw new Error(`画布 ${sheet.id} 已存在`)
     ids.add(sheet.id)
     for (const id of referencedAssetIds(sheet.document.topics)) {
-      const data = sheet.document.assets?.[id]?.data ?? ''
-      assetBytes += (data.length / 4) * 3 - (data.endsWith('==') ? 2 : data.endsWith('=') ? 1 : 0)
-      if (assetBytes > MAX_DOCUMENT_ASSET_BYTES) throw new Error('工作簿资源总量超过 24 MiB')
+      const asset = sheet.document.assets?.[id]
+      if (asset) {
+        const key = asset.storage ? `object:${asset.storage.objectId}` : `inline:${asset.data}`
+        const size = assetSize(asset)
+        const previous = binarySizes.get(key) ?? 0
+        assetBytes += Math.max(0, size - previous)
+        binarySizes.set(key, Math.max(previous, size))
+      }
+      if (assetBytes > MAX_DOCUMENT_ASSET_BYTES) throw new Error('工作簿资源总量超过 256 GiB')
     }
   }
   validateWorkbookLinks(validatedSheets)

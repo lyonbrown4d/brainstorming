@@ -12,7 +12,7 @@ const archive = (value: unknown): Uint8Array =>
 const sheet = (rootTopic: unknown): unknown[] => [{ id: 'sheet', title: 'Sheet', rootTopic }]
 
 describe('XMind import', () => {
-  it('imports an unmodified official XMind sample using modern content over warning-only XML', () => {
+  it('imports an unmodified official XMind sample using modern content over warning-only XML', async () => {
     const { workbook, warnings } = importXmind(fixture('official-viewer-test-1.xmind'))
     expect(workbook.sheets).toHaveLength(1)
     expect(workbook.sheets[0]?.name).toBe('Map 1')
@@ -25,7 +25,7 @@ describe('XMind import', () => {
       'Main Topic 3',
     ])
     expect(warnings).toEqual(expect.arrayContaining([expect.stringContaining('主题配色')]))
-    expect(decodeBrainstorming(encodeBrainstorming(workbook))).toEqual(workbook)
+    expect(await decodeBrainstorming(await encodeBrainstorming(workbook))).toEqual(workbook)
   })
 
   it('preserves modern sheet order, titles, ordered subtrees, collapse and explicit styles', () => {

@@ -10,15 +10,27 @@ describe('SQLite metadata lifecycle and schema', () => {
     const directory = await storageDirectory()
     const database = openDatabase(path.join(directory, 'nested'))
     await database.preferences.setLanguage('en')
-    const connection = new Database(path.join(directory, 'nested', 'brainstorming.sqlite'))
+    const connection = new Database(path.join(directory, 'nested', 'brainstorming-local.sqlite'))
     try {
       expect(connection.pragma('journal_mode', { simple: true })).toBe('wal')
-      expect(connection.pragma('user_version', { simple: true })).toBe(1)
+      expect(connection.pragma('user_version', { simple: true })).toBe(0)
       expect(
         connection
           .prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
           .all(),
-      ).toEqual([{ name: 'preferences' }, { name: 'recent_files' }, { name: 'workspace_recovery' }])
+      ).toEqual([
+        { name: 'kysely_migration' },
+        { name: 'kysely_migration_lock' },
+        { name: 'preferences' },
+        { name: 'recent_files' },
+        { name: 'workspace_recovery' },
+      ])
+      expect(connection.prepare('SELECT name FROM kysely_migration').all()).toEqual([
+        { name: '001-metadata' },
+      ])
+      expect(connection.prepare('SELECT is_locked FROM kysely_migration_lock').get()).toEqual({
+        is_locked: 0,
+      })
       expect(() => connection.prepare('INSERT INTO preferences VALUES (2, ?)').run('en')).toThrow()
       expect(() =>
         connection.prepare('UPDATE preferences SET language = ?').run('invalid'),
@@ -41,7 +53,7 @@ describe('SQLite metadata lifecycle and schema', () => {
 
   it('rejects unknown schema versions and leaves their data intact', async () => {
     const directory = await storageDirectory()
-    const file = path.join(directory, 'brainstorming.sqlite')
+    const file = path.join(directory, 'brainstorming-local.sqlite')
     const existing = new Database(file)
     existing.exec("CREATE TABLE future_data (value TEXT); INSERT INTO future_data VALUES ('kept')")
     existing.pragma('user_version = 42')
@@ -59,7 +71,7 @@ describe('SQLite metadata lifecycle and schema', () => {
 
   it('rejects an unversioned nonempty database and damaged bytes without overwriting either', async () => {
     const directory = await storageDirectory()
-    const file = path.join(directory, 'brainstorming.sqlite')
+    const file = path.join(directory, 'brainstorming-local.sqlite')
     const existing = new Database(file)
     existing.exec('CREATE TABLE unknown_data (value TEXT)')
     existing.close()
@@ -68,6 +80,47 @@ describe('SQLite metadata lifecycle and schema', () => {
     await writeFile(file, before)
     expect(() => new LocalDatabase(directory)).toThrow()
     expect(await readFile(file)).toEqual(before)
+  })
+
+  it('rejects a migration from a newer application without changing metadata', async () => {
+    const directory = await storageDirectory()
+    const database = openDatabase(directory)
+    await database.preferences.setLanguage('zh-CN')
+    database.close()
+    const file = path.join(directory, 'brainstorming-local.sqlite')
+    const connection = new Database(file)
+    try {
+      connection
+        .prepare('INSERT INTO kysely_migration (name, timestamp) VALUES (?, ?)')
+        .run('999-future', new Date().toISOString())
+      expect(() => new LocalDatabase(directory)).toThrow('Unsupported local database schema')
+      expect(connection.prepare('SELECT language FROM preferences').get()).toEqual({
+        language: 'zh-CN',
+      })
+      expect(connection.prepare('SELECT name FROM kysely_migration ORDER BY name').all()).toEqual([
+        { name: '001-metadata' },
+        { name: '999-future' },
+      ])
+    } finally {
+      connection.close()
+    }
+  })
+
+  it('starts with fresh metadata when a legacy database exists', async () => {
+    const directory = await storageDirectory()
+    const legacy = new Database(path.join(directory, 'brainstorming.sqlite'))
+    try {
+      legacy.exec(
+        "CREATE TABLE preferences (id INTEGER PRIMARY KEY, language TEXT); INSERT INTO preferences VALUES (1, 'en')",
+      )
+      legacy.pragma('user_version = 1')
+      const database = openDatabase(directory)
+      expect(await database.preferences.getLanguage()).toBeNull()
+      await database.preferences.setLanguage('zh-CN')
+      expect(legacy.prepare('SELECT language FROM preferences').get()).toEqual({ language: 'en' })
+    } finally {
+      legacy.close()
+    }
   })
 
   it('rejects operations after close without recreating the database', async () => {

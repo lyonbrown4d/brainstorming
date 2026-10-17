@@ -116,7 +116,7 @@ describe('系统主题剪贴板', () => {
     expect(Object.keys(useEditor.getState().history.document.topics)).toHaveLength(1)
   })
   it('成功剪切一次删除后可撤销，副本插入同级且不写入系统剪贴板', async () => {
-    await duplicateSelectedTopics()
+    duplicateSelectedTopics()
     const current = useEditor.getState()
     expect(current.error).toBeNull()
     expect(current.history.document.topics.root?.children).toHaveLength(2)

@@ -1,3 +1,4 @@
+import type { OpenedDocument } from '@shared/contracts'
 import { translate } from '@renderer/i18n'
 import { deserializeWorkbook } from '@core'
 import { requireDesktopAPI } from '@renderer/lib/desktop'
@@ -28,16 +29,7 @@ const showError = (error: unknown): void => {
 export const newDocument = (): void => {
   beginCreation('document')
 }
-export const openDocument = async (recentPath?: string, pending = false): Promise<void> => {
-  if (useEditor.getState().busy) return
-  if (pending) {
-    try {
-      if (!(await requireDesktopAPI().hasOpenFile())) return
-    } catch (error) {
-      showError(error)
-      return
-    }
-  }
+const acceptFileSelection = async (select: () => Promise<OpenedDocument | null>): Promise<void> => {
   if (useEditor.getState().busy) return
   useEditor.getState().commitDraft()
   if (useEditor.getState().editingId) return
@@ -46,12 +38,7 @@ export const openDocument = async (recentPath?: string, pending = false): Promis
   let reusedId: string | null = null
   useEditor.setState({ busy: true })
   try {
-    const bridge = requireDesktopAPI()
-    const selected = await (pending
-      ? bridge.takeOpenFile()
-      : recentPath
-        ? bridge.openRecent(recentPath)
-        : bridge.openDocument())
+    const selected = await select()
     if (!selected) return
     const existingPath = findDocumentTab(selected.path)
     if (existingPath) {
@@ -90,6 +77,27 @@ export const openDocument = async (recentPath?: string, pending = false): Promis
   } finally {
     useEditor.setState({ busy: false })
     if (reusedId) switchDocumentTab(reusedId)
+  }
+}
+
+/** Shared desktop-open acceptance, including password prompts and tab reuse. */
+export const acceptOpenedDocument = (selected: OpenedDocument): Promise<void> =>
+  acceptFileSelection(() => Promise.resolve(selected))
+
+export const openDocument = async (recentPath?: string, pending = false): Promise<void> => {
+  if (useEditor.getState().busy) return
+  try {
+    const bridge = requireDesktopAPI()
+    if (pending && !(await bridge.hasOpenFile())) return
+    await acceptFileSelection(() =>
+      pending
+        ? bridge.takeOpenFile()
+        : recentPath
+          ? bridge.openRecent(recentPath)
+          : bridge.openDocument(),
+    )
+  } catch (error) {
+    showError(error)
   }
 }
 export const saveDocument = async (saveAs = false): Promise<void> => {

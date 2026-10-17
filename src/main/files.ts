@@ -1,13 +1,13 @@
 import type { RecentFilesRepository } from '@main/storage/repositories'
 import type { RecoveryWorkspaceService } from '@main/workspace-recovery/service'
-import { atomicWrite } from '@main/file-security/write'
 export { atomicWrite } from '@main/file-security/write'
 import { mkdir } from 'node:fs/promises'
 import { basename, extname, resolve } from 'node:path'
 import { deserializeWorkbook, serializeWorkbook } from '@core'
-import { decodeFile } from '@formats'
-import { encodeBrainstorming } from '@formats/brainstorming'
-import { encryptBrainstorming, isEncryptedBrainstorming } from '@formats/encrypted'
+import { importXmind } from '@formats/xmind'
+import { NativeDocuments } from '@main/document-db'
+import { ResourceLibrary } from '@main/resources/library'
+import { isEncryptedNativeFile } from '@main/file-security/session'
 import type { FileSecuritySession } from '@main/file-security/session'
 import type { DocumentBackups } from '@main/file-security/backups'
 import { readDocumentBytes } from '@main/file-security/read'
@@ -54,19 +54,6 @@ export const validateSavePath: (value: unknown) => asserts value is string = (
   validatePath(value, ['.brainstorming'])
 }
 
-const decodeDocument = (
-  bytes: Uint8Array,
-  path: string,
-  exposedPath: string | null = path,
-): OpenedDocument => {
-  const decoded = decodeFile(bytes, path)
-  const contents = serializeWorkbook(decoded.workbook)
-  validateContents(contents)
-  return decoded.imported
-    ? { path: null, sourcePath: path, contents, warnings: decoded.warnings }
-    : { path: exposedPath, contents, warnings: decoded.warnings }
-}
-
 export class DocumentFiles {
   private readonly authorizedPaths = new Set<string>()
   private recentPaths: string[] = []
@@ -78,6 +65,8 @@ export class DocumentFiles {
     private readonly backups: DocumentBackups,
     private readonly workspace: RecoveryWorkspaceService,
     private readonly recent: RecentFilesRepository,
+    private readonly native = new NativeDocuments(),
+    private readonly resources = new ResourceLibrary(storageDirectory, native),
   ) {}
 
   initialize = async (): Promise<void> => {
@@ -101,16 +90,24 @@ export class DocumentFiles {
   openSelected = async (path: string): Promise<OpenedDocument> => {
     validateOpenPath(path)
     const absolute = resolve(path)
-    const bytes = await readDocumentBytes(absolute)
-    if (
-      extname(absolute).toLowerCase() === '.brainstorming' &&
-      (await isEncryptedBrainstorming(bytes))
-    )
-      return this.security.lock(bytes, absolute, true)
-    const document = decodeDocument(bytes, absolute)
-    if (document.path !== null) this.authorizedPaths.add(absolute)
+    if (extname(absolute).toLowerCase() === '.xmind') {
+      const imported = importXmind(await readDocumentBytes(absolute))
+      await this.remember(absolute)
+      return {
+        path: null,
+        sourcePath: absolute,
+        contents: serializeWorkbook(imported.workbook),
+        warnings: imported.warnings,
+      }
+    }
+    if (await isEncryptedNativeFile(absolute))
+      return this.security.lockFile(absolute, absolute, true)
+    const workbook = await this.native.read(absolute)
+    this.resources.register(workbook, absolute)
+    this.backups.register(workbook.id, absolute, null)
+    this.authorizedPaths.add(absolute)
     await this.remember(absolute)
-    return document
+    return { path: absolute, contents: serializeWorkbook(workbook), warnings: [] }
   }
 
   openRecent = async (path: unknown): Promise<OpenedDocument> => {
@@ -133,13 +130,34 @@ export class DocumentFiles {
     const workbook = deserializeWorkbook(contents)
     if (password !== undefined && password !== null) validateFilePassword(password)
     const key = password === undefined ? this.security.passwordFor(workbook.id) : password
-    const bytes =
-      key === null
-        ? encodeBrainstorming(workbook)
-        : await encryptBrainstorming(workbook, key, 'existing')
-    await atomicWrite(path, bytes)
-    await this.configurePassword(workbook.id, key, password === undefined)
-    await this.backups.write(workbook.id, bytes, key !== null)
+    const resources = await this.resources.packagesFor(workbook)
+    const previous = this.security.passwordFor(workbook.id)
+    const exists = await import('node:fs/promises').then((fs) =>
+      fs
+        .stat(path)
+        .then(() => true)
+        .catch(() => false),
+    )
+    await this.configurePassword(workbook.id, key, password === undefined, false)
+    try {
+      await this.native.write(path, workbook, {
+        ...(key ? { password: key } : {}),
+        ...(exists ? { existingPassword: previous } : {}),
+        source: this.resources,
+        resources,
+      })
+    } catch (cause) {
+      try {
+        await this.configurePassword(workbook.id, previous, true, false)
+      } catch (rollback) {
+        throw new AggregateError([cause, rollback], '保存失败，恢复文件的密码回滚也失败', {
+          cause: rollback,
+        })
+      }
+      throw cause
+    }
+    this.resources.register(workbook, path, key ?? undefined)
+    this.backups.register(workbook.id, path, key)
     await this.remember(path)
     return path
   }
@@ -174,6 +192,12 @@ export class DocumentFiles {
     await this.recoveryQueue
   }
 
+  releaseDocument = async (path: unknown): Promise<void> => {
+    validateSavePath(path)
+    if (!this.authorizedPaths.has(path)) return
+    await this.native.release(path)
+  }
+
   clearRecovery = (): Promise<void> => this.writeWorkspaceRecovery([])
 
   getFileSecurity = (documentId: unknown) => {
@@ -186,6 +210,7 @@ export class DocumentFiles {
     documentId: unknown,
     password: unknown,
     existing = false,
+    protectSavedFile = true,
   ): Promise<{ encrypted: boolean }> => {
     validateSecurityDocumentId(documentId)
     const previous = this.security.passwordFor(documentId)
@@ -193,8 +218,19 @@ export class DocumentFiles {
     const key = this.security.passwordFor(documentId)
     if (key === previous) return state
     const change = this.recoveryQueue.then(async () => {
-      await this.workspace.protect(documentId, previous, key)
-      await this.backups.protect(documentId, key)
+      try {
+        await this.workspace.protect(documentId, previous, key)
+        if (protectSavedFile) await this.backups.protect(documentId, key)
+      } catch (cause) {
+        try {
+          await this.workspace.protect(documentId, key, previous)
+        } catch (rollback) {
+          throw new AggregateError([cause, rollback], '密码更新失败，恢复文件的密码回滚也失败', {
+            cause: rollback,
+          })
+        }
+        throw cause
+      }
     })
     this.recoveryQueue = change.catch(() => undefined)
     try {
@@ -215,6 +251,7 @@ export class DocumentFiles {
     const activated = this.security.activate(token)
     await this.configurePassword(activated.documentId, activated.password, true)
     if (activated.path !== null && activated.authorize) {
+      this.backups.register(activated.documentId, activated.path, activated.password)
       this.authorizedPaths.add(activated.path)
       await this.remember(activated.path)
     }
@@ -229,13 +266,7 @@ export class DocumentFiles {
     return this.backups.list(documentId)
   }
   restoreDocumentBackup = async (id: unknown): Promise<OpenedDocument> => {
-    const bytes = await this.backups.read(id)
-    const encrypted = await isEncryptedBrainstorming(bytes)
-    if (typeof id !== 'string' || id.endsWith('-e.brainstorming') !== encrypted)
-      throw new Error('版本文件加密状态与记录不一致')
-    return encrypted
-      ? this.security.lock(bytes, null)
-      : decodeDocument(bytes, 'backup.brainstorming', null)
+    return this.backups.read(id)
   }
 
   private remember = async (path: string): Promise<void> => {

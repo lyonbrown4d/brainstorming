@@ -1,12 +1,10 @@
-import { strToU8, zipSync } from 'fflate'
 import { describe, expect, it } from 'vitest'
 import { createDocument, createWorkbook, type DocumentAsset, type Topic } from '@core'
 import { createAsset } from '@assets'
-import { readArchive } from '@formats/archive'
 import { decodeBrainstorming, encodeBrainstorming } from '@formats/brainstorming'
 
-describe('native asset budgets', () => {
-  it('bounds aggregate resources across sheets on save and open', () => {
+describe('native SQLite resource capacity', () => {
+  it('stores deduplicated resources across sheets without the former aggregate ZIP limit', async () => {
     const asset = createAsset(new Uint8Array(7 * 1024 * 1024), 'large.bin', 'large-a')
     const second = { ...asset, id: 'large-b' }
     const base = createDocument('Large', 'large-document')
@@ -20,35 +18,11 @@ describe('native asset budgets', () => {
     const workbook = createWorkbook(document)
     const sheet = workbook.sheets[0]
     if (!sheet) throw new Error('Missing fixture sheet')
-    expect(() =>
-      encodeBrainstorming({ ...workbook, sheets: [sheet, { ...sheet, id: 'sheet-two' }] }),
-    ).toThrow(/24 MiB/)
-    const entries = Object.fromEntries(readArchive(encodeBrainstorming(workbook)))
-    const content = JSON.parse(new TextDecoder().decode(entries['document.json'])) as {
-      sheets: { id: string; document: { assets: Record<string, { path: string }> } }[]
-    }
-    const stored = content.sheets[0]
-    if (!stored) throw new Error('Missing stored sheet')
-    content.sheets.push({
-      ...stored,
-      id: 'sheet-two',
-      document: {
-        ...stored.document,
-        assets: Object.fromEntries(
-          Object.entries(stored.document.assets).map(([id, metadata]) => [
-            id,
-            { ...metadata, path: `assets/1/${id}` },
-          ]),
-        ),
-      },
-    })
-    entries['document.json'] = strToU8(JSON.stringify(content))
-    entries['assets/1/large-a'] = new Uint8Array(7 * 1024 * 1024)
-    entries['assets/1/large-b'] = new Uint8Array(7 * 1024 * 1024)
-    expect(() => decodeBrainstorming(zipSync(entries))).toThrow(/24 MiB/)
+    const original = { ...workbook, sheets: [sheet, { ...sheet, id: 'sheet-two' }] }
+    expect(await decodeBrainstorming(await encodeBrainstorming(original))).toEqual(original)
   })
 
-  it('rejects a native write with more archive entries than the reader accepts', () => {
+  it('roundtrips more than the former ZIP archive entry limit', async () => {
     const base = createDocument('Many', 'many-document')
     const root = base.topics.root
     if (!root) throw new Error('Missing fixture root')
@@ -65,6 +39,7 @@ describe('native asset budgets', () => {
         assets[assetId] = createAsset(new Uint8Array(), 'empty.bin', assetId)
       topics[id] = { id, title: id, side: 'right', children: [], collapsed: false, attachments }
     }
-    expect(() => encodeBrainstorming(createWorkbook({ ...base, topics, assets }))).toThrow(/512/)
+    const original = createWorkbook({ ...base, topics, assets })
+    expect(await decodeBrainstorming(await encodeBrainstorming(original))).toEqual(original)
   })
 })

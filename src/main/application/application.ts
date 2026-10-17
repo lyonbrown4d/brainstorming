@@ -1,3 +1,4 @@
+import type { ResourceLifecycle } from '@main/resources/lifecycle'
 import type { AIService } from '@main/ai/application'
 import type { MCPService } from '@main/mcp/application'
 import type { App } from 'electron'
@@ -22,6 +23,7 @@ export class DesktopApplication {
     private readonly menu: NativeMenu,
     private readonly ai: AIService,
     private readonly mcp: MCPService,
+    private readonly resources?: ResourceLifecycle,
   ) {}
 
   start = (): Promise<void> => {
@@ -103,7 +105,11 @@ export class DesktopApplication {
       this.ipc.dispose()
       this.windows.dispose()
       for (const remove of this.cleanup.splice(0)) remove()
-      await Promise.all([this.ai.dispose(), this.mcp.dispose(), this.files.flush()])
+      try {
+        await Promise.all([this.ai.dispose(), this.mcp.dispose(), this.files.flush()])
+      } finally {
+        await this.resources?.dispose()
+      }
     })
     return this.disposed
   }

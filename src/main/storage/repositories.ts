@@ -1,7 +1,5 @@
-import { asc, eq } from 'drizzle-orm'
 import { z } from 'zod'
-import type { MetadataDatabase } from '@main/storage/initialize'
-import { preferences, recentFiles, workspaceRecovery } from '@main/storage/schema'
+import type { MetadataDatabase } from '@main/storage/schema'
 import {
   validateRecoveryIndex,
   type RecoveryIndexRepository,
@@ -29,48 +27,56 @@ const recentPathsSchema = z
   .max(10)
   .refine((paths) => new Set(paths).size === paths.length)
 
-export const createPreferencesRepository = (database: MetadataDatabase): PreferencesRepository => ({
-  getLanguage: () =>
-    Promise.resolve().then(() => {
-      const row = database.select().from(preferences).where(eq(preferences.id, 1)).get()
-      if (!row) return null
-      if (!isAppLanguage(row.language)) throw new TypeError('Unsupported application language')
-      return row.language
-    }),
-  setLanguage: (language) =>
-    Promise.resolve().then(() => {
-      if (!isAppLanguage(language)) throw new TypeError('Unsupported application language')
-      database
-        .insert(preferences)
-        .values({ id: 1, language })
-        .onConflictDoUpdate({ target: preferences.id, set: { language } })
-        .run()
-    }),
+export const createPreferencesRepository = (
+  database: MetadataDatabase,
+  ready: Promise<void>,
+): PreferencesRepository => ({
+  getLanguage: async () => {
+    await ready
+    const row = await database
+      .selectFrom('preferences')
+      .select('language')
+      .where('id', '=', 1)
+      .executeTakeFirst()
+    if (!row) return null
+    if (!isAppLanguage(row.language)) throw new TypeError('Unsupported application language')
+    return row.language
+  },
+  setLanguage: async (language) => {
+    await ready
+    if (!isAppLanguage(language)) throw new TypeError('Unsupported application language')
+    await database
+      .insertInto('preferences')
+      .values({ id: 1, language })
+      .onConflict((conflict) => conflict.column('id').doUpdateSet({ language }))
+      .execute()
+  },
 })
 
-export const createRecentFilesRepository = (database: MetadataDatabase): RecentFilesRepository => ({
-  read: () =>
-    Promise.resolve().then(() =>
-      recentPathsSchema.parse(
-        database
-          .select({ path: recentFiles.path })
-          .from(recentFiles)
-          .orderBy(asc(recentFiles.position))
-          .all()
-          .map((row) => row.path),
-      ),
-    ),
+export const createRecentFilesRepository = (
+  database: MetadataDatabase,
+  ready: Promise<void>,
+): RecentFilesRepository => ({
+  read: async () => {
+    await ready
+    const rows = await database
+      .selectFrom('recent_files')
+      .select('path')
+      .orderBy('position')
+      .execute()
+    return recentPathsSchema.parse(rows.map((row) => row.path))
+  },
   replace: (paths) => {
     const snapshot = [...paths]
-    return Promise.resolve().then(() => {
+    return ready.then(async () => {
       const validated = recentPathsSchema.parse(snapshot)
-      database.transaction((transaction) => {
-        transaction.delete(recentFiles).run()
+      await database.transaction().execute(async (transaction) => {
+        await transaction.deleteFrom('recent_files').execute()
         if (validated.length > 0)
-          transaction
-            .insert(recentFiles)
+          await transaction
+            .insertInto('recent_files')
             .values(validated.map((path, position) => ({ position, path })))
-            .run()
+            .execute()
       })
     })
   },
@@ -78,32 +84,39 @@ export const createRecentFilesRepository = (database: MetadataDatabase): RecentF
 
 export const createRecoveryIndexRepository = (
   database: MetadataDatabase,
+  ready: Promise<void>,
 ): RecoveryIndexRepository => ({
-  read: () =>
-    Promise.resolve().then(() =>
-      validateRecoveryIndex(
-        database
-          .select({
-            documentId: workspaceRecovery.documentId,
-            fileName: workspaceRecovery.fileName,
-            protocolVersion: workspaceRecovery.protocolVersion,
-          })
-          .from(workspaceRecovery)
-          .orderBy(asc(workspaceRecovery.position))
-          .all(),
-      ),
-    ),
+  read: async () => {
+    await ready
+    const rows = await database
+      .selectFrom('workspace_recovery')
+      .select([
+        'document_id as documentId',
+        'file_name as fileName',
+        'protocol_version as protocolVersion',
+      ])
+      .orderBy('position')
+      .execute()
+    return validateRecoveryIndex(rows)
+  },
   replace: (entries) => {
     const snapshot = entries.map((entry) => ({ ...entry }))
-    return Promise.resolve().then(() => {
+    return ready.then(async () => {
       const validated = validateRecoveryIndex(snapshot)
-      database.transaction((transaction) => {
-        transaction.delete(workspaceRecovery).run()
+      await database.transaction().execute(async (transaction) => {
+        await transaction.deleteFrom('workspace_recovery').execute()
         if (validated.length > 0)
-          transaction
-            .insert(workspaceRecovery)
-            .values(validated.map((entry, position) => ({ ...entry, position })))
-            .run()
+          await transaction
+            .insertInto('workspace_recovery')
+            .values(
+              validated.map((entry, position) => ({
+                position,
+                document_id: entry.documentId,
+                file_name: entry.fileName,
+                protocol_version: entry.protocolVersion,
+              })),
+            )
+            .execute()
       })
     })
   },

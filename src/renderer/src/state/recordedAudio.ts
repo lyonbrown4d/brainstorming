@@ -1,3 +1,4 @@
+import { validateWorkbook } from '@core'
 import { translate } from '@renderer/i18n'
 import { applyCommand } from '@core'
 import { useEditor } from '@renderer/state/editor'
@@ -14,11 +15,7 @@ export const persistRecordedAudio = async (
 ): Promise<boolean> => {
   if (!blob.size || blob.size > 8 * 1024 * 1024)
     throw new Error(translate('recordingIsEmptyOrExceeds8Mib'))
-  const [{ createAsset }, { encodeBrainstorming }, buffer] = await Promise.all([
-    import('@assets'),
-    import('@formats/brainstorming'),
-    blob.arrayBuffer(),
-  ])
+  const [{ createAsset }, buffer] = await Promise.all([import('@assets'), blob.arrayBuffer()])
   const current = useEditor.getState()
   if (
     !isCurrent() ||
@@ -45,7 +42,7 @@ export const persistRecordedAudio = async (
     throw new Error(translate('unrecognizedRecordingFormatYouCanImportA'))
   const command = { type: 'setTopicAudio' as const, topicId: target.topicId, asset }
   const candidate = applyCommand(current.history.document, command)
-  encodeBrainstorming({
+  validateWorkbook({
     ...current.workbook,
     sheets: current.workbook.sheets.map((sheet) =>
       sheet.id === target.sheetId ? { ...sheet, document: candidate } : sheet,

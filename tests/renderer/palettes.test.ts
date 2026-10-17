@@ -34,7 +34,7 @@ describe('独立导图配色', () => {
       }
     }
   })
-  it('配色按Sheet保存、一次撤销；原生与XMind扩展往返保留自定义颜色', () => {
+  it('配色按Sheet保存、一次撤销；原生与XMind扩展往返保留自定义颜色', async () => {
     useEditor.getState().replace(document)
     const firstId = useEditor.getState().activeSheetId
     useEditor.getState().addSheet()
@@ -60,9 +60,9 @@ describe('独立导图配色', () => {
     useEditor.getState().undo()
     expect(useEditor.getState().history.document).toEqual(original)
     const workbook = createWorkbook(styled)
-    expect(decodeBrainstorming(encodeBrainstorming(workbook)).sheets[0]?.document.settings).toEqual(
-      styled.settings,
-    )
+    expect(
+      (await decodeBrainstorming(await encodeBrainstorming(workbook))).sheets[0]?.document.settings,
+    ).toEqual(styled.settings)
     expect(importXmind(encodeXmind(workbook)).workbook.sheets[0]?.document.settings).toEqual(
       styled.settings,
     )

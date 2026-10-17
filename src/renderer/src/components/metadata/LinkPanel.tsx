@@ -1,3 +1,4 @@
+import { LinkPreviewAction } from '@renderer/components/metadata/LinkPreviewAction'
 import { useMessages } from '@renderer/i18n/useMessages'
 import { translate } from '@renderer/i18n'
 import { useState } from 'react'
@@ -149,6 +150,9 @@ export const LinkPanel = ({ topicId, metadata }: { topicId: string; metadata: To
           )}
         </div>
       </form>
+      {metadata.link?.kind === 'url' && (
+        <LinkPreviewAction key={metadata.link.url} topicId={topicId} url={metadata.link.url} />
+      )}
     </section>
   )
 }

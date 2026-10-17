@@ -75,9 +75,17 @@ Electron renderer 和 Storybook 共用正式 React Compiler Babel 接入：`@vit
 
 Inversify 容器入口会加载 `reflect-metadata/lite`，因此项目将 `reflect-metadata` 显式声明为生产依赖；不能只依赖 pnpm 自动补齐的 peer。即使不使用装饰器，正式应用包也需要这个运行时依赖。macOS CI 在 `pnpm package --dir` 后执行 `pnpm test:packaged`，验证 ASAR 内的依赖装载、主页、新建与原生保存。
 
-`LocalDatabase` 使用 better-sqlite3 + Drizzle，单个主进程连接访问 `userData/brainstorming.sqlite`，启用 WAL 和 3 秒 busy timeout。数据库保存界面语言、最近文件和恢复索引，不保存文档正文、资源或文件密码；SQL、数据库路径和连接不暴露给 renderer。没有旧 JSON 存储迁移流程。应用外观和小地图开关继续由现有 renderer 偏好管理，不写入导图文件。
+`LocalDatabase` 使用 Kysely + better-sqlite3，单个主进程连接访问 `userData/brainstorming-local.sqlite`，启用 WAL 和 3 秒 busy timeout。`src/main/storage/migrations` 静态注册迁移，通过官方 `Migrator` 维护迁移与锁记录；仓库异步方法等待初始化完成。数据库只保存界面语言、最近文件和恢复索引，不保存文档正文、资源或密码；未知结构拒绝打开，旧数据库不迁移。应用外观和小地图开关继续由 renderer 偏好管理。
 
-工作区恢复最多包含 32 份文档。先原子写入 `userData/recovery-v2` 下的新 ZIP，再在 SQLite 事务中替换索引，提交后清理旧文件。启用密码保护已有恢复记录与明文历史，并清理对应残留恢复文件；密钥仅留在主进程内存。恢复记录作为未保存副本打开，不恢复正式保存路径；原生文件协议见 [文件协议](file-format.md)。
+原生 `.brainstorming` 由 `NativeDocuments` 按文件路径读写，业务 SQL 通过 Kysely 执行。`better-sqlite3` 包名映射到 `better-sqlite3-multiple-ciphers`，提供 SQLCipher `key`/`rekey`；不能换回缺少这些能力的驱动。原生 schema 在 `src/main/document-db/schema.ts` 静态注册，官方 Migrator 记录迁移。打开时检查 application ID、协议版本和必需功能，拒绝旧 ZIP/JSON 以及未知未来版本。
+
+`NativeDocumentPools` 使用 Effect Pool，键为规范路径与凭据摘要；每个键至多一个连接，借用并发为 1。别名和符号链接路径归并；不同凭据隔离。默认空闲 TTL 为 30 秒，关闭文档和退出会显式释放连接；释放等待现有借用完成。资源读取每次仅为一块借用连接，不在整个播放期间占有连接。原生文件使用 DELETE journal，和本机元数据库的 WAL 设置分开。
+
+工作区恢复最多包含 32 份文档。正文保存在 `userData/recovery-sqlite-v1` 的 SQLite 文件中，继续使用稳定文件名与分块资源；写完后事务替换本机索引。索引提交失败时尝试恢复此前文档，清理本次新建文件；回滚也失败时报告错误。输入元数据总量限制为 128 MiB，资源字节不作为 base64 放进该输入。恢复记录作为未保存副本打开；密码与正式文件同步，密钥只留在主进程内存。
+
+Sharp 在原生工作线程生成 WebP 预览和 Deep Zoom 瓦片。`brainstorming-resource://` 使用本次会话的随机 origin，主进程只提供已登记对象的 GET/HEAD 和单段 Range 流；不能用任意磁盘路径读取文件。拖入文件通过 preload 的 `webUtils.getPathForFile` 获取实际路径，最多 32 个文件，由主进程校验并顺序导入。
+
+网页预览扫描所有已打开工作簿的 HTTP(S) 链接，将完整目标集交给 `LinkPreviewQueue`；`p-queue` 并发为 1，同 URL 去重，移出目标集的后台任务取消。截图使用没有应用 preload 的独立 Electron session，拒绝私网、混合公网/私网 DNS 结果、下载和权限请求。网页预览会访问网络，AI 的显式发送规则不适用于这项自动预览。具体协议与大小限制见 [文件协议](file-format.md)。
 
 界面文案使用 i18next 和 react-i18next，支持 `zh-CN` 与 `en`。语言选择由主进程保存到数据库，首次使用读取系统语言；文档内容不参与翻译。渲染文案通过 `useMessages` 或 react-i18next 返回的 `t` 显式绑定语言，选项数据以翻译函数为输入；全局 `translate` 仅用于事件和非 React 逻辑，避免 React Compiler 缓存旧语言。新增文案应使用类型明确的消息键；启动窗口读取同一本机语言选择，部分底层错误目前仍可能显示中文。
 
@@ -113,7 +121,7 @@ preload 仅暴露平台、窗口焦点及全屏状态；读取状态仍校验当
 
 本地 macOS 预览未配置 Developer ID 签名或公证。CI 自动生成 macOS 预览 artifact，不自动发布正式版本。正式发布还需要签名、公证、应用图标和分发策略。当前 electron-builder 使用默认 Electron 图标。
 
-文件读取或恢复失败时，界面显示错误，保留当前内容。保存失败后脏状态保持；可另存到新位置重试。恢复文件或索引损坏时，先保留 `userData/recovery-v2`、`brainstorming.sqlite` 及相关 WAL/SHM 文件再排查，不覆盖原记录。
+文件读取或恢复失败时，界面显示错误，保留当前内容。保存失败后脏状态保持；可另存到新位置重试。恢复文件或索引损坏时，先保留 `userData/recovery-sqlite-v1`、`brainstorming-local.sqlite` 及元数据库的 WAL/SHM 文件再排查，不覆盖原记录。原生文档还应一并保留；文件内版本依赖其中的共享资源，不能单独抽走资源表。
 
 运行时可选 `ELECTRON_RENDERER_URL` 仅供开发，通过 `src/main/config.ts` 校验为本机 loopback HTTP(S) 地址；生产始终加载打包资源。不要将凭据写入 `.env.example` 或文档。
 

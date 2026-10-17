@@ -11,7 +11,7 @@
 - 属性栏使用 shadcn 横向 Tabs：主题内容、格式与标记留在主题属性，结构、配色与模板放入画布属性。底部 Dock 保留画布操作；演示播放与设置移至标题栏。
 - 顶部浮动标签支持最多 32 份导图。每份导图独立保留路径、历史、当前 Sheet 和二维/三维会话；关闭最后一份返回首页。同路径或工作簿 ID 会复用已有标签。
 - 中文、英文即时切换，并由 SQLite 记住选择；原生菜单和启动窗口使用同一语言设置。文档标题、备注等用户内容不翻译。
-- 文件、系统剪贴板与工作区恢复由 Electron main 管理。Inversify 组装服务，Drizzle + better-sqlite3 保存语言、最近文件和恢复索引；正文仍使用原生 ZIP，密码不写入 SQLite。
+- 该次历史验收中，文件、系统剪贴板与工作区恢复由 Electron main 管理，Inversify 组装服务；当时使用 Drizzle + better-sqlite3 保存语言、最近文件和恢复索引，正文使用原生 ZIP，密码不写入元数据库。当前 SQLite/Kysely/SQLCipher 实现见 [文件协议](docs/file-format.md)。
 - 产品仅运行于 Electron。Playwright 使用真实桌面窗口、preload、主进程文件操作及隔离的本机存储；Storybook 的浏览器仅用于组件预览与测试。
 
 ## 环境与工具链

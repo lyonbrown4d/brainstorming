@@ -1,3 +1,5 @@
+import { createWorkbook } from '@core'
+import { prepareExportResources } from '@renderer/export/resources'
 import { translate } from '@renderer/i18n'
 import { prepareMarkerIcons } from '@shared/markerIcons'
 import type { MindMapDocument } from '@core'
@@ -8,6 +10,10 @@ export const printSheet = async (
   document: MindMapDocument,
   includeCollapsed = false,
 ): Promise<void> => {
+  const prepared = await prepareExportResources(createWorkbook(document), false)
+  const sheet = prepared.sheets[0]
+  if (!sheet) throw new Error(translate('exportImageResourceIsMissing'))
+  document = sheet.document
   await prepareMarkerIcons(document)
   const source = renderSheetSvg(document, includeCollapsed)
   const url = URL.createObjectURL(new Blob([source.svg], { type: 'image/svg+xml;charset=utf-8' }))

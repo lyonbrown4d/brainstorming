@@ -1,3 +1,4 @@
+import { ResourceLibrary } from '@main/resources/library'
 import { ContainerModule } from 'inversify'
 import { clipboard, ClipboardItem, dialog, nativeImage, shell } from 'electron'
 import { AssetFiles, type AssetPorts } from '@main/system/assets'
@@ -27,7 +28,10 @@ export const systemModule = new ContainerModule(({ bind }) => {
     .toDynamicValue(() => dialog)
     .inSingletonScope()
   bind(AssetFiles)
-    .toResolvedValue((ports: AssetPorts) => new AssetFiles(ports), [assetPorts])
+    .toResolvedValue(
+      (ports: AssetPorts, resources: ResourceLibrary) => new AssetFiles(ports, resources),
+      [assetPorts, ResourceLibrary],
+    )
     .inSingletonScope()
   bind(SystemEditing)
     .toResolvedValue((ports: EditingPorts) => new SystemEditing(ports), [editingPorts])

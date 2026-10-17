@@ -1,7 +1,7 @@
 import { prepareNativeSave } from '@tests/electron/native-files'
 import { expect, test, type Page } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
-import { decodeBrainstorming } from '@formats/brainstorming'
+import { decodeBrainstorming } from '@tests/electron/codec'
 import { openExample } from '@tests/e2e/workspace'
 import { dockAction } from '@tests/e2e/dock'
 
@@ -10,7 +10,7 @@ const savedDocument = async (page: Page) => {
   await page.keyboard.press('ControlOrMeta+s')
   const path = await pending.path()
   if (!path) throw new Error('没有生成保存文件')
-  const document = decodeBrainstorming(await readFile(path)).sheets[0]?.document
+  const document = (await decodeBrainstorming(await readFile(path))).sheets[0]?.document
   if (!document) throw new Error('保存文件缺少画布')
   return document
 }

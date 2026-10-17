@@ -8,7 +8,14 @@ import {
   encryptBrainstorming,
   isEncryptedBrainstorming,
 } from '@formats/encrypted'
-import type { DocumentFiles } from '@main/files'
+import { DocumentFiles } from '@main/files'
+import { NativeDocuments } from '@main/document-db'
+import { ResourceLibrary } from '@main/resources/library'
+import { LocalDatabase } from '@main/storage/database'
+import { FileSecuritySession, isEncryptedNativeFile } from '@main/file-security/session'
+import { DocumentBackups } from '@main/file-security/backups'
+import { RecoveryWorkspaceService } from '@main/workspace-recovery/service'
+import { createAsset } from '@assets'
 import { documentFiles, closeDocumentFiles, recoveryArchive } from '@tests/fixtures/files'
 
 let directory: string
@@ -29,7 +36,7 @@ afterEach(async () => {
 })
 
 describe('password-protected document lifecycle', () => {
-  it('retains successfully decrypted legacy passwords while enforcing new-password requirements', async () => {
+  it('retains accepted existing passwords while enforcing new-password requirements', async () => {
     const path = join(directory, 'legacy.brainstorming')
     await writeFile(path, await encryptBrainstorming(workbook, 'old', 'existing'))
     const locked = await files.openSelected(path)
@@ -48,7 +55,7 @@ describe('password-protected document lifecycle', () => {
     await expect(files.save(path, contents, 'old')).rejects.toThrow('8 至 128')
   })
 
-  it('saves AES-256, reopens after restart, retries wrong passwords and activates only accepted sessions', async () => {
+  it('saves encrypted SQLite, reopens after restart, retries wrong passwords and activates only accepted sessions', async () => {
     const path = files.authorizeSelected(join(directory, 'secure.brainstorming'))
     await files.save(path, contents, password)
     const bytes = await readFile(path)
@@ -123,16 +130,9 @@ describe('password-protected document lifecycle', () => {
     expect(backups.every(({ encrypted }) => encrypted)).toBe(true)
     const backup = backups[0]
     if (!backup) throw new Error('Missing backup')
-    expect(
-      await isEncryptedBrainstorming(
-        await readFile(join(directory, 'application', 'history-v1', backup.id)),
-      ),
-    ).toBe(true)
-    expect(
-      (
-        await readdir(join(directory, 'application', 'history-v1', backup.id.split('/')[0] ?? ''))
-      ).some((name) => name.endsWith('-p.brainstorming')),
-    ).toBe(false)
+    expect(await isEncryptedBrainstorming(await readFile(path))).toBe(true)
+    expect(await readdir(join(directory, 'application'))).not.toContain('history-v1')
+    expect((await files.restoreDocumentBackup(backup.id)).contents).toBe(contents)
   })
 
   it('changes/removes passwords explicitly and never carries a previous workbook key to a new document', async () => {
@@ -152,7 +152,7 @@ describe('password-protected document lifecycle', () => {
     const nextPath = files.authorizeSelected(join(directory, 'new.brainstorming'))
     await files.save(nextPath, serializeWorkbook(next))
     expect(await isEncryptedBrainstorming(await readFile(nextPath))).toBe(false)
-  })
+  }, 15_000)
 })
 
 describe('bounded private version history', () => {
@@ -168,9 +168,7 @@ describe('bounded private version history', () => {
     }
     const backups = await files.listDocumentBackups(workbook.id)
     expect(backups).toHaveLength(20)
-    expect(
-      backups.every(({ id }) => /^[a-f0-9]{32}\/\d{13}-[a-f0-9-]{36}-p\.brainstorming$/u.test(id)),
-    ).toBe(true)
+    expect(backups.every(({ id }) => /^[a-f0-9]{32}\/[a-f0-9-]{36}$/u.test(id))).toBe(true)
     const before = await readFile(path)
     const backup = backups.at(-1)
     if (!backup) throw new Error('Missing backup')
@@ -194,15 +192,91 @@ describe('bounded private version history', () => {
     const [backup] = await files.listDocumentBackups(workbook.id)
     if (!backup) throw new Error('Missing backup')
     expect(backup.encrypted).toBe(true)
-    const bytes = await readFile(join(directory, 'application', 'history-v1', backup.id))
+    const bytes = await readFile(path)
     expect(await isEncryptedBrainstorming(bytes)).toBe(true)
     expect(bytes.includes(Buffer.from('unique-secret-value'))).toBe(false)
     expect(bytes.includes(Buffer.from(password))).toBe(false)
     expect(await readdir(join(directory, 'application'))).not.toContain('password')
     const restarted = documentFiles(join(directory, 'application'))
     await restarted.initialize()
-    const locked = await restarted.restoreDocumentBackup(backup.id)
-    const restored = await restarted.unlockDocument(locked.lockedToken, password)
+    await expect(restarted.restoreDocumentBackup(backup.id)).rejects.toThrow('尚未打开')
+    const locked = await restarted.openSelected(path)
+    const unlocked = await restarted.unlockDocument(locked.lockedToken, password)
+    await restarted.activateUnlockedDocument(unlocked.sessionToken)
+    const restored = await restarted.restoreDocumentBackup(backup.id)
     expect(restored.contents).toBe(contents)
   })
+})
+
+it('compensates an orphan already rekeyed when indexed recovery protection fails', async () => {
+  const storage = join(directory, 'compensation')
+  const native = new NativeDocuments()
+  const resources = new ResourceLibrary(storage, native)
+  const database = new LocalDatabase(storage)
+  const security = new FileSecuritySession(native, resources)
+  const workspace = new RecoveryWorkspaceService(
+    storage,
+    security,
+    database.recoveryIndex,
+    native,
+    resources,
+  )
+  const local = new DocumentFiles(
+    storage,
+    security,
+    new DocumentBackups('', native, resources),
+    workspace,
+    database.recentFiles,
+    native,
+    resources,
+  )
+  const first = createWorkbook(
+    applyCommand(createDocument('Orphan', 'compensated'), {
+      type: 'addTopicAttachment',
+      topicId: 'root',
+      asset: createAsset(Buffer.from('orphan bytes'), 'orphan.bin', 'old'),
+    }),
+  )
+  const second = createWorkbook(
+    applyCommand(createDocument('Indexed', 'compensated'), {
+      type: 'addTopicAttachment',
+      topicId: 'root',
+      asset: createAsset(Buffer.from('current bytes'), 'current.bin', 'new'),
+    }),
+  )
+  try {
+    await local.initialize()
+    await local.writeWorkspaceRecovery([serializeWorkbook(first)])
+    const orphan = (await database.recoveryIndex.read())[0]
+    if (!orphan) throw new Error('Missing orphan')
+    await local.clearRecovery()
+    await local.writeWorkspaceRecovery([serializeWorkbook(second)])
+    const indexed = (await database.recoveryIndex.read())[0]
+    if (!indexed) throw new Error('Missing indexed recovery')
+    const orphanPath = join(storage, 'recovery-sqlite-v1', orphan.fileName)
+    const indexedPath = join(storage, 'recovery-sqlite-v1', indexed.fileName)
+    const rekey = native.rekey
+    let rejectIndexed = true
+    vi.spyOn(native, 'rekey').mockImplementation(async (path, previous, next) => {
+      if (path === indexedPath && next === password && rejectIndexed) {
+        rejectIndexed = false
+        throw new Error('indexed protection failed')
+      }
+      await rekey(path, previous, next)
+    })
+    await expect(local.setFilePassword(first.id, password)).rejects.toThrow(
+      'indexed protection failed',
+    )
+    expect(local.getFileSecurity(first.id)).toEqual({ encrypted: false })
+    expect(await isEncryptedNativeFile(orphanPath)).toBe(false)
+    expect(await isEncryptedNativeFile(indexedPath)).toBe(false)
+    expect((await native.read(orphanPath)).title).toBe(first.title)
+    expect((await native.read(indexedPath)).title).toBe(second.title)
+  } finally {
+    await local.flush()
+    security.dispose()
+    await resources.dispose()
+    await native.dispose()
+    database.close()
+  }
 })

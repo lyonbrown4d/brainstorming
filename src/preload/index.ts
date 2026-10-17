@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { DesktopAPI, MenuAction } from '@shared/contracts'
 import { isWindowState } from '@shared/window'
 import type { StartupAPI } from '@shared/startup'
@@ -17,6 +17,23 @@ const actions = new Set<MenuAction>([
   'centerRoot',
 ])
 const api: DesktopAPI = {
+  resourceOrigin: ipcRenderer.sendSync('resource:origin') as string,
+  importDroppedFiles: (files) =>
+    ipcRenderer.invoke(
+      'resource:drop',
+      files.map((file) => webUtils.getPathForFile(file)),
+    ),
+  generateLinkPreview: (url) => ipcRenderer.invoke('resource:link:generate', url),
+  queueLinkPreviews: (urls) => ipcRenderer.invoke('resource:link:queue', urls),
+  getLinkPreview: (url) => ipcRenderer.invoke('resource:link:get', url),
+  onLinkPreview: (callback) => {
+    const listener = (_event: Electron.IpcRendererEvent, url: unknown) => {
+      if (typeof url === 'string') callback(url)
+    }
+    ipcRenderer.on('resource:link:ready', listener)
+    return () => ipcRenderer.removeListener('resource:link:ready', listener)
+  },
+  releaseDocument: (path) => ipcRenderer.invoke('document:release', path),
   platform:
     process.platform === 'darwin' ? 'macos' : process.platform === 'win32' ? 'windows' : 'linux',
   getLanguage: () => ipcRenderer.invoke('app:language:get'),

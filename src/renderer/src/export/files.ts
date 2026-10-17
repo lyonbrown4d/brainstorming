@@ -1,3 +1,4 @@
+import { prepareExportResources } from '@renderer/export/resources'
 import { translate } from '@renderer/i18n'
 import { prepareMarkerIcons } from '@shared/markerIcons'
 import type { MindMapWorkbook } from '@core'
@@ -69,6 +70,11 @@ export const createExport = async (
   workbook: MindMapWorkbook,
   options: ExportOptions,
 ): Promise<ExportRequest> => {
+  const needsImages = ['png', 'svg', 'pdf'].includes(options.format)
+  if (options.format === 'xmind' || needsImages) {
+    workbook = exportSheets(workbook, options.wholeWorkbook ? undefined : options.sheetId)
+    workbook = await prepareExportResources(workbook, options.format === 'xmind')
+  }
   const sheet = workbook.sheets.find((entry) => entry.id === options.sheetId)
   if (!sheet) throw new Error(translate('sheetToExportDoesNotExist'))
   const selected = exportSheets(workbook, options.wholeWorkbook ? undefined : sheet.id)

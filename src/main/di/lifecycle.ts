@@ -1,3 +1,6 @@
+import { ResourceLifecycle } from '@main/resources/lifecycle'
+import { ResourceBridge } from '@main/resources/bridge'
+import { ResourceProtocol } from '@main/resources/protocol'
 import type { PreferencesRepository } from '@main/storage/repositories'
 import { preferencesRepository } from '@main/di/storage'
 import { LanguageStore } from '@main/language'
@@ -94,8 +97,23 @@ export const lifecycleModule = new ContainerModule(({ bind }) => {
         mcp: MCPService,
         menu: NativeMenu,
         dialogs: typeof dialog,
+        resources: ResourceBridge,
+        protocol: ResourceProtocol,
       ) =>
-        new ApplicationIPC(ipc, session, files, requests, assets, editing, ai, mcp, menu, dialogs),
+        new ApplicationIPC(
+          ipc,
+          session,
+          files,
+          requests,
+          assets,
+          editing,
+          ai,
+          mcp,
+          menu,
+          dialogs,
+          resources,
+          protocol,
+        ),
       [
         IPCRegistry,
         WindowSession,
@@ -107,6 +125,8 @@ export const lifecycleModule = new ContainerModule(({ bind }) => {
         MCPService,
         NativeMenu,
         documentDialogs,
+        ResourceBridge,
+        ResourceProtocol,
       ],
     )
     .inSingletonScope()
@@ -124,7 +144,8 @@ export const lifecycleModule = new ContainerModule(({ bind }) => {
         menu: NativeMenu,
         ai: AIService,
         mcp: MCPService,
-      ) => new DesktopApplication(session, files, requests, windows, ipc, menu, ai, mcp),
+        resources: ResourceLifecycle,
+      ) => new DesktopApplication(session, files, requests, windows, ipc, menu, ai, mcp, resources),
       [
         WindowSession,
         DocumentFiles,
@@ -134,6 +155,7 @@ export const lifecycleModule = new ContainerModule(({ bind }) => {
         NativeMenu,
         AIService,
         MCPService,
+        ResourceLifecycle,
       ],
     )
     .inSingletonScope()

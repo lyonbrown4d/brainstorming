@@ -1,42 +1,46 @@
-import { sql } from 'drizzle-orm'
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
-import type { metadataSchema } from '@main/storage/schema'
+import type Database from 'better-sqlite3'
+import { Migrator } from 'kysely/migration'
+import * as initialMetadata from '@main/storage/migrations/001-metadata'
+import type { MetadataDatabase } from '@main/storage/schema'
 
-export type MetadataDatabase = BetterSQLite3Database<typeof metadataSchema>
+export const metadataMigrations = { '001-metadata': initialMetadata }
+const expectedTables = new Set([
+  'kysely_migration',
+  'kysely_migration_lock',
+  'preferences',
+  'recent_files',
+  'workspace_recovery',
+])
 
-/** Initial schema creation only. Existing unknown schemas must never be rewritten. */
-export const initializeMetadataDatabase = (database: MetadataDatabase): void => {
-  database.transaction(
-    (transaction) => {
-      const version = transaction.get<{ user_version: number }>(sql`PRAGMA user_version`)
-      if (version.user_version === 1) return
-      if (version.user_version !== 0) throw new Error('Unsupported local database schema')
-      const existing = transaction.get<{ name: string } | undefined>(sql`
-        SELECT name FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' LIMIT 1
-      `)
-      if (existing) throw new Error('Unrecognized local database schema')
-      transaction.run(sql`
-        CREATE TABLE preferences (
-          id INTEGER PRIMARY KEY CHECK (id = 1),
-          language TEXT NOT NULL CHECK (language IN ('zh-CN', 'en'))
-        )
-      `)
-      transaction.run(sql`
-        CREATE TABLE recent_files (
-          position INTEGER PRIMARY KEY CHECK (position BETWEEN 0 AND 9),
-          path TEXT NOT NULL UNIQUE CHECK (length(path) > 0)
-        )
-      `)
-      transaction.run(sql`
-        CREATE TABLE workspace_recovery (
-          position INTEGER PRIMARY KEY CHECK (position BETWEEN 0 AND 31),
-          document_id TEXT NOT NULL UNIQUE CHECK (length(document_id) BETWEEN 1 AND 4096),
-          file_name TEXT NOT NULL UNIQUE,
-          protocol_version INTEGER NOT NULL CHECK (protocol_version = 2)
-        )
-      `)
-      transaction.run(sql`PRAGMA user_version = 1`)
-    },
-    { behavior: 'immediate' },
+/** Refuse foreign/legacy databases before the migrator can create bookkeeping tables. */
+export const assertMetadataSchema = (connection: Database.Database): void => {
+  const version: unknown = connection.pragma('user_version', { simple: true })
+  if (version !== 0) throw new Error('Unsupported local database schema')
+  const objects = connection
+    .prepare("SELECT name, type FROM sqlite_master WHERE name NOT LIKE 'sqlite_%'")
+    .all() as { name: string; type: string }[]
+  if (objects.length === 0) return
+  if (
+    objects.some((object) => object.type !== 'table' || !expectedTables.has(object.name)) ||
+    objects.length !== expectedTables.size
   )
+    throw new Error('Unrecognized local database schema')
+  const migrations = connection
+    .prepare('SELECT name FROM kysely_migration ORDER BY name')
+    .all() as { name: string }[]
+  if (
+    migrations.length !== Object.keys(metadataMigrations).length ||
+    migrations.some((migration) => !Object.hasOwn(metadataMigrations, migration.name))
+  )
+    throw new Error('Unsupported local database schema')
+}
+
+export const initializeMetadataDatabase = async (database: MetadataDatabase): Promise<void> => {
+  const migrator = new Migrator({
+    db: database,
+    provider: { getMigrations: () => Promise.resolve(metadataMigrations) },
+  })
+  const result = await migrator.migrateToLatest()
+  if (result.error)
+    throw new Error('Failed to migrate local database schema', { cause: result.error })
 }

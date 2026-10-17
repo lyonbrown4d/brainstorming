@@ -1,3 +1,4 @@
+import type { AssetStorage } from '@core/asset-storage'
 import type {
   DocumentAnnotations,
   DocumentExtensions,
@@ -19,13 +20,16 @@ export interface TopicStyle {
   readonly lineWidth?: number
 }
 
-export interface DocumentAsset {
+interface AssetIdentity {
   readonly id: string
   readonly name: string
   readonly mimeType: string
-  /** Canonical, padded base64 without a data URL prefix. */
-  readonly data: string
 }
+export type DocumentAsset = AssetIdentity &
+  (
+    | { readonly data: string; readonly storage?: never }
+    | { readonly storage: AssetStorage; readonly data?: never }
+  )
 
 export interface TopicImage {
   readonly assetId: string

@@ -1,3 +1,4 @@
+import { getAssetUrl } from '@renderer/lib/resource'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { lazy, Suspense, useState } from 'react'
@@ -81,7 +82,7 @@ export const FormulaAudioPanel = ({
               preload="none"
               className="h-10 w-full"
               aria-label={translate('playAudioValue0', { value0: asset.name })}
-              src={`data:${asset.mimeType};base64,${asset.data}`}
+              src={getAssetUrl(asset, 'original')}
             />
           </div>
         )}

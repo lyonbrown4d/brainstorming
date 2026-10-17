@@ -9,7 +9,9 @@
       "three",
       "three/addons/loaders/SVGLoader.js",
       "@iconify/react/offline",
-      "@iconify-json/simple-icons"
+      "@iconify-json/simple-icons",
+      "lodash-es",
+      "openseadragon"
     ]
   },
   "inputs": {

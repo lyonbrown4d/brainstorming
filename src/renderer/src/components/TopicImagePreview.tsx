@@ -3,7 +3,8 @@ import { useMessages } from '@renderer/i18n/useMessages'
 import { DialogContent } from '@renderer/components/DialogContent'
 import type { TopicImage as TopicImageData } from '@core'
 import { Expand } from 'lucide-react'
-import { TopicImage } from '@renderer/components/TopicImage'
+import { StoredImageViewer } from '@renderer/components/StoredImageViewer'
+import { useEditor } from '@renderer/state/editor'
 import { Button } from '@renderer/components/ui/button'
 import {
   Dialog,
@@ -15,6 +16,7 @@ import {
 
 export const TopicImagePreview = ({ image }: { image: TopicImageData }) => {
   const { translate } = useMessages()
+  const asset = useEditor((state) => state.history.document.assets?.[image.assetId])
 
   return (
     <Dialog>
@@ -36,10 +38,7 @@ export const TopicImagePreview = ({ image }: { image: TopicImageData }) => {
           <DialogTitle>{translate('topicImage')}</DialogTitle>
           <DialogDescription>{translate('imagesAreSavedWithTheMapReplace')}</DialogDescription>
         </DialogHeader>
-        <TopicImage
-          image={image}
-          className="topic-image-full m-auto block h-auto max-h-[65vh] w-auto max-w-full object-contain"
-        />
+        {asset && <StoredImageViewer asset={asset} />}
       </DialogContent>
     </Dialog>
   )

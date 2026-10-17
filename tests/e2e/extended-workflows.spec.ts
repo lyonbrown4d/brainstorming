@@ -116,7 +116,7 @@ test('密码保护的原生文件保存、错误重试、取消与重新解锁',
     await fileAction(page, '打开导图')
     await chooser.selectFile({
       name: saved.split('/').at(-1) ?? 'protected.brainstorming',
-      mimeType: 'application/vnd.brainstorming+zip',
+      mimeType: 'application/vnd.brainstorming+sqlite3',
       buffer: bytes,
     })
   }

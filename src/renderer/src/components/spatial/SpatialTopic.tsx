@@ -1,3 +1,4 @@
+import { getAssetUrl } from '@renderer/lib/resource'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { TopicMarkerLayout } from '@renderer/components/metadata/TopicMarkerLayout'
@@ -59,7 +60,9 @@ export const SpatialTopic = memo(
     const hasImage = Boolean(
       topic.image &&
       imageAsset &&
-      ['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(imageAsset.mimeType),
+      ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/tiff', 'image/avif'].includes(
+        imageAsset.mimeType,
+      ),
     )
     const content =
       Boolean(topic.notes) || Boolean(topic.attachments?.length) || Boolean(topic.metadata)
@@ -178,7 +181,7 @@ export const SpatialTopic = memo(
               <TopicMarkerLayout topicId={topic.id} metadata={topic.metadata}>
                 {hasImage && imageAsset && (
                   <img
-                    src={`data:${imageAsset.mimeType};base64,${imageAsset.data}`}
+                    src={getAssetUrl(imageAsset)}
                     alt={imageAsset.name}
                     className="max-h-[110px] max-w-full rounded-md object-contain"
                     style={{ maxHeight: Math.max(28, height * 100 - 60) }}

@@ -5,7 +5,6 @@ import {
   createHistory,
   createTopicClipboard,
   executeCommand,
-  MAX_ASSET_BYTES,
   undo,
   validateDocument,
   validateTopicClipboard,
@@ -101,14 +100,18 @@ describe('subtree clipboard', () => {
   })
 
   it('enforces pasted resource quotas on the final batch snapshot and preserves rollback', () => {
-    const data = 'AAAA'.repeat(Math.floor(MAX_ASSET_BYTES / 3)) + 'AAA='
-    const assetIds = ['one', 'two', 'three']
+    const assetIds = ['one', 'two', 'three', 'four']
     const source = applyCommand(createDocument('Source', 'large-source'), {
       type: 'batch',
-      commands: assetIds.map((id) => ({
+      commands: assetIds.map((id, index) => ({
         type: 'addTopicAttachment',
         topicId: 'root',
-        asset: { id, name: `${id}.bin`, mimeType: 'application/octet-stream', data },
+        asset: {
+          id,
+          name: `${id}.bin`,
+          mimeType: 'application/octet-stream',
+          storage: { objectId: String(index + 1).repeat(64), byteLength: 64 * 1024 ** 3 },
+        },
       })),
     })
     const target = applyCommand(createDocument('Target', 'large-target'), {
@@ -126,10 +129,10 @@ describe('subtree clipboard', () => {
       parentId: 'root',
       clipboard: createTopicClipboard(source, ['root']),
       topicIds: { root: 'copy-root' },
-      assetIds: { one: 'copy-one', two: 'copy-two', three: 'copy-three' },
+      assetIds: { one: 'copy-one', two: 'copy-two', three: 'copy-three', four: 'copy-four' },
     }
     const history = createHistory(target)
-    expect(() => executeCommand(history, command)).toThrow(/24 MiB/)
+    expect(() => executeCommand(history, command)).toThrow(/256 GiB/)
     expect(history.document).toBe(target)
     expect(history.past).toEqual([])
     const result = executeCommand(history, {
@@ -140,6 +143,7 @@ describe('subtree clipboard', () => {
       'copy-one',
       'copy-two',
       'copy-three',
+      'copy-four',
     ])
     expect(result.document.topics.root?.attachments).toBeUndefined()
     expect(result.past).toHaveLength(1)

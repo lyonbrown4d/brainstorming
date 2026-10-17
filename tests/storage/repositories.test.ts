@@ -73,7 +73,7 @@ describe('SQLite application metadata repositories', () => {
     const entries = [recoveryEntry('preserved')]
     await database.recentFiles.replace(['/preserved.brainstorming'])
     await database.recoveryIndex.replace(entries)
-    const connection = new Database(path.join(directory, 'brainstorming.sqlite'))
+    const connection = new Database(path.join(directory, 'brainstorming-local.sqlite'))
     try {
       connection.exec(`
         CREATE TRIGGER reject_recent BEFORE INSERT ON recent_files

@@ -120,23 +120,30 @@ describe('topic content validation boundaries', () => {
       }).not.toThrow()
   })
 
-  it('limits decoded referenced bytes, deduplicates shared references, and ignores retained unused bytes', () => {
-    const data = zeroData(MAX_ASSET_BYTES)
-    const assets = Object.fromEntries(
-      ['a', 'b', 'c', 'd'].map((id) => [id, { ...asset, id, data }]),
+  it('limits unique stored bytes, deduplicates object aliases and ignores retained unused objects', () => {
+    const assets: Record<string, DocumentAsset> = Object.fromEntries(
+      ['a', 'b', 'c', 'd', 'e'].map((id, index) => [
+        id,
+        {
+          id,
+          name: `${id}.bin`,
+          mimeType: 'application/octet-stream',
+          storage: { objectId: String(index + 1).repeat(64), byteLength: 64 * 1024 ** 3 },
+        },
+      ]),
     )
-    const atLimit = documentWith({ attachments: ['a', 'b', 'c'] }, assets) as MindMapDocument
+    const atLimit = documentWith({ attachments: ['a', 'b', 'c', 'd'] }, assets) as MindMapDocument
     validateDocument(atLimit)
     expect(() => {
-      validateDocument(documentWith({ attachments: ['a', 'b', 'c', 'd'] }, assets))
-    }).toThrow()
+      validateDocument(documentWith({ attachments: ['a', 'b', 'c', 'd', 'e'] }, assets))
+    }).toThrow('256 GiB')
     expect(() =>
       applyCommand(atLimit, {
         type: 'addTopicAttachment',
         topicId: 'root',
         asset: { ...asset, id: 'extra' },
       }),
-    ).toThrow()
+    ).toThrow('256 GiB')
     const shared = applyCommand(atLimit, {
       type: 'addTopic',
       parentId: 'root',
@@ -145,13 +152,13 @@ describe('topic content validation boundaries', () => {
     })
     const sharedAsset = assets.a
     if (!sharedAsset) throw new Error('Fixture 缺少资源')
-    expect(() =>
-      applyCommand(shared, {
-        type: 'addTopicAttachment',
-        topicId: 'child',
-        asset: sharedAsset,
-      }),
-    ).not.toThrow()
+    const aliased = applyCommand(shared, {
+      type: 'addTopicAttachment',
+      topicId: 'child',
+      asset: { ...sharedAsset, id: 'alias-a' },
+    })
+    expect(aliased.topics.child?.attachments).toEqual(['alias-a'])
+    validateDocument(aliased)
   })
 
   it('enforces command limits before mutating notes or attachment lists', () => {

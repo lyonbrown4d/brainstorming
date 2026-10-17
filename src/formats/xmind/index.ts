@@ -2,7 +2,7 @@ import { type MindMapSheet, type MindMapWorkbook, type Side, type Topic } from '
 import { truncateSheetName } from '@core/workbook'
 import { readArchive } from '@formats/archive'
 import type { ImportedWorkbook } from '@formats/types'
-import { encodeBrainstorming } from '@formats/brainstorming'
+import { validateAssetContent } from '@formats/brainstorming/assets'
 import { EmbeddedContent } from '@formats/xmind/content'
 import { validateBoundedWorkbook } from '@formats/brainstorming/validation'
 import {
@@ -90,7 +90,7 @@ export const importXmind = (bytes: Uint8Array): ImportedWorkbook => {
       warnings.add('未导入 XMind 未引用或不支持的内嵌资源')
   }
   validateBoundedWorkbook(workbook)
-  encodeBrainstorming(workbook)
+  validateAssetContent(workbook)
   return { workbook, warnings: warnings.values() }
 }
 

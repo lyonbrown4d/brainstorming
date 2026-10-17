@@ -1,3 +1,6 @@
+import { useLinkPreviewQueue } from '@renderer/hooks/useLinkPreviewQueue'
+import { useFileDrop } from '@renderer/hooks/useFileDrop'
+import { FileDropOverlay } from '@renderer/components/FileDropOverlay'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -51,7 +54,9 @@ export const App = () => {
   useStartupScreen()
   useMCPBridge()
   useFileLifecycle()
+  useLinkPreviewQueue()
   useKeyboardShortcuts()
+  const fileDrop = useFileDrop()
   const chrome = useWindowChrome()
   const playing = usePresentation((state) => state.playing)
   const screen = useWorkspace((state) => state.screen)
@@ -69,11 +74,13 @@ export const App = () => {
       <MotionConfig reducedMotion="user">
         <TooltipProvider>
           <div
-            className="app-shell flex h-full w-full min-w-0 flex-col"
+            className="app-shell relative flex h-full w-full min-w-0 flex-col"
+            {...fileDrop.handlers}
             data-platform={chrome.platform}
             data-focused={chrome.focused}
             data-fullscreen={chrome.fullScreen}
           >
+            <FileDropOverlay {...fileDrop} />
             {!playing && (screen === 'editor' ? <Toolbar /> : <WorkspaceHeader />)}
             <div className="app-body relative flex min-h-0 flex-1">
               <main className="workspace-main relative flex min-h-0 min-w-0 flex-1 flex-col">

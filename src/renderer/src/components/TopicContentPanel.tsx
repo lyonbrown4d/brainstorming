@@ -1,3 +1,4 @@
+import { AttachmentMedia } from '@renderer/components/metadata/AttachmentMedia'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { Download, ImagePlus, Paperclip, Trash2 } from 'lucide-react'
@@ -25,7 +26,7 @@ const TopicAttachment = ({ topicId, assetId }: { topicId: string; assetId: strin
   const busy = useEditor((state) => state.busy)
   if (!asset) return null
   return (
-    <li className="topic-attachment flex min-w-0 items-center gap-[5px] text-secondary-foreground [&>svg]:shrink-0">
+    <li className="topic-attachment flex flex-wrap min-w-0 items-center gap-[5px] text-secondary-foreground [&>svg]:shrink-0">
       <Paperclip size={14} aria-hidden />
       <span className="topic-attachment-name min-w-0 flex-1 truncate text-xs" title={asset.name}>
         {asset.name}
@@ -54,6 +55,7 @@ const TopicAttachment = ({ topicId, assetId }: { topicId: string; assetId: strin
       >
         <Trash2 size={14} />
       </Button>
+      <AttachmentMedia asset={asset} />
     </li>
   )
 }

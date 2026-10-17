@@ -1,13 +1,21 @@
+import { validateAssetStorage } from '@core/asset-storage'
 import type { DocumentAsset, MindMapDocument, Topic, TopicImage } from '@core/types'
 
 export const MAX_ASSET_BYTES = 8 * 1024 * 1024
-export const MAX_DOCUMENT_ASSET_BYTES = 24 * 1024 * 1024
+export const MAX_DOCUMENT_ASSET_BYTES = 256 * 1024 ** 3
 export const MAX_TOPIC_NOTES_LENGTH = 100_000
 export const MAX_TOPIC_ATTACHMENTS = 32
-export const MAX_IMAGE_DIMENSION = 8192
-export const MAX_IMAGE_PIXELS = 40_000_000
+export const MAX_IMAGE_DIMENSION = 65536
+export const MAX_IMAGE_PIXELS = 268_402_689
 
-const imageMimeTypes = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp'])
+const imageMimeTypes = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp',
+  'image/tiff',
+  'image/avif',
+])
 export const AUDIO_MIME_TYPES = [
   'audio/mpeg',
   'audio/wav',
@@ -63,7 +71,8 @@ export const validateDocumentAsset: (value: unknown) => asserts value is Documen
     cached.id === value.id &&
     cached.name === value.name &&
     cached.mimeType === value.mimeType &&
-    cached.data === value.data
+    cached.data === value.data &&
+    cached.storage === value.storage
   )
     return
   assertAssetId(value.id)
@@ -80,13 +89,19 @@ export const validateDocumentAsset: (value: unknown) => asserts value is Documen
     !mimePattern.test(value.mimeType)
   )
     throw new Error('资源 MIME 类型无效')
-  assetByteLength(value.data)
-  validatedAssets.set(value, {
-    id: value.id,
-    name: value.name,
-    mimeType: value.mimeType,
-    data: value.data as string,
-  })
+  if (value.storage !== undefined) {
+    if (value.data !== undefined) throw new Error('资源不能同时包含内联字节和存储引用')
+    validateAssetStorage(value.storage)
+  } else assetByteLength(value.data)
+  const normalized: DocumentAsset = value.storage
+    ? {
+        id: value.id,
+        name: value.name,
+        mimeType: value.mimeType,
+        storage: structuredClone(value.storage),
+      }
+    : { id: value.id, name: value.name, mimeType: value.mimeType, data: value.data as string }
+  validatedAssets.set(value, normalized)
 }
 
 export const validateAudioAsset: (value: unknown) => asserts value is DocumentAsset = (
@@ -156,19 +171,20 @@ export const validateDocumentContent = (
   for (const [id, asset] of Object.entries(assets)) {
     validateDocumentAsset(asset)
     if (asset.id !== id) throw new Error('资源 ID 与索引不一致')
-    sizes.set(
-      id,
-      (asset.data.length / 4) * 3 -
-        (asset.data.endsWith('==') ? 2 : asset.data.endsWith('=') ? 1 : 0),
-    )
+    sizes.set(id, assetSize(asset))
   }
   let total = 0
+  const binarySizes = new Map<string, number>()
   for (const id of referencedAssetIds(topics)) {
     const size = sizes.get(id)
     if (size === undefined) throw new Error(`资源 ${id} 不存在`)
-    total += size
+    const asset = assets[id] as DocumentAsset
+    const key = asset.storage ? `object:${asset.storage.objectId}` : `inline:${asset.data}`
+    const previous = binarySizes.get(key) ?? 0
+    total += Math.max(0, size - previous)
+    binarySizes.set(key, Math.max(previous, size))
   }
-  if (total > MAX_DOCUMENT_ASSET_BYTES) throw new Error('文档资源总量超过 24 MiB')
+  if (total > MAX_DOCUMENT_ASSET_BYTES) throw new Error('文档资源总量超过 256 GiB')
   for (const topic of Object.values(topics)) {
     if (topic.metadata?.audioAssetId) validateAudioAsset(assets[topic.metadata.audioAssetId])
     if (topic.image) {
@@ -179,7 +195,14 @@ export const validateDocumentContent = (
 }
 
 export const assetData = (asset: DocumentAsset): DocumentAsset => {
-  const result = { id: asset.id, name: asset.name, mimeType: asset.mimeType, data: asset.data }
+  const result: DocumentAsset = asset.storage
+    ? {
+        id: asset.id,
+        name: asset.name,
+        mimeType: asset.mimeType,
+        storage: structuredClone(asset.storage),
+      }
+    : { id: asset.id, name: asset.name, mimeType: asset.mimeType, data: asset.data }
   const cached = validatedAssets.get(asset)
   if (cached) validatedAssets.set(result, cached)
   return result
@@ -199,3 +222,6 @@ export const documentAssetsData = (
   }
   return Object.keys(assets).length > 0 ? assets : undefined
 }
+
+export const assetSize = (asset: DocumentAsset): number =>
+  asset.storage ? asset.storage.byteLength : assetByteLength(asset.data)

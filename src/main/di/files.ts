@@ -1,3 +1,5 @@
+import { NativeDocuments } from '@main/document-db'
+import { ResourceLibrary } from '@main/resources/library'
 import type { RecoveryIndexRepository } from '@main/workspace-recovery/repository'
 import type { RecentFilesRepository } from '@main/storage/repositories'
 import { recoveryIndexRepository, recentFilesRepository } from '@main/di/storage'
@@ -12,16 +14,20 @@ import { OpenFileRequests } from '@main/openFiles'
 
 export const filesModule = new ContainerModule(({ bind }) => {
   bind(FileSecuritySession)
-    .toDynamicValue(() => new FileSecuritySession())
+    .toResolvedValue(
+      (native: NativeDocuments, resources: ResourceLibrary) =>
+        new FileSecuritySession(native, resources),
+      [NativeDocuments, ResourceLibrary],
+    )
     .inSingletonScope()
     .onDeactivation((security) => {
       security.dispose()
     })
   bind(DocumentBackups)
     .toResolvedValue(
-      (options: ApplicationOptions) =>
-        new DocumentBackups(join(options.storageDirectory, 'history-v1')),
-      [applicationOptions],
+      (options: ApplicationOptions, native: NativeDocuments, resources: ResourceLibrary) =>
+        new DocumentBackups(join(options.storageDirectory, 'history-native'), native, resources),
+      [applicationOptions, NativeDocuments, ResourceLibrary],
     )
     .inSingletonScope()
   bind(RecoveryWorkspaceService)
@@ -30,8 +36,17 @@ export const filesModule = new ContainerModule(({ bind }) => {
         options: ApplicationOptions,
         security: FileSecuritySession,
         index: RecoveryIndexRepository,
-      ) => new RecoveryWorkspaceService(options.storageDirectory, security, index),
-      [applicationOptions, FileSecuritySession, recoveryIndexRepository],
+        native: NativeDocuments,
+        resources: ResourceLibrary,
+      ) =>
+        new RecoveryWorkspaceService(options.storageDirectory, security, index, native, resources),
+      [
+        applicationOptions,
+        FileSecuritySession,
+        recoveryIndexRepository,
+        NativeDocuments,
+        ResourceLibrary,
+      ],
     )
     .inSingletonScope()
   bind(DocumentFiles)
@@ -42,13 +57,26 @@ export const filesModule = new ContainerModule(({ bind }) => {
         backups: DocumentBackups,
         workspace: RecoveryWorkspaceService,
         recent: RecentFilesRepository,
-      ) => new DocumentFiles(options.storageDirectory, security, backups, workspace, recent),
+        native: NativeDocuments,
+        resources: ResourceLibrary,
+      ) =>
+        new DocumentFiles(
+          options.storageDirectory,
+          security,
+          backups,
+          workspace,
+          recent,
+          native,
+          resources,
+        ),
       [
         applicationOptions,
         FileSecuritySession,
         DocumentBackups,
         RecoveryWorkspaceService,
         recentFilesRepository,
+        NativeDocuments,
+        ResourceLibrary,
       ],
     )
     .inSingletonScope()

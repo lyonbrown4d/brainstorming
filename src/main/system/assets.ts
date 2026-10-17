@@ -1,3 +1,5 @@
+import type { ResourceLibrary } from '@main/resources/library'
+import { writeResourceFile } from '@main/resources/write'
 import type {
   BrowserWindow,
   OpenDialogOptions,
@@ -56,14 +58,24 @@ export const readSelectedAsset = async (
 }
 
 export class AssetFiles {
-  constructor(private readonly ports: AssetPorts) {}
+  constructor(
+    private readonly ports: AssetPorts,
+    private readonly resources?: ResourceLibrary,
+  ) {}
 
   select = async (window: BrowserWindow, kind: AssetKind): Promise<DocumentAsset | null> => {
     const result = await this.ports.showOpenDialog(window, {
       title: kind === 'image' ? '添加主题图片' : kind === 'audio' ? '添加音频备注' : '添加主题附件',
       properties: ['openFile'],
       ...(kind === 'image'
-        ? { filters: [{ name: '图片', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }] }
+        ? {
+            filters: [
+              {
+                name: '图片',
+                extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'tif', 'tiff'],
+              },
+            ],
+          }
         : kind === 'audio'
           ? {
               filters: [
@@ -73,18 +85,23 @@ export class AssetFiles {
           : {}),
     })
     const path = result.filePaths[0]
-    return result.canceled || !path ? null : readSelectedAsset(path, kind, this.ports.decodeImage)
+    if (result.canceled || !path) return null
+    return this.resources
+      ? this.resources.importFile(path, kind)
+      : readSelectedAsset(path, kind, this.ports.decodeImage)
   }
 
   export = async (window: BrowserWindow, input: unknown): Promise<boolean> => {
     validateDocumentAsset(input)
-    const bytes = assetBytes(input)
     const result = await this.ports.showSaveDialog(window, {
       title: '保存附件',
       defaultPath: safeAssetName(input.name),
     })
     if (result.canceled || !result.filePath) return false
-    await atomicWrite(result.filePath, bytes)
+    if (input.storage) {
+      if (!this.resources) throw new Error('桌面资源服务未初始化')
+      await writeResourceFile(result.filePath, this.resources.readObject(input.storage.objectId))
+    } else await atomicWrite(result.filePath, assetBytes(input))
     return true
   }
 }

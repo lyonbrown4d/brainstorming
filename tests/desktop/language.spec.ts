@@ -2,7 +2,7 @@ import { _electron, expect, test, type ElectronApplication, type Page } from '@p
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { decodeBrainstorming } from '@formats/brainstorming'
+import { decodeBrainstorming } from '@tests/electron/codec'
 import { mainWindow } from '@tests/desktop/windows'
 import { enterExampleIfHome } from '@tests/e2e/workspace'
 import { topicProperties } from '@tests/e2e/properties'
@@ -37,7 +37,7 @@ test('切换英文更新原生菜单并在重启后保留，切回中文不改�
     }, path)
     await page.keyboard.press('ControlOrMeta+s')
     await expect(page.locator('.save-status')).toContainText('已保存')
-    const before = decodeBrainstorming(await readFile(path))
+    const before = await decodeBrainstorming(await readFile(path))
     expect(before.sheets[0]?.document.topics.root?.notes).toBe('中文备注\n保留第二行')
     await chooseLanguage(page, 'English')
     await expect(
@@ -91,7 +91,7 @@ test('切换英文更新原生菜单并在重启后保留，切回中文不改�
     )
     await page.keyboard.press('ControlOrMeta+s')
     await expect(page.locator('.save-status')).toContainText('已保存')
-    expect(decodeBrainstorming(await readFile(path))).toEqual(before)
+    expect(await decodeBrainstorming(await readFile(path))).toEqual(before)
   } finally {
     app.process().kill('SIGKILL')
     await rm(directory, { recursive: true, force: true })

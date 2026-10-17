@@ -49,7 +49,9 @@ export const EditActions = () => {
           caption={caption}
           aria-label={title}
           title={title}
-          onClick={() => void action()}
+          onClick={() => {
+            action()
+          }}
         >
           <Icon className="size-4" />
         </DockAction>

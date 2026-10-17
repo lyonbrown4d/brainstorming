@@ -29,6 +29,12 @@ export const useFileLifecycle = (): void => {
     let nativeStatus = ''
     let emptyWorkspaceQueued = false
     let hadWorkspace = useDocumentTabs.getState().tabs.length > 0
+    let retainedPaths = new Set(
+      useDocumentTabs
+        .getState()
+        .tabs.map((tab) => tab.editor.path)
+        .filter((path): path is string => path !== null),
+    )
     const bridge = requireDesktopAPI()
     const reportError = (error: unknown): void => {
       if (alive)
@@ -82,6 +88,12 @@ export const useFileLifecycle = (): void => {
       const state = useEditor.getState()
       const workspace = useWorkspace.getState()
       const tabs = useDocumentTabs.getState()
+      const paths = new Set(
+        tabs.tabs.map((tab) => tab.editor.path).filter((path): path is string => path !== null),
+      )
+      for (const path of retainedPaths)
+        if (!paths.has(path)) void bridge.releaseDocument(path).catch(reportError)
+      retainedPaths = paths
       hadWorkspace ||= tabs.tabs.length > 0
       const dirty = anyDocumentDirty()
       const protectedRecovery = !ready || tabs.recovery.length > 0

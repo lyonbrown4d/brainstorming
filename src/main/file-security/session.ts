@@ -1,24 +1,43 @@
 import { randomUUID } from 'node:crypto'
-import { serializeWorkbook } from '@core'
-import { decryptBrainstorming } from '@formats/encrypted'
+import { lstat, open } from 'node:fs/promises'
+import { serializeWorkbook, type MindMapWorkbook } from '@core'
+import { decryptBrainstorming, isEncryptedBrainstorming } from '@formats/encrypted'
+import { NativeDocuments } from '@main/document-db'
+import type { ResourceLibrary } from '@main/resources/library'
 import type { OpenedDocument } from '@shared/contracts'
 import { validateFilePassword, validateSecurityDocumentId } from '@shared/fileSecurity'
 
 interface Pending {
   readonly token: string
-  readonly bytes: Uint8Array
+  readonly source: { readonly path: string } | { readonly bytes: Uint8Array }
   readonly path: string | null
   readonly expires: number
   readonly authorize: boolean
   readonly documentId?: string
   readonly timer: ReturnType<typeof setTimeout>
-  unlocked?: { documentId: string; password: string }
+  unlocked?: { documentId: string; password: string; workbook: MindMapWorkbook }
+}
+export const isEncryptedNativeFile = async (path: string): Promise<boolean> => {
+  const info = await lstat(path)
+  if (!info.isFile() || info.isSymbolicLink()) throw new Error('文档文件无效')
+  const file = await open(path, 'r')
+  try {
+    const buffer = Buffer.alloc(128)
+    const { bytesRead } = await file.read(buffer, 0, buffer.length, 0)
+    return await isEncryptedBrainstorming(buffer.subarray(0, bytesRead))
+  } finally {
+    await file.close()
+  }
 }
 
-/** Keys belong to document IDs, while each bounded unlock request owns an independent token. */
+/** Pending unlocks retain paths and metadata; passwords stay in main-process memory. */
 export class FileSecuritySession {
   private readonly pending = new Map<string, Pending>()
   private readonly passwords = new Map<string, string>()
+  constructor(
+    private readonly native = new NativeDocuments(),
+    private readonly resources?: ResourceLibrary,
+  ) {}
   passwordFor = (documentId: string): string | null => this.passwords.get(documentId) ?? null
   configure = (
     documentId: unknown,
@@ -35,13 +54,30 @@ export class FileSecuritySession {
     validateSecurityDocumentId(documentId)
     return { encrypted: this.passwordFor(documentId) !== null }
   }
+  lockFile = (
+    sourcePath: string,
+    exposedPath: string | null,
+    authorize = false,
+    documentId?: string,
+  ): OpenedDocument => {
+    return this.createPending({ path: sourcePath }, exposedPath, authorize, documentId)
+  }
+  /** Small fixture bridge; production callers always retain a file path. */
   lock = (
     bytes: Uint8Array,
     path: string | null,
     authorize = false,
     documentId?: string,
   ): OpenedDocument => {
-    // A workspace may contain up to 32 protected documents, plus explicit opens/history requests.
+    if (bytes.length > 64 * 1024 * 1024) throw new Error('内存解锁请求超过 64 MiB 限制')
+    return this.createPending({ bytes: bytes.slice() }, path, authorize, documentId)
+  }
+  private createPending = (
+    source: Pending['source'],
+    path: string | null,
+    authorize: boolean,
+    documentId?: string,
+  ): OpenedDocument => {
     if (this.pending.size >= 64) {
       const oldest = this.pending.keys().next().value
       if (oldest) this.cancel(oldest)
@@ -53,12 +89,12 @@ export class FileSecuritySession {
     timer.unref()
     this.pending.set(token, {
       token,
-      ...(documentId === undefined ? {} : { documentId }),
-      bytes: bytes.slice(),
+      source,
       path,
       authorize,
       timer,
       expires: Date.now() + 5 * 60_000,
+      ...(documentId === undefined ? {} : { documentId }),
     })
     return { path, contents: '', lockedToken: token, encrypted: true }
   }
@@ -74,11 +110,19 @@ export class FileSecuritySession {
   unlock = async (token: unknown, password: unknown): Promise<OpenedDocument> => {
     const pending = this.requirePending(token)
     validateFilePassword(password, false)
-    const workbook = await decryptBrainstorming(pending.bytes, password)
+    let workbook: MindMapWorkbook
+    try {
+      workbook =
+        'path' in pending.source
+          ? await this.native.read(pending.source.path, { password })
+          : await decryptBrainstorming(pending.source.bytes, password)
+    } catch (cause) {
+      throw new Error('密码错误或加密文件损坏，请重试', { cause })
+    }
     this.requirePending(token)
     if (pending.documentId !== undefined && workbook.id !== pending.documentId)
       throw new Error('恢复工作簿与索引不一致')
-    pending.unlocked = { documentId: workbook.id, password }
+    pending.unlocked = { documentId: workbook.id, password, workbook }
     return {
       path: pending.path,
       contents: serializeWorkbook(workbook),
@@ -93,12 +137,22 @@ export class FileSecuritySession {
     documentId: string
     password: string
     path: string | null
+    sourcePath?: string
     authorize: boolean
   } => {
     const pending = this.requirePending(token)
-    if (!pending.unlocked) throw new Error('请先解锁文件')
+    const unlocked = pending.unlocked
+    if (!unlocked) throw new Error('请先解锁文件')
+    if ('path' in pending.source)
+      this.resources?.register(unlocked.workbook, pending.source.path, unlocked.password)
     this.cancel(token)
-    return { ...pending.unlocked, path: pending.path, authorize: pending.authorize }
+    return {
+      documentId: unlocked.documentId,
+      password: unlocked.password,
+      path: pending.path,
+      authorize: pending.authorize,
+      ...('path' in pending.source ? { sourcePath: pending.source.path } : {}),
+    }
   }
   cancel = (token: unknown): void => {
     if (typeof token !== 'string') return

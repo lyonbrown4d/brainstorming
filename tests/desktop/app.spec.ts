@@ -8,8 +8,7 @@ import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createDocument, createWorkbook } from '@core'
-import { encodeBrainstorming } from '@formats/brainstorming'
-import { decodeFile } from '@formats'
+import { encodeBrainstorming, decodeBrainstorming } from '@tests/electron/codec'
 import { modernXmind } from '@tests/fixtures/xmind/archive'
 import { imageBase64, attachmentBytes } from '@tests/fixtures/content'
 
@@ -17,7 +16,7 @@ test('生产 Electron 启动、sandbox preload 和恢复闭环', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'brainstorming-desktop-'))
   await seedChinese(directory)
   const recovered = createWorkbook(createDocument('桌面恢复验证'))
-  await seedRecovery(directory, recovered.id, encodeBrainstorming(recovered))
+  await seedRecovery(directory, recovered.id, await encodeBrainstorming(recovered))
   const app = await electron.launch({
     colorScheme: null,
     args: ['.', `--user-data-dir=${directory}`],
@@ -98,7 +97,7 @@ test('生产 Electron 启动、sandbox preload 和恢复闭环', async () => {
     await expect
       .poll(async () =>
         readFile(savedPath)
-          .then((bytes) => JSON.stringify(decodeFile(bytes, savedPath).workbook))
+          .then(async (bytes) => JSON.stringify(await decodeBrainstorming(bytes)))
           .catch(() => ''),
       )
       .toContain('原生桌面编辑')
@@ -130,7 +129,7 @@ test('系统传入的文件在启动和 macOS 打开事件中使用相同打开�
   const secondPath = join(directory, 'second.xmind')
   const originalXmind = modernXmind()
   await Promise.all([
-    writeFile(firstPath, encodeBrainstorming(createWorkbook(createDocument('启动文件')))),
+    writeFile(firstPath, await encodeBrainstorming(createWorkbook(createDocument('启动文件')))),
     writeFile(secondPath, originalXmind),
   ])
   const damagedRecovery = await seedRecovery(directory, 'damaged-workbook', 'damaged recovery')

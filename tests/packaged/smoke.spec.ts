@@ -3,12 +3,12 @@ import { mkdtemp, readFile, realpath, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import type { ChildProcess } from 'node:child_process'
-import { decodeBrainstorming } from '@formats/brainstorming'
+import { decodeBrainstorming } from '@tests/electron/codec'
 import { mainWindow } from '@tests/desktop/windows'
 import { completeDocumentCreation } from '@tests/e2e/workspace'
 import { seedChinese } from '@tests/electron/preferences'
 
-test('打包应用使用隔离 SQLite 启动、新建并原生保存 ZIP，正常退出且无模块加载错误', async () => {
+test('打包应用使用隔离 SQLite 启动、新建并原生保存 SQLite，正常退出且无模块加载错误', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'brainstorming-packaged-'))
   let app: ElectronApplication | undefined
   let child: ChildProcess | undefined
@@ -60,12 +60,13 @@ test('打包应用使用隔离 SQLite 启动、新建并原生保存 ZIP，正�
     await expect
       .poll(() =>
         readFile(filePath)
-          .then((bytes) => decodeBrainstorming(bytes).sheets[0]?.document.title)
+          .then(async (bytes) => (await decodeBrainstorming(bytes)).sheets[0]?.document.title)
           .catch(() => ''),
       )
       .toBe('打包应用原生保存')
     await expect(page.locator('.save-status')).toContainText('已保存')
-    expect((await stat(join(directory, 'brainstorming.sqlite'))).size).toBeGreaterThan(0)
+    expect((await readFile(filePath)).subarray(0, 16).toString()).toBe('SQLite format 3\0')
+    expect((await stat(join(directory, 'brainstorming-local.sqlite'))).size).toBeGreaterThan(0)
     expect(errors).toEqual([])
     await app.close()
     await expect.poll(() => launchedProcess.exitCode).toBe(0)

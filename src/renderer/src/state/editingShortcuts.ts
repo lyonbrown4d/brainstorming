@@ -101,6 +101,6 @@ export const handleTopicShortcut = (event: KeyboardEvent): boolean => {
   else if (key === 'f') useSearch.setState({ open: true })
   else if (key === 'c' || key === 'x') void copySelectedTopics(key === 'x')
   else if (key === 'v') void pasteSelectedTopics()
-  else void duplicateSelectedTopics()
+  else duplicateSelectedTopics()
   return true
 }

@@ -1,3 +1,4 @@
+import { validateWorkbook } from '@core'
 import { translate } from '@renderer/i18n'
 import { requireDesktopAPI } from '@renderer/lib/desktop'
 import {
@@ -71,11 +72,11 @@ const plainText = (clipboard: TopicClipboard): string => {
   return lines.join('\n')
 }
 
-const pastePayload = async (
+const pastePayload = (
   source: TopicClipboard,
   before: NonNullable<ReturnType<typeof capture>>,
   parentId: string,
-): Promise<void> => {
+): void => {
   let omittedLinks = 0
   const clipboard: TopicClipboard = {
     ...source,
@@ -119,8 +120,7 @@ const pastePayload = async (
     annotationIds,
   }
   const document = applyCommand(before.history.document, command)
-  const { encodeBrainstorming } = await import('@formats/brainstorming')
-  encodeBrainstorming({
+  validateWorkbook({
     ...before.workbook,
     sheets: before.workbook.sheets.map((sheet) =>
       sheet.id === before.activeSheetId ? { ...sheet, document } : sheet,
@@ -175,7 +175,7 @@ export const pasteSelectedTopics = async (): Promise<void> => {
   try {
     const contents = await requireDesktopAPI().readTopicClipboard()
     if (!unchanged(before)) return
-    await pastePayload(parseTopicClipboard(contents), before, before.selectedId)
+    pastePayload(parseTopicClipboard(contents), before, before.selectedId)
   } catch (error) {
     report(error)
   } finally {
@@ -183,7 +183,7 @@ export const pasteSelectedTopics = async (): Promise<void> => {
   }
 }
 
-export const duplicateSelectedTopics = async (): Promise<void> => {
+export const duplicateSelectedTopics = (): void => {
   if (pending) return
   const before = capture()
   if (!before) return
@@ -192,7 +192,7 @@ export const duplicateSelectedTopics = async (): Promise<void> => {
     const clipboard = createTopicClipboard(before.history.document, selectedTopicIds(before))
     const parentId =
       getParentId(before.history.document, clipboard.roots[0] ?? '') ?? before.selectedId
-    await pastePayload(clipboard, before, parentId)
+    pastePayload(clipboard, before, parentId)
   } catch (error) {
     report(error)
   } finally {

@@ -5,7 +5,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createDocument, createWorkbook, type MindMapWorkbook } from '@core'
-import { decodeBrainstorming, encodeBrainstorming } from '@formats/brainstorming'
+import { decodeBrainstorming, encodeBrainstorming } from '@tests/electron/codec'
 import { mainWindow } from '@tests/desktop/windows'
 import { seedChinese } from '@tests/electron/preferences'
 
@@ -26,7 +26,7 @@ const openPath = async (app: ElectronApplication, page: Page, path: string): Pro
   await page.getByRole('menuitem', { name: '打开导图', exact: true }).click()
 }
 const diskWorkbook = async (path: string): Promise<MindMapWorkbook> =>
-  decodeBrainstorming(await readFile(path))
+  await decodeBrainstorming(await readFile(path))
 
 const fixtures = async (directory: string) => {
   const first = createWorkbook(createDocument('甲内容', 'document-a'), '导图甲')
@@ -40,10 +40,10 @@ const fixtures = async (directory: string) => {
   const firstPath = join(directory, 'alpha.brainstorming')
   const secondPath = join(directory, 'beta.brainstorming')
   await Promise.all([
-    writeFile(firstPath, encodeBrainstorming(workbook)),
+    writeFile(firstPath, await encodeBrainstorming(workbook)),
     writeFile(
       secondPath,
-      encodeBrainstorming(createWorkbook(createDocument('乙内容', 'document-b'), '导图乙')),
+      await encodeBrainstorming(createWorkbook(createDocument('乙内容', 'document-b'), '导图乙')),
     ),
   ])
   return { firstPath, secondPath }

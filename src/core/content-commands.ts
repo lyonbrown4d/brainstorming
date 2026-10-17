@@ -1,3 +1,4 @@
+import { isEqual } from 'lodash-es'
 import type { DocumentAsset, MindMapDocument, Topic, TopicContentCommand } from '@core/types'
 import {
   assetData,
@@ -15,7 +16,8 @@ export const withAsset = (document: MindMapDocument, asset: DocumentAsset): Mind
     if (
       existing.data !== asset.data ||
       existing.name !== asset.name ||
-      existing.mimeType !== asset.mimeType
+      existing.mimeType !== asset.mimeType ||
+      !isEqual(existing.storage, asset.storage)
     )
       throw new Error('资源 ID 已被其他内容占用')
     return document

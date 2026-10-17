@@ -195,27 +195,49 @@ describe('topic notes, images and attachments', () => {
     expect(createWorkbook(document).version).toBe(2)
   })
 
-  it('rejects sheet duplication that exceeds the whole-workbook resource budget', () => {
-    const asset: DocumentAsset = { ...attachment, data: 'AAAA'.repeat(((8 * 1024 * 1024) / 3) | 0) }
+  it('deduplicates shared binary objects across duplicated sheets and rejects unique workbook overflow', () => {
+    const assets: DocumentAsset[] = [1, 2, 3, 4].map((index) => ({
+      id: `large-${index}`,
+      name: `large-${index}.bin`,
+      mimeType: 'application/octet-stream',
+      storage: { objectId: String(index).repeat(64), byteLength: 64 * 1024 ** 3 },
+    }))
     const document = applyCommand(createDocument('素材', 'first'), {
-      type: 'addTopicAttachment',
-      topicId: 'root',
-      asset,
+      type: 'batch',
+      commands: assets.map((asset) => ({ type: 'addTopicAttachment', topicId: 'root', asset })),
     })
     let workbook = createWorkbook(document)
-    workbook = applyWorkbookCommand(workbook, {
-      type: 'duplicateSheet',
-      sheetId: 'first',
-      id: 'second',
+    for (const id of ['second', 'third', 'fourth'])
+      workbook = applyWorkbookCommand(workbook, { type: 'duplicateSheet', sheetId: 'first', id })
+    expect(workbook.sheets).toHaveLength(4)
+    const original = assets[0]
+    if (!original) throw new Error('Missing stored fixture')
+    const alias = applyCommand(createDocument('Alias', 'alias'), {
+      type: 'addTopicAttachment',
+      topicId: 'root',
+      asset: { ...original, id: 'different-resource-id' },
     })
     workbook = applyWorkbookCommand(workbook, {
-      type: 'duplicateSheet',
-      sheetId: 'first',
-      id: 'third',
+      type: 'addSheet',
+      sheet: { id: 'alias', name: 'Alias', document: alias },
+    })
+    expect(workbook.sheets).toHaveLength(5)
+    const extra = applyCommand(createDocument('Extra', 'extra'), {
+      type: 'addTopicAttachment',
+      topicId: 'root',
+      asset: {
+        id: 'extra',
+        name: 'extra.bin',
+        mimeType: 'application/octet-stream',
+        storage: { objectId: '5'.repeat(64), byteLength: 1 },
+      },
     })
     expect(() =>
-      applyWorkbookCommand(workbook, { type: 'duplicateSheet', sheetId: 'first', id: 'fourth' }),
-    ).toThrow('24 MiB')
-    expect(workbook.sheets).toHaveLength(3)
+      applyWorkbookCommand(workbook, {
+        type: 'addSheet',
+        sheet: { id: 'extra', name: 'Extra', document: extra },
+      }),
+    ).toThrow('256 GiB')
+    expect(workbook.sheets).toHaveLength(5)
   })
 })

@@ -9,9 +9,12 @@ const mocks = vi.hoisted(() => ({
   handlers: new Map<string, (...args: unknown[]) => unknown>(),
   events: new Map<string, (...args: unknown[]) => unknown>(),
   installMenu: vi.fn(),
+  protocolHandle: vi.fn(),
+  protocolUnhandle: vi.fn(),
 }))
 vi.mock('electron', () => ({
   app: { getLocale: () => 'zh-CN' },
+  protocol: { handle: mocks.protocolHandle, unhandle: mocks.protocolUnhandle },
   dialog: { showOpenDialog: vi.fn(), showSaveDialog: vi.fn(), showMessageBox: vi.fn() },
   ipcMain: {
     handle: (channel: string, handler: (...args: unknown[]) => unknown) => {
@@ -46,6 +49,8 @@ beforeEach(async () => {
   mocks.handlers.clear()
   mocks.events.clear()
   mocks.installMenu.mockClear()
+  mocks.protocolHandle.mockClear()
+  mocks.protocolUnhandle.mockClear()
 })
 afterEach(async () => {
   for (const container of containers.splice(0)) await container.unbindAllAsync()
@@ -124,7 +129,24 @@ describe('application dependency modules', () => {
     app.emit('activate')
     expect(createWindow).toHaveBeenCalledTimes(2)
     expect(mocks.handlers.size).toBe(channels)
-    expect(mocks.events.size).toBe(2)
+    expect([...mocks.events.keys()].sort()).toEqual([
+      'document:dirty',
+      'mcp:reply',
+      'resource:origin',
+    ])
+    expect(mocks.protocolHandle).toHaveBeenCalledOnce()
+    expect(mocks.protocolHandle).toHaveBeenCalledWith(
+      'brainstorming-resource',
+      expect.any(Function),
+    )
+    for (const channel of [
+      'resource:drop',
+      'resource:link:queue',
+      'resource:link:get',
+      'resource:link:generate',
+      'document:release',
+    ])
+      expect(mocks.handlers.has(channel)).toBe(true)
     const ai = container.get(AIService)
     const mcp = container.get(MCPService)
     const abort = vi.spyOn(ai, 'dispose')
@@ -133,6 +155,7 @@ describe('application dependency modules', () => {
     await container.unbindAllAsync()
     expect(abort).toHaveBeenCalled()
     expect(stop).toHaveBeenCalledOnce()
+    expect(mocks.protocolUnhandle).toHaveBeenCalledWith('brainstorming-resource')
     expect(mocks.handlers.size).toBe(0)
     expect(mocks.events.size).toBe(0)
     expect(app.listenerCount('activate')).toBe(0)

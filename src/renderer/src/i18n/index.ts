@@ -1,3 +1,4 @@
+import { resourceMessages } from '@renderer/i18n/resourceMessages'
 import { interfaceMessages } from '@renderer/i18n/interfaceMessages'
 import { requireDesktopAPI } from '@renderer/lib/desktop'
 import { documentTabMessages } from '@renderer/i18n/documentTabs'
@@ -15,6 +16,7 @@ import { messages7 } from '@renderer/i18n/messages7'
 import { messages8 } from '@renderer/i18n/messages8'
 
 const messages = {
+  ...resourceMessages,
   ...interfaceMessages,
   ...documentTabMessages,
   ...messages0,

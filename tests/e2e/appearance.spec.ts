@@ -5,7 +5,7 @@ import { resizeWindow } from '@tests/electron/session'
 import { reloadWindow } from '@tests/electron/session'
 import { expect, test, type Page } from '@tests/electron/fixture'
 import { readFile } from 'node:fs/promises'
-import { decodeBrainstorming } from '@formats/brainstorming'
+import { decodeBrainstorming } from '@tests/electron/codec'
 import { openExample } from '@tests/e2e/workspace'
 import { dockAction } from '@tests/e2e/dock'
 
@@ -24,7 +24,7 @@ const saveWorkbook = async (page: Page) => {
   await page.keyboard.press('ControlOrMeta+s')
   const path = await ready.path()
   if (!path) throw new Error('未生成原生文件')
-  return { workbook: decodeBrainstorming(await readFile(path)), path }
+  return { workbook: await decodeBrainstorming(await readFile(path)), path }
 }
 
 test('外观默认跟随系统、自动更新、显式选择不被覆盖，重载持久保留选择', async ({ page }) => {
