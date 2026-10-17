@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
-import { decodeTrelyx } from '../../src/formats/trelyx'
-import { openExample } from './workspace'
+import { decodeTrelyx } from '@formats/trelyx'
+import { openExample } from '@tests/e2e/workspace'
 
 type Mode = '2d' | '3d'
 const feedback = (page: Page) => page.getByTestId('drag-feedback')
@@ -10,13 +10,13 @@ const card = (page: Page, mode: Mode, id: string) =>
 const topic = (page: Page, mode: Mode, id: string) =>
   mode === '2d' ? card(page, mode, id) : page.locator(`[data-spatial-topic-id="${id}"]`)
 
-async function box(locator: Locator) {
+const box = async (locator: Locator) => {
   const bounds = await locator.boundingBox()
   if (!bounds) throw new Error('拖动主题不可见')
   return bounds
 }
 
-async function openCanvas(page: Page, mode: Mode) {
+const openCanvas = async (page: Page, mode: Mode) => {
   await openExample(page)
   if (mode === '3d') {
     await page.getByRole('button', { name: '三维视图', exact: true }).click()
@@ -27,7 +27,7 @@ async function openCanvas(page: Page, mode: Mode) {
   await expect(card(page, mode, 'vision-0')).toBeInViewport()
 }
 
-async function startDrag(page: Page, mode: Mode) {
+const startDrag = async (page: Page, mode: Mode) => {
   const from = await box(topic(page, mode, 'vision-0'))
   const start = { x: from.x + from.width / 2, y: from.y + from.height / 2 }
   await page.mouse.move(start.x, start.y)
@@ -36,7 +36,7 @@ async function startDrag(page: Page, mode: Mode) {
   await expect(feedback(page)).toBeVisible()
 }
 
-async function saveWorkbook(page: Page) {
+const saveWorkbook = async (page: Page) => {
   const download = page.waitForEvent('download')
   await page.keyboard.press('ControlOrMeta+s')
   const path = await (await download).path()

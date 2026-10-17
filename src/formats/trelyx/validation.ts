@@ -1,10 +1,10 @@
-import { validateWorkbook } from '../../core/workbook'
-import type { MindMapWorkbook } from '../../core/types'
-import { decodeAssets } from './assets'
+import { validateWorkbook } from '@core/workbook'
+import type { MindMapWorkbook } from '@core/types'
+import { decodeAssets } from '@formats/trelyx/assets'
 
 export const DOCUMENT_LIMITS = { topics: 20_000, depth: 128, sheets: 128 } as const
 
-export function record(value: unknown): Record<string, unknown> {
+export const record = (value: unknown): Record<string, unknown> => {
   if (
     typeof value !== 'object' ||
     value === null ||
@@ -15,13 +15,15 @@ export function record(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>
 }
 
-export function onlyKeys(value: Record<string, unknown>, allowed: readonly string[]): void {
+export const onlyKeys = (value: Record<string, unknown>, allowed: readonly string[]): void => {
   if (Object.keys(value).some((key) => !allowed.includes(key)))
     throw new Error('Trelyx 文档包含当前版本不支持的内容')
 }
 
 /** Bound the whole workbook as well as individual tree depth before layout or editing. */
-export function validateBoundedWorkbook(value: unknown): asserts value is MindMapWorkbook {
+export const validateBoundedWorkbook: (value: unknown) => asserts value is MindMapWorkbook = (
+  value: unknown,
+): asserts value is MindMapWorkbook => {
   validateWorkbook(value)
   if (value.sheets.length > DOCUMENT_LIMITS.sheets) throw new Error('文档画布超过 128 个限制')
   let count = 0
@@ -40,11 +42,11 @@ export function validateBoundedWorkbook(value: unknown): asserts value is MindMa
   }
 }
 
-export function nativeWorkbook(
+export const nativeWorkbook = (
   value: unknown,
   entries: ReadonlyMap<string, Uint8Array>,
   used: Set<string>,
-): MindMapWorkbook {
+): MindMapWorkbook => {
   const content = record(value)
   onlyKeys(content, ['id', 'title', 'sheets'])
   if (!Array.isArray(content.sheets)) throw new Error('Trelyx 文档缺少画布')

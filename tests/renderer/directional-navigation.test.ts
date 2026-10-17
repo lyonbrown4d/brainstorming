@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { applyCommand, createDocument, type LayoutKind, type MindMapDocument } from '@core'
-import { getNavigationTarget } from '../../src/renderer/src/state/keyboard'
+import { getNavigationTarget } from '@renderer/state/keyboard'
 
-function fixture(layout: LayoutKind = 'map'): MindMapDocument {
+const fixture = (layout: LayoutKind = 'map'): MindMapDocument => {
   let document = createDocument('Root')
   for (const [id, parentId] of [
     ['a', 'root'],
@@ -22,7 +22,7 @@ function fixture(layout: LayoutKind = 'map'): MindMapDocument {
   return applyCommand(document, { type: 'setDocumentSettings', settings: { layout } })
 }
 
-function target(document: MindMapDocument, id: string, key: string): string | undefined {
+const target = (document: MindMapDocument, id: string, key: string): string | undefined => {
   return getNavigationTarget(document, id, `Arrow${key}`)
 }
 

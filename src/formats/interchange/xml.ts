@@ -1,5 +1,5 @@
 /** XML 1.0 cannot encode control characters or lone UTF-16 surrogates. */
-export function xmlText(value: string): string {
+export const xmlText = (value: string): string => {
   for (const character of value) {
     const point = character.codePointAt(0) ?? 0
     if (

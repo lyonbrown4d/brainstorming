@@ -20,10 +20,10 @@ export interface SpatialWheelGesture {
 }
 
 /** Normalize the browser wheel contract without guessing the user's input device. */
-export function spatialWheelGesture(
+export const spatialWheelGesture = (
   event: SpatialWheelInput,
   viewport: GestureViewport,
-): SpatialWheelGesture | null {
+): SpatialWheelGesture | null => {
   if (
     !Number.isFinite(event.deltaX) ||
     !Number.isFinite(event.deltaY) ||

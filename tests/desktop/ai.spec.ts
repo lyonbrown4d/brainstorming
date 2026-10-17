@@ -1,11 +1,11 @@
-import { mainWindow } from './windows'
-import { enterExampleIfHome } from '../e2e/workspace'
+import { mainWindow } from '@tests/desktop/windows'
+import { enterExampleIfHome } from '@tests/e2e/workspace'
 import { _electron as electron, expect, test, type ElectronApplication } from '@playwright/test'
 import { createServer } from 'node:http'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { dockAction, openDock } from '../e2e/dock'
+import { dockAction, openDock } from '@tests/e2e/dock'
 
 // Local deterministic provider fixture: no external account, API key or internet request.
 test('真实 Electron AI 配置、预览、添加与一次撤销闭环', async () => {

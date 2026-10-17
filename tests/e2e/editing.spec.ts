@@ -1,9 +1,9 @@
-import { openExample } from './workspace'
-import { dockAction } from './dock'
+import { openExample } from '@tests/e2e/workspace'
+import { dockAction } from '@tests/e2e/dock'
 import { expect, test } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
-import { decodeTrelyx } from '../../src/formats/trelyx'
-import { composeChinese } from './ime'
+import { decodeTrelyx } from '@formats/trelyx'
+import { composeChinese } from '@tests/e2e/ime'
 
 test('选中后连续输入不丢首字，中文组词、换行、取消和整次撤销正常', async ({ page }) => {
   await openExample(page)

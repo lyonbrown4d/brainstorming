@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { createExampleDocument, createWorkbook } from '../src/core'
-import { ExportDialog } from '../src/renderer/src/components/ExportDialog'
-import { ImportTextDialog } from '../src/renderer/src/components/ImportTextDialog'
-import '../src/renderer/src/styles/ui.css'
+import { createExampleDocument, createWorkbook } from '@core'
+import { ExportDialog } from '@renderer/components/ExportDialog'
+import { ImportTextDialog } from '@renderer/components/ImportTextDialog'
+import '@renderer/styles/ui.css'
 
 const workbook = createWorkbook(createExampleDocument())
 const meta = {

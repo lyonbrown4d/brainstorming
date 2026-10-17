@@ -1,4 +1,4 @@
-import { extensionFixture } from './extension-test-fixture'
+import { extensionFixture } from '@core/extension-test-fixture'
 import { describe, expect, it } from 'vitest'
 import {
   applyCommand,
@@ -13,7 +13,7 @@ import {
   createTopicClipboard,
   validateTopicClipboard,
   type Command,
-} from './index'
+} from '@core'
 
 describe('local document extensions', () => {
   it('roundtrips all extensions and audio references through additive v1 JSON snapshots', () => {

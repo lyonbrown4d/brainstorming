@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { PerspectiveCamera, Vector3 } from 'three'
-import { spatialSelectionShift } from '../../src/renderer/src/lib/spatialSelectionVisibility'
+import { spatialSelectionShift } from '@renderer/lib/spatialSelectionVisibility'
 
 const viewport = { left: 250, top: 60, width: 900, height: 600 }
-function fixture(position: readonly [number, number, number]) {
+const fixture = (position: readonly [number, number, number]) => {
   const camera = new PerspectiveCamera(42, viewport.width / viewport.height, 0.1, 500)
   camera.position.set(0, 0, 10)
   camera.lookAt(0, 0, 0)

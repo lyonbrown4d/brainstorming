@@ -1,18 +1,18 @@
 import { Raycaster, Vector2, type Camera, type Scene } from 'three'
 import type { MindMapDocument } from '@core'
-import type { SpatialNode, SpatialPoint } from '../../../layout/spatial'
-import type { LayoutDirection } from '../../../layout/types'
-import { findTopicDrop } from './canvasDrop'
-import { projectSpatialDropNodes, type SpatialViewport } from './spatialDrag'
+import type { SpatialNode, SpatialPoint } from '@layout/spatial'
+import type { LayoutDirection } from '@layout/types'
+import { findTopicDrop } from '@renderer/lib/canvasDrop'
+import { projectSpatialDropNodes, type SpatialViewport } from '@renderer/lib/spatialDrag'
 
 /** Pick Html card surfaces first; raycast only when the pointer hits the WebGL canvas. */
-export function spatialPointerTopic(
+export const spatialPointerTopic = (
   target: Element,
   canvas: HTMLCanvasElement,
   scene: Scene,
   camera: Camera,
   point: { x: number; y: number },
-): string | undefined {
+): string | undefined => {
   const id = target.closest<HTMLElement>('[data-spatial-card-id]')?.dataset.spatialCardId
   if (id || target !== canvas) return id
   const bounds = canvas.getBoundingClientRect()
@@ -32,7 +32,7 @@ export function spatialPointerTopic(
 }
 
 /** Adapt the camera projection to the same child/sibling drop rules used by the 2D canvas. */
-export function findSpatialDrop(
+export const findSpatialDrop = (
   document: MindMapDocument,
   nodes: readonly SpatialNode[],
   anchorId: string,
@@ -41,7 +41,7 @@ export function findSpatialDrop(
   camera: Camera,
   viewport: SpatialViewport,
   directions: ReadonlyMap<string, LayoutDirection>,
-) {
+) => {
   const anchor = nodes.find((node) => node.id === anchorId)
   if (!anchor) return undefined
   const moved = projectSpatialDropNodes(

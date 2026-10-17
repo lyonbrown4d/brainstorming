@@ -1,12 +1,12 @@
-import type { DocumentAnnotations, TopicMetadata } from './extensions'
-import type { MindMapDocument, TopicClipboard } from './types'
-import { assertId } from './validation'
-import { record } from './extension-validation'
+import type { DocumentAnnotations, TopicMetadata } from '@core/extensions'
+import type { MindMapDocument, TopicClipboard } from '@core/types'
+import { assertId } from '@core/validation'
+import { record } from '@core/extension-validation'
 
-export function clipboardAnnotations(
+export const clipboardAnnotations = (
   document: MindMapDocument,
   retained: ReadonlySet<string>,
-): DocumentAnnotations {
+): DocumentAnnotations => {
   return {
     ...(document.relations === undefined
       ? {}
@@ -31,16 +31,16 @@ export function clipboardAnnotations(
         }),
   }
 }
-function mapped(mapping: Readonly<Record<string, string>>, id: string): string {
+const mapped = (mapping: Readonly<Record<string, string>>, id: string): string => {
   const result = Object.hasOwn(mapping, id) ? mapping[id] : undefined
   if (result === undefined) throw new Error('剪贴板扩展 ID 映射不完整')
   return result
 }
-export function remapMetadata(
+export const remapMetadata = (
   metadata: TopicMetadata,
   topicIds: Readonly<Record<string, string>>,
   assetIds: Readonly<Record<string, string>>,
-): TopicMetadata {
+): TopicMetadata => {
   const result = { ...structuredClone(metadata) }
   if (result.link?.kind === 'topic' && result.link.sheetId === undefined)
     result.link = { ...result.link, topicId: mapped(topicIds, result.link.topicId) }
@@ -52,12 +52,12 @@ export function remapMetadata(
   if (result.audioAssetId !== undefined) result.audioAssetId = mapped(assetIds, result.audioAssetId)
   return result
 }
-export function pasteAnnotations(
+export const pasteAnnotations = (
   document: MindMapDocument,
   clipboard: TopicClipboard,
   topicIds: Readonly<Record<string, string>>,
   annotationIds?: Readonly<Record<string, string>>,
-): DocumentAnnotations {
+): DocumentAnnotations => {
   const source = [
     ...(clipboard.relations ?? []),
     ...(clipboard.groups ?? []),

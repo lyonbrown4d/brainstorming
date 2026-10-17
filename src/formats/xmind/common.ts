@@ -25,19 +25,19 @@ const featureNames: Readonly<Record<string, string>> = {
   'xlink:href': '超链接或附件',
 }
 
-export function record(value: unknown, label: string): SourceRecord {
+export const record = (value: unknown, label: string): SourceRecord => {
   if (typeof value !== 'object' || value === null || Array.isArray(value))
     throw new Error(`XMind ${label} 格式无效`)
   return value as SourceRecord
 }
 
-export function list(value: unknown, label: string): unknown[] {
+export const list = (value: unknown, label: string): unknown[] => {
   if (value === undefined) return []
   if (!Array.isArray(value)) throw new Error(`XMind ${label} 必须是列表`)
   return value as unknown[]
 }
 
-export function text(value: unknown, label: string, fallback = ''): string {
+export const text = (value: unknown, label: string, fallback = ''): string => {
   if (value === undefined) return fallback
   if (typeof value !== 'string') throw new Error(`XMind ${label} 必须是文本`)
   return value
@@ -46,11 +46,11 @@ export function text(value: unknown, label: string, fallback = ''): string {
 export class Warnings {
   private readonly counts = new Map<string, number>()
 
-  add(message: string, count = 1): void {
+  add = (message: string, count = 1): void => {
     if (count > 0) this.counts.set(message, (this.counts.get(message) ?? 0) + count)
   }
 
-  omitted(source: SourceRecord, supported: ReadonlySet<string>): void {
+  omitted = (source: SourceRecord, supported: ReadonlySet<string>): void => {
     for (const [key, value] of Object.entries(source)) {
       if (supported.has(key) || value === undefined || value === null) continue
       const feature = Object.hasOwn(featureNames, key) ? featureNames[key] : '扩展属性'
@@ -70,16 +70,16 @@ export class Warnings {
     }
   }
 
-  values(): string[] {
+  values = (): string[] => {
     return Array.from(this.counts, ([message, count]) => `${message}（${count} 项）`)
   }
 }
 
-export function idAllocator(
+export const idAllocator = (
   prefix: string,
   warnings: Warnings,
   reserved: ReadonlySet<string> = new Set(),
-): (value: unknown) => string {
+): ((value: unknown) => string) => {
   const used = new Set<string>()
   let sequence = 0
   return (value) => {
@@ -94,7 +94,7 @@ export function idAllocator(
   }
 }
 
-export function topicIds(root: SourceRecord): ReadonlySet<string> {
+export const topicIds = (root: SourceRecord): ReadonlySet<string> => {
   const reserved = new Set<string>()
   const pending: { source: SourceRecord; depth: number }[] = [{ source: root, depth: 1 }]
   let count = 0

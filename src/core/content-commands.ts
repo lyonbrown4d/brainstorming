@@ -1,12 +1,12 @@
-import type { DocumentAsset, MindMapDocument, Topic, TopicContentCommand } from './types'
+import type { DocumentAsset, MindMapDocument, Topic, TopicContentCommand } from '@core/types'
 import {
   assetData,
   validateDocumentAsset,
   validateTopicImage,
   validateTopicNotes,
-} from './topic-content'
+} from '@core/topic-content'
 
-export function withAsset(document: MindMapDocument, asset: DocumentAsset): MindMapDocument {
+export const withAsset = (document: MindMapDocument, asset: DocumentAsset): MindMapDocument => {
   validateDocumentAsset(asset)
   const existing = Object.hasOwn(document.assets ?? {}, asset.id)
     ? document.assets?.[asset.id]
@@ -23,16 +23,16 @@ export function withAsset(document: MindMapDocument, asset: DocumentAsset): Mind
   return { ...document, assets: { ...document.assets, [asset.id]: assetData(asset) } }
 }
 
-function replaceTopic(document: MindMapDocument, topic: Topic): MindMapDocument {
+const replaceTopic = (document: MindMapDocument, topic: Topic): MindMapDocument => {
   const result = { ...document, topics: { ...document.topics, [topic.id]: topic } }
   return result
 }
 
-export function applyTopicContentCommand(
+export const applyTopicContentCommand = (
   document: MindMapDocument,
   topic: Topic,
   command: TopicContentCommand,
-): MindMapDocument {
+): MindMapDocument => {
   switch (command.type) {
     case 'setTopicNotes': {
       validateTopicNotes(command.notes)

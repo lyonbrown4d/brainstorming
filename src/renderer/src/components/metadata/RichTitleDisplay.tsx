@@ -1,7 +1,7 @@
 import Markdown from 'react-markdown'
 
 /** Inline portable formatting only; raw HTML, links and embedded resources are omitted. */
-export default function RichTitleDisplay({ source }: { source: string }) {
+export const RichTitleDisplay = ({ source }: { source: string }) => {
   return (
     <Markdown
       skipHtml
@@ -13,3 +13,5 @@ export default function RichTitleDisplay({ source }: { source: string }) {
     </Markdown>
   )
 }
+
+export default RichTitleDisplay

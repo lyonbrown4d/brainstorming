@@ -1,12 +1,18 @@
+import type { RendererConfig } from '@project/config/renderer'
+import { fileURLToPath } from 'node:url'
+import { readFileSync } from 'node:fs'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'electron-vite'
-import { alias, rendererInputs, rendererOptimizeDeps } from './vite.config.ts'
 import { resolve } from 'node:path'
+const rendererOptions = JSON.parse(
+  readFileSync(new URL('./config/renderer.json', import.meta.url), 'utf8'),
+) as RendererConfig
+const rendererOptimizeDeps = rendererOptions.optimizeDeps
 
 export default defineConfig({
   main: {
-    resolve: { alias },
+    resolve: { tsconfigPaths: true },
     build: {
       rollupOptions: {
         output: { entryFileNames: 'index.js', format: 'es' },
@@ -14,7 +20,7 @@ export default defineConfig({
     },
   },
   preload: {
-    resolve: { alias },
+    resolve: { tsconfigPaths: true },
     build: {
       externalizeDeps: false,
       rollupOptions: {
@@ -26,12 +32,19 @@ export default defineConfig({
   },
   renderer: {
     base: './',
-    resolve: { alias, dedupe: ['three'] },
+    resolve: { tsconfigPaths: true, dedupe: ['three'] },
     optimizeDeps: rendererOptimizeDeps,
     plugins: [react(), tailwindcss()],
     build: {
       minify: true,
-      rollupOptions: { input: rendererInputs },
+      rollupOptions: {
+        input: Object.fromEntries(
+          Object.entries(rendererOptions.inputs).map(([name, path]) => [
+            name,
+            fileURLToPath(new URL(path, import.meta.url)),
+          ]),
+        ),
+      },
     },
   },
 })

@@ -1,14 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { applyCommand, createExampleDocument, normalizeTopicSelection } from '@core'
 import { getSubtreeIds } from '@core/tree'
-import {
-  canvasDropCommand,
-  findCanvasDrop,
-  nodeCenter,
-} from '../../src/renderer/src/lib/canvasDrop'
-import { projectCanvas } from '../../src/renderer/src/components/documents/projectCanvas'
+import { canvasDropCommand, findCanvasDrop, nodeCenter } from '@renderer/lib/canvasDrop'
+import { projectCanvas } from '@renderer/components/documents/projectCanvas'
 
-function fixture() {
+const fixture = () => {
   const document = createExampleDocument()
   const nodes = projectCanvas(document).nodes
   const roots = normalizeTopicSelection(document, ['vision-0', 'vision-1'])

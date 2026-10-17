@@ -1,19 +1,27 @@
 import { deserializeWorkbook } from '@core'
 import type { OpenedDocument } from '@shared/contracts'
-import { isDirty, useEditor } from './editor'
-import { activateOpenedDocument, cancelOpenedDocument, unlockOpenedDocument } from './lockedFiles'
-import { browserPasswordFor, setBrowserPassword, useFileSecurityState } from './password'
+import { isDirty, useEditor } from '@renderer/state/editor'
+import {
+  activateOpenedDocument,
+  cancelOpenedDocument,
+  unlockOpenedDocument,
+} from '@renderer/state/lockedFiles'
+import {
+  browserPasswordFor,
+  setBrowserPassword,
+  useFileSecurityState,
+} from '@renderer/state/password'
 import {
   adoptBrowserRecoveryPassword,
   protectBrowserRecovery,
   readBrowserRecovery,
-} from './recovery'
+} from '@renderer/state/recovery'
 
 let pendingRecovery: OpenedDocument | null = null
-function showError(error: unknown): void {
+const showError = (error: unknown): void => {
   useEditor.getState().setError(error instanceof Error ? error.message : '文件操作失败')
 }
-export async function readRecoveryContents(): Promise<string | null> {
+export const readRecoveryContents = async (): Promise<string | null> => {
   if (!window.trelyx) return readBrowserRecovery()
   const opened = await window.trelyx.readLockedRecovery()
   if (!opened) return null
@@ -26,7 +34,7 @@ export async function readRecoveryContents(): Promise<string | null> {
   useFileSecurityState.setState({ lockedRecovery: false })
   return result.contents
 }
-export async function changeFilePassword(password: string | null): Promise<void> {
+export const changeFilePassword = async (password: string | null): Promise<void> => {
   const state = useEditor.getState()
   if (state.busy) return
   state.commitDraft()
@@ -52,7 +60,7 @@ export async function changeFilePassword(password: string | null): Promise<void>
     useEditor.setState({ busy: false })
   }
 }
-export function restoreRecovery(): void {
+export const restoreRecovery = (): void => {
   const contents = useEditor.getState().recovery
   if (!contents || useEditor.getState().busy) return
   useEditor.getState().commitDraft()
@@ -74,7 +82,7 @@ export function restoreRecovery(): void {
     }
   })()
 }
-export async function retryRecovery(): Promise<void> {
+export const retryRecovery = async (): Promise<void> => {
   if (useEditor.getState().busy) return
   useEditor.setState({ busy: true })
   try {
@@ -85,7 +93,7 @@ export async function retryRecovery(): Promise<void> {
     useEditor.setState({ busy: false })
   }
 }
-export async function restoreBackup(id: string): Promise<void> {
+export const restoreBackup = async (id: string): Promise<void> => {
   const bridge = window.trelyx
   if (!bridge || useEditor.getState().busy) return
   useEditor.getState().commitDraft()

@@ -1,12 +1,12 @@
-import { AI_LIMITS, type AITree } from '../../../../shared/ai'
-export function AIPreview({ tree }: { tree: AITree }) {
+import { AI_LIMITS, type AITree } from '@shared/ai'
+export const AIPreview = ({ tree }: { tree: AITree }) => {
   return (
     <ul className="grid gap-1 border-l border-border pl-4 text-sm" aria-label="AI 生成预览">
       <PreviewNode tree={tree} depth={1} />
     </ul>
   )
 }
-function PreviewNode({ tree, depth }: { tree: AITree; depth: number }) {
+const PreviewNode = ({ tree, depth }: { tree: AITree; depth: number }) => {
   if (depth > AI_LIMITS.depth) return null
   return (
     <li>

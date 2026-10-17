@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within, waitFor } from 'storybook/test'
-import { createExampleDocument } from '../src/core'
-import { App } from '../src/renderer/src/App'
-import { useEditor } from '../src/renderer/src/state/editor'
-import { selectedTopicIds } from '../src/renderer/src/state/selection'
-import { clearBrowserRecovery } from '../src/renderer/src/state/recovery'
+import { createExampleDocument } from '@core'
+import { App } from '@renderer/App'
+import { useEditor } from '@renderer/state/editor'
+import { selectedTopicIds } from '@renderer/state/selection'
+import { clearBrowserRecovery } from '@renderer/state/recovery'
 
 const meta = {
   title: 'Trelyx/图形结构',

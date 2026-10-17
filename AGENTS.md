@@ -30,7 +30,12 @@ Trelyx 是基于 React Flow + Electron 的本地优先桌面思维导图工具�
 
 - pnpm 是唯一包管理器，提交 pnpm-lock.yaml。
 - TypeScript strict、noUncheckedIndexedAccess、exactOptionalPropertyTypes；禁止滥用 any。
-- 手写源码原则上不超过 300 行，按职责拆分；不要为了行数拆成无意义碎片。
+- 项目内部静态导入、类型导入、再导出和动态导入统一使用 `@` 路径别名，禁止 `./`、`../` 相对模块路径；第三方包和 Node 内置模块保留原包名。路径别名集中维护在 `tsconfig.json`，Electron、浏览器、Vitest 和 Storybook 通过 Vite 内置 `resolve.tsconfigPaths` 解析，Playwright 使用 TypeScript 路径映射。资源 URL、文件路径和工具的目录配置不属于模块导入。
+- 手写源码、测试、Storybook 和 TypeScript 配置单文件不得超过 300 行，包含空行与注释；按职责拆分，不压缩格式或删除有用注释规避检查。第三方下载源码与生成产物不纳入该限制。
+- 函数、React 组件、回调和普通方法统一使用箭头函数；命名函数用 `const`，构造函数及 getter/setter 保留语言语法。断言函数的变量必须显式标注函数类型；迁移时检查初始化顺序，不依赖函数声明提升。
+- 新增源码、测试、配置和脚本优先使用 TypeScript（`.ts` / `.tsx`），保持 strict 类型检查，不新增平行的 JavaScript 实现。
+- 任何编码实现先检查现有依赖和成熟第三方库，优先复用通用能力，允许按需引入成熟库。选型检查维护状态、官方文档、类型支持、许可证、运行环境兼容性、包体积与安全性；只为主题树业务规则和必要集成维护自有逻辑。新增依赖使用 pnpm 并提交锁文件，不为通用能力另造基础组件或工具框架。
+- `pnpm lint` 强制检查内部路径、箭头函数及 300 行上限，`pnpm typecheck` 校验 TypeScript 契约；提交前与 CI 沿用同一套检查。详细别名和示例见 `docs/development.md`。
 - React 组件负责呈现和交互；模型、布局、文件协议分别维护。
 - 使用局部订阅和稳定引用，避免输入一个字符重绘全部主题。
 - Enter、Tab、blur、快捷键必须考虑 IME composition。

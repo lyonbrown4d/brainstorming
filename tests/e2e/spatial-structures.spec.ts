@@ -1,9 +1,9 @@
-import { openExample } from './workspace'
+import { openExample } from '@tests/e2e/workspace'
 import { expect, test, type Page } from '@playwright/test'
-import { structureOptions } from '../../src/renderer/src/components/documents/structureOptions'
-import { dockAction } from './dock'
+import { structureOptions } from '@renderer/components/documents/structureOptions'
+import { dockAction } from '@tests/e2e/dock'
 
-async function applyStructure(page: Page, label: string) {
+const applyStructure = async (page: Page, label: string) => {
   await dockAction(page, '图形结构')
   const picker = page.getByRole('dialog', { name: '图形结构', exact: true })
   const option = picker.getByRole('button', { name: `应用${label}`, exact: true })

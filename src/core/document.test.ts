@@ -7,7 +7,7 @@ import {
   deserializeDocument,
   serializeDocument,
   validateDocument,
-} from './index'
+} from '@core'
 
 describe('versioned document persistence', () => {
   it('round-trips a sample without derived or foreign persisted properties', () => {

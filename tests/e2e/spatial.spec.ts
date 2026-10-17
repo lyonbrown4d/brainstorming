@@ -1,8 +1,8 @@
-import { completeDocumentCreation, enterExampleIfHome, openExample } from './workspace'
-import { dockAction } from './dock'
+import { completeDocumentCreation, enterExampleIfHome, openExample } from '@tests/e2e/workspace'
+import { dockAction } from '@tests/e2e/dock'
 import { expect, test, type Page } from '@playwright/test'
 
-async function fileAction(page: Page, name: string) {
+const fileAction = async (page: Page, name: string) => {
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name, exact: true }).click()
   if (name === '新建导图') await completeDocumentCreation(page)
@@ -98,13 +98,12 @@ test('图形能力不可用时说明原因并能返回二维继续编辑', async
   await page.addInitScript(() => {
     // eslint-disable-next-line @typescript-eslint/unbound-method -- The replacement preserves the original canvas receiver with apply.
     const original = HTMLCanvasElement.prototype.getContext
-    HTMLCanvasElement.prototype.getContext = function (
-      this: HTMLCanvasElement,
-      ...args: Parameters<typeof original>
-    ) {
-      if (args[0].startsWith('webgl')) return null
-      return original.apply(this, args)
-    } as typeof original
+    HTMLCanvasElement.prototype.getContext = new Proxy(original, {
+      apply: (target, receiver: HTMLCanvasElement, args: Parameters<typeof original>) => {
+        if (args[0].startsWith('webgl')) return null
+        return target.apply(receiver, args)
+      },
+    })
   })
   await page.reload()
   await enterExampleIfHome(page)

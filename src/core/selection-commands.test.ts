@@ -8,10 +8,10 @@ import {
   redo,
   undo,
   validateDocument,
-} from './index'
-import type { Command, MindMapDocument } from './index'
+} from '@core'
+import type { Command, MindMapDocument } from '@core'
 
-function fixture(): MindMapDocument {
+const fixture = (): MindMapDocument => {
   return applyCommand(createDocument('中心', 'selection'), {
     type: 'batch',
     commands: [

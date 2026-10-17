@@ -1,4 +1,4 @@
-import type { TopicStyle } from './types'
+import type { TopicStyle } from '@core/types'
 
 const styleKeys = [
   'fill',
@@ -12,7 +12,9 @@ const styleKeys = [
 ] as const
 
 /** Accept only explicit, bounded presentation values at the command/file boundary. */
-export function validateTopicStyle(value: unknown): asserts value is TopicStyle {
+export const validateTopicStyle: (value: unknown) => asserts value is TopicStyle = (
+  value: unknown,
+): asserts value is TopicStyle => {
   if (
     typeof value !== 'object' ||
     value === null ||
@@ -52,7 +54,7 @@ export function validateTopicStyle(value: unknown): asserts value is TopicStyle 
 }
 
 /** Copy only protocol fields; renderer caches and arbitrary CSS are never persisted. */
-export function normalizeTopicStyle(style: TopicStyle): TopicStyle {
+export const normalizeTopicStyle = (style: TopicStyle): TopicStyle => {
   return Object.fromEntries(
     styleKeys.filter((key) => Object.hasOwn(style, key)).map((key) => [key, style[key]]),
   )

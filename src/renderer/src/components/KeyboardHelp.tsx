@@ -1,7 +1,13 @@
-import { DialogContent } from './DialogContent'
+import { DialogContent } from '@renderer/components/DialogContent'
 import { CircleHelp } from 'lucide-react'
-import { Button } from './ui/button'
-import { Dialog, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
+import { Button } from '@renderer/components/ui/button'
+import {
+  Dialog,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@renderer/components/ui/dialog'
 
 const shortcuts = [
   ['Tab / Enter', '添加子主题 / 同级主题（编辑中 Enter 确认）'],
@@ -21,7 +27,7 @@ const shortcuts = [
   ['拖动画布空白', '平移画布；按住 Shift 拖动框选主题'],
 ] as const
 
-export function KeyboardHelp() {
+export const KeyboardHelp = () => {
   return (
     <Dialog>
       <DialogTrigger asChild>

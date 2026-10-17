@@ -8,10 +8,10 @@ import {
   serializeDocument,
   serializeWorkbook,
   validateWorkbook,
-} from './index'
-import type { MindMapSheet, WorkbookCommand } from './index'
+} from '@core'
+import type { MindMapSheet, WorkbookCommand } from '@core'
 
-function secondSheet(): MindMapSheet {
+const secondSheet = (): MindMapSheet => {
   return { id: 'second', name: '第二页', document: createDocument('第二页中心', 'second') }
 }
 

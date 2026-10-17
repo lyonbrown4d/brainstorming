@@ -1,5 +1,5 @@
-import { mainWindow } from './windows'
-import { enterExampleIfHome } from '../e2e/workspace'
+import { mainWindow } from '@tests/desktop/windows'
+import { enterExampleIfHome } from '@tests/e2e/workspace'
 import { _electron as electron, expect, test } from '@playwright/test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'

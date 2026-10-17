@@ -5,29 +5,29 @@ import {
   createFloatingAt,
   interactAnnotationTopic,
   useAnnotationInteraction,
-} from '../state/annotationInteraction'
-import { useCanvasRelations } from '../hooks/useCanvasRelations'
-import { canvasFitPadding } from '../hooks/useWorkbenchInsets'
-import { CanvasOverlay } from './workbench/CanvasOverlay'
-import { useCanvasViewport } from '../hooks/useCanvasViewport'
-import { useCanvasDrag } from '../hooks/useCanvasDrag'
-import { DragFeedback } from './workbench/DragFeedback'
-import { CanvasMinimap } from './CanvasMinimap'
-import { RelationEdge } from './annotations/RelationEdge'
-import { presentationDocument, usePresentation } from '../state/presentation'
-import { useEditor } from '../state/editor'
-import { selectTopic, setSelectedTopics } from '../state/selection'
-import { TopicNode, type TopicFlowNode } from './TopicNode'
-import { CanvasAnnotations } from './annotations/CanvasAnnotations'
-import { SelectionVisibility } from './SelectionVisibility'
-import { FloatingToolbar } from './FloatingToolbar'
+} from '@renderer/state/annotationInteraction'
+import { useCanvasRelations } from '@renderer/hooks/useCanvasRelations'
+import { canvasFitPadding } from '@renderer/hooks/useWorkbenchInsets'
+import { CanvasOverlay } from '@renderer/components/workbench/CanvasOverlay'
+import { useCanvasViewport } from '@renderer/hooks/useCanvasViewport'
+import { useCanvasDrag } from '@renderer/hooks/useCanvasDrag'
+import { DragFeedback } from '@renderer/components/workbench/DragFeedback'
+import { CanvasMinimap } from '@renderer/components/CanvasMinimap'
+import { RelationEdge } from '@renderer/components/annotations/RelationEdge'
+import { presentationDocument, usePresentation } from '@renderer/state/presentation'
+import { useEditor } from '@renderer/state/editor'
+import { selectTopic, setSelectedTopics } from '@renderer/state/selection'
+import { TopicNode, type TopicFlowNode } from '@renderer/components/TopicNode'
+import { CanvasAnnotations } from '@renderer/components/annotations/CanvasAnnotations'
+import { SelectionVisibility } from '@renderer/components/SelectionVisibility'
+import { FloatingToolbar } from '@renderer/components/FloatingToolbar'
 import { documentAppearance } from '@shared/appearance'
-import { projectCanvas } from './documents/projectCanvas'
-import { StructureEdge, StructureGeometry } from './documents/StructureGeometry'
+import { projectCanvas } from '@renderer/components/documents/projectCanvas'
+import { StructureEdge, StructureGeometry } from '@renderer/components/documents/StructureGeometry'
 const nodeTypes = { topic: TopicNode }
 const edgeTypes = { relation: RelationEdge, structure: StructureEdge }
-export { ZoomControls } from './ZoomControls'
-export function Canvas() {
+export { ZoomControls } from '@renderer/components/ZoomControls'
+export const Canvas = () => {
   const flow = useReactFlow<TopicFlowNode>()
   useCanvasViewport()
   const reduceMotion = useReducedMotion()

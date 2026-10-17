@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { validateRendererURL } from '../../src/main/config'
+import { validateRendererURL } from '@main/config'
 
 describe('开发渲染地址', () => {
   it('只允许明确的本机 HTTP 地址', () => {

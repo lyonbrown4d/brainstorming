@@ -2,9 +2,9 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { FORMAT_TEXT_COMMAND } from 'lexical'
 import { INSERT_ORDERED_LIST_COMMAND, INSERT_UNORDERED_LIST_COMMAND } from '@lexical/list'
 import { Bold, Italic, Code, Strikethrough, List, ListOrdered } from 'lucide-react'
-import { Button } from '../ui/button'
+import { Button } from '@renderer/components/ui/button'
 
-export function RichTextToolbar({ title }: { title: boolean }) {
+export const RichTextToolbar = ({ title }: { title: boolean }) => {
   const [editor] = useLexicalComposerContext()
   return (
     <div

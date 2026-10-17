@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within, waitFor } from 'storybook/test'
-import { createExampleDocument } from '../src/core'
-import { App } from '../src/renderer/src/App'
-import { useEditor } from '../src/renderer/src/state/editor'
-import { setSelectedTopics } from '../src/renderer/src/state/selection'
-import { useSearch } from '../src/renderer/src/state/search'
-import { clearBrowserRecovery } from '../src/renderer/src/state/recovery'
+import { createExampleDocument } from '@core'
+import { App } from '@renderer/App'
+import { useEditor } from '@renderer/state/editor'
+import { setSelectedTopics } from '@renderer/state/selection'
+import { useSearch } from '@renderer/state/search'
+import { clearBrowserRecovery } from '@renderer/state/recovery'
 
 const meta = {
   title: 'Trelyx/批量编辑与查找',

@@ -4,14 +4,14 @@ import { Tabs } from 'radix-ui'
 import { Plus } from 'lucide-react'
 import { closestCenter, DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { horizontalListSortingStrategy, SortableContext } from '@dnd-kit/sortable'
-import { useEditor } from '../state/editor'
-import { SheetTabItem } from './SheetTabItem'
-import { SheetDialog, type SheetDialogAction } from './SheetDialog'
-import { Button } from './ui/button'
-import '../styles/sheets.css'
-import { beginCreation } from '../state/creation'
+import { useEditor } from '@renderer/state/editor'
+import { SheetTabItem } from '@renderer/components/SheetTabItem'
+import { SheetDialog, type SheetDialogAction } from '@renderer/components/SheetDialog'
+import { Button } from '@renderer/components/ui/button'
+import '@renderer/styles/sheets.css'
+import { beginCreation } from '@renderer/state/creation'
 
-export function SheetTabs() {
+export const SheetTabs = () => {
   const layoutId = useId()
   const sheets = useEditor((state) => state.workbook.sheets)
   const activeId = useEditor((state) => state.activeSheetId)

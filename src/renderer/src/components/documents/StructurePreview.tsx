@@ -20,7 +20,7 @@ const vertical: readonly Point[] = [
   [96, 60],
 ]
 
-function node([x, y]: Point, index: number) {
+const node = ([x, y]: Point, index: number) => {
   return (
     <rect
       key={index}
@@ -37,7 +37,7 @@ function node([x, y]: Point, index: number) {
 }
 
 /** Small code-native diagrams keep each structure recognizable without raster assets. */
-export function StructurePreview({ kind }: { kind: LayoutKind }) {
+export const StructurePreview = ({ kind }: { kind: LayoutKind }) => {
   const verticalLayout = [
     'org-down',
     'org-up',

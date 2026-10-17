@@ -1,12 +1,12 @@
 import { app, BrowserWindow, dialog } from 'electron'
 import { join } from 'node:path'
-import { desktopConfig } from './config'
-import { DocumentFiles } from './files'
-import { registerIPC } from './ipc'
-import { installMenu } from './menu'
-import { OpenFileRequests } from './openFiles'
-import { installWindowChrome, windowChromeOptions } from './windowChrome'
-import { StartupWindow } from './startupWindow'
+import { desktopConfig } from '@main/config'
+import { DocumentFiles } from '@main/files'
+import { registerIPC } from '@main/ipc'
+import { installMenu } from '@main/menu'
+import { OpenFileRequests } from '@main/openFiles'
+import { installWindowChrome, windowChromeOptions } from '@main/windowChrome'
+import { StartupWindow } from '@main/startupWindow'
 
 app.setName('Trelyx')
 const openFiles = new OpenFileRequests()
@@ -23,7 +23,7 @@ let files: DocumentFiles
 let initialized = false
 let startup: StartupWindow | null = null
 
-function startSplash(): void {
+const startSplash = (): void => {
   startup = new StartupWindow(
     app.isPackaged ? undefined : desktopConfig.rendererURL,
     () => {
@@ -38,7 +38,7 @@ function startSplash(): void {
   )
 }
 
-function notifyOpenFile(): void {
+const notifyOpenFile = (): void => {
   if (!window && app.isReady() && initialized) createWindow()
   if (window?.isMinimized()) window.restore()
   if (window?.isVisible()) window.focus()
@@ -57,7 +57,7 @@ app.on('second-instance', (_event, arguments_) => {
   }
 })
 
-function createWindow(): void {
+const createWindow = (): void => {
   if (!startup) startSplash()
   dirty = false
   preserveRecovery = true

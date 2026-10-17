@@ -7,10 +7,10 @@ import {
   exportNotice,
   type ExportFormat,
   type ExportRequest,
-} from '../export/files'
-import { printSheet } from '../export/print'
-import { Button } from './ui/button'
-import { Label } from './ui/label'
+} from '@renderer/export/files'
+import { printSheet } from '@renderer/export/print'
+import { Button } from '@renderer/components/ui/button'
+import { Label } from '@renderer/components/ui/label'
 import {
   Dialog,
   DialogClose,
@@ -20,8 +20,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from './ui/dialog'
-import { FieldSelect } from './FieldSelect'
+} from '@renderer/components/ui/dialog'
+import { FieldSelect } from '@renderer/components/FieldSelect'
 
 const formats: readonly { value: ExportFormat; label: string }[] = [
   { value: 'png', label: 'PNG 图片' },
@@ -38,12 +38,12 @@ export interface ExportDialogProps {
   onExport?: (request: ExportRequest) => Promise<string | null>
   defaultOpen?: boolean
 }
-export function ExportDialog({
+export const ExportDialog = ({
   workbook,
   currentSheetId,
   onExport = downloadExport,
   defaultOpen = false,
-}: ExportDialogProps) {
+}: ExportDialogProps) => {
   const [open, setOpen] = useState(defaultOpen)
   const [format, setFormat] = useState<ExportFormat>('png')
   const [scope, setScope] = useState<'sheet' | 'workbook'>('sheet')

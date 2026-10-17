@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
-import { ImportNotice } from '../src/renderer/src/components/ImportNotice'
-import { useEditor } from '../src/renderer/src/state/editor'
-import '../src/renderer/src/styles/ui.css'
-import '../src/renderer/src/styles/chrome.css'
+import { ImportNotice } from '@renderer/components/ImportNotice'
+import { useEditor } from '@renderer/state/editor'
+import '@renderer/styles/ui.css'
+import '@renderer/styles/chrome.css'
 
 const meta = {
   title: 'Trelyx/XMind 导入',

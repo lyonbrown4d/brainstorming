@@ -8,4 +8,4 @@ if (import.meta.env.DEV && import.meta.env.VITE_REACT_SCAN !== 'false') {
     console.warn('React Scan 初始化失败，编辑器将继续启动。', error)
   }
 }
-await import('./mountApp')
+await import('@renderer/mountApp')

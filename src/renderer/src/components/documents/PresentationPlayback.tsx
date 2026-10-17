@@ -1,10 +1,10 @@
 import { ArrowLeft, ArrowRight, Maximize, Minimize, Square } from 'lucide-react'
-import { useEditor } from '../../state/editor'
-import { showPresentationStep, stopPresentation } from '../../state/presentation'
-import { usePresentationPlayback } from '../../hooks/usePresentationPlayback'
-import { Button } from '../ui/button'
+import { useEditor } from '@renderer/state/editor'
+import { showPresentationStep, stopPresentation } from '@renderer/state/presentation'
+import { usePresentationPlayback } from '@renderer/hooks/usePresentationPlayback'
+import { Button } from '@renderer/components/ui/button'
 
-export function PresentationPlayback() {
+export const PresentationPlayback = () => {
   const { presentation, fullscreen, toggleFullscreen } = usePresentationPlayback()
   const title = useEditor(
     (state) =>

@@ -1,18 +1,18 @@
 import { XMLParser } from 'fast-xml-parser'
 import { DOMParser, onWarningStopParsing } from '@xmldom/xmldom'
-import { record, text, type SourceRecord, type Warnings } from './common'
-import { legacyStyleMap } from './styles'
+import { record, text, type SourceRecord, type Warnings } from '@formats/xmind/common'
+import { legacyStyleMap } from '@formats/xmind/styles'
 
-function many(value: unknown): unknown[] {
+const many = (value: unknown): unknown[] => {
   return value === undefined ? [] : Array.isArray(value) ? (value as unknown[]) : [value]
 }
 
-function xmlText(value: unknown): string {
+const xmlText = (value: unknown): string => {
   if (value === undefined) return ''
   return typeof value === 'string' ? value : text(record(value, 'XML 文本')['#text'], 'XML 文本')
 }
 
-function parseXml(xml: string): SourceRecord {
+const parseXml = (xml: string): SourceRecord => {
   if (/<!\s*(?:DOCTYPE|ENTITY)\b/i.test(xml)) throw new Error('XMind XML 不允许 DOCTYPE 或实体声明')
   // Bound nesting before passing untrusted input into the third-party XML parser.
   const markup = xml.replace(/<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?[\s\S]*?\?>/g, '')
@@ -54,11 +54,11 @@ function parseXml(xml: string): SourceRecord {
   return record(parser.parse(xml) as unknown, 'XML')
 }
 
-export function parseLegacy(
+export const parseLegacy = (
   xml: string,
   stylesXml: string | undefined,
   warnings: Warnings,
-): unknown[] {
+): unknown[] => {
   const content = record(parseXml(xml)['xmap-content'], 'xmap-content')
   const styles = stylesXml
     ? legacyStyleMap(record(parseXml(stylesXml)['xmap-styles'], 'xmap-styles'))

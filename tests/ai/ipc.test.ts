@@ -1,8 +1,8 @@
 import { EventEmitter } from 'node:events'
 import type { BrowserWindow, IpcMainInvokeEvent } from 'electron'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { AIResult, AISettings } from '../../src/shared/ai'
-import type { PrivateAISettings } from '../../src/main/ai/settings'
+import type { AIResult, AISettings } from '@shared/ai'
+import type { PrivateAISettings } from '@main/ai/settings'
 
 const mocks = vi.hoisted(() => ({
   handlers: new Map<string, (event: IpcMainInvokeEvent, input?: unknown) => unknown>(),
@@ -34,7 +34,7 @@ vi.mock('../../src/main/ai/settings', () => ({
   },
 }))
 vi.mock('../../src/main/ai/service', () => ({ generateMindMap: mocks.generate }))
-import { registerAIIPC } from '../../src/main/ai'
+import { registerAIIPC } from '@main/ai'
 
 const settings: AISettings = {
   baseURL: 'http://localhost:11434/v1',
@@ -54,10 +54,10 @@ const result: AIResult = {
 const request = { requestId: 'request-one', mode: 'generate', prompt: '计划', context: [] }
 const frame = {}
 const windows = new Map<number, EventEmitter>()
-function event(id = 1): IpcMainInvokeEvent {
+const event = (id = 1): IpcMainInvokeEvent => {
   return { sender: { id }, senderFrame: frame } as unknown as IpcMainInvokeEvent
 }
-function invoke(channel: string, owner = event(), input?: unknown): Promise<unknown> {
+const invoke = (channel: string, owner = event(), input?: unknown): Promise<unknown> => {
   return Promise.resolve().then(() => {
     const handler = mocks.handlers.get(channel)
     if (!handler) throw new Error('Missing AI IPC handler')

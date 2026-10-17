@@ -1,13 +1,13 @@
-import { clipboardAnnotations, pasteAnnotations, remapMetadata } from './clipboard-extensions'
-import { pruneTopicMetadata } from './extension-references'
-import { documentData } from './document'
-import { normalizeTopicSelection } from './selection'
-import { getSubtreeIds, requireTopic } from './tree'
-import { assertAssetId, assetData, referencedAssetIds } from './topic-content'
-import type { Command, DocumentAsset, MindMapDocument, Topic, TopicClipboard } from './types'
-import { assertId, validateDocument } from './validation'
+import { clipboardAnnotations, pasteAnnotations, remapMetadata } from '@core/clipboard-extensions'
+import { pruneTopicMetadata } from '@core/extension-references'
+import { documentData } from '@core/document'
+import { normalizeTopicSelection } from '@core/selection'
+import { getSubtreeIds, requireTopic } from '@core/tree'
+import { assertAssetId, assetData, referencedAssetIds } from '@core/topic-content'
+import type { Command, DocumentAsset, MindMapDocument, Topic, TopicClipboard } from '@core/types'
+import { assertId, validateDocument } from '@core/validation'
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+const isRecord = (value: unknown): value is Record<string, unknown> => {
   return (
     typeof value === 'object' &&
     value !== null &&
@@ -17,7 +17,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /** Clipboard payloads cross a trust boundary, including when read from system text. */
-export function validateTopicClipboard(value: unknown): asserts value is TopicClipboard {
+export const validateTopicClipboard: (value: unknown) => asserts value is TopicClipboard = (
+  value: unknown,
+): asserts value is TopicClipboard => {
   if (
     !isRecord(value) ||
     value.format !== 'trelyx.topics' ||
@@ -61,10 +63,10 @@ export function validateTopicClipboard(value: unknown): asserts value is TopicCl
   })
 }
 
-export function createTopicClipboard(
+export const createTopicClipboard = (
   document: MindMapDocument,
   topicIds: readonly string[],
-): TopicClipboard {
+): TopicClipboard => {
   validateDocument(document)
   const roots = normalizeTopicSelection(document, topicIds)
   if (roots.length === 0) throw new Error('请选择要复制的主题')
@@ -91,12 +93,12 @@ export function createTopicClipboard(
   }
 }
 
-function validateMapping(
+const validateMapping = (
   sourceIds: readonly string[],
   mapping: Readonly<Record<string, string>>,
   existing: Readonly<Record<string, unknown>>,
   assert: (id: unknown) => void,
-): void {
+): void => {
   if (!isRecord(mapping) || Object.keys(mapping).length !== sourceIds.length)
     throw new Error('剪贴板 ID 映射不完整')
   const seen = new Set<string>()
@@ -110,10 +112,10 @@ function validateMapping(
   }
 }
 
-export function pasteTopics(
+export const pasteTopics = (
   document: MindMapDocument,
   command: Extract<Command, { type: 'pasteTopics' }>,
-): MindMapDocument {
+): MindMapDocument => {
   validateTopicClipboard(command.clipboard)
   const { clipboard, topicIds, assetIds } = command
   const sourceTopics = documentData({ ...document, topics: clipboard.topics }).topics

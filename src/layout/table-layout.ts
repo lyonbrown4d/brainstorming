@@ -1,13 +1,13 @@
 import { hierarchy, partition } from 'd3-hierarchy'
-import { requireUnit } from './tree-layout'
-import type { LayoutComponent, LayoutUnit, LocalLayout } from './types'
+import { requireUnit } from '@layout/tree-layout'
+import type { LayoutComponent, LayoutUnit, LocalLayout } from '@layout/types'
 
 /** D3's icicle partition supplies hierarchical spanning cells with measured editable cards. */
-export function tableLayout(
+export const tableLayout = (
   component: LayoutComponent,
   units: ReadonlyMap<string, LayoutUnit>,
   direction: 'right' | 'down',
-): LocalLayout {
+): LocalLayout => {
   const vertical = direction === 'down'
   const root = requireUnit(units, component.rootId)
   const branch = hierarchy(root, (unit) =>

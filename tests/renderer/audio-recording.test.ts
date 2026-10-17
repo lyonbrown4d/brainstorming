@@ -1,16 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createDocument } from '../../src/core'
+import { createDocument } from '@core'
 import {
   AudioRecordingSession,
   MAX_RECORDING_BYTES,
   MAX_RECORDING_SECONDS,
-} from '../../src/renderer/src/state/audioRecording'
-import { persistRecordedAudio } from '../../src/renderer/src/state/recordedAudio'
-import { useEditor } from '../../src/renderer/src/state/editor'
+} from '@renderer/state/audioRecording'
+import { persistRecordedAudio } from '@renderer/state/recordedAudio'
+import { useEditor } from '@renderer/state/editor'
 
 class FakeRecorder {
   static instances: FakeRecorder[] = []
-  static isTypeSupported() {
+  static isTypeSupported = () => {
     return true
   }
   state: 'recording' | 'inactive' = 'inactive'
@@ -21,23 +21,23 @@ class FakeRecorder {
   constructor() {
     FakeRecorder.instances.push(this)
   }
-  start() {
+  start = () => {
     this.state = 'recording'
   }
-  stop() {
+  stop = () => {
     this.state = 'inactive'
     queueMicrotask(() => {
       this.onstop?.()
     })
   }
-  emit(data: Blob) {
+  emit = (data: Blob) => {
     this.ondataavailable?.({ data })
   }
 }
 const trackStop = vi.fn()
 const stream = { getTracks: () => [{ stop: trackStop }] }
 const getUserMedia = vi.fn(() => Promise.resolve(stream))
-function callbacks() {
+const callbacks = () => {
   return { onStarted: vi.fn(), onComplete: vi.fn(), onError: vi.fn(), onLimit: vi.fn() }
 }
 beforeEach(() => {

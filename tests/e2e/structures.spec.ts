@@ -1,21 +1,21 @@
-import { completeDocumentCreation, openExample } from './workspace'
+import { completeDocumentCreation, openExample } from '@tests/e2e/workspace'
 import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
-import { applyCommand, createExampleDocument, createWorkbook } from '../../src/core'
-import { decodeTrelyx, encodeTrelyx } from '../../src/formats/trelyx'
-import { structureOptions } from '../../src/renderer/src/components/documents/structureOptions'
-import { dockAction } from './dock'
+import { applyCommand, createExampleDocument, createWorkbook } from '@core'
+import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
+import { structureOptions } from '@renderer/components/documents/structureOptions'
+import { dockAction } from '@tests/e2e/dock'
 
-async function fileAction(page: Page, name: string) {
+const fileAction = async (page: Page, name: string) => {
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name, exact: true }).click()
   if (name === '新建导图') await completeDocumentCreation(page)
 }
-async function openPicker(page: Page) {
+const openPicker = async (page: Page) => {
   await dockAction(page, '图形结构')
   return page.getByRole('dialog', { name: '图形结构', exact: true })
 }
-async function save(page: Page) {
+const save = async (page: Page) => {
   const download = page.waitForEvent('download')
   await page.keyboard.press('ControlOrMeta+s')
   const path = await (await download).path()

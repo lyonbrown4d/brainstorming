@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { getParentId, type MindMapDocument } from '@core'
-import type { SpatialCameraState } from '../components/spatial/SpatialCanvas'
+import type { SpatialCameraState } from '@renderer/components/spatial/SpatialCanvas'
 
 export type ViewMode = '2d' | '3d'
 export interface SpatialSheetView {
@@ -51,10 +51,10 @@ export const useSpatialView = create<SpatialViewState>((set) => ({
   },
 }))
 
-export function visibleSpatialFocus(
+export const visibleSpatialFocus = (
   document: MindMapDocument,
   focusId: string | null,
-): string | null {
+): string | null => {
   if (!focusId || !document.topics[focusId] || focusId === document.rootId) return null
   let visibleId = focusId
   let parentId = getParentId(document, focusId)

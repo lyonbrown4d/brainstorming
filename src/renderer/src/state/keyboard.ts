@@ -2,7 +2,7 @@ import type { MindMapDocument } from '@core'
 import { layoutDocument, type LayoutDirection, type LayoutNode } from '@layout'
 
 /** Safari may end composition before dispatching its final Enter key. */
-export function isCompositionKey(event: KeyboardEvent): boolean {
+export const isCompositionKey = (event: KeyboardEvent): boolean => {
   return event.isComposing || event.key === 'Process' || Reflect.get(event, 'keyCode') === 229
 }
 
@@ -28,7 +28,7 @@ const opposite: Readonly<Record<LayoutDirection, LayoutDirection>> = {
   down: 'up',
 }
 
-function navigationLayout(document: MindMapDocument): NavigationLayout {
+const navigationLayout = (document: MindMapDocument): NavigationLayout => {
   const cached = navigationLayouts.get(document)
   if (cached) return cached
   const layout = layoutDocument(document)
@@ -44,21 +44,21 @@ function navigationLayout(document: MindMapDocument): NavigationLayout {
   return result
 }
 
-function visibleChildren(
+const visibleChildren = (
   document: MindMapDocument,
   layout: NavigationLayout,
   id: string,
-): string[] {
+): string[] => {
   return (document.topics[id]?.children ?? []).filter((child) => layout.parents.get(child) === id)
 }
 
 /** Prefer the nearest card in the same row/column, then penalize perpendicular distance. */
-function nearest(
+const nearest = (
   origin: LayoutNode,
   candidates: Iterable<LayoutNode>,
   direction: LayoutDirection,
   alignedOnly = false,
-): string | undefined {
+): string | undefined => {
   const horizontal = direction === 'left' || direction === 'right'
   const sign = direction === 'left' || direction === 'up' ? -1 : 1
   let best: { id: string; aligned: boolean; score: number } | undefined
@@ -82,11 +82,11 @@ function nearest(
 }
 
 /** Resolve visible neighbors in the shared logical layout used by both canvas views. */
-export function getNavigationTarget(
+export const getNavigationTarget = (
   document: MindMapDocument,
   selectedId: string,
   key: string,
-): string | undefined {
+): string | undefined => {
   const direction = directions.get(key)
   if (!direction || !document.topics[selectedId]) return undefined
   const layout = navigationLayout(document)

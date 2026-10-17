@@ -1,9 +1,9 @@
 import { create } from 'zustand'
-import { usePresentation } from './presentation'
-import { useEditor } from './editor'
-import { selectedTopicIds } from './selection'
-import { runAnnotationCommand } from '../components/annotations/commands'
-import { isCompositionKey } from './keyboard'
+import { usePresentation } from '@renderer/state/presentation'
+import { useEditor } from '@renderer/state/editor'
+import { selectedTopicIds } from '@renderer/state/selection'
+import { runAnnotationCommand } from '@renderer/components/annotations/commands'
+import { isCompositionKey } from '@renderer/state/keyboard'
 
 export type AnnotationKind = 'relation' | 'group' | 'callout'
 export interface AnnotationSelection {
@@ -19,7 +19,7 @@ export const useAnnotationInteraction = create<{
   editing: boolean
 }>(() => ({ floating: false, fromId: null, sheetId: null, selected: null, editing: false }))
 
-export function selectAnnotation(kind: AnnotationKind, id: string, editing = false): void {
+export const selectAnnotation = (kind: AnnotationKind, id: string, editing = false): void => {
   if (usePresentation.getState().playing) return
   useEditor.getState().commitDraft()
   if (useEditor.getState().editingId) return
@@ -35,7 +35,7 @@ export function selectAnnotation(kind: AnnotationKind, id: string, editing = fal
   })
 }
 
-export function handleAnnotationKey(event: KeyboardEvent): boolean {
+export const handleAnnotationKey = (event: KeyboardEvent): boolean => {
   if (event.defaultPrevented || isCompositionKey(event)) return false
   const target = event.target
   if (
@@ -78,7 +78,7 @@ export function handleAnnotationKey(event: KeyboardEvent): boolean {
   if (success) useAnnotationInteraction.setState({ selected: null, editing: false })
   return true
 }
-export function toggleRelationMode(): void {
+export const toggleRelationMode = (): void => {
   const current = useAnnotationInteraction.getState()
   if (current.fromId) {
     useAnnotationInteraction.setState({ fromId: null, sheetId: null })
@@ -94,7 +94,7 @@ export function toggleRelationMode(): void {
     editing: false,
   })
 }
-export function connectAnnotation(from: string, to: string): boolean {
+export const connectAnnotation = (from: string, to: string): boolean => {
   if (from === to) return false
   const id = crypto.randomUUID()
   if (
@@ -109,7 +109,7 @@ export function connectAnnotation(from: string, to: string): boolean {
   return true
 }
 /** Only topic pointer selection participates; keyboard navigation and search remain independent. */
-export function interactAnnotationTopic(id: string): boolean {
+export const interactAnnotationTopic = (id: string): boolean => {
   const interaction = useAnnotationInteraction.getState()
   if (!interaction.fromId) return false
   if (interaction.sheetId !== useEditor.getState().activeSheetId) {
@@ -119,7 +119,7 @@ export function interactAnnotationTopic(id: string): boolean {
   connectAnnotation(interaction.fromId, id)
   return true
 }
-export function addSelectionGroup(kind: 'boundary' | 'summary'): void {
+export const addSelectionGroup = (kind: 'boundary' | 'summary'): void => {
   const state = useEditor.getState(),
     topicIds = selectedTopicIds(state)
   if (!topicIds.length) return
@@ -132,7 +132,7 @@ export function addSelectionGroup(kind: 'boundary' | 'summary'): void {
   )
     selectAnnotation('group', id, true)
 }
-export function addSelectionCallout(): void {
+export const addSelectionCallout = (): void => {
   const id = crypto.randomUUID()
   if (
     runAnnotationCommand({
@@ -143,7 +143,7 @@ export function addSelectionCallout(): void {
     selectAnnotation('callout', id, true)
 }
 
-export function armFloatingTopic(): void {
+export const armFloatingTopic = (): void => {
   const state = useEditor.getState()
   state.commitDraft()
   if (useEditor.getState().editingId) return
@@ -155,7 +155,7 @@ export function armFloatingTopic(): void {
     editing: false,
   })
 }
-export function createFloatingAt(x: number, y: number): boolean {
+export const createFloatingAt = (x: number, y: number): boolean => {
   if (!useAnnotationInteraction.getState().floating) return false
   const id = crypto.randomUUID()
   if (runAnnotationCommand({ type: 'addFloatingTopic', id, title: '游离主题', x, y })) {

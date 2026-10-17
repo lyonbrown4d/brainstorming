@@ -2,10 +2,10 @@ import { useEffect, useRef, type RefObject } from 'react'
 import { useThree } from '@react-three/fiber'
 import type { CameraControlsImpl } from '@react-three/drei'
 import { Vector3 } from 'three'
-import type { SpatialNode } from '../../../layout/spatial'
-import { spatialSelectionShift } from '../lib/spatialSelectionVisibility'
-import { spatialSafeViewport } from '../lib/spatialSafeViewport'
-import { useEditor } from '../state/editor'
+import type { SpatialNode } from '@layout/spatial'
+import { spatialSelectionShift } from '@renderer/lib/spatialSelectionVisibility'
+import { spatialSafeViewport } from '@renderer/lib/spatialSafeViewport'
+import { useEditor } from '@renderer/state/editor'
 
 interface Options {
   readonly controls: RefObject<CameraControlsImpl | null>
@@ -17,14 +17,14 @@ interface Options {
 }
 
 /** Navigation reveals new selections; document edits and restored views retain their framing. */
-export function useSpatialSelectionVisibility({
+export const useSpatialSelectionVisibility = ({
   controls,
   nodes,
   selectedId,
   frameKey,
   framing,
   enabled,
-}: Options): void {
+}: Options): void => {
   const camera = useThree((state) => state.camera)
   const gl = useThree((state) => state.gl)
   const invalidate = useThree((state) => state.invalidate)

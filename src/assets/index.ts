@@ -1,11 +1,11 @@
-import { audioMime } from './audio'
+import { audioMime } from '@assets/audio'
 import { base64 } from '@scure/base'
 import { imageSize } from 'image-size'
-import { validateDocumentAsset, type DocumentAsset } from '../core'
+import { validateDocumentAsset, type DocumentAsset } from '@core'
 
 export const MAX_ASSET_BYTES = 8 * 1024 * 1024
 
-export function safeAssetName(name: string): string {
+export const safeAssetName = (name: string): string => {
   const basename = name.split(/[\\/]/u).at(-1) ?? ''
   const cleaned = basename
     .replace(/[\p{Cc}<>:"|?*]/gu, '_')
@@ -24,7 +24,7 @@ export function safeAssetName(name: string): string {
   return /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/iu.test(result) ? `_${result}` : result
 }
 
-function rasterMime(bytes: Uint8Array): string | undefined {
+const rasterMime = (bytes: Uint8Array): string | undefined => {
   const starts = (signature: readonly number[]): boolean =>
     signature.every((byte, index) => bytes[index] === byte)
   if (starts([137, 80, 78, 71, 13, 10, 26, 10])) return 'image/png'
@@ -42,11 +42,11 @@ function rasterMime(bytes: Uint8Array): string | undefined {
   return undefined
 }
 
-export function createAsset(
+export const createAsset = (
   bytes: Uint8Array,
   name: string,
   id: string = crypto.randomUUID(),
-): DocumentAsset {
+): DocumentAsset => {
   if (bytes.byteLength > MAX_ASSET_BYTES) throw new Error('单个资源不能超过 8 MiB')
   const asset: DocumentAsset = {
     id,
@@ -58,12 +58,12 @@ export function createAsset(
   return asset
 }
 
-export function assetBytes(asset: DocumentAsset): Uint8Array {
+export const assetBytes = (asset: DocumentAsset): Uint8Array => {
   validateDocumentAsset(asset)
   return base64.decode(asset.data)
 }
 
-export function imageDimensions(asset: DocumentAsset): { width: number; height: number } {
+export const imageDimensions = (asset: DocumentAsset): { width: number; height: number } => {
   const bytes = assetBytes(asset)
   if (!rasterMime(bytes) || rasterMime(bytes) !== asset.mimeType)
     throw new Error('图片仅支持有效的 PNG、JPEG、GIF 或 WebP')

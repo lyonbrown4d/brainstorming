@@ -4,7 +4,7 @@ import type {
   ExtensionCommand,
   LayoutKind,
   TopicMetadata,
-} from './extensions'
+} from '@core/extensions'
 
 export type Side = 'left' | 'right'
 

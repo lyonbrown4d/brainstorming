@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import { extname, resolve, sep } from 'node:path'
 
 /** Serves the actual production HTML/assets while holding only the editor module. */
-export async function startupServer() {
+export const startupServer = async () => {
   let unblock: (() => void) | undefined
   let requested: (() => void) | undefined
   const blocked = new Promise<void>((resolve) => {

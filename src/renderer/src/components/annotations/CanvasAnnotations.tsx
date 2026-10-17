@@ -1,16 +1,16 @@
 import { ViewportPortal } from '@xyflow/react'
 import type { MindMapDocument } from '@core'
 import type { LayoutNode } from '@layout'
-import { InlineAnnotationLabel } from './InlineAnnotationLabel'
-import { groupBounds } from './projection'
+import { InlineAnnotationLabel } from '@renderer/components/annotations/InlineAnnotationLabel'
+import { groupBounds } from '@renderer/components/annotations/projection'
 
-export function CanvasAnnotations({
+export const CanvasAnnotations = ({
   document,
   nodes,
 }: {
   document: MindMapDocument
   nodes: readonly LayoutNode[]
-}) {
+}) => {
   const byId = new Map(nodes.map((node) => [node.id, node]))
   return (
     <ViewportPortal>

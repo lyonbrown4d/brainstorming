@@ -1,12 +1,12 @@
 import { CubicBezierLine, Html, Line } from '@react-three/drei'
 import type { RefObject } from 'react'
 import type { MindMapDocument } from '@core'
-import type { SpatialLayout } from '../../../../layout/spatial'
-import { InlineAnnotationLabel } from './InlineAnnotationLabel'
-import { groupBounds } from './projection'
+import type { SpatialLayout } from '@layout/spatial'
+import { InlineAnnotationLabel } from '@renderer/components/annotations/InlineAnnotationLabel'
+import { groupBounds } from '@renderer/components/annotations/projection'
 
 type Point = [number, number, number]
-function arrowPoints(from: Point, to: Point): Point[] {
+const arrowPoints = (from: Point, to: Point): Point[] => {
   const dx = to[0] - from[0],
     dy = to[1] - from[1]
   const length = Math.hypot(dx, dy) || 1
@@ -18,7 +18,7 @@ function arrowPoints(from: Point, to: Point): Point[] {
     [to[0] - ux + uy * 0.5, to[1] - uy - ux * 0.5, to[2]],
   ]
 }
-export function SpatialAnnotations({
+export const SpatialAnnotations = ({
   document,
   layout,
   labelPortal,
@@ -26,7 +26,7 @@ export function SpatialAnnotations({
   document: MindMapDocument
   layout: SpatialLayout
   labelPortal: RefObject<HTMLDivElement>
-}) {
+}) => {
   const byId = new Map(layout.nodes.map((node) => [node.id, node]))
   return (
     <>

@@ -1,8 +1,8 @@
-import { openExample } from './workspace'
+import { openExample } from '@tests/e2e/workspace'
 import { expect, test } from '@playwright/test'
-import { openDock, dockAction } from './dock'
+import { openDock, dockAction } from '@tests/e2e/dock'
 import { readFile } from 'node:fs/promises'
-import { decodeTrelyx } from '../../src/formats/trelyx'
+import { decodeTrelyx } from '@formats/trelyx'
 
 test('保存多布局、主题、游离位置和演示步骤，播放不修改保存内容', async ({ page }) => {
   await openExample(page)

@@ -1,13 +1,13 @@
 import { Check, ListTree, Network, SlidersHorizontal } from 'lucide-react'
-import { useEditor, editorIsDirty } from '../state/editor'
-import { showWorkspaceHome } from '../state/creation'
-import { useSpatialView } from '../state/spatial'
-import { Button } from './ui/button'
-import { Separator } from './ui/separator'
-import { ToolbarFileMenu } from './ToolbarFileMenu'
-import { ViewModeSwitch } from './ViewModeSwitch'
+import { useEditor, editorIsDirty } from '@renderer/state/editor'
+import { showWorkspaceHome } from '@renderer/state/creation'
+import { useSpatialView } from '@renderer/state/spatial'
+import { Button } from '@renderer/components/ui/button'
+import { Separator } from '@renderer/components/ui/separator'
+import { ToolbarFileMenu } from '@renderer/components/ToolbarFileMenu'
+import { ViewModeSwitch } from '@renderer/components/ViewModeSwitch'
 
-export function Toolbar() {
+export const Toolbar = () => {
   const path = useEditor((state) => state.path)
   const busy = useEditor((state) => state.busy)
   const outline = useEditor((state) => state.outlineOpen)

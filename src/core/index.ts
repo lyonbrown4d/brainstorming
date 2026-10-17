@@ -13,7 +13,7 @@ export type {
   TopicImage,
   TopicContentCommand,
   TopicClipboard,
-} from './types'
+} from '@core/types'
 export {
   MAX_ASSET_BYTES,
   MAX_DOCUMENT_ASSET_BYTES,
@@ -23,30 +23,30 @@ export {
   MAX_IMAGE_PIXELS,
   validateDocumentAsset,
   validateTopicImage,
-} from './topic-content'
+} from '@core/topic-content'
 export {
   createDocument,
   createExampleDocument,
   serializeDocument,
   deserializeDocument,
-} from './document'
-export { applyCommand } from './commands'
-export { createHistory, executeCommand, undo, redo } from './history'
-export { getParentId, getVisibleTopicIds } from './tree'
-export { validateDocument } from './validation'
-export { createFixtureDocument } from './fixtures'
+} from '@core/document'
+export { applyCommand } from '@core/commands'
+export { createHistory, executeCommand, undo, redo } from '@core/history'
+export { getParentId, getVisibleTopicIds } from '@core/tree'
+export { validateDocument } from '@core/validation'
+export { createFixtureDocument } from '@core/fixtures'
 export {
   createWorkbook,
   deserializeWorkbook,
   serializeWorkbook,
   validateWorkbook,
-} from './workbook'
-export { applyWorkbookCommand } from './workbook-commands'
+} from '@core/workbook'
+export { applyWorkbookCommand } from '@core/workbook-commands'
 
-export { createTopicClipboard, validateTopicClipboard } from './clipboard'
-export { normalizeTopicSelection } from './selection'
-export { searchDocument, searchWorkbook } from './search'
-export type { SearchOptions, SearchMatch, DocumentSearchMatch } from './search'
+export { createTopicClipboard, validateTopicClipboard } from '@core/clipboard'
+export { normalizeTopicSelection } from '@core/selection'
+export { searchDocument, searchWorkbook } from '@core/search'
+export type { SearchOptions, SearchMatch, DocumentSearchMatch } from '@core/search'
 
 export type {
   LayoutKind,
@@ -62,18 +62,18 @@ export type {
   DocumentAnnotations,
   DocumentExtensions,
   ExtensionCommand,
-} from './extensions'
-export { LAYOUT_KINDS } from './extensions'
+} from '@core/extensions'
+export { LAYOUT_KINDS } from '@core/extensions'
 export {
   validateTopicMetadata,
   validateDocumentSettings,
   validateLayoutKind,
-} from './metadata-validation'
+} from '@core/metadata-validation'
 export {
   validateRelation,
   validateTopicGroup,
   validateTopicCallout,
   validateFloatingPosition,
   validatePresentationStep,
-} from './annotation-validation'
-export { AUDIO_MIME_TYPES, validateAudioAsset } from './topic-content'
+} from '@core/annotation-validation'
+export { AUDIO_MIME_TYPES, validateAudioAsset } from '@core/topic-content'

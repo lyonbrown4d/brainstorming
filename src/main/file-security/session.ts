@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto'
-import { serializeWorkbook } from '../../core'
-import { decryptTrelyx } from '../../formats/encrypted'
-import type { OpenedDocument } from '../../shared/contracts'
-import { validateFilePassword, validateSecurityDocumentId } from '../../shared/fileSecurity'
+import { serializeWorkbook } from '@core'
+import { decryptTrelyx } from '@formats/encrypted'
+import type { OpenedDocument } from '@shared/contracts'
+import { validateFilePassword, validateSecurityDocumentId } from '@shared/fileSecurity'
 
 interface Pending {
   readonly token: string
@@ -16,20 +16,24 @@ export class FileSecuritySession {
   private pending: Pending | null = null
   private expiry: ReturnType<typeof setTimeout> | null = null
   private session: { documentId: string; password: string | null } | null = null
-  passwordFor(documentId: string): string | null {
+  passwordFor = (documentId: string): string | null => {
     return this.session?.documentId === documentId ? this.session.password : null
   }
-  configure(documentId: unknown, password: unknown, existing = false): { encrypted: boolean } {
+  configure = (
+    documentId: unknown,
+    password: unknown,
+    existing = false,
+  ): { encrypted: boolean } => {
     validateSecurityDocumentId(documentId)
     if (password !== null) validateFilePassword(password, !existing)
     this.session = { documentId, password }
     return { encrypted: password !== null }
   }
-  state(documentId: unknown): { encrypted: boolean } {
+  state = (documentId: unknown): { encrypted: boolean } => {
     validateSecurityDocumentId(documentId)
     return { encrypted: this.passwordFor(documentId) !== null }
   }
-  lock(bytes: Uint8Array, path: string | null, authorize = false): OpenedDocument {
+  lock = (bytes: Uint8Array, path: string | null, authorize = false): OpenedDocument => {
     const token = randomUUID()
     if (this.expiry) clearTimeout(this.expiry)
     this.expiry = setTimeout(() => {
@@ -45,7 +49,7 @@ export class FileSecuritySession {
     }
     return { path, contents: '', lockedToken: token, encrypted: true }
   }
-  private requirePending(token: unknown): Pending {
+  private requirePending = (token: unknown): Pending => {
     if (typeof token !== 'string' || token !== this.pending?.token)
       throw new Error('解锁请求已失效，请重新选择文件')
     if (Date.now() > this.pending.expires) {
@@ -54,7 +58,7 @@ export class FileSecuritySession {
     }
     return this.pending
   }
-  async unlock(token: unknown, password: unknown): Promise<OpenedDocument> {
+  unlock = async (token: unknown, password: unknown): Promise<OpenedDocument> => {
     const pending = this.requirePending(token)
     validateFilePassword(password, false)
     const workbook = await decryptTrelyx(pending.bytes, password)
@@ -69,19 +73,21 @@ export class FileSecuritySession {
       warnings: [],
     }
   }
-  activate(token: unknown): {
+  activate = (
+    token: unknown,
+  ): {
     documentId: string
     password: string
     path: string | null
     authorize: boolean
-  } {
+  } => {
     const pending = this.requirePending(token)
     if (!pending.unlocked) throw new Error('请先解锁文件')
     this.pending = null
     if (this.expiry) clearTimeout(this.expiry)
     return { ...pending.unlocked, path: pending.path, authorize: pending.authorize }
   }
-  cancel(token: unknown): void {
+  cancel = (token: unknown): void => {
     if (typeof token === 'string' && this.pending?.token === token) {
       this.pending = null
       if (this.expiry) clearTimeout(this.expiry)

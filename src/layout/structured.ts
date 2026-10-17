@@ -1,10 +1,10 @@
 import type { LayoutKind, MindMapDocument } from '@core'
-import { measureTopic } from './measure'
-import { mapLayout, requireUnit, treeLayout } from './tree-layout'
-import { spineLayout } from './special-layouts'
-import { matrixLayout } from './matrix-layout'
-import { alignedTreeLayout, braceLayout } from './aligned-tree'
-import { tableLayout } from './table-layout'
+import { measureTopic } from '@layout/measure'
+import { mapLayout, requireUnit, treeLayout } from '@layout/tree-layout'
+import { spineLayout } from '@layout/special-layouts'
+import { matrixLayout } from '@layout/matrix-layout'
+import { alignedTreeLayout, braceLayout } from '@layout/aligned-tree'
+import { tableLayout } from '@layout/table-layout'
 import {
   layoutBounds,
   type LayoutBounds,
@@ -12,9 +12,9 @@ import {
   type LayoutUnit,
   type LocalLayout,
   type MindMapLayout,
-} from './types'
+} from '@layout/types'
 
-function components(document: MindMapDocument): { plans: LayoutComponent[]; roots: string[] } {
+const components = (document: MindMapDocument): { plans: LayoutComponent[]; roots: string[] } => {
   const floating = new Set(document.floatingIds ?? [])
   const roots = [document.rootId, ...(document.floatingIds ?? [])]
   const plans: LayoutComponent[] = []
@@ -61,7 +61,10 @@ function components(document: MindMapDocument): { plans: LayoutComponent[]; root
   }
   return { plans, roots }
 }
-function localLayout(plan: LayoutComponent, units: ReadonlyMap<string, LayoutUnit>): LocalLayout {
+const localLayout = (
+  plan: LayoutComponent,
+  units: ReadonlyMap<string, LayoutUnit>,
+): LocalLayout => {
   switch (plan.kind) {
     case 'map':
       return mapLayout(plan, units)
@@ -100,7 +103,7 @@ interface Computed {
 }
 
 /** Compose measured subtree boxes around D3/Dagre layouts without recursion or document mutation. */
-export function layoutStructuredDocument(document: MindMapDocument): MindMapLayout {
+export const layoutStructuredDocument = (document: MindMapDocument): MindMapLayout => {
   const { plans, roots } = components(document)
   const computed = new Map<string, Computed>()
   for (let index = plans.length - 1; index >= 0; index -= 1) {

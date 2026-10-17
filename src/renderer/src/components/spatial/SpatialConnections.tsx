@@ -1,10 +1,10 @@
 import { CubicBezierLine } from '@react-three/drei'
 import { topicAppearance } from '@shared/appearance'
 import type { MindMapDocument } from '@core'
-import type { SpatialLayout, SpatialNode } from '../../../../layout/spatial'
-import { SpatialPathLine } from './SpatialStructureGeometry'
+import type { SpatialLayout, SpatialNode } from '@layout/spatial'
+import { SpatialPathLine } from '@renderer/components/spatial/SpatialStructureGeometry'
 
-export function SpatialConnections({
+export const SpatialConnections = ({
   document,
   layout,
   nodesById,
@@ -16,7 +16,7 @@ export function SpatialConnections({
   readonly nodesById: ReadonlyMap<string, SpatialNode>
   readonly colors: ReadonlyMap<string, string>
   readonly focusIds: ReadonlySet<string> | null
-}) {
+}) => {
   return layout.edges.map((edge) => {
     const source = nodesById.get(edge.source)
     const target = nodesById.get(edge.target)

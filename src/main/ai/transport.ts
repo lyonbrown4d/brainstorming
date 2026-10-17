@@ -1,7 +1,7 @@
-import { AI_LIMITS } from '../../shared/ai'
+import { AI_LIMITS } from '@shared/ai'
 
 /** Requests are limited to the configured origin/path; redirects never forward the API key. */
-export function boundedAIFetch(endpoint: string, transport: typeof fetch = fetch): typeof fetch {
+export const boundedAIFetch = (endpoint: string, transport: typeof fetch = fetch): typeof fetch => {
   const expected = new URL(`${endpoint}/chat/completions`)
   return async (input, init) => {
     const target = input instanceof Request ? new URL(input.url) : new URL(input.toString())

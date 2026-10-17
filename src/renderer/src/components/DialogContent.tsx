@@ -1,15 +1,15 @@
 import type { ComponentProps } from 'react'
 import { X } from 'lucide-react'
-import { DialogClose, DialogContent as BaseDialogContent } from './ui/dialog'
-import { Button } from './ui/button'
+import { DialogClose, DialogContent as BaseDialogContent } from '@renderer/components/ui/dialog'
+import { Button } from '@renderer/components/ui/button'
 
 /** Business composition: keep the downloaded primitive and its public API untouched. */
-export function DialogContent({
+export const DialogContent = ({
   closeLabel = '关闭',
   children,
   className = '',
   ...props
-}: Omit<ComponentProps<typeof BaseDialogContent>, 'showCloseButton'> & { closeLabel?: string }) {
+}: Omit<ComponentProps<typeof BaseDialogContent>, 'showCloseButton'> & { closeLabel?: string }) => {
   return (
     <BaseDialogContent {...props} showCloseButton={false} className={`trelyx-dialog ${className}`}>
       {children}

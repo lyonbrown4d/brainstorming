@@ -9,10 +9,10 @@ import {
   redo,
   undo,
   validateDocument,
-} from './index'
-import type { Command, MindMapDocument } from './index'
+} from '@core'
+import type { Command, MindMapDocument } from '@core'
 
-function branchDocument(): MindMapDocument {
+const branchDocument = (): MindMapDocument => {
   let document = createDocument('中心', 'test-document')
   const commands: Command[] = [
     { type: 'addTopic', parentId: 'root', id: 'a', title: 'A', side: 'left' },

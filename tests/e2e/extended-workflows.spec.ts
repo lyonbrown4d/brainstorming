@@ -1,10 +1,10 @@
-import { completeDocumentCreation, openExample } from './workspace'
+import { completeDocumentCreation, openExample } from '@tests/e2e/workspace'
 import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
-import { importXmind } from '../../src/formats/xmind'
-import { openDock, dockAction } from './dock'
+import { importXmind } from '@formats/xmind'
+import { openDock, dockAction } from '@tests/e2e/dock'
 
-async function fileAction(page: Page, label: string) {
+const fileAction = async (page: Page, label: string) => {
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name: label, exact: true }).click()
   if (label === '新建导图') await completeDocumentCreation(page)

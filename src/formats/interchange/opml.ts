@@ -1,12 +1,12 @@
 import { DOMImplementation, DOMParser, XMLSerializer, type Element } from '@xmldom/xmldom'
-import type { MindMapWorkbook } from '../../core'
-import { validateBoundedWorkbook } from '../trelyx/validation'
-import { xmlText } from './xml'
-import { assertTextSize, outlineWorkbook, type OutlineTopic } from './outline'
+import type { MindMapWorkbook } from '@core'
+import { validateBoundedWorkbook } from '@formats/trelyx/validation'
+import { xmlText } from '@formats/interchange/xml'
+import { assertTextSize, outlineWorkbook, type OutlineTopic } from '@formats/interchange/outline'
 
 const children = (element: Element) =>
   Array.from(element.childNodes).filter((node): node is Element => node.nodeType === 1)
-export function decodeOpml(text: string): MindMapWorkbook {
+export const decodeOpml = (text: string): MindMapWorkbook => {
   assertTextSize(text)
   if (/<!\s*(?:DOCTYPE|ENTITY)\b/i.test(text)) throw new Error('OPML 不允许 DTD 或实体声明')
   const parsed = new DOMParser({
@@ -51,7 +51,7 @@ export function decodeOpml(text: string): MindMapWorkbook {
         ],
   )
 }
-export function encodeOpml(workbook: MindMapWorkbook): string {
+export const encodeOpml = (workbook: MindMapWorkbook): string => {
   validateBoundedWorkbook(workbook)
   const document = new DOMImplementation().createDocument(null, 'opml', null)
   const root = document.documentElement

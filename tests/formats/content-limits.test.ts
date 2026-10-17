@@ -1,9 +1,9 @@
 import { strToU8, zipSync } from 'fflate'
 import { describe, expect, it } from 'vitest'
-import { createDocument, createWorkbook, type DocumentAsset, type Topic } from '../../src/core'
-import { createAsset } from '../../src/assets'
-import { readArchive } from '../../src/formats/archive'
-import { decodeTrelyx, encodeTrelyx } from '../../src/formats/trelyx'
+import { createDocument, createWorkbook, type DocumentAsset, type Topic } from '@core'
+import { createAsset } from '@assets'
+import { readArchive } from '@formats/archive'
+import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
 
 describe('native asset budgets', () => {
   it('bounds aggregate resources across sheets on save and open', () => {

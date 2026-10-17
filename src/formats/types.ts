@@ -1,4 +1,4 @@
-import type { MindMapWorkbook } from '../core'
+import type { MindMapWorkbook } from '@core'
 
 export interface ImportedWorkbook {
   workbook: MindMapWorkbook

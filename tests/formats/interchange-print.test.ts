@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { applyCommand, createDocument } from '../../src/core'
-import { printSheet } from '../../src/renderer/src/export/print'
+import { applyCommand, createDocument } from '@core'
+import { printSheet } from '@renderer/export/print'
 
-function printSurface(fail = false) {
+const printSurface = (fail = false) => {
   const printEvents = new Map<string, () => void>()
   const image = {
     alt: '',

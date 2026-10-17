@@ -1,14 +1,14 @@
 import { useEffect } from 'react'
-import { usePresentation } from '../state/presentation'
-import { useEditor } from '../state/editor'
-import { newDocument, openDocument, saveDocument } from '../state/files'
-import { isCompositionKey } from '../state/keyboard'
-import { handleTopicNavigation, handleTopicShortcut } from '../state/editingShortcuts'
-import { useWorkspace } from '../state/workspace'
-import { handleAnnotationKey } from '../state/annotationInteraction'
-import { cancelCreation } from '../state/creation'
+import { usePresentation } from '@renderer/state/presentation'
+import { useEditor } from '@renderer/state/editor'
+import { newDocument, openDocument, saveDocument } from '@renderer/state/files'
+import { isCompositionKey } from '@renderer/state/keyboard'
+import { handleTopicNavigation, handleTopicShortcut } from '@renderer/state/editingShortcuts'
+import { useWorkspace } from '@renderer/state/workspace'
+import { handleAnnotationKey } from '@renderer/state/annotationInteraction'
+import { cancelCreation } from '@renderer/state/creation'
 
-export function useKeyboardShortcuts(): void {
+export const useKeyboardShortcuts = (): void => {
   useEffect(() => {
     const handler = (event: KeyboardEvent): void => {
       if (isCompositionKey(event) || event.defaultPrevented) return

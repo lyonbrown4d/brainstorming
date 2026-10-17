@@ -1,10 +1,10 @@
-import { mainWindow } from './windows'
-import { enterExampleIfHome } from '../e2e/workspace'
+import { mainWindow } from '@tests/desktop/windows'
+import { enterExampleIfHome } from '@tests/e2e/workspace'
 import { _electron as electron, expect, test } from '@playwright/test'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { dockAction, openDock } from '../e2e/dock'
+import { dockAction, openDock } from '@tests/e2e/dock'
 
 test('原生自定义剪贴板跨画布复制子树，保留普通文本并一次撤销', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'trelyx-clipboard-'))

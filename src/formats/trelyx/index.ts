@@ -1,10 +1,15 @@
 import { strToU8, zipSync } from 'fflate'
-import type { MindMapWorkbook } from '../../core/types'
-import { documentExtensionData } from '../../core/extension-data'
-import { documentData } from '../../core/document'
-import { ARCHIVE_LIMITS, readArchive } from '../archive'
-import { assertUsedAssets, encodeAssets, validateAssetContent } from './assets'
-import { nativeWorkbook, onlyKeys, record, validateBoundedWorkbook } from './validation'
+import type { MindMapWorkbook } from '@core/types'
+import { documentExtensionData } from '@core/extension-data'
+import { documentData } from '@core/document'
+import { ARCHIVE_LIMITS, readArchive } from '@formats/archive'
+import { assertUsedAssets, encodeAssets, validateAssetContent } from '@formats/trelyx/assets'
+import {
+  nativeWorkbook,
+  onlyKeys,
+  record,
+  validateBoundedWorkbook,
+} from '@formats/trelyx/validation'
 
 const manifest = {
   format: 'app.trelyx.document',
@@ -12,7 +17,7 @@ const manifest = {
   createdBy: { name: 'Trelyx', version: '0.1.0' },
 } as const
 
-function jsonBytes(value: unknown): Uint8Array {
+const jsonBytes = (value: unknown): Uint8Array => {
   let characters = 0
   const json = JSON.stringify(value, (_key: string, item: unknown) => {
     if (typeof item === 'string') characters += item.length
@@ -25,7 +30,7 @@ function jsonBytes(value: unknown): Uint8Array {
   return bytes
 }
 
-function parseJson(bytes: Uint8Array | undefined, name: string): unknown {
+const parseJson = (bytes: Uint8Array | undefined, name: string): unknown => {
   if (!bytes) throw new Error(`Trelyx 文件缺少 ${name}`)
   try {
     return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)) as unknown
@@ -34,7 +39,7 @@ function parseJson(bytes: Uint8Array | undefined, name: string): unknown {
   }
 }
 
-export function encodeTrelyx(workbook: MindMapWorkbook): Uint8Array {
+export const encodeTrelyx = (workbook: MindMapWorkbook): Uint8Array => {
   validateBoundedWorkbook(workbook)
   validateAssetContent(workbook)
   const entries: Record<string, Uint8Array> = {}
@@ -68,7 +73,7 @@ export function encodeTrelyx(workbook: MindMapWorkbook): Uint8Array {
   return archive
 }
 
-export function decodeTrelyx(bytes: Uint8Array): MindMapWorkbook {
+export const decodeTrelyx = (bytes: Uint8Array): MindMapWorkbook => {
   const entries = readArchive(bytes)
   const metadata = record(parseJson(entries.get('manifest.json'), 'manifest.json'))
   if (metadata.format !== manifest.format) throw new Error('文件不是 Trelyx 原生文档')

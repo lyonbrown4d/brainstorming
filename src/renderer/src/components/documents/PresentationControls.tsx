@@ -2,18 +2,22 @@ import type { PresentationStep } from '@core'
 import { useState } from 'react'
 import { Popover } from 'radix-ui'
 import { ArrowDown, ArrowUp, Play, Plus, Trash2 } from 'lucide-react'
-import { useEditor } from '../../state/editor'
-import { selectedTopicIds } from '../../state/selection'
-import { presentationSteps, showPresentationStep, usePresentation } from '../../state/presentation'
-import { useSpatialView } from '../../state/spatial'
-import { runAnnotationCommand } from '../annotations/commands'
-import { Button } from '../ui/button'
+import { useEditor } from '@renderer/state/editor'
+import { selectedTopicIds } from '@renderer/state/selection'
+import {
+  presentationSteps,
+  showPresentationStep,
+  usePresentation,
+} from '@renderer/state/presentation'
+import { useSpatialView } from '@renderer/state/spatial'
+import { runAnnotationCommand } from '@renderer/components/annotations/commands'
+import { Button } from '@renderer/components/ui/button'
 
-export { PresentationPlayback } from './PresentationPlayback'
+export { PresentationPlayback } from '@renderer/components/documents/PresentationPlayback'
 
 const emptySteps: readonly PresentationStep[] = []
 
-export function PresentationControls() {
+export const PresentationControls = () => {
   const [open, setOpen] = useState(false)
   const document = useEditor((state) => state.history.document)
   const steps = document.presentation ?? emptySteps

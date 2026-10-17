@@ -1,6 +1,6 @@
 import { getParentId, type Command, type MindMapDocument, type Side } from '@core'
-import type { TopicFlowNode } from '../components/TopicNode'
-import type { LayoutDirection } from '../../../layout/types'
+import type { TopicFlowNode } from '@renderer/components/TopicNode'
+import type { LayoutDirection } from '@layout/types'
 
 interface Point {
   readonly x: number
@@ -19,7 +19,7 @@ export interface CanvasDrop {
   readonly index?: number
   readonly side: Side
 }
-export function nodeCenter(node: TopicFlowNode): Point {
+export const nodeCenter = (node: TopicFlowNode): Point => {
   return {
     x: node.position.x + Number(node.style?.width ?? node.width ?? 160) / 2,
     y: node.position.y + Number(node.style?.height ?? node.height ?? 48) / 2,
@@ -27,12 +27,12 @@ export function nodeCenter(node: TopicFlowNode): Point {
 }
 
 /** Center drops attach; dropping at a sibling's outer edge inserts before or after it. */
-export function findCanvasDrop(
+export const findCanvasDrop = (
   document: MindMapDocument,
   nodes: readonly TopicFlowNode[],
   excluded: ReadonlySet<string>,
   point: Point,
-): CanvasDrop | undefined {
+): CanvasDrop | undefined => {
   return findTopicDrop(
     document,
     nodes.map((node) => ({
@@ -48,12 +48,12 @@ export function findCanvasDrop(
 }
 
 /** View-neutral targeting in a common projected coordinate system. */
-export function findTopicDrop(
+export const findTopicDrop = (
   document: MindMapDocument,
   nodes: readonly DropNode[],
   excluded: ReadonlySet<string>,
   point: Point,
-): CanvasDrop | undefined {
+): CanvasDrop | undefined => {
   const centerOf = (node: DropNode): Point => ({
     x: node.position.x + node.width / 2,
     y: node.position.y + node.height / 2,
@@ -109,13 +109,13 @@ export function findTopicDrop(
 }
 
 /** The whole gesture is one command, including a translation of several independent roots. */
-export function canvasDropCommand(
+export const canvasDropCommand = (
   document: MindMapDocument,
   roots: readonly string[],
   origins: ReadonlyMap<string, Point>,
   delta: Point,
   drop: CanvasDrop | undefined,
-): Command | undefined {
+): Command | undefined => {
   if (drop)
     return {
       type: 'moveTopics',

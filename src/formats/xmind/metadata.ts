@@ -1,12 +1,12 @@
-import type { TopicMetadata } from '../../core/extensions'
-import { validateTopicMetadata } from '../../core/metadata-validation'
-import type { SourceRecord, Warnings } from './common'
+import type { TopicMetadata } from '@core/extensions'
+import { validateTopicMetadata } from '@core/metadata-validation'
+import type { SourceRecord, Warnings } from '@formats/xmind/common'
 
 /** Standard XMind labels and safe URL links remain data; importing never opens a URL. */
-export function standardMetadata(
+export const standardMetadata = (
   source: SourceRecord,
   warnings: Warnings,
-): TopicMetadata | undefined {
+): TopicMetadata | undefined => {
   const metadata: { labels?: string[]; link?: { kind: 'url'; url: string } } = {}
   if (source.labels !== undefined) {
     if (

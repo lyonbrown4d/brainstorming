@@ -1,20 +1,20 @@
-import { validateWorkbookLinks } from './workbook-links'
-import { createDocument, documentData } from './document'
-import type { MindMapDocument, MindMapSheet, MindMapWorkbook } from './types'
-import { assertId, validateDocument } from './validation'
-import { MAX_DOCUMENT_ASSET_BYTES, referencedAssetIds } from './topic-content'
+import { validateWorkbookLinks } from '@core/workbook-links'
+import { createDocument, documentData } from '@core/document'
+import type { MindMapDocument, MindMapSheet, MindMapWorkbook } from '@core/types'
+import { assertId, validateDocument } from '@core/validation'
+import { MAX_DOCUMENT_ASSET_BYTES, referencedAssetIds } from '@core/topic-content'
 
 const nameSegmenter = new Intl.Segmenter('zh-CN', { granularity: 'grapheme' })
 
-function nameCharacters(value: string): string[] {
+const nameCharacters = (value: string): string[] => {
   return Array.from(nameSegmenter.segment(value), ({ segment }) => segment)
 }
 
-export function truncateSheetName(value: string, length = 80): string {
+export const truncateSheetName = (value: string, length = 80): string => {
   return nameCharacters(value).slice(0, length).join('')
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+const isRecord = (value: unknown): value is Record<string, unknown> => {
   return (
     typeof value === 'object' &&
     value !== null &&
@@ -23,16 +23,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   )
 }
 
-function own(value: Record<string, unknown>, key: string): unknown {
+const own = (value: Record<string, unknown>, key: string): unknown => {
   return Object.hasOwn(value, key) ? value[key] : undefined
 }
 
-export function assertSheetName(value: unknown): asserts value is string {
+export const assertSheetName: (value: unknown) => asserts value is string = (
+  value: unknown,
+): asserts value is string => {
   if (typeof value !== 'string' || value.trim().length === 0 || nameCharacters(value).length > 80)
     throw new Error('画布名称须为 1 至 80 个字符')
 }
 
-export function validateSheet(value: unknown): asserts value is MindMapSheet {
+export const validateSheet: (value: unknown) => asserts value is MindMapSheet = (
+  value: unknown,
+): asserts value is MindMapSheet => {
   if (!isRecord(value)) throw new Error('画布格式无效')
   assertId(own(value, 'id'))
   assertSheetName(own(value, 'name'))
@@ -41,7 +45,9 @@ export function validateSheet(value: unknown): asserts value is MindMapSheet {
   assertId(document.id)
 }
 
-export function validateWorkbook(value: unknown): asserts value is MindMapWorkbook {
+export const validateWorkbook: (value: unknown) => asserts value is MindMapWorkbook = (
+  value: unknown,
+): asserts value is MindMapWorkbook => {
   if (!isRecord(value) || own(value, 'format') !== 'trelyx')
     throw new Error('文件不是 Trelyx 工作簿')
   if (own(value, 'version') !== 2) throw new Error('不支持此 Trelyx 工作簿版本')
@@ -66,11 +72,11 @@ export function validateWorkbook(value: unknown): asserts value is MindMapWorkbo
   validateWorkbookLinks(validatedSheets)
 }
 
-export function sheetData(sheet: MindMapSheet): MindMapSheet {
+export const sheetData = (sheet: MindMapSheet): MindMapSheet => {
   return { id: sheet.id, name: sheet.name, document: documentData(sheet.document) }
 }
 
-function workbookData(workbook: MindMapWorkbook): MindMapWorkbook {
+const workbookData = (workbook: MindMapWorkbook): MindMapWorkbook => {
   return {
     format: 'trelyx',
     version: 2,
@@ -80,10 +86,10 @@ function workbookData(workbook: MindMapWorkbook): MindMapWorkbook {
   }
 }
 
-export function createWorkbook(
+export const createWorkbook = (
   document: MindMapDocument = createDocument(),
   title: string = document.title,
-): MindMapWorkbook {
+): MindMapWorkbook => {
   validateDocument(document)
   const truncatedTitle = truncateSheetName(document.title)
   const name = truncatedTitle.trim().length > 0 ? truncatedTitle : '画布 1'
@@ -98,12 +104,12 @@ export function createWorkbook(
   return workbook
 }
 
-export function serializeWorkbook(workbook: MindMapWorkbook): string {
+export const serializeWorkbook = (workbook: MindMapWorkbook): string => {
   validateWorkbook(workbook)
   return JSON.stringify(workbookData(workbook), null, 2)
 }
 
-export function deserializeWorkbook(json: string): MindMapWorkbook {
+export const deserializeWorkbook = (json: string): MindMapWorkbook => {
   let parsed: unknown
   try {
     parsed = JSON.parse(json) as unknown

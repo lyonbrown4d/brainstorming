@@ -6,10 +6,10 @@ import {
   getVisibleTopicIds,
 } from '@core'
 import type { MindMapDocument, Topic } from '@core'
-import { layoutSpatialDocument, spatialBounds, spatialSubtreeIds } from './spatial'
-import type { SpatialNode } from './spatial'
+import { layoutSpatialDocument, spatialBounds, spatialSubtreeIds } from '@layout/spatial'
+import type { SpatialNode } from '@layout/spatial'
 
-function assertFrontProjectionIsLegible(nodes: readonly SpatialNode[]): void {
+const assertFrontProjectionIsLegible = (nodes: readonly SpatialNode[]): void => {
   // Camera at [0, 5, 18], looking at the origin; perspective scale cancels here.
   const distance = Math.hypot(5, 18)
   const projected = nodes.map((node) => {
@@ -32,7 +32,7 @@ function assertFrontProjectionIsLegible(nodes: readonly SpatialNode[]): void {
   }
 }
 
-function wideFixture(count: number): MindMapDocument {
+const wideFixture = (count: number): MindMapDocument => {
   const document = createFixtureDocument(count)
   const topics: Record<string, Topic> = {}
   const children = Object.keys(document.topics).filter((id) => id !== document.rootId)

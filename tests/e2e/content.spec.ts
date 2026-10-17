@@ -1,12 +1,12 @@
-import { completeDocumentCreation, openExample } from './workspace'
-import { dockAction } from './dock'
+import { completeDocumentCreation, openExample } from '@tests/e2e/workspace'
+import { dockAction } from '@tests/e2e/dock'
 import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
-import { decodeTrelyx } from '../../src/formats/trelyx'
-import { imageBase64, attachmentBytes } from '../fixtures/content'
-import { composeChinese } from './ime'
+import { decodeTrelyx } from '@formats/trelyx'
+import { imageBase64, attachmentBytes } from '@tests/fixtures/content'
+import { composeChinese } from '@tests/e2e/ime'
 
-async function fileAction(page: Page, name: string) {
+const fileAction = async (page: Page, name: string) => {
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name, exact: true }).click()
   if (name === '新建导图') await completeDocumentCreation(page)

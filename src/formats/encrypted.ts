@@ -7,17 +7,17 @@ import {
   type CreateReadableOptions,
 } from '@zip.js/zip.js'
 import { zipSync } from 'fflate'
-import type { MindMapWorkbook } from '../core'
-import { validateFilePassword } from '../shared/fileSecurity'
-import { ARCHIVE_LIMITS, readArchive } from './archive'
-import { decodeTrelyx, encodeTrelyx } from './trelyx'
+import type { MindMapWorkbook } from '@core'
+import { validateFilePassword } from '@shared/fileSecurity'
+import { ARCHIVE_LIMITS, readArchive } from '@formats/archive'
+import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
 
 class BoundedZipInput extends Uint8ArrayReader {
-  override createReadable(options?: CreateReadableOptions): ReadableStream<Uint8Array> {
+  override createReadable = (options?: CreateReadableOptions): ReadableStream<Uint8Array> => {
     return super.createReadable({ ...options, chunkSize: 1024 })
   }
 }
-function reader(bytes: Uint8Array) {
+const reader = (bytes: Uint8Array) => {
   if (bytes.length > ARCHIVE_LIMITS.compressed) throw new Error('文件超过 32 MiB')
   const input = new BoundedZipInput(bytes)
   return new ZipReader(input, {
@@ -28,7 +28,7 @@ function reader(bytes: Uint8Array) {
     checkOverlappingEntry: true,
   })
 }
-function validateEntry(entry: Entry, names: Set<string>, budget: { size: number }): void {
+const validateEntry = (entry: Entry, names: Set<string>, budget: { size: number }): void => {
   const name = entry.filename
   if (
     !name ||
@@ -62,7 +62,7 @@ function validateEntry(entry: Entry, names: Set<string>, budget: { size: number 
   if (entry.encrypted && (entry.zipCrypto || entry.extraFieldAES?.strength !== 3))
     throw new Error('仅支持 AES-256 加密的 Trelyx 文件')
 }
-async function entriesOf(zip: ReturnType<typeof reader>): Promise<Entry[]> {
+const entriesOf = async (zip: ReturnType<typeof reader>): Promise<Entry[]> => {
   const names = new Set<string>()
   const budget = { size: 0 }
   const result: Entry[] = []
@@ -74,7 +74,7 @@ async function entriesOf(zip: ReturnType<typeof reader>): Promise<Entry[]> {
     throw new Error('缺少 Trelyx 原生文档内容')
   return result
 }
-export async function isEncryptedTrelyx(bytes: Uint8Array): Promise<boolean> {
+export const isEncryptedTrelyx = async (bytes: Uint8Array): Promise<boolean> => {
   const zip = reader(bytes)
   try {
     return (await entriesOf(zip)).some((entry) => entry.encrypted)
@@ -82,11 +82,11 @@ export async function isEncryptedTrelyx(bytes: Uint8Array): Promise<boolean> {
     await zip.close()
   }
 }
-export async function encryptTrelyx(
+export const encryptTrelyx = async (
   workbook: MindMapWorkbook,
   password: string,
   passwordPolicy: 'new' | 'existing' = 'new',
-): Promise<Uint8Array> {
+): Promise<Uint8Array> => {
   validateFilePassword(password, passwordPolicy === 'new')
   const zip = new ZipWriter(new Uint8ArrayWriter(), {
     password,
@@ -102,7 +102,10 @@ export async function encryptTrelyx(
   if (result.length > ARCHIVE_LIMITS.compressed) throw new Error('加密文件超过 32 MiB')
   return result
 }
-export async function decryptTrelyx(bytes: Uint8Array, password: string): Promise<MindMapWorkbook> {
+export const decryptTrelyx = async (
+  bytes: Uint8Array,
+  password: string,
+): Promise<MindMapWorkbook> => {
   validateFilePassword(password, false)
   const zip = reader(bytes)
   try {
@@ -119,7 +122,7 @@ export async function decryptTrelyx(bytes: Uint8Array, password: string): Promis
       const chunks: Uint8Array[] = []
       let size = 0
       const writable = new WritableStream<Uint8Array>({
-        write(chunk) {
+        write: (chunk) => {
           size += chunk.length
           total += chunk.length
           if (

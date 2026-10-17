@@ -1,10 +1,10 @@
-import { useEditor } from '../../state/editor'
-import { LabelsPanel } from './LabelsPanel'
-import { LinkPanel } from './LinkPanel'
-import { TaskPanel } from './TaskPanel'
-import { FormulaAudioPanel } from './FormulaAudioPanel'
+import { useEditor } from '@renderer/state/editor'
+import { LabelsPanel } from '@renderer/components/metadata/LabelsPanel'
+import { LinkPanel } from '@renderer/components/metadata/LinkPanel'
+import { TaskPanel } from '@renderer/components/metadata/TaskPanel'
+import { FormulaAudioPanel } from '@renderer/components/metadata/FormulaAudioPanel'
 
-export function TopicMetadataPanel({ topicId }: { topicId: string }) {
+export const TopicMetadataPanel = ({ topicId }: { topicId: string }) => {
   const metadata = useEditor((state) => state.history.document.topics[topicId]?.metadata)
   const value = metadata ?? {}
   return (

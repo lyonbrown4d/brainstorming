@@ -1,16 +1,16 @@
 import { useState } from 'react'
 import { Palette } from 'lucide-react'
 import type { DocumentSettings, TopicStyle } from '@core'
-import { useEditor } from '../../state/editor'
-import { updateSelectedStyle } from '../../state/selection'
-import { defaultTopicStyle } from '../../lib/topicAppearance'
-import { runAnnotationCommand } from '../annotations/commands'
-import { Button } from '../ui/button'
-import { Input } from '../ui/input'
-import { FieldSelect } from '../FieldSelect'
+import { useEditor } from '@renderer/state/editor'
+import { updateSelectedStyle } from '@renderer/state/selection'
+import { defaultTopicStyle } from '@renderer/lib/topicAppearance'
+import { runAnnotationCommand } from '@renderer/components/annotations/commands'
+import { Button } from '@renderer/components/ui/button'
+import { Input } from '@renderer/components/ui/input'
+import { FieldSelect } from '@renderer/components/FieldSelect'
 import { Popover } from 'radix-ui'
 
-export function DocumentSettingsPanel() {
+export const DocumentSettingsPanel = () => {
   const document = useEditor((state) => state.history.document)
   const selectedId = useEditor((state) => state.selectedId)
   const [copiedStyle, setCopiedStyle] = useState<TopicStyle | null>(null)

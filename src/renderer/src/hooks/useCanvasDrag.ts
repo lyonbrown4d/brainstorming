@@ -2,13 +2,17 @@ import { useEffect, useRef } from 'react'
 import { useNodesState, type OnNodeDrag, type ReactFlowProps } from '@xyflow/react'
 import { normalizeTopicSelection, type MindMapDocument } from '@core'
 import { getSubtreeIds } from '@core/tree'
-import type { TopicFlowNode } from '../components/TopicNode'
-import { canvasDropCommand, findCanvasDrop, nodeCenter } from '../lib/canvasDrop'
-import { projectCanvas } from '../components/documents/projectCanvas'
-import { useEditor } from '../state/editor'
-import { selectedTopicIds, setSelectedTopics, useSelectedIds } from '../state/selection'
-import { usePresentation } from '../state/presentation'
-import { beginCanvasDrag, clearCanvasDrag, updateCanvasDrag } from '../state/canvasInteraction'
+import type { TopicFlowNode } from '@renderer/components/TopicNode'
+import { canvasDropCommand, findCanvasDrop, nodeCenter } from '@renderer/lib/canvasDrop'
+import { projectCanvas } from '@renderer/components/documents/projectCanvas'
+import { useEditor } from '@renderer/state/editor'
+import { selectedTopicIds, setSelectedTopics, useSelectedIds } from '@renderer/state/selection'
+import { usePresentation } from '@renderer/state/presentation'
+import {
+  beginCanvasDrag,
+  clearCanvasDrag,
+  updateCanvasDrag,
+} from '@renderer/state/canvasInteraction'
 
 interface DragSession {
   readonly token: symbol
@@ -21,10 +25,10 @@ interface DragSession {
 }
 
 /** Preserve dimensions measured by React Flow while only selection/position changes. */
-function preserveMeasurement(
+const preserveMeasurement = (
   node: TopicFlowNode,
   previous: TopicFlowNode | undefined,
-): TopicFlowNode {
+): TopicFlowNode => {
   return previous?.measured &&
     node.style?.width === previous.style?.width &&
     node.style?.height === previous.style?.height
@@ -33,7 +37,7 @@ function preserveMeasurement(
 }
 
 /** React Flow owns pointer/box selection; document commands are submitted only at gesture end. */
-export function useCanvasDrag(projectedNodes: TopicFlowNode[]) {
+export const useCanvasDrag = (projectedNodes: TopicFlowNode[]) => {
   const selectedIds = useSelectedIds()
   const playing = usePresentation((state) => state.playing)
   const primaryId = useEditor((state) => state.selectedId)

@@ -1,18 +1,18 @@
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ChevronRight, Trash2 } from 'lucide-react'
 import { getParentId } from '@core'
 import { useEffect } from 'react'
-import { useEditor } from '../state/editor'
-import { useSelectedIds } from '../state/selection'
-import { SelectionMarkers } from './workbench/SelectionMarkers'
-import { useSpatialView } from '../state/spatial'
-import { TopicRichTitle } from './metadata/TopicRichTitle'
-import { Button } from './ui/button'
-import { TopicFormatting } from './TopicFormatting'
-import { TopicContentPanel } from './TopicContentPanel'
-import { TopicMetadataPanel } from './metadata/TopicMetadataPanel'
-import { FieldSelect } from './FieldSelect'
+import { useEditor } from '@renderer/state/editor'
+import { useSelectedIds } from '@renderer/state/selection'
+import { SelectionMarkers } from '@renderer/components/workbench/SelectionMarkers'
+import { useSpatialView } from '@renderer/state/spatial'
+import { TopicRichTitle } from '@renderer/components/metadata/TopicRichTitle'
+import { Button } from '@renderer/components/ui/button'
+import { TopicFormatting } from '@renderer/components/TopicFormatting'
+import { TopicContentPanel } from '@renderer/components/TopicContentPanel'
+import { TopicMetadataPanel } from '@renderer/components/metadata/TopicMetadataPanel'
+import { FieldSelect } from '@renderer/components/FieldSelect'
 
-export function Inspector() {
+export const Inspector = () => {
   const document = useEditor((state) => state.history.document)
   const selectedId = useEditor((state) => state.selectedId)
   const sheetId = useEditor((state) => state.activeSheetId)

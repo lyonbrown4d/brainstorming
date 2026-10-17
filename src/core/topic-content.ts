@@ -1,4 +1,4 @@
-import type { DocumentAsset, MindMapDocument, Topic, TopicImage } from './types'
+import type { DocumentAsset, MindMapDocument, Topic, TopicImage } from '@core/types'
 
 export const MAX_ASSET_BYTES = 8 * 1024 * 1024
 export const MAX_DOCUMENT_ASSET_BYTES = 24 * 1024 * 1024
@@ -22,7 +22,7 @@ const mimePattern = /^[a-z0-9!#$%&'*+.^_`|~-]+\/[a-z0-9!#$%&'*+.^_`|~-]+$/
 const base64Alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
 const validatedAssets = new WeakMap<object, DocumentAsset>()
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+const isRecord = (value: unknown): value is Record<string, unknown> => {
   return (
     typeof value === 'object' &&
     value !== null &&
@@ -31,13 +31,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   )
 }
 
-export function assertAssetId(value: unknown): asserts value is string {
+export const assertAssetId: (value: unknown) => asserts value is string = (
+  value: unknown,
+): asserts value is string => {
   if (typeof value !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(value) || forbiddenIds.has(value))
     throw new Error('资源 ID 无效')
 }
 
 /** Validate canonical padding and unused tail bits without allocating decoded byte arrays. */
-function assetByteLength(data: unknown): number {
+const assetByteLength = (data: unknown): number => {
   if (typeof data !== 'string' || data.length > Math.ceil(MAX_ASSET_BYTES / 3) * 4)
     throw new Error('资源超过 8 MiB 或编码无效')
   if (data.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(data))
@@ -51,7 +53,9 @@ function assetByteLength(data: unknown): number {
   return length
 }
 
-export function validateDocumentAsset(value: unknown): asserts value is DocumentAsset {
+export const validateDocumentAsset: (value: unknown) => asserts value is DocumentAsset = (
+  value: unknown,
+): asserts value is DocumentAsset => {
   if (!isRecord(value)) throw new Error('资源格式无效')
   const cached = validatedAssets.get(value)
   if (
@@ -85,18 +89,24 @@ export function validateDocumentAsset(value: unknown): asserts value is Document
   })
 }
 
-export function validateAudioAsset(value: unknown): asserts value is DocumentAsset {
+export const validateAudioAsset: (value: unknown) => asserts value is DocumentAsset = (
+  value: unknown,
+): asserts value is DocumentAsset => {
   validateDocumentAsset(value)
   if (!(AUDIO_MIME_TYPES as readonly string[]).includes(value.mimeType))
     throw new Error('录音资源格式不受支持')
 }
 
-export function validateTopicNotes(value: unknown): asserts value is string {
+export const validateTopicNotes: (value: unknown) => asserts value is string = (
+  value: unknown,
+): asserts value is string => {
   if (typeof value !== 'string' || value.length > MAX_TOPIC_NOTES_LENGTH)
     throw new Error('备注须为不超过 100000 字符的文本')
 }
 
-export function validateTopicImage(value: unknown): asserts value is TopicImage {
+export const validateTopicImage: (value: unknown) => asserts value is TopicImage = (
+  value: unknown,
+): asserts value is TopicImage => {
   if (!isRecord(value)) throw new Error('主题图片格式无效')
   assertAssetId(value.assetId)
   const { width, height } = value
@@ -114,7 +124,7 @@ export function validateTopicImage(value: unknown): asserts value is TopicImage 
     throw new Error('主题图片尺寸无效')
 }
 
-export function validateTopicContent(topic: Record<string, unknown>): void {
+export const validateTopicContent = (topic: Record<string, unknown>): void => {
   if (Object.hasOwn(topic, 'notes')) validateTopicNotes(topic.notes)
   if (Object.hasOwn(topic, 'image')) validateTopicImage(topic.image)
   if (Object.hasOwn(topic, 'attachments')) {
@@ -126,7 +136,7 @@ export function validateTopicContent(topic: Record<string, unknown>): void {
   }
 }
 
-export function referencedAssetIds(topics: Readonly<Record<string, Topic>>): Set<string> {
+export const referencedAssetIds = (topics: Readonly<Record<string, Topic>>): Set<string> => {
   const ids = new Set<string>()
   for (const topic of Object.values(topics)) {
     if (topic.image) ids.add(topic.image.assetId)
@@ -136,10 +146,10 @@ export function referencedAssetIds(topics: Readonly<Record<string, Topic>>): Set
   return ids
 }
 
-export function validateDocumentContent(
+export const validateDocumentContent = (
   value: Record<string, unknown>,
   topics: Readonly<Record<string, Topic>>,
-): void {
+): void => {
   const assets = Object.hasOwn(value, 'assets') ? value.assets : {}
   if (!isRecord(assets)) throw new Error('文档资源列表无效')
   const sizes = new Map<string, number>()
@@ -168,17 +178,17 @@ export function validateDocumentContent(
   }
 }
 
-export function assetData(asset: DocumentAsset): DocumentAsset {
+export const assetData = (asset: DocumentAsset): DocumentAsset => {
   const result = { id: asset.id, name: asset.name, mimeType: asset.mimeType, data: asset.data }
   const cached = validatedAssets.get(asset)
   if (cached) validatedAssets.set(result, cached)
   return result
 }
 
-export function documentAssetsData(
+export const documentAssetsData = (
   document: MindMapDocument,
   preserveUnused = false,
-): Readonly<Record<string, DocumentAsset>> | undefined {
+): Readonly<Record<string, DocumentAsset>> | undefined => {
   const ids = preserveUnused
     ? Object.keys(document.assets ?? {})
     : referencedAssetIds(document.topics)

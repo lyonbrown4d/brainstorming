@@ -1,22 +1,22 @@
 import { Download, ImagePlus, Paperclip, Trash2 } from 'lucide-react'
 import type { Command } from '@core'
-import { useEditor } from '../state/editor'
-import { exportTopicAsset, importTopicAssets } from '../state/assets'
-import { TopicNotes } from './metadata/TopicNotes'
-import { TopicImage } from './TopicImage'
-import { TopicImagePreview } from './TopicImagePreview'
-import { Button } from './ui/button'
-import { Badge } from './ui/badge'
-import { ScrollArea } from './ui/scroll-area'
+import { useEditor } from '@renderer/state/editor'
+import { exportTopicAsset, importTopicAssets } from '@renderer/state/assets'
+import { TopicNotes } from '@renderer/components/metadata/TopicNotes'
+import { TopicImage } from '@renderer/components/TopicImage'
+import { TopicImagePreview } from '@renderer/components/TopicImagePreview'
+import { Button } from '@renderer/components/ui/button'
+import { Badge } from '@renderer/components/ui/badge'
+import { ScrollArea } from '@renderer/components/ui/scroll-area'
 
-function removeContent(command: Command): void {
+const removeContent = (command: Command): void => {
   const state = useEditor.getState()
   if (state.busy) return
   state.commitDraft()
   state.command(command)
 }
 
-function TopicAttachment({ topicId, assetId }: { topicId: string; assetId: string }) {
+const TopicAttachment = ({ topicId, assetId }: { topicId: string; assetId: string }) => {
   const asset = useEditor((state) => state.history.document.assets?.[assetId])
   const busy = useEditor((state) => state.busy)
   if (!asset) return null
@@ -54,7 +54,7 @@ function TopicAttachment({ topicId, assetId }: { topicId: string; assetId: strin
   )
 }
 
-export function TopicContentPanel({ topicId }: { topicId: string }) {
+export const TopicContentPanel = ({ topicId }: { topicId: string }) => {
   const topic = useEditor((state) => state.history.document.topics[topicId])
   const busy = useEditor((state) => state.busy)
   if (!topic) return null

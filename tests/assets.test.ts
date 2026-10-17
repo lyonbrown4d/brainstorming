@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import {
-  assetBytes,
-  createAsset,
-  imageDimensions,
-  MAX_ASSET_BYTES,
-  safeAssetName,
-} from '../src/assets'
-import { imageBase64, attachmentBytes } from './fixtures/content'
+import { assetBytes, createAsset, imageDimensions, MAX_ASSET_BYTES, safeAssetName } from '@assets'
+import { imageBase64, attachmentBytes } from '@tests/fixtures/content'
 
 describe('embedded asset boundary', () => {
   it('preserves arbitrary attachment bytes and normalizes portable filenames', () => {

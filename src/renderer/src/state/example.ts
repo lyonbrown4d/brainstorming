@@ -1,6 +1,6 @@
 import { applyWorkbookCommand, createDocument, createExampleDocument, createWorkbook } from '@core'
 
-export function exampleWorkbook() {
+export const exampleWorkbook = () => {
   let workbook = createWorkbook(createExampleDocument())
   const first = workbook.sheets[0]
   if (first)

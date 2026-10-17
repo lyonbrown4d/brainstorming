@@ -9,9 +9,9 @@ import {
   searchDocument,
   searchWorkbook,
   undo,
-} from './index'
+} from '@core'
 
-function fixture() {
+const fixture = () => {
   return applyCommand(createDocument('Search 搜索', 'search'), {
     type: 'batch',
     commands: [

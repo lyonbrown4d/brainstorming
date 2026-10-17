@@ -2,14 +2,14 @@ import { layoutDocument, type LayoutNode } from '@layout'
 import type { MindMapDocument } from '@core'
 import { topicAppearance } from '@shared/appearance'
 import { layoutEdgePath } from '@shared/layout-geometry'
-import { relationEdges } from '../annotations/projection'
-import type { TopicFlowNode } from '../TopicNode'
+import { relationEdges } from '@renderer/components/annotations/projection'
+import type { TopicFlowNode } from '@renderer/components/TopicNode'
 
-export function edgeHandles(
+export const edgeHandles = (
   source: LayoutNode,
   target: LayoutNode,
   direction?: 'left' | 'right' | 'up' | 'down',
-) {
+) => {
   const dx = target.x + target.width / 2 - source.x - source.width / 2
   const dy = target.y + target.height / 2 - source.y - source.height / 2
   if (direction) {
@@ -27,7 +27,7 @@ export function edgeHandles(
   const to = vertical ? (dy > 0 ? 'top' : 'bottom') : dx > 0 ? 'left' : 'right'
   return { sourceHandle: `source-${from}`, targetHandle: `target-${to}` }
 }
-export function projectCanvas(document: MindMapDocument) {
+export const projectCanvas = (document: MindMapDocument) => {
   const layout = layoutDocument(document)
   const byId = new Map(layout.nodes.map((node) => [node.id, node]))
   const nodes: TopicFlowNode[] = layout.nodes.flatMap((node) => {

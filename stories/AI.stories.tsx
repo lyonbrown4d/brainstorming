@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within, waitFor } from 'storybook/test'
-import { createDocument } from '../src/core'
-import type { AIAPI, AISettings } from '../src/shared/ai'
-import { AIAssistant } from '../src/renderer/src/components/ai/AIAssistant'
-import { useEditor } from '../src/renderer/src/state/editor'
-import '../src/renderer/src/styles/ui.css'
+import { createDocument } from '@core'
+import type { AIAPI, AISettings } from '@shared/ai'
+import { AIAssistant } from '@renderer/components/ai/AIAssistant'
+import { useEditor } from '@renderer/state/editor'
+import '@renderer/styles/ui.css'
 
 const settings: AISettings = {
   baseURL: 'https://fixture.invalid/v1',
@@ -48,7 +48,7 @@ const meta = {
 } satisfies Meta<typeof AIAssistant>
 export default meta
 type Story = StoryObj<typeof meta>
-async function generate(canvasElement: HTMLElement) {
+const generate = async (canvasElement: HTMLElement) => {
   const page = within(canvasElement.ownerDocument.body)
   const dialog = within(await page.findByRole('dialog', { name: 'AI 思维导图助手' }))
   await waitFor(() => expect(dialog.getByText(/storybook-fixture/)).toBeVisible())

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
-import { createFixtureDocument, createWorkbook } from '../../src/core'
-import { encodeTrelyx } from '../../src/formats/trelyx'
+import { createFixtureDocument, createWorkbook } from '@core'
+import { encodeTrelyx } from '@formats/trelyx'
 
 for (const count of [100, 1_000, 5_000]) {
   test(`${count} 主题固定文档打开与交互采样`, async ({ page }, testInfo) => {

@@ -1,20 +1,22 @@
-import { pruneDocumentReferences } from './extension-references'
-import { normalizeTopicSelection } from './selection'
-import { getParentId, getSubtreeIds, requireTopic } from './tree'
-import type { Command, MindMapDocument, Side, Topic } from './types'
+import { pruneDocumentReferences } from '@core/extension-references'
+import { normalizeTopicSelection } from '@core/selection'
+import { getParentId, getSubtreeIds, requireTopic } from '@core/tree'
+import type { Command, MindMapDocument, Side, Topic } from '@core/types'
 
-export function insertionIndex(index: number | undefined, length: number): number {
+export const insertionIndex = (index: number | undefined, length: number): number => {
   const result = index ?? length
   if (!Number.isInteger(result) || result < 0 || result > length)
     throw new Error('子主题插入位置超出范围')
   return result
 }
 
-export function assertSide(side: unknown): asserts side is Side {
+export const assertSide: (side: unknown) => asserts side is Side = (
+  side: unknown,
+): asserts side is Side => {
   if (side !== 'left' && side !== 'right') throw new Error('主题方向无效')
 }
 
-export function branchSide(document: MindMapDocument, parent: Topic, side?: Side): Side {
+export const branchSide = (document: MindMapDocument, parent: Topic, side?: Side): Side => {
   if (side !== undefined) assertSide(side)
   if (parent.id !== document.rootId) {
     if (side !== undefined && side !== parent.side) throw new Error('子主题必须继承父分支方向')
@@ -23,26 +25,29 @@ export function branchSide(document: MindMapDocument, parent: Topic, side?: Side
   return side ?? (parent.children.length % 2 === 0 ? 'right' : 'left')
 }
 
-export function assertNonRoot(document: MindMapDocument, id: string): string {
+export const assertNonRoot = (document: MindMapDocument, id: string): string => {
   if (id === document.rootId) throw new Error('不能删除、移动或改变中心主题的方向')
   const parentId = getParentId(document, id)
   if (parentId === undefined) throw new Error(`主题 ${id} 没有父主题`)
   return parentId
 }
 
-export function updateSide(
+export const updateSide = (
   document: MindMapDocument,
   topics: Record<string, Topic>,
   id: string,
   side: Side,
-): void {
+): void => {
   for (const childId of getSubtreeIds(document, id)) {
     const topic = requireTopic(document, childId)
     if (topic.side !== side) topics[childId] = { ...topic, side }
   }
 }
 
-function detachRoots(document: MindMapDocument, roots: readonly string[]): Record<string, Topic> {
+const detachRoots = (
+  document: MindMapDocument,
+  roots: readonly string[],
+): Record<string, Topic> => {
   const selected = new Set(roots)
   if (selected.has(document.rootId)) throw new Error('不能删除或移动中心主题')
   const topics = { ...document.topics }
@@ -53,10 +58,10 @@ function detachRoots(document: MindMapDocument, roots: readonly string[]): Recor
   return topics
 }
 
-export function deleteTopics(
+export const deleteTopics = (
   document: MindMapDocument,
   topicIds: readonly string[],
-): MindMapDocument {
+): MindMapDocument => {
   const roots = normalizeTopicSelection(document, topicIds)
   if (roots.length === 0) return document
   const topics = detachRoots(document, roots)
@@ -68,10 +73,10 @@ export function deleteTopics(
   })
 }
 
-export function moveTopics(
+export const moveTopics = (
   document: MindMapDocument,
   command: Extract<Command, { type: 'moveTopics' }>,
-): MindMapDocument {
+): MindMapDocument => {
   const roots = normalizeTopicSelection(document, command.topicIds)
   const parent = requireTopic(document, command.parentId)
   if (command.side !== undefined) assertSide(command.side)

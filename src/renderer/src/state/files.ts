@@ -1,16 +1,24 @@
 import { deserializeWorkbook } from '@core'
 import type { DesktopAPI } from '@shared/contracts'
-import { useEditor } from './editor'
-import { suggestedFileName } from './fileName'
-import { browserOpen, adoptBrowserPassword, cancelBrowserPassword } from './browserFiles'
-import { activateOpenedDocument, cancelOpenedDocument, unlockOpenedDocument } from './lockedFiles'
-import { browserPasswordFor } from './password'
-import { beginCreation } from './creation'
-import { confirmDiscard } from './documentDiscard'
-import { serializedWorkbook } from './workbookState'
-import { invalidateRecentFiles } from '../hooks/useRecentFiles'
-import { useWorkspace } from './workspace'
-export { RECOVERY_KEY } from './recovery'
+import { useEditor } from '@renderer/state/editor'
+import { suggestedFileName } from '@renderer/state/fileName'
+import {
+  browserOpen,
+  adoptBrowserPassword,
+  cancelBrowserPassword,
+} from '@renderer/state/browserFiles'
+import {
+  activateOpenedDocument,
+  cancelOpenedDocument,
+  unlockOpenedDocument,
+} from '@renderer/state/lockedFiles'
+import { browserPasswordFor } from '@renderer/state/password'
+import { beginCreation } from '@renderer/state/creation'
+import { confirmDiscard } from '@renderer/state/documentDiscard'
+import { serializedWorkbook } from '@renderer/state/workbookState'
+import { invalidateRecentFiles } from '@renderer/hooks/useRecentFiles'
+import { useWorkspace } from '@renderer/state/workspace'
+export { RECOVERY_KEY } from '@renderer/state/recovery'
 
 declare global {
   interface Window {
@@ -18,13 +26,13 @@ declare global {
   }
 }
 
-function showError(error: unknown): void {
+const showError = (error: unknown): void => {
   useEditor.getState().setError(error instanceof Error ? error.message : '文件操作失败，请重试。')
 }
-export function newDocument(): void {
+export const newDocument = (): void => {
   beginCreation('document')
 }
-export async function openDocument(recentPath?: string, pending = false): Promise<void> {
+export const openDocument = async (recentPath?: string, pending = false): Promise<void> => {
   if (useEditor.getState().busy) return
   if (pending) {
     try {
@@ -83,7 +91,7 @@ export async function openDocument(recentPath?: string, pending = false): Promis
     useEditor.setState({ busy: false })
   }
 }
-export async function saveDocument(saveAs = false): Promise<void> {
+export const saveDocument = async (saveAs = false): Promise<void> => {
   if (
     useEditor.getState().busy ||
     !useWorkspace.getState().hasDocument ||
@@ -107,10 +115,8 @@ export async function saveDocument(saveAs = false): Promise<void> {
       const password = browserPasswordFor(workbook.id)
       const bytes =
         password === null
-          ? (await import('../../../formats/trelyx')).encodeTrelyx(workbook)
-          : await (
-              await import('../../../formats/encrypted')
-            ).encryptTrelyx(workbook, password, 'existing')
+          ? (await import('@formats/trelyx')).encodeTrelyx(workbook)
+          : await (await import('@formats/encrypted')).encryptTrelyx(workbook, password, 'existing')
       const url = URL.createObjectURL(
         new Blob([new Uint8Array(bytes).buffer], { type: 'application/vnd.trelyx+zip' }),
       )
@@ -139,4 +145,4 @@ export {
   retryRecovery,
   restoreBackup,
   changeFilePassword,
-} from './fileSecurityActions'
+} from '@renderer/state/fileSecurityActions'

@@ -5,15 +5,15 @@ import {
   validateTopicClipboard,
   type TopicClipboard,
 } from '@core'
-import { useEditor } from './editor'
-import { selectedTopicIds, setSelectedTopics } from './selection'
+import { useEditor } from '@renderer/state/editor'
+import { selectedTopicIds, setSelectedTopics } from '@renderer/state/selection'
 
 export const TOPIC_CLIPBOARD_PREFIX = 'Trelyx topics v1\n'
 const MAX_CLIPBOARD_BYTES = 56 * 1024 * 1024
 const MAX_TOPIC_BYTES = 10 * 1024 * 1024
 let pending = false
 
-export function parseTopicClipboard(contents: string): TopicClipboard {
+export const parseTopicClipboard = (contents: string): TopicClipboard => {
   if (new TextEncoder().encode(contents).byteLength > MAX_CLIPBOARD_BYTES)
     throw new Error('剪贴板内容过大')
   if (!contents.startsWith(TOPIC_CLIPBOARD_PREFIX))
@@ -28,17 +28,17 @@ export function parseTopicClipboard(contents: string): TopicClipboard {
   return value
 }
 
-function report(error: unknown): void {
+const report = (error: unknown): void => {
   useEditor.getState().setError(error instanceof Error ? error.message : '剪贴板操作失败')
 }
-function capture() {
+const capture = () => {
   const state = useEditor.getState()
   state.commitDraft()
   const current = useEditor.getState()
   if (current.editingId || current.busy) return null
   return { ...current, selectedTopics: selectedTopicIds(current) }
 }
-function unchanged(before: NonNullable<ReturnType<typeof capture>>): boolean {
+const unchanged = (before: NonNullable<ReturnType<typeof capture>>): boolean => {
   const state = useEditor.getState()
   if (
     state.workbook !== before.workbook ||
@@ -53,7 +53,7 @@ function unchanged(before: NonNullable<ReturnType<typeof capture>>): boolean {
   }
   return true
 }
-function plainText(clipboard: TopicClipboard): string {
+const plainText = (clipboard: TopicClipboard): string => {
   const lines: string[] = []
   const stack = clipboard.roots.map((id) => ({ id, depth: 0 })).reverse()
   while (stack.length) {
@@ -67,11 +67,11 @@ function plainText(clipboard: TopicClipboard): string {
   return lines.join('\n')
 }
 
-async function pastePayload(
+const pastePayload = async (
   source: TopicClipboard,
   before: NonNullable<ReturnType<typeof capture>>,
   parentId: string,
-): Promise<void> {
+): Promise<void> => {
   let omittedLinks = 0
   const clipboard: TopicClipboard = {
     ...source,
@@ -115,7 +115,7 @@ async function pastePayload(
     annotationIds,
   }
   const document = applyCommand(before.history.document, command)
-  const { encodeTrelyx } = await import('../../../formats/trelyx')
+  const { encodeTrelyx } = await import('@formats/trelyx')
   encodeTrelyx({
     ...before.workbook,
     sheets: before.workbook.sheets.map((sheet) =>
@@ -132,7 +132,7 @@ async function pastePayload(
   }
 }
 
-export async function copySelectedTopics(cut = false): Promise<void> {
+export const copySelectedTopics = async (cut = false): Promise<void> => {
   if (pending) return
   const before = capture()
   if (!before) return
@@ -162,7 +162,7 @@ export async function copySelectedTopics(cut = false): Promise<void> {
   }
 }
 
-export async function pasteSelectedTopics(): Promise<void> {
+export const pasteSelectedTopics = async (): Promise<void> => {
   if (pending) return
   const before = capture()
   if (!before) return
@@ -180,7 +180,7 @@ export async function pasteSelectedTopics(): Promise<void> {
   }
 }
 
-export async function duplicateSelectedTopics(): Promise<void> {
+export const duplicateSelectedTopics = async (): Promise<void> => {
   if (pending) return
   const before = capture()
   if (!before) return

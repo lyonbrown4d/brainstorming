@@ -1,12 +1,12 @@
 import type { TopicMetadata } from '@core'
-import { useEditor } from '../../state/editor'
-import { runAnnotationCommand } from '../annotations/commands'
+import { useEditor } from '@renderer/state/editor'
+import { runAnnotationCommand } from '@renderer/components/annotations/commands'
 
-export function setMetadataField<K extends keyof TopicMetadata>(
+export const setMetadataField = <K extends keyof TopicMetadata>(
   topicId: string,
   key: K,
   value: TopicMetadata[K] | undefined,
-): boolean {
+): boolean => {
   const state = useEditor.getState()
   if (state.busy) return false
   state.commitDraft()
@@ -19,7 +19,7 @@ export function setMetadataField<K extends keyof TopicMetadata>(
   return runAnnotationCommand({ type: 'setTopicMetadata', topicId, metadata })
 }
 
-export function toggleTopicMarker(topicId: string, marker: string): boolean {
+export const toggleTopicMarker = (topicId: string, marker: string): boolean => {
   const current = useEditor.getState().history.document.topics[topicId]?.metadata?.markers ?? []
   if (!current.includes(marker) && (current.length >= 32 || marker.length > 64)) return false
   return setMetadataField(

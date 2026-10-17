@@ -1,32 +1,32 @@
-import { cleanupRemovedWorkbookTargets, remapSheetLinks } from './workbook-links'
-import { documentData } from './document'
-import type { MindMapSheet, MindMapWorkbook, WorkbookCommand } from './types'
-import { assertId, validateDocument } from './validation'
+import { cleanupRemovedWorkbookTargets, remapSheetLinks } from '@core/workbook-links'
+import { documentData } from '@core/document'
+import type { MindMapSheet, MindMapWorkbook, WorkbookCommand } from '@core/types'
+import { assertId, validateDocument } from '@core/validation'
 import {
   assertSheetName,
   sheetData,
   truncateSheetName,
   validateSheet,
   validateWorkbook,
-} from './workbook'
+} from '@core/workbook'
 
-function insertionIndex(index: number | undefined, length: number): number {
+const insertionIndex = (index: number | undefined, length: number): number => {
   const result = index ?? length
   if (!Number.isInteger(result) || result < 0 || result > length)
     throw new Error('画布位置超出范围')
   return result
 }
 
-function assertNewId(workbook: MindMapWorkbook, id: string): void {
+const assertNewId = (workbook: MindMapWorkbook, id: string): void => {
   assertId(id)
   if (workbook.sheets.some((sheet) => sheet.id === id)) throw new Error(`画布 ${id} 已存在`)
 }
 
 /** One immutable workbook operation; each sheet retains its own topic-tree protocol. */
-export function applyWorkbookCommand(
+export const applyWorkbookCommand = (
   workbook: MindMapWorkbook,
   command: WorkbookCommand,
-): MindMapWorkbook {
+): MindMapWorkbook => {
   validateWorkbook(workbook)
   const sheets = [...workbook.sheets]
   if (command.type === 'addSheet') {

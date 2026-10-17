@@ -1,4 +1,4 @@
-import type { MindMapDocument, MindMapWorkbook } from '../core'
+import type { MindMapDocument, MindMapWorkbook } from '@core'
 
 export interface MarkerVector {
   readonly body: string
@@ -9,7 +9,7 @@ let brandIcons: Readonly<Record<string, MarkerVector>> | undefined
 let loading: Promise<void> | undefined
 
 /** Load a bundled offline collection only when a brand picker, badge, or export needs it. */
-export function loadBrandMarkers(): Promise<void> {
+export const loadBrandMarkers = (): Promise<void> => {
   loading ??= import('@iconify-json/simple-icons')
     .then(({ icons }) => {
       brandIcons = Object.fromEntries(
@@ -29,13 +29,15 @@ export function loadBrandMarkers(): Promise<void> {
     })
   return loading
 }
-export function brandMarkerIcon(marker: string): MarkerVector | undefined {
+export const brandMarkerIcon = (marker: string): MarkerVector | undefined => {
   return brandIcons && Object.hasOwn(brandIcons, marker) ? brandIcons[marker] : undefined
 }
-export function brandMarkerNames(): readonly string[] {
+export const brandMarkerNames = (): readonly string[] => {
   return Object.keys(brandIcons ?? {}).filter((name) => name.length <= 64)
 }
-export async function prepareMarkerIcons(source: MindMapDocument | MindMapWorkbook): Promise<void> {
+export const prepareMarkerIcons = async (
+  source: MindMapDocument | MindMapWorkbook,
+): Promise<void> => {
   const documents = 'sheets' in source ? source.sheets.map((sheet) => sheet.document) : [source]
   if (
     documents.some((document) =>

@@ -1,11 +1,11 @@
-import type { MindMapDocument, Topic } from './types'
-import { createDocument } from './document'
+import type { MindMapDocument, Topic } from '@core/types'
+import { createDocument } from '@core/document'
 
 /** Fixed inputs for Storybook and repeatable 100 / 1,000 / 5,000-topic performance sampling. */
-export function createFixtureDocument(
+export const createFixtureDocument = (
   count: number,
   shape: 'balanced' | 'deep' = 'balanced',
-): MindMapDocument {
+): MindMapDocument => {
   if (!Number.isInteger(count) || count < 1) throw new Error('Fixture 主题数量必须是正整数')
   const document = createDocument('性能测试', `fixture-${shape}-${count}`)
   const topics: Record<string, Topic> = { ...document.topics }

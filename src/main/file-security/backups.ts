@@ -1,37 +1,41 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { mkdir, readdir, lstat, unlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { DocumentBackup } from '../../shared/fileSecurity'
-import { validateSecurityDocumentId } from '../../shared/fileSecurity'
-import { encryptTrelyx } from '../../formats/encrypted'
-import { decodeTrelyx } from '../../formats/trelyx'
-import { atomicWrite } from './write'
-import { readDocumentBytes } from './read'
+import type { DocumentBackup } from '@shared/fileSecurity'
+import { validateSecurityDocumentId } from '@shared/fileSecurity'
+import { encryptTrelyx } from '@formats/encrypted'
+import { decodeTrelyx } from '@formats/trelyx'
+import { atomicWrite } from '@main/file-security/write'
+import { readDocumentBytes } from '@main/file-security/read'
 
 const folderPattern = /^[a-f0-9]{32}$/u
 const filePattern = /^\d{13}-[a-f0-9-]{36}-[ep]\.trelyx$/u
 const idPattern = /^[a-f0-9]{32}\/\d{13}-[a-f0-9-]{36}-[ep]\.trelyx$/u
-function isMissing(error: unknown): boolean {
+const isMissing = (error: unknown): boolean => {
   return error instanceof Error && 'code' in error && error.code === 'ENOENT'
 }
-function folderFor(documentId: unknown): string {
+const folderFor = (documentId: unknown): string => {
   validateSecurityDocumentId(documentId)
   return createHash('sha256').update(documentId).digest('hex').slice(0, 32)
 }
 export class DocumentBackups {
   private queue: Promise<void> = Promise.resolve()
   constructor(private readonly directory: string) {}
-  private async secureDirectory(path: string): Promise<void> {
+  private secureDirectory = async (path: string): Promise<void> => {
     await mkdir(path, { recursive: true, mode: 0o700 })
     const info = await lstat(path)
     if (!info.isDirectory() || info.isSymbolicLink()) throw new Error('版本历史目录无效')
   }
-  write(documentId: string, bytes: Uint8Array, encrypted: boolean): Promise<void> {
+  write = (documentId: string, bytes: Uint8Array, encrypted: boolean): Promise<void> => {
     const task = this.queue.then(() => this.writeNow(documentId, bytes, encrypted))
     this.queue = task.catch(() => undefined)
     return task
   }
-  private async writeNow(documentId: string, bytes: Uint8Array, encrypted: boolean): Promise<void> {
+  private writeNow = async (
+    documentId: string,
+    bytes: Uint8Array,
+    encrypted: boolean,
+  ): Promise<void> => {
     await this.secureDirectory(this.directory)
     const folder = folderFor(documentId)
     const directory = join(this.directory, folder)
@@ -48,7 +52,7 @@ export class DocumentBackups {
     all.sort((a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id))
     await Promise.all(all.slice(20).map(({ id }) => unlink(join(this.directory, id))))
   }
-  protect(documentId: string, password: string | null): Promise<void> {
+  protect = (documentId: string, password: string | null): Promise<void> => {
     if (password === null) return Promise.resolve()
     const task = this.queue.then(async () => {
       for (const backup of await this.list(documentId)) {
@@ -64,7 +68,7 @@ export class DocumentBackups {
     this.queue = task.catch(() => undefined)
     return task
   }
-  private async listFolder(folder: string): Promise<DocumentBackup[]> {
+  private listFolder = async (folder: string): Promise<DocumentBackup[]> => {
     const result: DocumentBackup[] = []
     const directory = join(this.directory, folder)
     try {
@@ -88,10 +92,10 @@ export class DocumentBackups {
     }
     return result.sort((a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id))
   }
-  list(documentId: unknown): Promise<DocumentBackup[]> {
+  list = (documentId: unknown): Promise<DocumentBackup[]> => {
     return this.listFolder(folderFor(documentId))
   }
-  async read(id: unknown): Promise<Uint8Array> {
+  read = async (id: unknown): Promise<Uint8Array> => {
     if (typeof id !== 'string' || !idPattern.test(id)) throw new Error('版本标识无效')
     const root = await lstat(this.directory)
     if (!root.isDirectory() || root.isSymbolicLink()) throw new Error('版本历史目录无效')

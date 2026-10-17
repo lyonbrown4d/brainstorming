@@ -48,7 +48,7 @@ export const templateOptions = Object.entries(templates).map(([id, template]) =>
   title: template.title,
   count: 13,
 }))
-export function createTemplate(id: TemplateId): MindMapDocument {
+export const createTemplate = (id: TemplateId): MindMapDocument => {
   const template = templates[id]
   let document = createDocument(template.title, crypto.randomUUID())
   document = applyCommand(document, {

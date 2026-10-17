@@ -1,9 +1,6 @@
 import { QueryClient, QueryObserver } from '@tanstack/react-query'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  invalidateRecentFiles,
-  recentFilesOptions,
-} from '../../src/renderer/src/hooks/useRecentFiles'
+import { invalidateRecentFiles, recentFilesOptions } from '@renderer/hooks/useRecentFiles'
 
 let client: QueryClient
 let subscriptions: (() => void)[]
@@ -17,7 +14,7 @@ afterEach(() => {
   client.clear()
   vi.unstubAllGlobals()
 })
-function observe() {
+const observe = () => {
   const observer = new QueryObserver(client, recentFilesOptions())
   subscriptions.push(observer.subscribe(() => undefined))
   return observer

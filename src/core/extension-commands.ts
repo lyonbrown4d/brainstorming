@@ -1,23 +1,23 @@
-import type { Command, MindMapDocument, Topic } from './types'
-import type { ExtensionCommand } from './extensions'
-import { assertId } from './validation'
-import { requireTopic } from './tree'
-import { withAsset } from './content-commands'
+import type { Command, MindMapDocument, Topic } from '@core/types'
+import type { ExtensionCommand } from '@core/extensions'
+import { assertId } from '@core/validation'
+import { requireTopic } from '@core/tree'
+import { withAsset } from '@core/content-commands'
 import {
   validateDocumentSettings,
   validateLayoutKind,
   validateTopicMetadata,
-} from './metadata-validation'
+} from '@core/metadata-validation'
 import {
   validateFloatingPosition,
   validatePresentationStep,
   validateRelation,
   validateTopicCallout,
   validateTopicGroup,
-} from './annotation-validation'
-import { clearFloatingRoots } from './extension-references'
-import { moveTopics } from './selection-commands'
-import { validateAudioAsset } from './topic-content'
+} from '@core/annotation-validation'
+import { clearFloatingRoots } from '@core/extension-references'
+import { moveTopics } from '@core/selection-commands'
+import { validateAudioAsset } from '@core/topic-content'
 
 const extensionTypes = new Set([
   'setTopicMetadata',
@@ -35,31 +35,31 @@ const extensionTypes = new Set([
   'attachFloatingTopic',
   'setPresentation',
 ])
-export function isExtensionCommand(command: Command): command is ExtensionCommand {
+export const isExtensionCommand = (command: Command): command is ExtensionCommand => {
   return extensionTypes.has(command.type)
 }
-function same(left: unknown, right: unknown): boolean {
+const same = (left: unknown, right: unknown): boolean => {
   return JSON.stringify(left) === JSON.stringify(right)
 }
-function replaceTopic(document: MindMapDocument, topic: Topic): MindMapDocument {
+const replaceTopic = (document: MindMapDocument, topic: Topic): MindMapDocument => {
   return same(document.topics[topic.id], topic)
     ? document
     : { ...document, topics: { ...document.topics, [topic.id]: topic } }
 }
-function upsert<T extends { readonly id: string }>(
+const upsert = <T extends { readonly id: string }>(
   values: readonly T[] | undefined,
   value: T,
-): readonly T[] {
+): readonly T[] => {
   const found = values?.findIndex(({ id }) => id === value.id) ?? -1
   const result = [...(values ?? [])]
   if (found < 0) result.push(structuredClone(value))
   else result[found] = structuredClone(value)
   return result
 }
-export function applyExtensionCommand(
+export const applyExtensionCommand = (
   document: MindMapDocument,
   command: ExtensionCommand,
-): MindMapDocument {
+): MindMapDocument => {
   switch (command.type) {
     case 'setTopicMetadata': {
       validateTopicMetadata(command.metadata)

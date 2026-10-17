@@ -2,7 +2,7 @@ import { useEffect, type RefObject } from 'react'
 import { useThree } from '@react-three/fiber'
 import { CameraControlsImpl } from '@react-three/drei'
 import { Vector3 } from 'three'
-import { spatialWheelGesture } from '../lib/spatialGestures'
+import { spatialWheelGesture } from '@renderer/lib/spatialGestures'
 
 interface SpatialGestureOptions {
   readonly canvas: HTMLCanvasElement
@@ -12,12 +12,12 @@ interface SpatialGestureOptions {
 }
 
 /** Maps trackpad intent to CameraControls; camera movement and limits stay in the library. */
-export function useSpatialGestures({
+export const useSpatialGestures = ({
   canvas,
   controls,
   enabled,
   animation,
-}: SpatialGestureOptions): void {
+}: SpatialGestureOptions): void => {
   const get = useThree((state) => state.get)
 
   useEffect(() => {

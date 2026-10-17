@@ -16,15 +16,15 @@ export const defaultTopicFilters: TopicFilters = {
   assignee: '',
 }
 export const useTopicFilters = create<TopicFilters>(() => ({ ...defaultTopicFilters }))
-function localDate(): string {
+const localDate = (): string => {
   const date = new Date()
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
-export function filterTopics(
+export const filterTopics = (
   document: MindMapDocument,
   filters: TopicFilters,
   today = localDate(),
-): Topic[] {
+): Topic[] => {
   return Object.values(document.topics).filter((topic) => {
     const metadata = topic.metadata,
       task = metadata?.task

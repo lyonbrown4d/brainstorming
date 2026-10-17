@@ -1,6 +1,6 @@
-import type { MindMapSheet, MindMapWorkbook, Topic } from '../../core'
-import { truncateSheetName } from '../../core/workbook'
-import { validateBoundedWorkbook } from '../trelyx/validation'
+import type { MindMapSheet, MindMapWorkbook, Topic } from '@core'
+import { truncateSheetName } from '@core/workbook'
+import { validateBoundedWorkbook } from '@formats/trelyx/validation'
 
 export interface OutlineTopic {
   title: string
@@ -13,12 +13,12 @@ export interface OutlineSheet {
 }
 export const MAX_TEXT_BYTES = 8 * 1024 * 1024
 
-export function assertTextSize(text: string): void {
+export const assertTextSize = (text: string): void => {
   if (text.length > MAX_TEXT_BYTES || new TextEncoder().encode(text).length > MAX_TEXT_BYTES)
     throw new Error('大纲文本不能超过 8 MiB')
 }
 
-export function outlineWorkbook(sheets: readonly OutlineSheet[]): MindMapWorkbook {
+export const outlineWorkbook = (sheets: readonly OutlineSheet[]): MindMapWorkbook => {
   if (!sheets.length || sheets.length > 128) throw new Error('大纲画布数须为 1 至 128')
   let count = 0
   const convert = (sheet: OutlineSheet): MindMapSheet => {
@@ -62,7 +62,7 @@ export function outlineWorkbook(sheets: readonly OutlineSheet[]): MindMapWorkboo
   return workbook
 }
 
-export function exportSheets(workbook: MindMapWorkbook, sheetId?: string): MindMapWorkbook {
+export const exportSheets = (workbook: MindMapWorkbook, sheetId?: string): MindMapWorkbook => {
   validateBoundedWorkbook(workbook)
   if (!sheetId) return workbook
   const sheet = workbook.sheets.find((entry) => entry.id === sheetId)

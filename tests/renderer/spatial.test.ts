@@ -5,10 +5,10 @@ import {
   createDocument,
   createWorkbook,
   serializeWorkbook,
-} from '../../src/core'
-import { isDirty, useEditor } from '../../src/renderer/src/state/editor'
-import { useSpatialView, visibleSpatialFocus } from '../../src/renderer/src/state/spatial'
-import { changeViewMode } from '../../src/renderer/src/components/ViewModeSwitch'
+} from '@core'
+import { isDirty, useEditor } from '@renderer/state/editor'
+import { useSpatialView, visibleSpatialFocus } from '@renderer/state/spatial'
+import { changeViewMode } from '@renderer/components/ViewModeSwitch'
 
 const camera = { position: [2, 5, 10] as const, target: [0, 0, 0] as const }
 

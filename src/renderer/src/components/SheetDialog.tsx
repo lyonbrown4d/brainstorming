@@ -1,10 +1,16 @@
-import { DialogContent } from './DialogContent'
+import { DialogContent } from '@renderer/components/DialogContent'
 import { useId, useRef, useState } from 'react'
-import { useEditor } from '../state/editor'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Label } from './ui/label'
-import { Dialog, DialogClose, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
+import { useEditor } from '@renderer/state/editor'
+import { Button } from '@renderer/components/ui/button'
+import { Input } from '@renderer/components/ui/input'
+import { Label } from '@renderer/components/ui/label'
+import {
+  Dialog,
+  DialogClose,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@renderer/components/ui/dialog'
 
 export interface SheetDialogAction {
   kind: 'rename' | 'delete'
@@ -12,7 +18,7 @@ export interface SheetDialogAction {
   name: string
 }
 
-export function SheetDialog({
+export const SheetDialog = ({
   action,
   busy,
   onClose,
@@ -20,7 +26,7 @@ export function SheetDialog({
   action: SheetDialogAction
   busy: boolean
   onClose: () => void
-}) {
+}) => {
   const [name, setName] = useState(action.name)
   const nameId = useId()
   const submitting = useRef(false)

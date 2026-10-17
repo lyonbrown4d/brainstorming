@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { strToU8, zipSync } from 'fflate'
 import { describe, expect, it } from 'vitest'
-import { validateWorkbook } from '../../src/core'
-import { importXmind } from '../../src/formats/xmind'
-import { decodeTrelyx, encodeTrelyx } from '../../src/formats/trelyx'
+import { validateWorkbook } from '@core'
+import { importXmind } from '@formats/xmind'
+import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
 
 const fixture = (name: string): Uint8Array =>
   readFileSync(new URL(`../fixtures/xmind/${name}`, import.meta.url))
@@ -203,6 +203,6 @@ describe('XMind import', () => {
   })
 })
 
-function archiveContent(value: unknown): Uint8Array {
+const archiveContent = (value: unknown): Uint8Array => {
   return strToU8(JSON.stringify(value))
 }

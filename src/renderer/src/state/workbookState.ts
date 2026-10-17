@@ -8,9 +8,9 @@ import {
   type MindMapDocument,
   type MindMapWorkbook,
 } from '@core'
-import type { EditorData, SheetSession, StructureSnapshot } from './editorTypes'
+import type { EditorData, SheetSession, StructureSnapshot } from '@renderer/state/editorTypes'
 
-export function sessionFor(document: MindMapDocument): SheetSession {
+export const sessionFor = (document: MindMapDocument): SheetSession => {
   return {
     history: createHistory(document),
     selectedId: document.rootId,
@@ -18,9 +18,9 @@ export function sessionFor(document: MindMapDocument): SheetSession {
     redoOrder: [],
   }
 }
-export function loadWorkbook(
+export const loadWorkbook = (
   document: MindMapDocument | MindMapWorkbook,
-): StructureSnapshot & { history: HistoryState; selectedId: string } {
+): StructureSnapshot & { history: HistoryState; selectedId: string } => {
   const workbook = document.version === 1 ? createWorkbook(document) : document
   const first = workbook.sheets[0]
   if (!first) throw new Error('工作簿至少需要一个画布')
@@ -37,7 +37,7 @@ export function loadWorkbook(
     selectedId: session.selectedId,
   }
 }
-export function snapshot(state: EditorData): StructureSnapshot {
+export const snapshot = (state: EditorData): StructureSnapshot => {
   return {
     workbook: state.workbook,
     activeSheetId: state.activeSheetId,
@@ -51,11 +51,11 @@ export function snapshot(state: EditorData): StructureSnapshot {
     },
   }
 }
-export function withHistory(
+export const withHistory = (
   state: EditorData,
   history: HistoryState,
   session: SheetSession,
-): Partial<EditorData> {
+): Partial<EditorData> => {
   const selectedId = history.document.topics[state.selectedId]
     ? state.selectedId
     : history.document.rootId
@@ -73,10 +73,10 @@ export function withHistory(
 }
 
 /** Restoring sheet order/names must preserve later content edits in surviving sheets. */
-export function restoreStructure(
+export const restoreStructure = (
   state: EditorData,
   target: StructureSnapshot,
-): Partial<EditorData> {
+): Partial<EditorData> => {
   const current = snapshot(state)
   const sessions = Object.fromEntries(
     target.workbook.sheets.map((sheet) => [
@@ -104,7 +104,10 @@ export function restoreStructure(
     dropTargetId: null,
   }
 }
-export function travelHistory(state: EditorData, direction: 'undo' | 'redo'): Partial<EditorData> {
+export const travelHistory = (
+  state: EditorData,
+  direction: 'undo' | 'redo',
+): Partial<EditorData> => {
   const session = state.sessions[state.activeSheetId] ?? sessionFor(state.history.document)
   const backwards = direction === 'undo'
   const structural = backwards ? state.structurePast.at(-1) : state.structureFuture[0]
@@ -151,7 +154,7 @@ export function travelHistory(state: EditorData, direction: 'undo' | 'redo'): Pa
   })
 }
 const cache = new WeakMap<MindMapWorkbook, string>()
-export function serializedWorkbook(workbook: MindMapWorkbook): string {
+export const serializedWorkbook = (workbook: MindMapWorkbook): string => {
   let contents = cache.get(workbook)
   if (contents === undefined) {
     contents = serializeWorkbook(workbook)

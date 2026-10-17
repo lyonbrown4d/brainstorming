@@ -1,10 +1,10 @@
-import { completeDocumentCreation, openExample } from './workspace'
+import { completeDocumentCreation, openExample } from '@tests/e2e/workspace'
 import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
-import { decodeTrelyx } from '../../src/formats/trelyx'
-import { legacyXmind, modernXmind } from '../fixtures/xmind/archive'
+import { decodeTrelyx } from '@formats/trelyx'
+import { legacyXmind, modernXmind } from '@tests/fixtures/xmind/archive'
 
-async function fileAction(page: Page, name: string) {
+const fileAction = async (page: Page, name: string) => {
   if (name === '打开导图')
     await expect
       .poll(

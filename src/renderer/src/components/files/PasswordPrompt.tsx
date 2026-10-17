@@ -6,14 +6,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../ui/dialog'
-import { Input } from '../ui/input'
-import { Button } from '../ui/button'
-import { FileSecurityPanel } from './FileSecurity'
-import { HistoryPanel } from './HistoryDialog'
-import { answerPassword, usePasswordPrompt } from '../../state/password'
+} from '@renderer/components/ui/dialog'
+import { Input } from '@renderer/components/ui/input'
+import { Button } from '@renderer/components/ui/button'
+import { FileSecurityPanel } from '@renderer/components/files/FileSecurity'
+import { HistoryPanel } from '@renderer/components/files/HistoryDialog'
+import { answerPassword, usePasswordPrompt } from '@renderer/state/password'
 
-function PasswordForm({
+const PasswordForm = ({
   title,
   description,
   error,
@@ -21,7 +21,7 @@ function PasswordForm({
   title: string
   description?: string
   error?: string
-}) {
+}) => {
   const [password, setPassword] = useState('')
   const passwordId = useId()
   return (
@@ -76,7 +76,7 @@ function PasswordForm({
     </form>
   )
 }
-export function PasswordPrompt() {
+export const PasswordPrompt = () => {
   const request = usePasswordPrompt((state) => state.request)
   return (
     <>

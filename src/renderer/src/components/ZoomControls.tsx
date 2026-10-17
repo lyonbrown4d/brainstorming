@@ -1,12 +1,12 @@
-import { canvasFitPadding } from '../hooks/useWorkbenchInsets'
+import { canvasFitPadding } from '@renderer/hooks/useWorkbenchInsets'
 import { useReducedMotion } from 'motion/react'
 import { useReactFlow, useViewport } from '@xyflow/react'
 import { Focus, Minus, Plus, Maximize2 } from 'lucide-react'
-import { Button } from './ui/button'
-import { useEditor } from '../state/editor'
-import type { TopicFlowNode } from './TopicNode'
+import { Button } from '@renderer/components/ui/button'
+import { useEditor } from '@renderer/state/editor'
+import type { TopicFlowNode } from '@renderer/components/TopicNode'
 
-export function ZoomControls() {
+export const ZoomControls = () => {
   const reduceMotion = useReducedMotion()
   const flow = useReactFlow<TopicFlowNode>()
   const { zoom } = useViewport()

@@ -2,17 +2,17 @@ import { useCallback, useEffect, useRef, type RefObject } from 'react'
 import { useThree } from '@react-three/fiber'
 import type { CameraControlsImpl } from '@react-three/drei'
 import { Box3, Vector3 } from 'three'
-import { usePresentation } from '../state/presentation'
-import { useViewportRequest } from '../state/viewport'
-import { useEditor } from '../state/editor'
+import { usePresentation } from '@renderer/state/presentation'
+import { useViewportRequest } from '@renderer/state/viewport'
+import { useEditor } from '@renderer/state/editor'
 import { useReducedMotion } from 'motion/react'
-import { spatialBounds, type SpatialNode } from '../../../layout/spatial'
-import type { SpatialCameraActions, SpatialCameraState } from '../components/spatial/types'
+import { spatialBounds, type SpatialNode } from '@layout/spatial'
+import type { SpatialCameraActions, SpatialCameraState } from '@renderer/components/spatial/types'
 import {
   spatialFramingTarget,
   spatialSafeViewport,
   type ViewportBounds,
-} from '../lib/spatialSafeViewport'
+} from '@renderer/lib/spatialSafeViewport'
 
 interface SpatialCameraOptions {
   readonly controls: RefObject<CameraControlsImpl | null>
@@ -26,7 +26,7 @@ interface SpatialCameraOptions {
 }
 
 /** Synchronizes a mature camera controller with document framing and persisted view state. */
-export function useSpatialCamera({
+export const useSpatialCamera = ({
   controls,
   actions,
   nodes,
@@ -35,7 +35,7 @@ export function useSpatialCamera({
   initialCamera,
   onCameraChange,
   onZoomChange,
-}: SpatialCameraOptions) {
+}: SpatialCameraOptions) => {
   const cameraRequest = usePresentation((state) => state.cameraRequest)
   const reduceMotion = useReducedMotion()
   const invalidate = useThree((state) => state.invalidate)
@@ -191,11 +191,11 @@ export function useSpatialCamera({
   return { report, orient, framing, smoothTime: reduceMotion ? 0 : 0.18 }
 }
 
-function spatialFrame(
+const spatialFrame = (
   controller: CameraControlsImpl,
   nodes: readonly SpatialNode[],
   viewport: ViewportBounds,
-) {
+) => {
   const bounds = spatialBounds(nodes)
   const box = new Box3(new Vector3(...bounds.min), new Vector3(...bounds.max))
   const size = box.getSize(new Vector3())

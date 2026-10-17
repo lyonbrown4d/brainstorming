@@ -2,12 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { PerspectiveCamera, Vector3 } from 'three'
 import { applyCommand, createExampleDocument } from '@core'
 import { layoutDocument } from '@layout'
-import {
-  layoutSpatialDocument,
-  type SpatialNode,
-  type SpatialPoint,
-} from '../../src/layout/spatial'
-import { canvasDropCommand, findTopicDrop } from '../../src/renderer/src/lib/canvasDrop'
+import { layoutSpatialDocument, type SpatialNode, type SpatialPoint } from '@layout/spatial'
+import { canvasDropCommand, findTopicDrop } from '@renderer/lib/canvasDrop'
 import {
   createSpatialDrag,
   previewSpatialDrag,
@@ -17,7 +13,7 @@ import {
   spatialDragDelta,
   spatialDragSelection,
   spatialRectangleSelection,
-} from '../../src/renderer/src/lib/spatialDrag'
+} from '@renderer/lib/spatialDrag'
 
 const viewport = { left: 120, top: 80, width: 800, height: 400 }
 const card: SpatialNode = {
@@ -29,7 +25,7 @@ const card: SpatialNode = {
   depth: 1,
 }
 
-function cameraAt(position: SpatialPoint = [0, 0, 10]) {
+const cameraAt = (position: SpatialPoint = [0, 0, 10]) => {
   const camera = new PerspectiveCamera(50, 2, 0.1, 100)
   camera.position.set(...position)
   camera.lookAt(0, 0, 0)
@@ -37,7 +33,7 @@ function cameraAt(position: SpatialPoint = [0, 0, 10]) {
   return camera
 }
 
-function required<T>(value: T | undefined): T {
+const required = <T>(value: T | undefined): T => {
   if (value === undefined) throw new Error('Missing expected geometry')
   return value
 }

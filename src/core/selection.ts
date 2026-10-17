@@ -1,11 +1,11 @@
-import { requireTopic } from './tree'
-import type { MindMapDocument } from './types'
+import { requireTopic } from '@core/tree'
+import type { MindMapDocument } from '@core/types'
 
 /** Selected subtree roots in document order, without duplicated descendants. */
-export function normalizeTopicSelection(
+export const normalizeTopicSelection = (
   document: MindMapDocument,
   topicIds: readonly string[],
-): string[] {
+): string[] => {
   const selected = new Set(topicIds)
   for (const id of selected) requireTopic(document, id)
   const result: string[] = []

@@ -13,11 +13,11 @@ interface PromptState {
 export const usePasswordPrompt = create<PromptState>(() => ({ request: null }))
 let finishPrompt: ((password: string | null) => void) | null = null
 let promptId = 0
-export function requestPassword(
+export const requestPassword = (
   title: string,
   description?: string,
   error?: string,
-): Promise<string | null> {
+): Promise<string | null> => {
   finishPrompt?.(null)
   return new Promise((resolve) => {
     finishPrompt = resolve
@@ -32,7 +32,7 @@ export function requestPassword(
     })
   })
 }
-export function answerPassword(password: string | null): void {
+export const answerPassword = (password: string | null): void => {
   const finish = finishPrompt
   finishPrompt = null
   usePasswordPrompt.setState({ request: null })
@@ -49,19 +49,19 @@ export const useFileSecurityState = create<SecurityView>(() => ({
   lockedRecovery: false,
 }))
 let browserSession: { documentId: string; password: string | null } | null = null
-export function browserPasswordFor(documentId: string): string | null {
+export const browserPasswordFor = (documentId: string): string | null => {
   return browserSession?.documentId === documentId ? browserSession.password : null
 }
-export function setBrowserPassword(
+export const setBrowserPassword = (
   documentId: string,
   password: string | null,
   unlocking = false,
-): void {
+): void => {
   if (password !== null) validateFilePassword(password, !unlocking)
   browserSession = { documentId, password }
   useFileSecurityState.setState({ documentId, encrypted: password !== null })
 }
-export function resetBrowserPassword(): void {
+export const resetBrowserPassword = (): void => {
   browserSession = null
   useFileSecurityState.setState({ documentId: null, encrypted: false })
 }

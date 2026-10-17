@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { strToU8, zipSync, Zip, ZipDeflate } from 'fflate'
-import { ARCHIVE_LIMITS, readArchive } from '../../src/formats/archive'
+import { ARCHIVE_LIMITS, readArchive } from '@formats/archive'
 
-function centralOffsets(bytes: Uint8Array): number[] {
+const centralOffsets = (bytes: Uint8Array): number[] => {
   const offsets: number[] = []
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
   for (let cursor = 0; cursor + 4 <= bytes.length; cursor++) {
@@ -11,13 +11,13 @@ function centralOffsets(bytes: Uint8Array): number[] {
   return offsets
 }
 
-function centralOffset(bytes: Uint8Array, index = 0): number {
+const centralOffset = (bytes: Uint8Array, index = 0): number => {
   const offset = centralOffsets(bytes)[index]
   if (offset === undefined) throw new Error('Test fixture is missing a central directory entry')
   return offset
 }
 
-function mutateSize(bytes: Uint8Array, size: number): Uint8Array {
+const mutateSize = (bytes: Uint8Array, size: number): Uint8Array => {
   const copy = bytes.slice()
   const view = new DataView(copy.buffer)
   for (const offset of centralOffsets(copy)) {

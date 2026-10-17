@@ -17,7 +17,7 @@ export class AudioRecordingSession {
   private timer: ReturnType<typeof setTimeout> | undefined
   constructor(private readonly callbacks: RecordingCallbacks) {}
 
-  async start(): Promise<void> {
+  start = async (): Promise<void> => {
     if (
       typeof MediaRecorder === 'undefined' ||
       !Reflect.has(navigator, 'mediaDevices') ||
@@ -74,17 +74,17 @@ export class AudioRecordingSession {
       throw error
     }
   }
-  stop(): void {
+  stop = (): void => {
     clearTimeout(this.timer)
     if (this.recorder?.state === 'recording') this.recorder.stop()
     this.release()
   }
-  cancel(): void {
+  cancel = (): void => {
     this.discarded = true
     this.chunks = []
     this.stop()
   }
-  private release(): void {
+  private release = (): void => {
     clearTimeout(this.timer)
     this.stream?.getTracks().forEach((track) => {
       track.stop()

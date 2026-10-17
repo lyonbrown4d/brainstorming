@@ -1,14 +1,14 @@
-import { canvasFitPadding } from '../hooks/useWorkbenchInsets'
+import { canvasFitPadding } from '@renderer/hooks/useWorkbenchInsets'
 import { useEffect, useRef } from 'react'
 import { useReducedMotion } from 'motion/react'
 import { useReactFlow, useStore } from '@xyflow/react'
-import { usePresentation } from '../state/presentation'
-import { useEditor } from '../state/editor'
-import type { TopicFlowNode } from './TopicNode'
+import { usePresentation } from '@renderer/state/presentation'
+import { useEditor } from '@renderer/state/editor'
+import type { TopicFlowNode } from '@renderer/components/TopicNode'
 import { documentStructureKey } from '@shared/layout-geometry'
 
 /** Keep keyboard navigation and newly created editors inside the visible canvas. */
-export function SelectionVisibility() {
+export const SelectionVisibility = () => {
   const reduceMotion = useReducedMotion()
   const playing = usePresentation((state) => state.playing)
   const restoreRequest = usePresentation((state) => state.viewportRequest)

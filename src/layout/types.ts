@@ -70,10 +70,10 @@ export interface LayoutBounds {
   readonly maxX: number
   readonly maxY: number
 }
-export function layoutBounds(
+export const layoutBounds = (
   placements: readonly LocalPlacement[],
   decorations: readonly LayoutDecoration[] = [],
-): LayoutBounds {
+): LayoutBounds => {
   let minX = Infinity
   let minY = Infinity
   let maxX = -Infinity

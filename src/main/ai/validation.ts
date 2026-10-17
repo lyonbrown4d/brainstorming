@@ -1,6 +1,6 @@
-import { AI_LIMITS, type AIGenerateRequest, type AISettingsInput } from '../../shared/ai'
+import { AI_LIMITS, type AIGenerateRequest, type AISettingsInput } from '@shared/ai'
 
-export function object(value: unknown): Record<string, unknown> {
+export const object = (value: unknown): Record<string, unknown> => {
   if (
     !value ||
     typeof value !== 'object' ||
@@ -10,7 +10,7 @@ export function object(value: unknown): Record<string, unknown> {
     throw new Error('AI 请求格式无效')
   return value as Record<string, unknown>
 }
-export function validateEndpoint(value: unknown): string {
+export const validateEndpoint = (value: unknown): string => {
   if (typeof value !== 'string' || value.length > 2048 || /[\p{Cc}]/u.test(value))
     throw new Error('AI 服务地址无效')
   let url: URL
@@ -31,7 +31,7 @@ export function validateEndpoint(value: unknown): string {
     throw new Error('AI 地址须使用 HTTPS，本机服务可使用 HTTP；不可包含凭据、查询参数或片段')
   return url.href.replace(/\/+$/, '')
 }
-export function validateSettings(value: unknown): AISettingsInput {
+export const validateSettings = (value: unknown): AISettingsInput => {
   const input = object(value)
   if (
     Object.keys(input).some(
@@ -72,7 +72,7 @@ export function validateSettings(value: unknown): AISettingsInput {
     ...(typeof input.clearKey === 'boolean' ? { clearKey: input.clearKey } : {}),
   }
 }
-export function validateRequest(value: unknown): AIGenerateRequest {
+export const validateRequest = (value: unknown): AIGenerateRequest => {
   const input = object(value)
   if (Object.keys(input).some((key) => !['requestId', 'mode', 'prompt', 'context'].includes(key)))
     throw new Error('AI 请求包含未知字段')

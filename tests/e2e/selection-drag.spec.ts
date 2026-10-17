@@ -1,10 +1,10 @@
 import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
-import { decodeTrelyx } from '../../src/formats/trelyx'
-import { openExample } from './workspace'
-import { dockAction } from './dock'
+import { decodeTrelyx } from '@formats/trelyx'
+import { openExample } from '@tests/e2e/workspace'
+import { dockAction } from '@tests/e2e/dock'
 
-async function savedDocument(page: Page) {
+const savedDocument = async (page: Page) => {
   const pending = page.waitForEvent('download')
   await page.keyboard.press('ControlOrMeta+s')
   const path = await (await pending).path()

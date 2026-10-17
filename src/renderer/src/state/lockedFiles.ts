@@ -1,11 +1,11 @@
 import type { OpenedDocument } from '@shared/contracts'
 import { deserializeWorkbook } from '@core'
-import { requestPassword, setBrowserPassword, useFileSecurityState } from './password'
+import { requestPassword, setBrowserPassword, useFileSecurityState } from '@renderer/state/password'
 
-export async function unlockOpenedDocument(
+export const unlockOpenedDocument = async (
   opened: OpenedDocument,
   title = '解锁思维导图',
-): Promise<OpenedDocument | null> {
+): Promise<OpenedDocument | null> => {
   const bridge = window.trelyx
   if (!opened.lockedToken || !bridge) return opened
   const token = opened.lockedToken
@@ -25,7 +25,7 @@ export async function unlockOpenedDocument(
   await bridge.cancelUnlock(token)
   throw new Error('解锁尝试过多，请重新选择文件')
 }
-export async function activateOpenedDocument(opened: OpenedDocument): Promise<void> {
+export const activateOpenedDocument = async (opened: OpenedDocument): Promise<void> => {
   const id = deserializeWorkbook(opened.contents).id
   if (window.trelyx) {
     const state = opened.sessionToken
@@ -34,7 +34,7 @@ export async function activateOpenedDocument(opened: OpenedDocument): Promise<vo
     useFileSecurityState.setState({ documentId: id, encrypted: state.encrypted })
   } else if (!opened.encrypted) setBrowserPassword(id, null)
 }
-export async function cancelOpenedDocument(opened: OpenedDocument): Promise<void> {
+export const cancelOpenedDocument = async (opened: OpenedDocument): Promise<void> => {
   const token = opened.sessionToken ?? opened.lockedToken
   if (token) await window.trelyx?.cancelUnlock(token)
 }

@@ -6,13 +6,13 @@ import {
   clearCanvasDrag,
   updateCanvasDrag,
   useCanvasInteraction,
-} from '../../src/renderer/src/state/canvasInteraction'
+} from '@renderer/state/canvasInteraction'
 
 afterEach(() => {
   useCanvasInteraction.setState({ drag: null })
 })
 
-function message() {
+const message = () => {
   const drag = useCanvasInteraction.getState().drag
   if (!drag) throw new Error('Missing drag feedback')
   return canvasDragMessage(drag)

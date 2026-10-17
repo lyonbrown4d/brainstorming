@@ -1,7 +1,12 @@
 import { fromMarkdown } from 'mdast-util-from-markdown'
-import type { MindMapWorkbook } from '../../core'
-import { validateBoundedWorkbook } from '../trelyx/validation'
-import { assertTextSize, outlineWorkbook, type OutlineSheet, type OutlineTopic } from './outline'
+import type { MindMapWorkbook } from '@core'
+import { validateBoundedWorkbook } from '@formats/trelyx/validation'
+import {
+  assertTextSize,
+  outlineWorkbook,
+  type OutlineSheet,
+  type OutlineTopic,
+} from '@formats/interchange/outline'
 
 interface MarkdownNode {
   type: string
@@ -9,7 +14,7 @@ interface MarkdownNode {
   children?: MarkdownNode[]
   depth?: number
 }
-function plain(node: MarkdownNode): string {
+const plain = (node: MarkdownNode): string => {
   if (node.type === 'break') return '\n'
   if (node.type === 'html') return node.value ?? ''
   if (node.value !== undefined) return node.value
@@ -18,7 +23,7 @@ function plain(node: MarkdownNode): string {
     .map(plain)
     .join('')
 }
-function listTopics(node: MarkdownNode, depth = 1): OutlineTopic[] {
+const listTopics = (node: MarkdownNode, depth = 1): OutlineTopic[] => {
   if (depth > 128) throw new Error('大纲超过 128 层')
   return (node.children ?? []).map((item) => {
     const paragraphs = (item.children ?? []).filter((child) => child.type !== 'list')
@@ -31,7 +36,7 @@ function listTopics(node: MarkdownNode, depth = 1): OutlineTopic[] {
   })
 }
 /** CommonMark is parsed to plain topic titles; raw HTML never executes. */
-export function decodeMarkdown(text: string): MindMapWorkbook {
+export const decodeMarkdown = (text: string): MindMapWorkbook => {
   assertTextSize(text)
   const ast: MarkdownNode = fromMarkdown(text)
   const sheets: OutlineSheet[] = []
@@ -70,7 +75,7 @@ export function decodeMarkdown(text: string): MindMapWorkbook {
   return outlineWorkbook(sheets)
 }
 const escape = (value: string) => value.replace(/[\\`*_[\]<>#!|~+().&-]/g, '\\$&')
-export function encodeMarkdown(workbook: MindMapWorkbook): string {
+export const encodeMarkdown = (workbook: MindMapWorkbook): string => {
   validateBoundedWorkbook(workbook)
   return (
     workbook.sheets
@@ -90,7 +95,7 @@ export function encodeMarkdown(workbook: MindMapWorkbook): string {
       .join('\n\n') + '\n'
   )
 }
-export function encodeText(workbook: MindMapWorkbook): string {
+export const encodeText = (workbook: MindMapWorkbook): string => {
   validateBoundedWorkbook(workbook)
   return (
     workbook.sheets

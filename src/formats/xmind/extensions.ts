@@ -1,18 +1,18 @@
-import type { DocumentExtensions } from '../../core/extensions'
-import type { MindMapDocument, Topic } from '../../core'
-import { validateDocument, validateTopicImage } from '../../core'
-import { documentExtensionData } from '../../core/extension-data'
-import { validateLayoutKind, validateTopicMetadata } from '../../core/metadata-validation'
-import { normalizeTopicStyle, validateTopicStyle } from '../../core/topic-style'
-import type { EmbeddedContent } from './content'
-import { list, record, type SourceRecord, type Warnings } from './common'
+import type { DocumentExtensions } from '@core/extensions'
+import type { MindMapDocument, Topic } from '@core'
+import { validateDocument, validateTopicImage } from '@core'
+import { documentExtensionData } from '@core/extension-data'
+import { validateLayoutKind, validateTopicMetadata } from '@core/metadata-validation'
+import { normalizeTopicStyle, validateTopicStyle } from '@core/topic-style'
+import type { EmbeddedContent } from '@formats/xmind/content'
+import { list, record, type SourceRecord, type Warnings } from '@formats/xmind/common'
 
 export const TRELYX_PROVIDER = 'org.trelyx.interchange'
-export function trelyxExtension(
+export const trelyxExtension = (
   source: SourceRecord,
   warnings: Warnings,
   kind: 'sheet' | 'topic' = 'topic',
-): SourceRecord | undefined {
+): SourceRecord | undefined => {
   let own: SourceRecord | undefined
   const entries = list(source.extensions, 'extensions')
   if (entries.length > 64) throw new Error('XMind 扩展数量超过限制')
@@ -44,11 +44,11 @@ export function trelyxExtension(
   }
   return own
 }
-export function restoreTopicExtension(
+export const restoreTopicExtension = (
   topic: Topic,
   extension: SourceRecord | undefined,
   content: EmbeddedContent,
-): Topic {
+): Topic => {
   if (!extension) return topic
   const result = { ...topic }
   if (extension.side !== undefined) {
@@ -99,10 +99,10 @@ export function restoreTopicExtension(
   }
   return result
 }
-export function restoreDocumentExtension(
+export const restoreDocumentExtension = (
   document: MindMapDocument,
   extension: SourceRecord | undefined,
-): MindMapDocument {
+): MindMapDocument => {
   if (!extension) return document
   const allowed: readonly (keyof DocumentExtensions)[] = [
     'settings',

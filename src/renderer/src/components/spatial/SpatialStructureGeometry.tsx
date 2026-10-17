@@ -5,7 +5,7 @@ import { DoubleSide } from 'three'
 import { SVGLoader } from 'three/addons/loaders/SVGLoader.js'
 import type { MindMapDocument } from '@core'
 import { topicAppearance } from '@shared/appearance'
-import type { SpatialDecoration } from '../../../../layout/spatial'
+import type { SpatialDecoration } from '@layout/spatial'
 
 const svgLoader = new SVGLoader()
 type Point = [number, number, number]
@@ -22,7 +22,7 @@ interface SpatialPathLineProps {
 }
 
 /** Three's SVG parser owns curve sampling; Drei owns line geometry/material disposal. */
-function SpatialPathLineComponent({
+const SpatialPathLineComponent = ({
   path,
   startZ,
   endZ = startZ,
@@ -31,7 +31,7 @@ function SpatialPathLineComponent({
   opacity,
   name,
   kind,
-}: SpatialPathLineProps) {
+}: SpatialPathLineProps) => {
   const paths = useMemo(
     () =>
       svgLoader
@@ -67,7 +67,7 @@ function SpatialPathLineComponent({
 
 export const SpatialPathLine = memo(SpatialPathLineComponent)
 
-export function SpatialStructureGeometry({
+export const SpatialStructureGeometry = ({
   document,
   decorations,
   focusIds,
@@ -75,7 +75,7 @@ export function SpatialStructureGeometry({
   readonly document: MindMapDocument
   readonly decorations: readonly SpatialDecoration[]
   readonly focusIds: ReadonlySet<string> | null
-}) {
+}) => {
   return decorations.map((decoration) => {
     const appearance = topicAppearance(document, decoration.topicId)
     const faded = focusIds !== null && !focusIds.has(decoration.topicId)

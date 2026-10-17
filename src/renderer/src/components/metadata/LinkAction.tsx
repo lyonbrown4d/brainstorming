@@ -1,10 +1,10 @@
 import { Popover } from 'radix-ui'
 import { Link } from 'lucide-react'
-import { useEditor } from '../../state/editor'
-import { DockAction } from '../DockAction'
-import { LinkPanel } from './LinkPanel'
+import { useEditor } from '@renderer/state/editor'
+import { DockAction } from '@renderer/components/DockAction'
+import { LinkPanel } from '@renderer/components/metadata/LinkPanel'
 
-export function LinkAction() {
+export const LinkAction = () => {
   const id = useEditor((state) => state.selectedId)
   const metadata = useEditor((state) => state.history.document.topics[id]?.metadata)
   return (

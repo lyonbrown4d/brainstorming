@@ -2,18 +2,23 @@ import { useEffect } from 'react'
 import { $getRoot, getNearestEditorFromDOMNode, REDO_COMMAND, UNDO_COMMAND } from 'lexical'
 import { applyCommand, serializeWorkbook } from '@core'
 import { $convertToMarkdownString } from '@lexical/markdown'
-import { richTransformers } from '../components/metadata/richTransformers'
-import { draftCommand } from '../state/editorDraft'
-import { isDirty, useEditor } from '../state/editor'
-import { newDocument, openDocument, saveDocument, readRecoveryContents } from '../state/files'
-import { writeBrowserRecovery } from '../state/recovery'
-import { requestViewport } from '../state/viewport'
-import { usePresentation } from '../state/presentation'
-import { useSpatialView } from '../state/spatial'
-import { createRecoveryWriter } from '../lib/recoveryWriter'
-import { useWorkspace } from '../state/workspace'
+import { richTransformers } from '@renderer/components/metadata/richTransformers'
+import { draftCommand } from '@renderer/state/editorDraft'
+import { isDirty, useEditor } from '@renderer/state/editor'
+import {
+  newDocument,
+  openDocument,
+  saveDocument,
+  readRecoveryContents,
+} from '@renderer/state/files'
+import { writeBrowserRecovery } from '@renderer/state/recovery'
+import { requestViewport } from '@renderer/state/viewport'
+import { usePresentation } from '@renderer/state/presentation'
+import { useSpatialView } from '@renderer/state/spatial'
+import { createRecoveryWriter } from '@renderer/lib/recoveryWriter'
+import { useWorkspace } from '@renderer/state/workspace'
 
-export function useFileLifecycle(): void {
+export const useFileLifecycle = (): void => {
   useEffect(() => {
     let alive = true
     let ready = false
@@ -21,7 +26,7 @@ export function useFileLifecycle(): void {
     let pendingOpen = true
     let nativeStatus = ''
     const bridge = window.trelyx
-    function openPending(): void {
+    const openPending = (): void => {
       const state = useEditor.getState()
       if (!bridge || !recoveryRead || !pendingOpen || state.busy || state.recovery) return
       pendingOpen = false
@@ -31,7 +36,7 @@ export function useFileLifecycle(): void {
       pendingOpen = true
       openPending()
     })
-    function synchronize(): void {
+    const synchronize = (): void => {
       const state = useEditor.getState()
       const workspace = useWorkspace.getState()
       const dirty = workspace.hasDocument && isDirty()

@@ -1,4 +1,4 @@
-export function showStartupIssue(document: Document, message: string, failed: boolean): void {
+export const showStartupIssue = (document: Document, message: string, failed: boolean): void => {
   const screen = document.getElementById('startup-screen')
   if (!screen) return
   const status = document.getElementById('startup-message')
@@ -15,7 +15,7 @@ export function showStartupIssue(document: Document, message: string, failed: bo
   }
 }
 
-export function dismissStartupScreen(document: Document): void {
+export const dismissStartupScreen = (document: Document): void => {
   const screen = document.getElementById('startup-screen')
   if (document.defaultView?.trelyxStartup) {
     screen?.remove()

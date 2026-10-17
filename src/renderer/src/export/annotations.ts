@@ -1,8 +1,8 @@
 import type { MindMapDocument } from '@core'
 import type { LayoutNode } from '@layout'
 import type { Document, Element } from '@xmldom/xmldom'
-import { xmlText } from '../../../formats/interchange/xml'
-import { groupBounds, type GroupBounds } from '../components/annotations/projection'
+import { xmlText } from '@formats/interchange/xml'
+import { groupBounds, type GroupBounds } from '@renderer/components/annotations/projection'
 
 interface ExportAnnotation extends GroupBounds {
   title: string
@@ -10,7 +10,7 @@ interface ExportAnnotation extends GroupBounds {
   kind: 'boundary' | 'summary' | 'callout' | 'relation-label'
   lines: string[]
 }
-function wrap(text: string, columns = 22): string[] {
+const wrap = (text: string, columns = 22): string[] => {
   return text.split('\n').flatMap((line) => {
     const characters = Array.from(line)
     const lines: string[] = []
@@ -19,10 +19,10 @@ function wrap(text: string, columns = 22): string[] {
     return lines.length ? lines : ['']
   })
 }
-export function exportAnnotations(
+export const exportAnnotations = (
   document: MindMapDocument,
   nodes: readonly LayoutNode[],
-): ExportAnnotation[] {
+): ExportAnnotation[] => {
   const positions = new Map(nodes.map((node) => [node.id, node]))
   const groups: ExportAnnotation[] = (document.groups ?? []).flatMap((group) => {
     const bounds = groupBounds(
@@ -83,7 +83,7 @@ export function exportAnnotations(
     }),
   ]
 }
-export function annotationExtents(annotations: readonly ExportAnnotation[]): GroupBounds[] {
+export const annotationExtents = (annotations: readonly ExportAnnotation[]): GroupBounds[] => {
   return annotations.map((annotation) => {
     const captionHeight =
       annotation.kind === 'boundary' || annotation.kind === 'summary'
@@ -104,14 +104,14 @@ export function annotationExtents(annotations: readonly ExportAnnotation[]): Gro
     }
   })
 }
-export function drawExportAnnotations(
+export const drawExportAnnotations = (
   xml: Document,
   root: Element,
   document: MindMapDocument,
   nodes: readonly LayoutNode[],
   annotations: readonly ExportAnnotation[],
   layer: 'underlay' | 'overlay',
-): void {
+): void => {
   const element = (name: string, attrs: Record<string, string | number>): Element => {
     const node = xml.createElementNS('http://www.w3.org/2000/svg', name)
     for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value))

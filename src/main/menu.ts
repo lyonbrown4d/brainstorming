@@ -1,7 +1,7 @@
 import { Menu, type MenuItemConstructorOptions } from 'electron'
-import type { MenuAction } from '../shared/contracts'
+import type { MenuAction } from '@shared/contracts'
 
-export function installMenu(send: (action: MenuAction) => void): void {
+export const installMenu = (send: (action: MenuAction) => void): void => {
   const action = (label: string, value: MenuAction, accelerator: string) => ({
     label,
     accelerator,

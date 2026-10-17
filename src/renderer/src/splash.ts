@@ -1,9 +1,9 @@
-import { showStartupIssue } from './startupStatus'
-import type { StartupPhase } from '../../shared/startup'
+import { showStartupIssue } from '@renderer/startupStatus'
+import type { StartupPhase } from '@shared/startup'
 
 const bridge = window.trelyxSplash
 const retry = document.getElementById('startup-retry')
-function updatePhase(phase: StartupPhase): void {
+const updatePhase = (phase: StartupPhase): void => {
   if (phase === 'loading') {
     document.getElementById('startup-screen')?.setAttribute('aria-busy', 'true')
     document.getElementById('startup-indicator')?.removeAttribute('hidden')

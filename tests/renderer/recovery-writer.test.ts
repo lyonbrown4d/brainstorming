@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest'
-import { createRecoveryWriter } from '../../src/renderer/src/lib/recoveryWriter'
+import { createRecoveryWriter } from '@renderer/lib/recoveryWriter'
 
 afterEach(() => {
   vi.useRealTimers()

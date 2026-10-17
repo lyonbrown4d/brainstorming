@@ -4,7 +4,7 @@ import type { MindMapLayout } from '@layout'
 import { topicAppearance } from '@shared/appearance'
 import { layoutDecorationPath } from '@shared/layout-geometry'
 
-export function structureExtents(layout: MindMapLayout) {
+export const structureExtents = (layout: MindMapLayout) => {
   return [
     ...(layout.decorations ?? []),
     ...layout.edges.flatMap((edge) =>
@@ -13,12 +13,12 @@ export function structureExtents(layout: MindMapLayout) {
   ]
 }
 
-export function drawStructureGeometry(
+export const drawStructureGeometry = (
   xml: Document,
   root: Element,
   document: MindMapDocument,
   layout: MindMapLayout,
-): void {
+): void => {
   for (const decoration of layout.decorations ?? []) {
     const appearance = topicAppearance(document, decoration.topicId ?? document.rootId)
     const cell = decoration.kind === 'cell'

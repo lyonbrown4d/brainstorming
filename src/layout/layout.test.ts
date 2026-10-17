@@ -5,10 +5,10 @@ import {
   createFixtureDocument,
   getVisibleTopicIds,
 } from '@core'
-import { layoutDocument, measureTopic, measureTopicImage } from './index'
-import type { LayoutNode } from './index'
+import { layoutDocument, measureTopic, measureTopicImage } from '@layout'
+import type { LayoutNode } from '@layout'
 
-function assertNoOverlap(nodes: readonly LayoutNode[]): void {
+const assertNoOverlap = (nodes: readonly LayoutNode[]): void => {
   const ordered = [...nodes].sort((a, b) => a.x - b.x)
   for (let index = 0; index < ordered.length; index += 1) {
     const a = ordered[index]

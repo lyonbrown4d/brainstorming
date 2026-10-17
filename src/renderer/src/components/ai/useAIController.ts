@@ -1,23 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { MindMapDocument } from '@core'
+import { assertAITree, type AIAPI, type AIMode, type AIResult, type AISettings } from '@shared/ai'
 import {
-  assertAITree,
-  type AIAPI,
-  type AIMode,
-  type AIResult,
-  type AISettings,
-} from '../../../../shared/ai'
-import { aiContext, applyAIResult, captureAISnapshot, type AISnapshot } from './apply'
+  aiContext,
+  applyAIResult,
+  captureAISnapshot,
+  type AISnapshot,
+} from '@renderer/components/ai/apply'
 
 export interface AIPreview {
   readonly result: AIResult
   readonly snapshot: AISnapshot
   readonly mode: AIMode
 }
-export function useAIController(
+export const useAIController = (
   api: AIAPI | undefined,
   onAddSheet: (document: MindMapDocument) => boolean,
-) {
+) => {
   const [settings, setSettings] = useState<AISettings | null>(null)
   const [loading, setLoading] = useState(false)
   const [busy, setBusy] = useState(false)

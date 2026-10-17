@@ -1,14 +1,14 @@
-import { documentExtensionData, topicExtensionData } from './extension-data'
-import { applyCommand } from './commands'
-import type { MindMapDocument, Side, Topic } from './types'
-import { assertId, validateDocument } from './validation'
-import { normalizeTopicStyle } from './topic-style'
-import { documentAssetsData } from './topic-content'
+import { documentExtensionData, topicExtensionData } from '@core/extension-data'
+import { applyCommand } from '@core/commands'
+import type { MindMapDocument, Side, Topic } from '@core/types'
+import { assertId, validateDocument } from '@core/validation'
+import { normalizeTopicStyle } from '@core/topic-style'
+import { documentAssetsData } from '@core/topic-content'
 
-export function createDocument(
+export const createDocument = (
   title = '中心主题',
   id = `map-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`,
-): MindMapDocument {
+): MindMapDocument => {
   assertId(id)
   if (typeof title !== 'string') throw new Error('标题必须是文本')
   return {
@@ -21,7 +21,7 @@ export function createDocument(
   }
 }
 
-export function createExampleDocument(): MindMapDocument {
+export const createExampleDocument = (): MindMapDocument => {
   let document = createDocument('产品规划', 'trelyx-example')
   const branches: readonly [string, string, Side, readonly string[]][] = [
     ['vision', '产品愿景', 'left', ['让思考自由生长', '本地优先']],
@@ -43,12 +43,12 @@ export function createExampleDocument(): MindMapDocument {
   return document
 }
 
-export function serializeDocument(document: MindMapDocument): string {
+export const serializeDocument = (document: MindMapDocument): string => {
   validateDocument(document)
   return JSON.stringify(documentData(document), null, 2)
 }
 
-export function deserializeDocument(json: string): MindMapDocument {
+export const deserializeDocument = (json: string): MindMapDocument => {
   let parsed: unknown
   try {
     parsed = JSON.parse(json) as unknown
@@ -59,10 +59,10 @@ export function deserializeDocument(json: string): MindMapDocument {
   return documentData(parsed)
 }
 
-export function documentData(
+export const documentData = (
   document: MindMapDocument,
   preserveUnusedAssets = false,
-): MindMapDocument {
+): MindMapDocument => {
   const topics: Record<string, Topic> = {}
   for (const topic of Object.values(document.topics)) {
     topics[topic.id] = {

@@ -1,12 +1,17 @@
-import { layoutBounds, type LayoutComponent, type LayoutUnit, type LocalLayout } from './types'
-import { requireUnit, treeLayout } from './tree-layout'
+import {
+  layoutBounds,
+  type LayoutComponent,
+  type LayoutUnit,
+  type LocalLayout,
+} from '@layout/types'
+import { requireUnit, treeLayout } from '@layout/tree-layout'
 
 /** Measured D3 branches are packed along a real spine; ribs attach at ordered spine points. */
-export function spineLayout(
+export const spineLayout = (
   component: LayoutComponent,
   units: ReadonlyMap<string, LayoutUnit>,
   kind: 'fishbone' | 'timeline' | 'timeline-vertical',
-): LocalLayout {
+): LocalLayout => {
   const root = requireUnit(units, component.rootId)
   const vertical = kind === 'timeline-vertical'
   const fishbone = kind === 'fishbone'

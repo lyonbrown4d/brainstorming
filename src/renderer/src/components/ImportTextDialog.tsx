@@ -1,10 +1,10 @@
 import { useId, useRef, useState } from 'react'
 import type { MindMapWorkbook } from '@core'
-import { decodeMarkdown, decodeOpml } from '../../../formats/interchange'
-import { Button } from './ui/button'
-import { Label } from './ui/label'
-import { Input } from './ui/input'
-import { Textarea } from './ui/textarea'
+import { decodeMarkdown, decodeOpml } from '@formats/interchange'
+import { Button } from '@renderer/components/ui/button'
+import { Label } from '@renderer/components/ui/label'
+import { Input } from '@renderer/components/ui/input'
+import { Textarea } from '@renderer/components/ui/textarea'
 import {
   Dialog,
   DialogClose,
@@ -14,8 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from './ui/dialog'
-import { FieldSelect } from './FieldSelect'
+} from '@renderer/components/ui/dialog'
+import { FieldSelect } from '@renderer/components/FieldSelect'
 
 export interface ImportTextDialogProps {
   onImport:
@@ -23,7 +23,7 @@ export interface ImportTextDialogProps {
     | ((workbook: MindMapWorkbook) => boolean | Promise<boolean>)
   defaultOpen?: boolean
 }
-export function ImportTextDialog({ onImport, defaultOpen = false }: ImportTextDialogProps) {
+export const ImportTextDialog = ({ onImport, defaultOpen = false }: ImportTextDialogProps) => {
   const [open, setOpen] = useState(defaultOpen)
   const [format, setFormat] = useState<'md' | 'opml'>('md')
   const [text, setText] = useState('')

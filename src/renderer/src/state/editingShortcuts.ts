@@ -1,15 +1,23 @@
 import { getVisibleTopicIds } from '@core'
-import { useEditor } from './editor'
-import { setSelectedTopics } from './selection'
-import { copySelectedTopics, duplicateSelectedTopics, pasteSelectedTopics } from './clipboard'
-import { insertParentTopic, removeTopicOnly, reorderSelectedTopic } from './structuralEditing'
-import { requestViewport } from './viewport'
-import { useSpatialView } from './spatial'
-import { useSearch } from './search'
-import { getNavigationTarget, isCompositionKey } from './keyboard'
+import { useEditor } from '@renderer/state/editor'
+import { setSelectedTopics } from '@renderer/state/selection'
+import {
+  copySelectedTopics,
+  duplicateSelectedTopics,
+  pasteSelectedTopics,
+} from '@renderer/state/clipboard'
+import {
+  insertParentTopic,
+  removeTopicOnly,
+  reorderSelectedTopic,
+} from '@renderer/state/structuralEditing'
+import { requestViewport } from '@renderer/state/viewport'
+import { useSpatialView } from '@renderer/state/spatial'
+import { useSearch } from '@renderer/state/search'
+import { getNavigationTarget, isCompositionKey } from '@renderer/state/keyboard'
 
 /** Canvas and spatial topic controls share the same structural keyboard actions. */
-export function handleTopicNavigation(event: KeyboardEvent, topicId?: string): boolean {
+export const handleTopicNavigation = (event: KeyboardEvent, topicId?: string): boolean => {
   if (isCompositionKey(event)) return false
   if (
     event.altKey &&
@@ -49,7 +57,7 @@ export function handleTopicNavigation(event: KeyboardEvent, topicId?: string): b
 }
 
 /** Called only outside native text editing and after the composition guard. */
-export function handleTopicShortcut(event: KeyboardEvent): boolean {
+export const handleTopicShortcut = (event: KeyboardEvent): boolean => {
   if (!(event.metaKey || event.ctrlKey) || event.altKey) return false
   const key = event.key.toLowerCase()
   if (

@@ -3,11 +3,11 @@ import {
   copySelectedTopics,
   duplicateSelectedTopics,
   pasteSelectedTopics,
-} from '../state/clipboard'
-import { useSearch } from '../state/search'
-import { DockAction } from './DockAction'
+} from '@renderer/state/clipboard'
+import { useSearch } from '@renderer/state/search'
+import { DockAction } from '@renderer/components/DockAction'
 
-export function EditActions() {
+export const EditActions = () => {
   return (
     <div className="flex items-center gap-0.5" role="group" aria-label="主题编辑操作">
       {[

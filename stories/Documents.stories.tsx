@@ -1,13 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within, waitFor } from 'storybook/test'
-import { applyCommand, createExampleDocument } from '../src/core'
-import { App } from '../src/renderer/src/App'
-import { useEditor } from '../src/renderer/src/state/editor'
-import { clearBrowserRecovery } from '../src/renderer/src/state/recovery'
-import {
-  defaultTopicFilters,
-  useTopicFilters,
-} from '../src/renderer/src/components/documents/filterTopics'
+import { applyCommand, createExampleDocument } from '@core'
+import { App } from '@renderer/App'
+import { useEditor } from '@renderer/state/editor'
+import { clearBrowserRecovery } from '@renderer/state/recovery'
+import { defaultTopicFilters, useTopicFilters } from '@renderer/components/documents/filterTopics'
 
 const meta = {
   title: 'Trelyx/布局模板与演示',

@@ -1,17 +1,17 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
-import { decodeTrelyx } from '../../src/formats/trelyx'
-import { openExample } from './workspace'
+import { decodeTrelyx } from '@formats/trelyx'
+import { openExample } from '@tests/e2e/workspace'
 
 test.use({ reducedMotion: 'no-preference' })
 
-async function bounds(locator: Locator) {
+const bounds = async (locator: Locator) => {
   const box = await locator.boundingBox()
   if (!box) throw new Error('主题不可见')
   return box
 }
 
-async function settled(locator: Locator) {
+const settled = async (locator: Locator) => {
   let previous = await bounds(locator)
   let stable = 0
   await expect
@@ -24,7 +24,7 @@ async function settled(locator: Locator) {
     .toBeGreaterThanOrEqual(3)
 }
 
-async function expectPanelAnchor(topic: Locator, action: () => Promise<void>) {
+const expectPanelAnchor = async (topic: Locator, action: () => Promise<void>) => {
   const before = await bounds(topic)
   // Sample the public card rectangle through the panel's width animation, including its exit.
   const sampling = topic.evaluate(async (element) => {
@@ -51,7 +51,7 @@ async function expectPanelAnchor(topic: Locator, action: () => Promise<void>) {
   }
 }
 
-async function savedSheets(page: Page) {
+const savedSheets = async (page: Page) => {
   const pending = page.waitForEvent('download')
   await page.keyboard.press('ControlOrMeta+s')
   const path = await (await pending).path()

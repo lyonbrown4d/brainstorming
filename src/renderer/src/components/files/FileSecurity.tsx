@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 import { LockKeyhole } from 'lucide-react'
-import { Button } from '../ui/button'
-import { Input } from '../ui/input'
+import { Button } from '@renderer/components/ui/button'
+import { Input } from '@renderer/components/ui/input'
 import {
   Dialog,
   DialogContent,
@@ -9,13 +9,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../ui/dialog'
-import { useEditor } from '../../state/editor'
-import { changeFilePassword, retryRecovery } from '../../state/files'
-import { useFileDialogs } from '../../state/fileDialogs'
-import { useFileSecurityState } from '../../state/password'
+} from '@renderer/components/ui/dialog'
+import { useEditor } from '@renderer/state/editor'
+import { changeFilePassword, retryRecovery } from '@renderer/state/files'
+import { useFileDialogs } from '@renderer/state/fileDialogs'
+import { useFileSecurityState } from '@renderer/state/password'
 
-export function FileSecurity() {
+export const FileSecurity = () => {
   return (
     <Button
       variant="ghost"
@@ -30,7 +30,7 @@ export function FileSecurity() {
     </Button>
   )
 }
-export function FileSecurityPanel() {
+export const FileSecurityPanel = () => {
   const open = useFileDialogs((state) => state.security)
   const setOpen = (value: boolean): void => {
     useFileDialogs.setState({ security: value })
@@ -44,7 +44,7 @@ export function FileSecurityPanel() {
   const busy = useEditor((state) => state.busy)
   const security = useFileSecurityState()
   const encrypted = security.documentId === documentId && security.encrypted
-  async function apply(value: string | null): Promise<void> {
+  const apply = async (value: string | null): Promise<void> => {
     if (busy) return
     if (value !== null && (value.length < 8 || value.length > 128 || value !== confirmation)) {
       setError('请输入 8 至 128 个字符的密码，并确保两次输入相同。')

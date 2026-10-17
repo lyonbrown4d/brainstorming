@@ -20,6 +20,9 @@ export default defineConfig(
       'apm_modules/**',
       // Third-party shadcn source is kept verbatim; business wrappers remain linted.
       'src/renderer/src/components/ui/**',
+      // Dice UI Stepper helpers downloaded by shadcn; keep upstream source intact.
+      'src/renderer/src/hooks/use-value-as-ref.ts',
+      'src/renderer/src/hooks/use-ref-with-init.ts',
     ],
   },
   js.configs.recommended,
@@ -30,6 +33,28 @@ export default defineConfig(
       parserOptions: { project: './tsconfig.json', tsconfigRootDir: import.meta.dirname },
     },
     rules: {
+      'max-lines': ['error', { max: 300, skipBlankLines: false, skipComments: false }],
+      'no-restricted-syntax': [
+        'error',
+        { selector: 'FunctionDeclaration', message: '函数统一使用 const 箭头函数。' },
+        {
+          selector:
+            'FunctionExpression:not([parent.type="MethodDefinition"][parent.kind=/^(constructor|get|set)$/]):not([parent.type="Property"][parent.kind=/^(get|set)$/])',
+          message: '函数、回调及方法统一使用箭头函数；构造函数保留语言语法。',
+        },
+        {
+          selector: ':matches(ImportExpression, TSImportType)[source.value=/^\\./]',
+          message: '项目内部动态导入和 import 类型表达式使用 @ 别名。',
+        },
+      ],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            { group: ['./**', '../**'], message: '项目内部导入和再导出统一使用 @ 别名。' },
+          ],
+        },
+      ],
       '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
       '@typescript-eslint/no-non-null-assertion': 'error',
       '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
@@ -53,7 +78,27 @@ export default defineConfig(
         'error',
         {
           paths: ['react', 'react-dom', 'electron', '@xyflow/react', 'lexical'],
-          patterns: ['@lexical/*', '@renderer/*', '@layout'],
+          patterns: [
+            { group: ['./**', '../**'], message: '项目内部导入和再导出统一使用 @ 别名。' },
+            {
+              group: [
+                '@lexical/*',
+                '@renderer/*',
+                '@layout',
+                '@layout/*',
+                '@main/*',
+                '@preload/*',
+                '@formats',
+                '@formats/*',
+                '@assets',
+                '@assets/*',
+                '@tests/*',
+                '@stories/*',
+                '@project/*',
+              ],
+              message: 'Core 只能依赖纯 TypeScript 领域模块。',
+            },
+          ],
         },
       ],
       'no-restricted-globals': [
@@ -63,6 +108,20 @@ export default defineConfig(
         'HTMLElement',
         'KeyboardEvent',
         'PointerEvent',
+      ],
+    },
+  },
+  {
+    ...tseslint.configs.disableTypeChecked,
+    files: ['**/*.{js,jsx,mjs,cjs}'],
+    rules: {
+      ...tseslint.configs.disableTypeChecked.rules,
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'Program',
+          message: '手写源码、测试、配置和脚本使用 TypeScript（.ts / .tsx）。',
+        },
       ],
     },
   },

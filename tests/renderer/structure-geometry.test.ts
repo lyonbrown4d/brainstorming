@@ -1,14 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { DOMParser } from '@xmldom/xmldom'
-import { applyCommand, createExampleDocument, type LayoutKind } from '../../src/core'
-import { layoutDocument } from '../../src/layout'
-import { projectCanvas } from '../../src/renderer/src/components/documents/projectCanvas'
-import { renderSheetSvg } from '../../src/renderer/src/export/svg'
-import {
-  documentStructureKey,
-  layoutDecorationPath,
-  layoutEdgePath,
-} from '../../src/shared/layout-geometry'
+import { applyCommand, createExampleDocument, type LayoutKind } from '@core'
+import { layoutDocument } from '@layout'
+import { projectCanvas } from '@renderer/components/documents/projectCanvas'
+import { renderSheetSvg } from '@renderer/export/svg'
+import { documentStructureKey, layoutDecorationPath, layoutEdgePath } from '@shared/layout-geometry'
 
 describe('structure canvas and export geometry', () => {
   it.each<LayoutKind>([

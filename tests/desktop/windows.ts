@@ -1,7 +1,7 @@
 import { expect, type ElectronApplication, type Page } from '@playwright/test'
 
 /** The first native window is the splash; select the document window by its real entry. */
-export async function mainWindow(app: ElectronApplication): Promise<Page> {
+export const mainWindow = async (app: ElectronApplication): Promise<Page> => {
   const find = () =>
     app.windows().find((page) => {
       const url = new URL(page.url())

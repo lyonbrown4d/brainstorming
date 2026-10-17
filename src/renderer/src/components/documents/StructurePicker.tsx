@@ -2,14 +2,14 @@ import { useState } from 'react'
 import { Network } from 'lucide-react'
 import { Popover } from 'radix-ui'
 import type { LayoutKind } from '@core'
-import { useEditor } from '../../state/editor'
-import { selectedTopicIds, useSelectedIds } from '../../state/selection'
-import { runAnnotationCommand } from '../annotations/commands'
-import { Button } from '../ui/button'
-import { StructurePreview } from './StructurePreview'
-import { structureOptions } from './structureOptions'
+import { useEditor } from '@renderer/state/editor'
+import { selectedTopicIds, useSelectedIds } from '@renderer/state/selection'
+import { runAnnotationCommand } from '@renderer/components/annotations/commands'
+import { Button } from '@renderer/components/ui/button'
+import { StructurePreview } from '@renderer/components/documents/StructurePreview'
+import { structureOptions } from '@renderer/components/documents/structureOptions'
 
-export function StructurePicker() {
+export const StructurePicker = () => {
   const [scope, setScope] = useState<'sheet' | 'branch'>('sheet')
   const document = useEditor((state) => state.history.document)
   const selectedId = useEditor((state) => state.selectedId)
@@ -20,7 +20,7 @@ export function StructurePicker() {
       ? (document.topics[document.rootId]?.structure ?? document.settings?.layout ?? 'map')
       : document.topics[ids[0] ?? selectedId]?.structure
   const mixed = scope === 'branch' && ids.some((id) => document.topics[id]?.structure !== current)
-  function apply(structure?: LayoutKind): void {
+  const apply = (structure?: LayoutKind): void => {
     const state = useEditor.getState()
     const latest = state.history.document
     runAnnotationCommand(

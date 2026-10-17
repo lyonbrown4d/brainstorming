@@ -1,8 +1,8 @@
 import type { RefObject } from 'react'
 import type { CameraControlsImpl } from '@react-three/drei'
 import type { MindMapDocument } from '@core'
-import type { SpatialLayout, SpatialPoint } from '../../../layout/spatial'
-import type { SpatialDragPlane, SpatialScreenRect } from './spatialDrag'
+import type { SpatialLayout, SpatialPoint } from '@layout/spatial'
+import type { SpatialDragPlane, SpatialScreenRect } from '@renderer/lib/spatialDrag'
 
 export interface SpatialSelectionDragOptions {
   readonly document: MindMapDocument
@@ -31,7 +31,7 @@ export interface SpatialSelectionGesture {
 }
 
 /** Keep capture-phase listeners paired, including cancellation outside the canvas. */
-export function bindSpatialDragEvents(
+export const bindSpatialDragEvents = (
   surface: HTMLElement,
   handlers: {
     down: (event: PointerEvent) => void
@@ -42,7 +42,7 @@ export function bindSpatialDragEvents(
     click: (event: MouseEvent) => void
     key: (event: KeyboardEvent) => void
   },
-): () => void {
+): (() => void) => {
   const { down, move, up, lostCapture, cancel, click, key } = handlers
   surface.addEventListener('pointerdown', down, true)
   surface.addEventListener('click', click, true)

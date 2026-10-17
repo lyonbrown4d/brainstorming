@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { SplashAPI } from '../shared/startup'
+import type { SplashAPI } from '@shared/startup'
 
 const api: SplashAPI = {
   mounted: () => {

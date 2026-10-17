@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { PerspectiveCamera, Vector3 } from 'three'
-import {
-  spatialFramingTarget,
-  spatialSafeViewport,
-} from '../../src/renderer/src/lib/spatialSafeViewport'
-import { spatialSelectionShift } from '../../src/renderer/src/lib/spatialSelectionVisibility'
+import { spatialFramingTarget, spatialSafeViewport } from '@renderer/lib/spatialSafeViewport'
+import { spatialSelectionShift } from '@renderer/lib/spatialSelectionVisibility'
 
 const viewport = { left: 24, top: 60, width: 1440, height: 800 }
 

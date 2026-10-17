@@ -1,18 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { useReactFlow } from '@xyflow/react'
 import { useReducedMotion } from 'motion/react'
-import { useEditor } from '../state/editor'
-import { isCompositionKey } from '../state/keyboard'
+import { useEditor } from '@renderer/state/editor'
+import { isCompositionKey } from '@renderer/state/keyboard'
 import {
   capturePresentationViewport,
   showPresentationStep,
   stopPresentation,
   usePresentation,
-} from '../state/presentation'
-import { useSpatialView } from '../state/spatial'
+} from '@renderer/state/presentation'
+import { useSpatialView } from '@renderer/state/spatial'
 
 /** Synchronize transient playback with viewport, focus, keyboard and browser fullscreen. */
-export function usePresentationPlayback() {
+export const usePresentationPlayback = () => {
   const flow = useReactFlow()
   const pendingFit = useRef<Promise<boolean> | null>(null)
   const presentation = usePresentation()

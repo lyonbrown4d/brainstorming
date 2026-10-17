@@ -1,5 +1,10 @@
-import { layoutBounds, type LayoutComponent, type LayoutUnit, type LocalLayout } from './types'
-import { requireUnit, treeLayout } from './tree-layout'
+import {
+  layoutBounds,
+  type LayoutComponent,
+  type LayoutUnit,
+  type LocalLayout,
+} from '@layout/types'
+import { requireUnit, treeLayout } from '@layout/tree-layout'
 
 interface MatrixColumn {
   readonly id: string
@@ -8,10 +13,10 @@ interface MatrixColumn {
 }
 
 /** Root children are columns, their children are ordered rows; deeper content stays in its cell. */
-export function matrixLayout(
+export const matrixLayout = (
   component: LayoutComponent,
   units: ReadonlyMap<string, LayoutUnit>,
-): LocalLayout {
+): LocalLayout => {
   const root = requireUnit(units, component.rootId)
   const rowHeights: number[] = []
   let headerHeight = 0

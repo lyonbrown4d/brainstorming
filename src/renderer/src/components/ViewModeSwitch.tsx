@@ -1,8 +1,8 @@
-import { useEditor } from '../state/editor'
-import { defaultSpatialView, useSpatialView, type ViewMode } from '../state/spatial'
-import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group'
+import { useEditor } from '@renderer/state/editor'
+import { defaultSpatialView, useSpatialView, type ViewMode } from '@renderer/state/spatial'
+import { ToggleGroup, ToggleGroupItem } from '@renderer/components/ui/toggle-group'
 
-export function changeViewMode(mode: ViewMode): boolean {
+export const changeViewMode = (mode: ViewMode): boolean => {
   useEditor.getState().commitDraft()
   const editor = useEditor.getState()
   if (editor.editingId) return false
@@ -10,7 +10,7 @@ export function changeViewMode(mode: ViewMode): boolean {
   return true
 }
 
-export function ViewModeSwitch() {
+export const ViewModeSwitch = () => {
   const sheetId = useEditor((state) => state.activeSheetId)
   const busy = useEditor((state) => state.busy)
   const mode = useSpatialView((state) => state.sheets[sheetId]?.mode ?? defaultSpatialView.mode)

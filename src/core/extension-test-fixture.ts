@@ -1,6 +1,6 @@
-import { applyCommand, createDocument, type MindMapDocument } from './index'
+import { applyCommand, createDocument, type MindMapDocument } from '@core'
 
-export function extensionFixture(): MindMapDocument {
+export const extensionFixture = (): MindMapDocument => {
   return applyCommand(createDocument('扩展', 'extensions'), {
     type: 'batch',
     commands: [

@@ -1,6 +1,6 @@
 import { BrowserWindow, dialog, ipcMain, type IpcMainEvent } from 'electron'
 import { join } from 'node:path'
-import type { StartupPhase } from '../shared/startup'
+import type { StartupPhase } from '@shared/startup'
 
 /** Owns the native splash and the first-paint handoff; it never accesses document storage. */
 export class StartupWindow {
@@ -65,7 +65,7 @@ export class StartupWindow {
     })
   }
 
-  attach(main: BrowserWindow): void {
+  attach = (main: BrowserWindow): void => {
     this.main = main
     main.once('ready-to-show', () => {
       this.painted = true
@@ -82,14 +82,14 @@ export class StartupWindow {
     })
   }
 
-  fail(): void {
+  fail = (): void => {
     if (!this.disposed) {
       clearTimeout(this.timer)
       this.publish('failed')
     }
   }
 
-  dispose(): void {
+  dispose = (): void => {
     if (this.disposed) return
     this.disposed = true
     clearTimeout(this.timer)
@@ -101,7 +101,7 @@ export class StartupWindow {
     if (!this.splash.isDestroyed()) this.splash.destroy()
   }
 
-  private trusted(event: IpcMainEvent, window: BrowserWindow | null): boolean {
+  private trusted = (event: IpcMainEvent, window: BrowserWindow | null): boolean => {
     return Boolean(
       window &&
       !window.isDestroyed() &&
@@ -137,7 +137,7 @@ export class StartupWindow {
     if (this.trusted(event, this.splash)) this.cancel()
   }
 
-  private reveal(): void {
+  private reveal = (): void => {
     if (this.disposed || !this.painted || !this.rendered || !this.main || this.main.isDestroyed())
       return
     this.main.show()
@@ -145,13 +145,13 @@ export class StartupWindow {
     this.complete()
   }
 
-  private publish(phase: StartupPhase): void {
+  private publish = (phase: StartupPhase): void => {
     this.phase = phase
     if (!this.disposed && !this.splash.isDestroyed())
       this.splash.webContents.send('startup:phase', phase)
   }
 
-  private startTimer(): void {
+  private startTimer = (): void => {
     clearTimeout(this.timer)
     this.timer = setTimeout(() => {
       if (!this.disposed) this.publish('slow')

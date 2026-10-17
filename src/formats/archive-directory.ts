@@ -17,11 +17,11 @@ export interface ArchiveEntry {
   readonly offset: number
 }
 
-function invalid(): never {
+const invalid = (): never => {
   throw new Error('ZIP 文件损坏或使用不支持的 ZIP 扩展')
 }
 
-function assertPath(name: string): void {
+const assertPath = (name: string): void => {
   const parts = name.split('/')
   if (
     name.length === 0 ||
@@ -37,10 +37,12 @@ function assertPath(name: string): void {
 }
 
 /** Inspect bounded ZIP metadata before starting any decompression. ZIP64 is unsupported. */
-export function archiveDirectory(bytes: Uint8Array): {
+export const archiveDirectory = (
+  bytes: Uint8Array,
+): {
   entries: readonly ArchiveEntry[]
   dataEnd: number
-} {
+} => {
   if (bytes.length > ARCHIVE_LIMITS.compressed) throw new Error('ZIP 文件超过 32 MiB 限制')
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
   const u16 = (offset: number): number => view.getUint16(offset, true)

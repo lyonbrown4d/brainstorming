@@ -5,20 +5,17 @@ import {
   createDocument,
   createWorkbook,
   serializeWorkbook,
-} from '../../src/core'
-import {
-  selectAnnotation,
-  useAnnotationInteraction,
-} from '../../src/renderer/src/state/annotationInteraction'
-import { isDirty, useEditor } from '../../src/renderer/src/state/editor'
-import { setSelectedTopics, useSelection } from '../../src/renderer/src/state/selection'
-import { useSpatialView } from '../../src/renderer/src/state/spatial'
+} from '@core'
+import { selectAnnotation, useAnnotationInteraction } from '@renderer/state/annotationInteraction'
+import { isDirty, useEditor } from '@renderer/state/editor'
+import { setSelectedTopics, useSelection } from '@renderer/state/selection'
+import { useSpatialView } from '@renderer/state/spatial'
 import {
   presentationSteps,
   showPresentationStep,
   stopPresentation,
   usePresentation,
-} from '../../src/renderer/src/state/presentation'
+} from '@renderer/state/presentation'
 
 const camera = { position: [2, 5, 10] as const, target: [0, 0, 0] as const }
 const savedCamera = { position: [8, 9, 12] as const, target: [1, 2, 0] as const }

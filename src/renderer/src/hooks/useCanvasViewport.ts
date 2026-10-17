@@ -1,11 +1,11 @@
 import { useEffect } from 'react'
 import { useReactFlow } from '@xyflow/react'
 import { useReducedMotion } from 'motion/react'
-import { useViewportRequest } from '../state/viewport'
-import { useEditor } from '../state/editor'
-import type { TopicFlowNode } from '../components/TopicNode'
+import { useViewportRequest } from '@renderer/state/viewport'
+import { useEditor } from '@renderer/state/editor'
+import type { TopicFlowNode } from '@renderer/components/TopicNode'
 
-export function useCanvasViewport(): void {
+export const useCanvasViewport = (): void => {
   const flow = useReactFlow<TopicFlowNode>()
   const reduced = useReducedMotion()
   useEffect(

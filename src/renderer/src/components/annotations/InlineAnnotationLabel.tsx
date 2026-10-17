@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useRef } from 'react'
-import { useEditor } from '../../state/editor'
+import { useEditor } from '@renderer/state/editor'
 import {
   selectAnnotation,
   useAnnotationInteraction,
   type AnnotationKind,
-} from '../../state/annotationInteraction'
-import { isCompositionKey } from '../../state/keyboard'
-import { Input } from '../ui/input'
-import { Textarea } from '../ui/textarea'
-import { runAnnotationCommand } from './commands'
+} from '@renderer/state/annotationInteraction'
+import { isCompositionKey } from '@renderer/state/keyboard'
+import { Input } from '@renderer/components/ui/input'
+import { Textarea } from '@renderer/components/ui/textarea'
+import { runAnnotationCommand } from '@renderer/components/annotations/commands'
 
-export function InlineAnnotationLabel({
+export const InlineAnnotationLabel = ({
   kind,
   id,
   text,
@@ -20,7 +20,7 @@ export function InlineAnnotationLabel({
   id: string
   text: string
   color?: string | undefined
-}) {
+}) => {
   const sheetId = useEditor((state) => state.activeSheetId)
   const selected = useAnnotationInteraction(
     (state) =>

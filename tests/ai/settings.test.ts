@@ -2,11 +2,11 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { AISettingsStore, type KeyStorage } from '../../src/main/ai/settings'
-import { validateEndpoint, validateRequest } from '../../src/main/ai/validation'
+import { AISettingsStore, type KeyStorage } from '@main/ai/settings'
+import { validateEndpoint, validateRequest } from '@main/ai/validation'
 
 const directories: string[] = []
-async function directory(): Promise<string> {
+const directory = async (): Promise<string> => {
   const path = await mkdtemp(join(tmpdir(), 'trelyx-ai-'))
   directories.push(path)
   return path
@@ -20,7 +20,7 @@ const input = {
   rememberKey: true,
   structuredOutputs: true,
 }
-function secureStorage(): KeyStorage {
+const secureStorage = (): KeyStorage => {
   return {
     isEncryptionAvailable: () => true,
     encryptString: vi.fn(() => Buffer.from([1, 2, 3, 4])),

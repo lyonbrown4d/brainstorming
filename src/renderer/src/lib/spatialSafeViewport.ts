@@ -8,11 +8,11 @@ export interface ViewportBounds {
 }
 
 /** Panels cover the canvas without changing its renderer dimensions or camera projection. */
-export function spatialSafeViewport(
+export const spatialSafeViewport = (
   viewport: ViewportBounds,
   outlineOpen: boolean,
   inspectorOpen: boolean,
-): ViewportBounds {
+): ViewportBounds => {
   const left = outlineOpen ? 216 : 0
   const right = inspectorOpen ? 256 : 0
   const occupied = left + right
@@ -27,14 +27,14 @@ export function spatialSafeViewport(
 }
 
 /** Place a fitted document at the visible center using a translation of the existing view. */
-export function spatialFramingTarget(
+export const spatialFramingTarget = (
   camera: Camera,
   center: Vector3,
   distance: number,
   viewport: ViewportBounds,
   safe: ViewportBounds,
   direction?: Vector3,
-): Vector3 {
+): Vector3 => {
   if (!(camera instanceof PerspectiveCamera) || viewport.width <= 0 || viewport.height <= 0)
     return center.clone()
   const framed = camera.clone()

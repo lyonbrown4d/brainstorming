@@ -1,8 +1,8 @@
 import { readFile, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import writeFileAtomic from 'write-file-atomic'
-import { type AISettings, type AISettingsInput } from '../../shared/ai'
-import { object, validateSettings } from './validation'
+import { type AISettings, type AISettingsInput } from '@shared/ai'
+import { object, validateSettings } from '@main/ai/validation'
 
 export interface KeyStorage {
   readonly isEncryptionAvailable: () => boolean
@@ -32,17 +32,17 @@ export class AISettingsStore {
     private readonly directory: string,
     private readonly storage: KeyStorage,
   ) {}
-  private secure(): boolean {
+  private secure = (): boolean => {
     return (
       this.storage.isEncryptionAvailable() &&
       this.storage.getSelectedStorageBackend?.() !== 'basic_text'
     )
   }
-  private initialize(): Promise<void> {
+  private initialize = (): Promise<void> => {
     this.initialized ??= this.load()
     return this.initialized
   }
-  private async load(): Promise<void> {
+  private load = async (): Promise<void> => {
     try {
       const bytes = await readFile(join(this.directory, 'ai-settings.json'))
       if (bytes.length > 16384) throw new Error('AI 设置文件超过限制')
@@ -72,7 +72,7 @@ export class AISettingsStore {
         throw new Error('无法读取 AI 设置，请重新保存服务配置')
     }
   }
-  private view(): AISettings {
+  private view = (): AISettings => {
     return {
       baseURL: this.settings.baseURL,
       model: this.settings.model,
@@ -85,12 +85,12 @@ export class AISettingsStore {
         : null,
     }
   }
-  async get(): Promise<AISettings> {
+  get = async (): Promise<AISettings> => {
     await this.queue.catch(() => undefined)
     await this.initialize()
     return this.view()
   }
-  async privateSettings(): Promise<PrivateAISettings> {
+  privateSettings = async (): Promise<PrivateAISettings> => {
     await this.queue.catch(() => undefined)
     await this.initialize()
     return {
@@ -100,7 +100,7 @@ export class AISettingsStore {
       apiKey: this.key,
     }
   }
-  save(input: unknown): Promise<AISettings> {
+  save = (input: unknown): Promise<AISettings> => {
     const next = validateSettings(input)
     const operation = this.queue
       .catch(() => undefined)

@@ -1,6 +1,6 @@
 import 'dotenv/config'
 
-export function validateRendererURL(value: string | undefined): string | undefined {
+export const validateRendererURL = (value: string | undefined): string | undefined => {
   if (value === undefined) return undefined
   const url = new URL(value)
   if (

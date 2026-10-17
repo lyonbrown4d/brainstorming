@@ -9,10 +9,10 @@ import {
   undo,
   validateDocument,
   validateTopicClipboard,
-} from './index'
-import type { Command, MindMapDocument } from './index'
+} from '@core'
+import type { Command, MindMapDocument } from '@core'
 
-function fixture(): MindMapDocument {
+const fixture = (): MindMapDocument => {
   return applyCommand(createDocument('源文档', 'source'), {
     type: 'batch',
     commands: [
@@ -42,7 +42,7 @@ function fixture(): MindMapDocument {
   })
 }
 
-function pasteCommand(document: MindMapDocument): Extract<Command, { type: 'pasteTopics' }> {
+const pasteCommand = (document: MindMapDocument): Extract<Command, { type: 'pasteTopics' }> => {
   return {
     type: 'pasteTopics',
     parentId: 'root',

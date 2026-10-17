@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within, waitFor } from 'storybook/test'
-import { createExampleDocument, applyCommand } from '../src/core'
-import { App } from '../src/renderer/src/App'
-import { useEditor } from '../src/renderer/src/state/editor'
-import { clearBrowserRecovery } from '../src/renderer/src/state/recovery'
+import { createExampleDocument, applyCommand } from '@core'
+import { App } from '@renderer/App'
+import { useEditor } from '@renderer/state/editor'
+import { clearBrowserRecovery } from '@renderer/state/recovery'
 const meta = {
   title: 'Trelyx/思维导图',
   component: App,

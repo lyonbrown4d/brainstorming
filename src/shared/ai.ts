@@ -54,7 +54,9 @@ export interface AIAPI {
   generateMindMap(request: AIGenerateRequest): Promise<AIResult>
   cancelAIGeneration(requestId: string): Promise<void>
 }
-export function assertAITree(value: unknown): asserts value is AITree {
+export const assertAITree: (value: unknown) => asserts value is AITree = (
+  value: unknown,
+): asserts value is AITree => {
   const pending: { value: unknown; depth: number }[] = [{ value, depth: 1 }]
   const visited = new Set<object>()
   let count = 0

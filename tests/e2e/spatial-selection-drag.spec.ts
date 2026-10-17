@@ -1,10 +1,10 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 import { basename } from 'node:path'
-import { applyCommand, createDocument, createWorkbook } from '../../src/core'
-import { decodeTrelyx, encodeTrelyx } from '../../src/formats/trelyx'
-import { dockAction } from './dock'
-import { openExample } from './workspace'
+import { applyCommand, createDocument, createWorkbook } from '@core'
+import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
+import { dockAction } from '@tests/e2e/dock'
+import { openExample } from '@tests/e2e/workspace'
 
 interface Box {
   x: number
@@ -16,13 +16,13 @@ const leaves = ['vision-0', 'vision-1'] as const
 const card = (page: Page, id: string) => page.locator(`[data-spatial-card-id="${id}"]`)
 const title = (page: Page, id: string) => page.locator(`[data-spatial-topic-id="${id}"]`)
 
-async function bounds(locator: Locator): Promise<Box> {
+const bounds = async (locator: Locator): Promise<Box> => {
   const box = await locator.boundingBox()
   if (!box) throw new Error('三维主题不可见')
   return box
 }
 
-async function save(page: Page) {
+const save = async (page: Page) => {
   const pending = page.waitForEvent('download')
   await page.keyboard.press('ControlOrMeta+s')
   const path = await (await pending).path()
@@ -32,7 +32,7 @@ async function save(page: Page) {
   return { path, document }
 }
 
-async function marquee(page: Page, reverse = false) {
+const marquee = async (page: Page, reverse = false) => {
   const boxes = await Promise.all(leaves.map((id) => bounds(card(page, id))))
   const start = {
     x: Math.min(...boxes.map((box) => box.x)) - 10,
@@ -54,7 +54,7 @@ async function marquee(page: Page, reverse = false) {
   await expect(page.locator('[data-spatial-selection]')).toHaveCount(0)
 }
 
-async function expectPosition(locator: Locator, original: Box) {
+const expectPosition = async (locator: Locator, original: Box) => {
   await expect
     .poll(async () => {
       const current = await bounds(locator)
@@ -63,7 +63,7 @@ async function expectPosition(locator: Locator, original: Box) {
     .toBeLessThan(1)
 }
 
-async function beginDrag(page: Page, id: string, dx = 28, dy = 22) {
+const beginDrag = async (page: Page, id: string, dx = 28, dy = 22) => {
   const from = await bounds(title(page, id))
   const x = from.x + from.width / 2
   const y = from.y + from.height / 2
@@ -72,12 +72,12 @@ async function beginDrag(page: Page, id: string, dx = 28, dy = 22) {
   await page.mouse.move(x + dx, y + dy, { steps: 8 })
 }
 
-async function expectSharedPreview(
+const expectSharedPreview = async (
   page: Page,
   ids: readonly string[],
   originals: readonly Box[],
   sameDepth = true,
-) {
+) => {
   await expect
     .poll(async () => {
       const first = originals[0]

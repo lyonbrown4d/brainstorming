@@ -1,13 +1,13 @@
 import { hierarchy } from 'd3-hierarchy'
-import { requireUnit, treeLayout } from './tree-layout'
-import type { LayoutComponent, LayoutUnit, LocalLayout } from './types'
+import { requireUnit, treeLayout } from '@layout/tree-layout'
+import type { LayoutComponent, LayoutUnit, LocalLayout } from '@layout/types'
 
 /** An aligned tree reserves each subtree's full breadth and aligns parent/first-child edges. */
-export function alignedTreeLayout(
+export const alignedTreeLayout = (
   component: LayoutComponent,
   units: ReadonlyMap<string, LayoutUnit>,
   direction: 'down' | 'up',
-): LocalLayout {
+): LocalLayout => {
   const root = requireUnit(units, component.rootId)
   const branch = hierarchy(root, (unit) =>
     (component.children.get(unit.id) ?? []).map((id) => requireUnit(units, id)),
@@ -57,11 +57,11 @@ export function alignedTreeLayout(
 }
 
 /** Braces group direct siblings; logical parent edges remain available to spatial consumers. */
-export function braceLayout(
+export const braceLayout = (
   component: LayoutComponent,
   units: ReadonlyMap<string, LayoutUnit>,
   direction: 'right' | 'left',
-): LocalLayout {
+): LocalLayout => {
   const result = treeLayout(component, units, direction)
   const positions = new Map(result.placements.map((placement) => [placement.unit.id, placement]))
   const decorations: NonNullable<LocalLayout['decorations']> = []

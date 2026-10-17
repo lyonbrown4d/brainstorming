@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { generateMindMap, sdkGenerate } from '../../src/main/ai/service'
-import type { AIResult, AITree } from '../../src/shared/ai'
+import { generateMindMap, sdkGenerate } from '@main/ai/service'
+import type { AIResult, AITree } from '@shared/ai'
 
 const settings = {
   baseURL: 'https://service.example/v1',
@@ -15,7 +15,7 @@ const request = {
   context: [{ title: '产品', depth: 0 }],
 } as const
 const tree: AITree = { title: '计划', children: [{ title: '研究', children: [] }] }
-function response(content: string): Response {
+const response = (content: string): Response => {
   return new Response(
     JSON.stringify({
       id: 'chat-test',

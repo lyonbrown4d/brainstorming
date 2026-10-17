@@ -9,6 +9,6 @@ export const useViewportRequest = create<{ action: ViewportAction | null; sequen
 )
 
 /** View operations never enter document history. */
-export function requestViewport(action: ViewportAction): void {
+export const requestViewport = (action: ViewportAction): void => {
   useViewportRequest.setState((state) => ({ action, sequence: state.sequence + 1 }))
 }

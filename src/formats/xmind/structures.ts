@@ -1,5 +1,5 @@
-import type { LayoutKind } from '../../core/extensions'
-import type { Warnings } from './common'
+import type { LayoutKind } from '@core/extensions'
+import type { Warnings } from '@formats/xmind/common'
 
 /** IDs published by the official XMind viewer; never synthesize a structure-class ID.
  * https://github.com/xmindltd/xmind-viewer/blob/master/src/common/constants/structures.ts
@@ -15,7 +15,7 @@ const structures: Readonly<Partial<Record<LayoutKind, string>>> = {
   fishbone: 'org.xmind.ui.fishbone.leftHeaded',
 }
 
-export function importStructure(value: unknown, warnings: Warnings): LayoutKind | undefined {
+export const importStructure = (value: unknown, warnings: Warnings): LayoutKind | undefined => {
   if (value === undefined) return undefined
   if (value === 'org.xmind.ui.map') return 'map'
   const found = Object.entries(structures).find(([, id]) => id === value)
@@ -25,7 +25,7 @@ export function importStructure(value: unknown, warnings: Warnings): LayoutKind 
 }
 
 /** Unsupported visual structures use a known standard fallback; the extension keeps the exact kind. */
-export function exportStructure(kind: LayoutKind): string {
+export const exportStructure = (kind: LayoutKind): string => {
   if (structures[kind]) return structures[kind]
   // These preserve the broad reading direction only, not brace, tree or table geometry.
   switch (kind) {

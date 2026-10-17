@@ -1,13 +1,13 @@
 import { motion, useIsPresent, useReducedMotion } from 'motion/react'
 import type { ReactNode } from 'react'
 
-export function AnimatedPanel({
+export const AnimatedPanel = ({
   children,
   side = 'left',
 }: {
   children: ReactNode
   side?: 'left' | 'right'
-}) {
+}) => {
   const present = useIsPresent()
   const reduceMotion = useReducedMotion()
   return (

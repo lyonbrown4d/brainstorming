@@ -2,14 +2,14 @@ import { useState } from 'react'
 import { ExternalLink, Link2 } from 'lucide-react'
 import type { TopicMetadata, TopicLink } from '@core'
 import { getParentId } from '@core'
-import { useEditor } from '../../state/editor'
-import { useSpatialView } from '../../state/spatial'
-import { Button } from '../ui/button'
-import { Input } from '../ui/input'
-import { FieldSelect } from '../FieldSelect'
-import { setMetadataField } from './commands'
+import { useEditor } from '@renderer/state/editor'
+import { useSpatialView } from '@renderer/state/spatial'
+import { Button } from '@renderer/components/ui/button'
+import { Input } from '@renderer/components/ui/input'
+import { FieldSelect } from '@renderer/components/FieldSelect'
+import { setMetadataField } from '@renderer/components/metadata/commands'
 
-export function openTopicLink(link: TopicLink): void {
+export const openTopicLink = (link: TopicLink): void => {
   const state = useEditor.getState()
   if (link.kind === 'url') {
     try {
@@ -44,7 +44,7 @@ export function openTopicLink(link: TopicLink): void {
   current.select(link.topicId)
   useSpatialView.getState().setFocus(sheetId, null)
 }
-export function LinkPanel({ topicId, metadata }: { topicId: string; metadata: TopicMetadata }) {
+export const LinkPanel = ({ topicId, metadata }: { topicId: string; metadata: TopicMetadata }) => {
   const workbook = useEditor((state) => state.workbook)
   const activeSheetId = useEditor((state) => state.activeSheetId)
   const [kind, setKind] = useState(metadata.link?.kind ?? 'url')

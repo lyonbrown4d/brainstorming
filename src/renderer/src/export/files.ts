@@ -6,8 +6,8 @@ import {
   encodeText,
   encodeXmind,
   exportSheets,
-} from '../../../formats/interchange'
-import { checkRasterSize, renderSheetSvg, type SheetSvg } from './svg'
+} from '@formats/interchange'
+import { checkRasterSize, renderSheetSvg, type SheetSvg } from '@renderer/export/svg'
 
 export type ExportFormat = 'png' | 'svg' | 'pdf' | 'md' | 'opml' | 'txt' | 'xmind'
 export interface ExportRequest {
@@ -41,7 +41,7 @@ export const exportNotice: Record<ExportFormat, string> = {
   xmind:
     '现代 XMind 文件包含所选画布、主题、备注和内嵌资源。每个主题的首个附件使用标准链接；额外附件和扩展元数据写入 Trelyx 扩展，其他软件可能忽略。仅导出当前画布时会移除指向其他画布的主题链接。',
 }
-async function rasterize(source: SheetSvg, scale: number): Promise<HTMLCanvasElement> {
+const rasterize = async (source: SheetSvg, scale: number): Promise<HTMLCanvasElement> => {
   if (!Number.isFinite(scale) || scale < 0.25 || scale > 3)
     throw new Error('图片倍率须为 0.25 至 3')
   const width = Math.ceil(source.width * scale)
@@ -64,7 +64,7 @@ async function rasterize(source: SheetSvg, scale: number): Promise<HTMLCanvasEle
     URL.revokeObjectURL(url)
   }
 }
-async function canvasPng(canvas: HTMLCanvasElement): Promise<Uint8Array> {
+const canvasPng = async (canvas: HTMLCanvasElement): Promise<Uint8Array> => {
   const blob = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((result) => {
       if (result) resolve(result)
@@ -73,10 +73,10 @@ async function canvasPng(canvas: HTMLCanvasElement): Promise<Uint8Array> {
   })
   return new Uint8Array(await blob.arrayBuffer())
 }
-export async function createExport(
+export const createExport = async (
   workbook: MindMapWorkbook,
   options: ExportOptions,
-): Promise<ExportRequest> {
+): Promise<ExportRequest> => {
   const sheet = workbook.sheets.find((entry) => entry.id === options.sheetId)
   if (!sheet) throw new Error('导出的画布不存在')
   const selected = exportSheets(workbook, options.wholeWorkbook ? undefined : sheet.id)
@@ -147,7 +147,7 @@ export async function createExport(
       .slice(0, 100) || 'Trelyx'
   return { format: options.format, suggestedName: `${name}.${options.format}`, bytes }
 }
-export function downloadExport(request: ExportRequest): Promise<string> {
+export const downloadExport = (request: ExportRequest): Promise<string> => {
   const url = URL.createObjectURL(
     new Blob([new Uint8Array(request.bytes)], { type: mimeTypes[request.format] }),
   )

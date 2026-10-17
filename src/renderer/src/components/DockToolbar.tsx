@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { PanelBottom } from 'lucide-react'
-import { useDockToolbar } from '../hooks/useDockToolbar'
-import { Button } from './ui/button'
-import { ScrollArea, ScrollBar } from './ui/scroll-area'
+import { useDockToolbar } from '@renderer/hooks/useDockToolbar'
+import { Button } from '@renderer/components/ui/button'
+import { ScrollArea, ScrollBar } from '@renderer/components/ui/scroll-area'
 
-export function DockToolbar({ children, hint }: { children: ReactNode; hint?: ReactNode }) {
+export const DockToolbar = ({ children, hint }: { children: ReactNode; hint?: ReactNode }) => {
   const { root, handle, open, enter, leave, focus, blur, toggle, expand } = useDockToolbar()
   const reduced = useReducedMotion()
   return (

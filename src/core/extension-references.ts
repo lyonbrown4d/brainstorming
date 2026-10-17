@@ -1,20 +1,20 @@
-import type { MindMapDocument, Topic } from './types'
-import type { DocumentExtensions, TopicMetadata } from './extensions'
-import * as v from './extension-validation'
-import { validateDocumentSettings } from './metadata-validation'
+import type { MindMapDocument, Topic } from '@core/types'
+import type { DocumentExtensions, TopicMetadata } from '@core/extensions'
+import * as v from '@core/extension-validation'
+import { validateDocumentSettings } from '@core/metadata-validation'
 import {
   validateFloatingPosition,
   validatePresentationStep,
   validateRelation,
   validateTopicCallout,
   validateTopicGroup,
-} from './annotation-validation'
+} from '@core/annotation-validation'
 
-export function validateDocumentExtensions(
+export const validateDocumentExtensions = (
   value: Record<string, unknown>,
   topics: Readonly<Record<string, Topic>>,
   rootId: string,
-): void {
+): void => {
   const require = (id: string): void => {
     if (!Object.hasOwn(topics, id)) throw new Error(`扩展引用的主题 ${id} 不存在`)
   }
@@ -95,10 +95,10 @@ export function validateDocumentExtensions(
 }
 
 /** Keep only references that remain meaningful after removing or copying topics. */
-export function pruneTopicMetadata(
+export const pruneTopicMetadata = (
   metadata: TopicMetadata,
   retained: ReadonlySet<string>,
-): TopicMetadata {
+): TopicMetadata => {
   const result = { ...structuredClone(metadata) }
   const link = result.link
   if (link?.kind === 'topic' && link.sheetId === undefined && !retained.has(link.topicId))
@@ -111,7 +111,7 @@ export function pruneTopicMetadata(
   return result
 }
 
-export function pruneDocumentReferences(document: MindMapDocument): MindMapDocument {
+export const pruneDocumentReferences = (document: MindMapDocument): MindMapDocument => {
   const retained = new Set(Object.keys(document.topics))
   const topics: Record<string, Topic> = { ...document.topics }
   for (const topic of Object.values(topics)) {
@@ -158,10 +158,10 @@ export function pruneDocumentReferences(document: MindMapDocument): MindMapDocum
   return { ...document, topics, ...extensions }
 }
 
-export function clearFloatingRoots(
+export const clearFloatingRoots = (
   document: MindMapDocument,
   topicIds: readonly string[],
-): MindMapDocument {
+): MindMapDocument => {
   if (!document.floatingIds?.some((id) => topicIds.includes(id))) return document
   const remaining = document.floatingIds.filter((id) => !topicIds.includes(id))
   return {

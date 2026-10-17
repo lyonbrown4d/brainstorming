@@ -1,7 +1,7 @@
 import { getParentId } from '@core'
-import { useEditor } from './editor'
+import { useEditor } from '@renderer/state/editor'
 
-function structuralSelection() {
+const structuralSelection = () => {
   useEditor.getState().commitDraft()
   const state = useEditor.getState()
   if (state.editingId) return undefined
@@ -13,7 +13,7 @@ function structuralSelection() {
   return { state, document, topic, parent }
 }
 
-export function insertParentTopic(): void {
+export const insertParentTopic = (): void => {
   const selection = structuralSelection()
   if (!selection) return
   const { state, topic } = selection
@@ -22,7 +22,7 @@ export function insertParentTopic(): void {
     useEditor.getState().startEdit(id)
 }
 
-export function removeTopicOnly(): void {
+export const removeTopicOnly = (): void => {
   const selection = structuralSelection()
   if (!selection) return
   const { state, topic, parent } = selection
@@ -30,7 +30,7 @@ export function removeTopicOnly(): void {
     useEditor.getState().select(topic.children[0] ?? parent.id)
 }
 
-export function reorderSelectedTopic(direction: -1 | 1): void {
+export const reorderSelectedTopic = (direction: -1 | 1): void => {
   const selection = structuralSelection()
   if (!selection) return
   const { state, document, topic, parent } = selection

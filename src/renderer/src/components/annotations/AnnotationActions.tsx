@@ -1,16 +1,16 @@
 import { useEffect } from 'react'
 import { CornerDownRight, Group, Link2, MessageSquareText } from 'lucide-react'
-import { useEditor } from '../../state/editor'
+import { useEditor } from '@renderer/state/editor'
 import {
   addSelectionCallout,
   addSelectionGroup,
   toggleRelationMode,
   useAnnotationInteraction,
-} from '../../state/annotationInteraction'
-import { isCompositionKey } from '../../state/keyboard'
-import { DockAction } from '../DockAction'
+} from '@renderer/state/annotationInteraction'
+import { isCompositionKey } from '@renderer/state/keyboard'
+import { DockAction } from '@renderer/components/DockAction'
 
-export function AnnotationActions() {
+export const AnnotationActions = () => {
   const fromId = useAnnotationInteraction((state) => state.fromId)
   const sheetId = useEditor((state) => state.activeSheetId)
   useEffect(() => {
@@ -88,7 +88,7 @@ export function AnnotationActions() {
   )
 }
 
-export function AnnotationModeHint() {
+export const AnnotationModeHint = () => {
   const fromId = useAnnotationInteraction((state) => state.fromId)
   const floating = useAnnotationInteraction((state) => state.floating)
   if (!fromId && !floating) return null

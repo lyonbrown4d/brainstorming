@@ -1,20 +1,20 @@
 import { hierarchy, tree } from 'd3-hierarchy'
-import type { LayoutComponent, LayoutDirection, LayoutUnit, LocalLayout } from './types'
+import type { LayoutComponent, LayoutDirection, LayoutUnit, LocalLayout } from '@layout/types'
 
-export function requireUnit(units: ReadonlyMap<string, LayoutUnit>, id: string): LayoutUnit {
+export const requireUnit = (units: ReadonlyMap<string, LayoutUnit>, id: string): LayoutUnit => {
   const unit = units.get(id)
   if (!unit) throw new Error('布局主题不存在')
   return unit
 }
 
 /** D3 handles tidy-tree ordering and separation; this adapter supplies measured component boxes. */
-export function treeLayout(
+export const treeLayout = (
   component: LayoutComponent,
   units: ReadonlyMap<string, LayoutUnit>,
   direction: LayoutDirection,
   rootId = component.rootId,
   firstChildren?: readonly string[],
-): LocalLayout {
+): LocalLayout => {
   const vertical = direction === 'down' || direction === 'up'
   const root = requireUnit(units, rootId)
   const branch = hierarchy(root, (unit) =>
@@ -58,10 +58,10 @@ export function treeLayout(
   return result
 }
 
-export function mapLayout(
+export const mapLayout = (
   component: LayoutComponent,
   units: ReadonlyMap<string, LayoutUnit>,
-): LocalLayout {
+): LocalLayout => {
   const children = component.children.get(component.rootId) ?? []
   const result: LocalLayout = { placements: [], edges: [] }
   for (const direction of ['left', 'right'] as const) {

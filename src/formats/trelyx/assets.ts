@@ -1,10 +1,10 @@
-import type { DocumentAsset, MindMapDocument, MindMapWorkbook } from '../../core'
-import { assetBytes, createAsset, imageDimensions } from '../../assets'
-import { AUDIO_MIME_TYPES } from '../../core/topic-content'
-import { referencedAssetIds } from '../../core/topic-content'
-import { onlyKeys, record } from './validation'
+import type { DocumentAsset, MindMapDocument, MindMapWorkbook } from '@core'
+import { assetBytes, createAsset, imageDimensions } from '@assets'
+import { AUDIO_MIME_TYPES } from '@core/topic-content'
+import { referencedAssetIds } from '@core/topic-content'
+import { onlyKeys, record } from '@formats/trelyx/validation'
 
-function samePortableMime(declared: string, detected: string): boolean {
+const samePortableMime = (declared: string, detected: string): boolean => {
   // Earlier v1 files stored every non-raster attachment as opaque bytes, including audio.
   return (
     declared === detected ||
@@ -16,7 +16,7 @@ function samePortableMime(declared: string, detected: string): boolean {
 export const ASSET_LIMITS = { entry: 8 * 1024 * 1024, total: 24 * 1024 * 1024 } as const
 
 /** Verify actual image bytes, MIME and dimensions before accepting or saving content. */
-export function validateAssetContent(workbook: MindMapWorkbook): void {
+export const validateAssetContent = (workbook: MindMapWorkbook): void => {
   let size = 0
   for (const { document } of workbook.sheets) {
     for (const id of referencedAssetIds(document.topics)) {
@@ -41,11 +41,11 @@ export function validateAssetContent(workbook: MindMapWorkbook): void {
   }
 }
 
-export function encodeAssets(
+export const encodeAssets = (
   document: MindMapDocument,
   index: number,
   entries: Record<string, Uint8Array>,
-): Record<string, Omit<DocumentAsset, 'data'> & { path: string }> | undefined {
+): Record<string, Omit<DocumentAsset, 'data'> & { path: string }> | undefined => {
   const metadata: Record<string, Omit<DocumentAsset, 'data'> & { path: string }> = {}
   for (const id of referencedAssetIds(document.topics)) {
     const asset = document.assets?.[id]
@@ -57,13 +57,13 @@ export function encodeAssets(
   return Object.keys(metadata).length > 0 ? metadata : undefined
 }
 
-export function decodeAssets(
+export const decodeAssets = (
   value: unknown,
   index: number,
   entries: ReadonlyMap<string, Uint8Array>,
   used: Set<string>,
   budget: { bytes: number },
-): Record<string, DocumentAsset> {
+): Record<string, DocumentAsset> => {
   const assets = record(value)
   const result: Record<string, DocumentAsset> = {}
   for (const [id, value] of Object.entries(assets)) {
@@ -96,7 +96,7 @@ export function decodeAssets(
   return result
 }
 
-export function assertUsedAssets(workbook: MindMapWorkbook): void {
+export const assertUsedAssets = (workbook: MindMapWorkbook): void => {
   for (const { document } of workbook.sheets) {
     const referenced = referencedAssetIds(document.topics)
     if (Object.keys(document.assets ?? {}).some((id) => !referenced.has(id)))

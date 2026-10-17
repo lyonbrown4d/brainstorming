@@ -1,13 +1,13 @@
 import { getSubtreeIds } from '@core/tree'
 import type { MindMapDocument } from '@core'
-import { layoutDocument } from './index'
-import type { LayoutNode } from './index'
+import { layoutDocument } from '@layout'
+import type { LayoutNode } from '@layout'
 import {
   projectSpatialGeometry,
   type SpatialDecoration,
   type SpatialEdge,
-} from './spatial-geometry'
-export type { SpatialDecoration, SpatialEdge } from './spatial-geometry'
+} from '@layout/spatial-geometry'
+export type { SpatialDecoration, SpatialEdge } from '@layout/spatial-geometry'
 
 export type SpatialPoint = readonly [number, number, number]
 
@@ -51,7 +51,7 @@ const BRANCH_GAP = 1
  * with a generous gap. Gentle depth layers keep the default elevated front view legible.
  * This projection is transient: it never changes topic order, content, or document history.
  */
-export function layoutSpatialDocument(document: MindMapDocument): SpatialLayout {
+export const layoutSpatialDocument = (document: MindMapDocument): SpatialLayout => {
   const planar = layoutDocument(document)
   const root = document.topics[document.rootId]
   if (root === undefined) throw new Error('缺少中心主题')
@@ -140,13 +140,13 @@ export function layoutSpatialDocument(document: MindMapDocument): SpatialLayout 
   return { nodes, ...geometry, bounds: spatialBounds([...nodes, ...geometry.decorations]) }
 }
 
-function spatialNode(
+const spatialNode = (
   node: LayoutNode,
   branchId: string,
   depth: number,
   group: BranchGroup | undefined,
   preservePlanar: boolean,
-): SpatialNode {
+): SpatialNode => {
   // Descendants stay close to their main branch's plane, even for very deep trees.
   const depthOffset = preservePlanar ? 0 : Math.min(0.36, Math.max(0, depth - 1) * 0.12)
   return {
@@ -173,14 +173,14 @@ function spatialNode(
 }
 
 /** Includes collapsed descendants; intersect with visible layout nodes when focusing. */
-export function spatialSubtreeIds(document: MindMapDocument, id: string): Set<string> {
+export const spatialSubtreeIds = (document: MindMapDocument, id: string): Set<string> => {
   return new Set(getSubtreeIds(document, id))
 }
 
 /** Axis-aligned bounds include each card's width and height, with no camera padding. */
-export function spatialBounds(
+export const spatialBounds = (
   nodes: readonly Pick<SpatialNode, 'position' | 'width' | 'height'>[],
-): SpatialBounds {
+): SpatialBounds => {
   if (nodes.length === 0) return { min: [0, 0, 0], max: [0, 0, 0] }
   const min: [number, number, number] = [Infinity, Infinity, Infinity]
   const max: [number, number, number] = [-Infinity, -Infinity, -Infinity]

@@ -1,12 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { applyCommand, createDocument } from '../../src/core'
-import { useEditor } from '../../src/renderer/src/state/editor'
-import {
-  aiContext,
-  applyAIResult,
-  captureAISnapshot,
-} from '../../src/renderer/src/components/ai/apply'
-import { assertAITree, type AITree } from '../../src/shared/ai'
+import { applyCommand, createDocument } from '@core'
+import { useEditor } from '@renderer/state/editor'
+import { aiContext, applyAIResult, captureAISnapshot } from '@renderer/components/ai/apply'
+import { assertAITree, type AITree } from '@shared/ai'
 
 const tree: AITree = {
   title: 'AI 建议 <script>',

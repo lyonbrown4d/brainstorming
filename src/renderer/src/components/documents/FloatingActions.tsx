@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { Popover } from 'radix-ui'
 import { CirclePlus, CornerDownRight } from 'lucide-react'
-import { useEditor } from '../../state/editor'
-import { useSpatialView } from '../../state/spatial'
-import { armFloatingTopic, useAnnotationInteraction } from '../../state/annotationInteraction'
-import { runAnnotationCommand } from '../annotations/commands'
-import { Button } from '../ui/button'
-import { FieldSelect } from '../FieldSelect'
+import { useEditor } from '@renderer/state/editor'
+import { useSpatialView } from '@renderer/state/spatial'
+import { armFloatingTopic, useAnnotationInteraction } from '@renderer/state/annotationInteraction'
+import { runAnnotationCommand } from '@renderer/components/annotations/commands'
+import { Button } from '@renderer/components/ui/button'
+import { FieldSelect } from '@renderer/components/FieldSelect'
 
-export function FloatingActions() {
+export const FloatingActions = () => {
   const document = useEditor((state) => state.history.document)
   const selectedId = useEditor((state) => state.selectedId)
   const armed = useAnnotationInteraction((state) => state.floating)

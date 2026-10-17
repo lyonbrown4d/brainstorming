@@ -2,9 +2,9 @@ import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { applyCommand, createDocument, createWorkbook, serializeWorkbook } from '../../src/core'
-import { decryptTrelyx, encryptTrelyx, isEncryptedTrelyx } from '../../src/formats/encrypted'
-import { DocumentFiles } from '../../src/main/files'
+import { applyCommand, createDocument, createWorkbook, serializeWorkbook } from '@core'
+import { decryptTrelyx, encryptTrelyx, isEncryptedTrelyx } from '@formats/encrypted'
+import { DocumentFiles } from '@main/files'
 
 let directory: string
 let files: DocumentFiles

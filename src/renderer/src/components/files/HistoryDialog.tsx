@@ -1,11 +1,17 @@
 import { History } from 'lucide-react'
-import { Button } from '../ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
-import { useFileDialogs, openHistoryDialog } from '../../state/fileDialogs'
-import { useEditor } from '../../state/editor'
-import { restoreBackup } from '../../state/files'
+import { Button } from '@renderer/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@renderer/components/ui/dialog'
+import { useFileDialogs, openHistoryDialog } from '@renderer/state/fileDialogs'
+import { useEditor } from '@renderer/state/editor'
+import { restoreBackup } from '@renderer/state/files'
 
-export function HistoryDialog() {
+export const HistoryDialog = () => {
   return (
     <Button
       variant="ghost"
@@ -20,7 +26,7 @@ export function HistoryDialog() {
     </Button>
   )
 }
-export function HistoryPanel() {
+export const HistoryPanel = () => {
   const open = useFileDialogs((state) => state.history)
   const setOpen = (value: boolean): void => {
     useFileDialogs.setState({ history: value })

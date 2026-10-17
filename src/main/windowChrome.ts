@@ -1,8 +1,8 @@
 import type { BrowserWindow, BrowserWindowConstructorOptions } from 'electron'
-import type { WindowState } from '../shared/window'
+import type { WindowState } from '@shared/window'
 
 /** Let the OS own caption buttons, resizing, snapping, and native close behavior. */
-export function windowChromeOptions(platform: NodeJS.Platform): BrowserWindowConstructorOptions {
+export const windowChromeOptions = (platform: NodeJS.Platform): BrowserWindowConstructorOptions => {
   return platform === 'darwin'
     ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 16, y: 21 } }
     : {
@@ -12,11 +12,11 @@ export function windowChromeOptions(platform: NodeJS.Platform): BrowserWindowCon
       }
 }
 
-export function readWindowState(window: BrowserWindow): WindowState {
+export const readWindowState = (window: BrowserWindow): WindowState => {
   return { focused: window.isFocused(), fullScreen: window.isFullScreen() }
 }
 
-export function installWindowChrome(window: BrowserWindow): void {
+export const installWindowChrome = (window: BrowserWindow): void => {
   const publish = () => {
     if (!window.isDestroyed() && !window.webContents.isDestroyed()) {
       window.webContents.send('window:state-changed', readWindowState(window))

@@ -1,14 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { ReactFlow, ReactFlowProvider } from '@xyflow/react'
-import { TopicNode, type TopicFlowNode } from '../src/renderer/src/components/TopicNode'
-import { createDocument } from '../src/core'
-import { useEditor } from '../src/renderer/src/state/editor'
+import { TopicNode, type TopicFlowNode } from '@renderer/components/TopicNode'
+import { createDocument } from '@core'
+import { useEditor } from '@renderer/state/editor'
 import '@xyflow/react/dist/style.css'
-import '../src/renderer/src/styles/base.css'
-import '../src/renderer/src/styles/topics.css'
+import '@renderer/styles/base.css'
+import '@renderer/styles/topics.css'
 const topic = createDocument('一个新的想法').topics.root
 const nodeTypes = { topic: TopicNode }
-function TopicPreview({ root = false }: { root?: boolean }) {
+const TopicPreview = ({ root = false }: { root?: boolean }) => {
   if (!topic) return null
   const nodes: TopicFlowNode[] = [
     {

@@ -1,8 +1,8 @@
 import type { Command } from '@core'
-import type { EditorData } from './editorTypes'
+import type { EditorData } from '@renderer/state/editorTypes'
 
 /** The same candidate command is used by commit and recovery, including formatting-only edits. */
-export function draftCommand(state: EditorData): Command | null {
+export const draftCommand = (state: EditorData): Command | null => {
   const { editingId, editingSurface, draft, richDraft } = state
   if (!editingId) return null
   const topic = state.history.document.topics[editingId]

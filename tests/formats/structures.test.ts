@@ -1,11 +1,11 @@
 import { strToU8, zipSync } from 'fflate'
 import { describe, expect, it } from 'vitest'
-import { applyCommand, createDocument, createWorkbook } from '../../src/core'
-import { LAYOUT_KINDS, type LayoutKind } from '../../src/core/extensions'
-import { readArchive } from '../../src/formats/archive'
-import { encodeXmind } from '../../src/formats/interchange/xmind'
-import { decodeTrelyx, encodeTrelyx } from '../../src/formats/trelyx'
-import { importXmind } from '../../src/formats/xmind'
+import { applyCommand, createDocument, createWorkbook } from '@core'
+import { LAYOUT_KINDS, type LayoutKind } from '@core/extensions'
+import { readArchive } from '@formats/archive'
+import { encodeXmind } from '@formats/interchange/xmind'
+import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
+import { importXmind } from '@formats/xmind'
 
 const provider = 'org.trelyx.interchange'
 const pairs = [
@@ -19,7 +19,7 @@ const pairs = [
   ['fishbone', 'org.xmind.ui.fishbone.leftHeaded'],
 ] as const
 
-function book(layout: LayoutKind) {
+const book = (layout: LayoutKind) => {
   let document = applyCommand(createDocument('中心'), {
     type: 'addTopic',
     parentId: 'root',
@@ -34,7 +34,7 @@ function book(layout: LayoutKind) {
   })
   return createWorkbook(document)
 }
-function modern(rootTopic: unknown, extensions?: unknown) {
+const modern = (rootTopic: unknown, extensions?: unknown) => {
   return zipSync({
     'content.json': strToU8(
       JSON.stringify([
@@ -43,7 +43,7 @@ function modern(rootTopic: unknown, extensions?: unknown) {
     ),
   })
 }
-function content(bytes: Uint8Array) {
+const content = (bytes: Uint8Array) => {
   return JSON.parse(new TextDecoder().decode(readArchive(bytes).get('content.json'))) as {
     rootTopic: { structureClass: string; children: { attached: { structureClass: string }[] } }
   }[]

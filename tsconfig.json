@@ -22,10 +22,21 @@
       "@core": ["src/core/index.ts"],
       "@core/*": ["src/core/*"],
       "@layout": ["src/layout/index.ts"],
+      "@layout/*": ["src/layout/*"],
+      "@formats": ["src/formats/index.ts"],
+      "@formats/*": ["src/formats/*"],
+      "@assets": ["src/assets/index.ts"],
+      "@assets/*": ["src/assets/*"],
+      "@main/*": ["src/main/*"],
+      "@preload/*": ["src/preload/*"],
       "@shared/*": ["src/shared/*"],
-      "@renderer/*": ["src/renderer/src/*"]
+      "@renderer/*": ["src/renderer/src/*"],
+      "@tests/*": ["tests/*"],
+      "@stories/*": ["stories/*"],
+      "@project/*": ["./*"]
     },
-    "types": ["node", "vite/client"]
+    "types": ["node", "vite/client"],
+    "resolveJsonModule": true
   },
   "include": ["src", "tests", "stories", ".storybook/**/*.ts", "*.ts"]
 }

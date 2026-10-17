@@ -1,5 +1,5 @@
 import { filetypeinfo } from 'magic-bytes.js'
-import { AUDIO_MIME_TYPES } from '../core/topic-content'
+import { AUDIO_MIME_TYPES } from '@core/topic-content'
 
 const mimeAliases: Readonly<Record<string, string>> = {
   'audio/x-wav': 'audio/wav',
@@ -17,7 +17,7 @@ const mimeAliases: Readonly<Record<string, string>> = {
 const supported = new Set<string>(AUDIO_MIME_TYPES)
 
 /** Detect containers with upstream signatures; actual playback decoding belongs to the browser. */
-export function audioMime(bytes: Uint8Array): string | undefined {
+export const audioMime = (bytes: Uint8Array): string | undefined => {
   const guesses = filetypeinfo(bytes.subarray(0, 4096))
   if (guesses.some(({ mime }) => mime?.startsWith('image/'))) return undefined
   for (const guess of guesses) {

@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { applyCommand, createDocument } from '../../src/core'
-import { useEditor } from '../../src/renderer/src/state/editor'
+import { applyCommand, createDocument } from '@core'
+import { useEditor } from '@renderer/state/editor'
 import {
   insertParentTopic,
   removeTopicOnly,
   reorderSelectedTopic,
-} from '../../src/renderer/src/state/structuralEditing'
+} from '@renderer/state/structuralEditing'
 
 beforeEach(() => {
   const document = applyCommand(createDocument('中心', 'structural'), {

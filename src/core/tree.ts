@@ -1,16 +1,16 @@
-import type { MindMapDocument, Topic } from './types'
+import type { MindMapDocument, Topic } from '@core/types'
 
-export function requireTopic(document: MindMapDocument, id: string): Topic {
+export const requireTopic = (document: MindMapDocument, id: string): Topic => {
   const topic = Object.hasOwn(document.topics, id) ? document.topics[id] : undefined
   if (!topic) throw new Error(`主题 ${id} 不存在`)
   return topic
 }
 
-export function getParentId(document: MindMapDocument, topicId: string): string | undefined {
+export const getParentId = (document: MindMapDocument, topicId: string): string | undefined => {
   return Object.values(document.topics).find((topic) => topic.children.includes(topicId))?.id
 }
 
-export function getSubtreeIds(document: MindMapDocument, topicId: string): string[] {
+export const getSubtreeIds = (document: MindMapDocument, topicId: string): string[] => {
   const result: string[] = []
   const pending = [topicId]
   while (pending.length > 0) {
@@ -27,7 +27,7 @@ export function getSubtreeIds(document: MindMapDocument, topicId: string): strin
 }
 
 /** Visible depth-first order; floating roots remain independent of center collapse. */
-export function getVisibleTopicIds(document: MindMapDocument): readonly string[] {
+export const getVisibleTopicIds = (document: MindMapDocument): readonly string[] => {
   const result: string[] = []
   const floating = new Set(document.floatingIds ?? [])
   const pending = [...(document.floatingIds ?? [])].reverse()

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import type { MindMapDocument } from '@core'
-import { AI_LIMITS, type AIAPI, type AIMode } from '../../../../shared/ai'
-import { Button } from '../ui/button'
-import { Checkbox } from '../ui/checkbox'
-import { Label } from '../ui/label'
-import { Textarea } from '../ui/textarea'
+import { AI_LIMITS, type AIAPI, type AIMode } from '@shared/ai'
+import { Button } from '@renderer/components/ui/button'
+import { Checkbox } from '@renderer/components/ui/checkbox'
+import { Label } from '@renderer/components/ui/label'
+import { Textarea } from '@renderer/components/ui/textarea'
 import {
   Dialog,
   DialogContent,
@@ -14,23 +14,23 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '../ui/dialog'
-import { FieldSelect } from '../FieldSelect'
-import { AISettingsForm } from './AISettingsForm'
-import { AIPreview } from './AIPreview'
-import { useAIController } from './useAIController'
-import { useEditor } from '../../state/editor'
+} from '@renderer/components/ui/dialog'
+import { FieldSelect } from '@renderer/components/FieldSelect'
+import { AISettingsForm } from '@renderer/components/ai/AISettingsForm'
+import { AIPreview } from '@renderer/components/ai/AIPreview'
+import { useAIController } from '@renderer/components/ai/useAIController'
+import { useEditor } from '@renderer/state/editor'
 
 export interface AIAssistantProps {
   onAddSheet: (document: MindMapDocument) => boolean
   api?: AIAPI
   defaultOpen?: boolean
 }
-export function AIAssistant({
+export const AIAssistant = ({
   onAddSheet,
   api = window.trelyx,
   defaultOpen = false,
-}: AIAssistantProps) {
+}: AIAssistantProps) => {
   const [open, setOpen] = useState(defaultOpen)
   const [configure, setConfigure] = useState(false)
   const [mode, setMode] = useState<AIMode>('generate')

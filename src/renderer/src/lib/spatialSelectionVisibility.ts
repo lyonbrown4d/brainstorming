@@ -1,14 +1,14 @@
 import { Euler, Quaternion, Vector3, type Camera } from 'three'
-import type { SpatialNode } from '../../../layout/spatial'
-import type { ViewportBounds } from './spatialSafeViewport'
+import type { SpatialNode } from '@layout/spatial'
+import type { ViewportBounds } from '@renderer/lib/spatialSafeViewport'
 
 /** Reveal a newly selected card with a view translation; preserve its perspective depth. */
-export function spatialSelectionShift(
+export const spatialSelectionShift = (
   camera: Camera,
   node: Pick<SpatialNode, 'position' | 'width' | 'height'>,
   viewport: ViewportBounds,
   visible: ViewportBounds = viewport,
-): Vector3 | null {
+): Vector3 | null => {
   if (viewport.width <= 0 || viewport.height <= 0) return null
   camera.updateWorldMatrix(true, false)
   const center = new Vector3(...node.position)
@@ -54,13 +54,13 @@ export function spatialSelectionShift(
   return center.sub(desired)
 }
 
-function revealOffset(
+const revealOffset = (
   start: number,
   end: number,
   safeStart: number,
   safeEnd: number,
   center: number,
-): number {
+): number => {
   // A card wider than the usable surface can only be centered without changing the user's zoom.
   if (end - start > safeEnd - safeStart) return (safeStart + safeEnd) / 2 - center
   if (start < safeStart) return safeStart - start

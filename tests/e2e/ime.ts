@@ -1,7 +1,7 @@
 import { expect, type Locator, type Page } from '@playwright/test'
 
 /** Chromium creates native composition/input events; no application state is injected. */
-export async function composeChinese(page: Page, input: Locator, text: string) {
+export const composeChinese = async (page: Page, input: Locator, text: string) => {
   await input.press('ControlOrMeta+A')
   const session = await page.context().newCDPSession(page)
   try {

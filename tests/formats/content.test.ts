@@ -1,17 +1,17 @@
 import { readFileSync } from 'node:fs'
 import { strToU8, zipSync } from 'fflate'
 import { describe, expect, it } from 'vitest'
-import { createDocument, createWorkbook, type MindMapWorkbook } from '../../src/core'
-import { assetBytes, createAsset } from '../../src/assets'
-import { decodeTrelyx, encodeTrelyx } from '../../src/formats/trelyx'
-import { readArchive } from '../../src/formats/archive'
-import { importXmind } from '../../src/formats/xmind'
-import { contentXmind } from '../fixtures/xmind/archive'
+import { createDocument, createWorkbook, type MindMapWorkbook } from '@core'
+import { assetBytes, createAsset } from '@assets'
+import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
+import { readArchive } from '@formats/archive'
+import { importXmind } from '@formats/xmind'
+import { contentXmind } from '@tests/fixtures/xmind/archive'
 
 const fixture = (name: string): Uint8Array =>
   new Uint8Array(readFileSync(new URL(`../fixtures/xmind/${name}`, import.meta.url)))
 
-function contentWorkbook(): MindMapWorkbook {
+const contentWorkbook = (): MindMapWorkbook => {
   const image = createAsset(fixture('pixel image.png'), '图片.png', 'picture')
   const attachment = createAsset(fixture('data.bin'), '数据.bin', 'attachment')
   const unused = createAsset(strToU8('unused'), 'unused.txt', 'unused')
@@ -32,9 +32,9 @@ function contentWorkbook(): MindMapWorkbook {
   })
 }
 
-function modifyContent(
+const modifyContent = (
   mutate: (content: Record<string, unknown>, entries: Record<string, Uint8Array>) => void,
-): Uint8Array {
+): Uint8Array => {
   const entries = Object.fromEntries(readArchive(encodeTrelyx(contentWorkbook())))
   const content = JSON.parse(new TextDecoder().decode(entries['document.json'])) as Record<
     string,
@@ -45,15 +45,15 @@ function modifyContent(
   return zipSync(entries)
 }
 
-function documentOf(content: Record<string, unknown>): Record<string, unknown> {
+const documentOf = (content: Record<string, unknown>): Record<string, unknown> => {
   return (content.sheets as { document: Record<string, unknown> }[])[0]?.document ?? {}
 }
 
-function assetOf(content: Record<string, unknown>): Record<string, unknown> {
+const assetOf = (content: Record<string, unknown>): Record<string, unknown> => {
   return (documentOf(content).assets as Record<string, Record<string, unknown>>).picture ?? {}
 }
 
-function rootOf(content: Record<string, unknown>): Record<string, unknown> {
+const rootOf = (content: Record<string, unknown>): Record<string, unknown> => {
   return (documentOf(content).topics as Record<string, Record<string, unknown>>).root ?? {}
 }
 

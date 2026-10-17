@@ -8,9 +8,9 @@ export interface GroupBounds {
   readonly width: number
   readonly height: number
 }
-export function groupBounds(
+export const groupBounds = (
   nodes: readonly Pick<LayoutNode, 'x' | 'y' | 'width' | 'height'>[],
-): GroupBounds | null {
+): GroupBounds | null => {
   if (!nodes.length) return null
   let left = Infinity,
     top = Infinity,
@@ -24,7 +24,10 @@ export function groupBounds(
   }
   return { x: left - 16, y: top - 26, width: right - left + 32, height: bottom - top + 42 }
 }
-export function relationEdges(document: MindMapDocument, visibleIds: ReadonlySet<string>): Edge[] {
+export const relationEdges = (
+  document: MindMapDocument,
+  visibleIds: ReadonlySet<string>,
+): Edge[] => {
   return (document.relations ?? []).flatMap((relation) => {
     if (!visibleIds.has(relation.from) || !visibleIds.has(relation.to)) return []
     const color = relation.color ?? '#8b79d9'

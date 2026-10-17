@@ -5,7 +5,7 @@ export interface WindowState {
   fullScreen: boolean
 }
 
-export function isWindowState(value: unknown): value is WindowState {
+export const isWindowState = (value: unknown): value is WindowState => {
   return (
     typeof value === 'object' &&
     value !== null &&

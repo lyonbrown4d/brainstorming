@@ -1,14 +1,14 @@
-import { mainWindow } from './windows'
-import { completeDocumentCreation } from '../e2e/workspace'
+import { mainWindow } from '@tests/desktop/windows'
+import { completeDocumentCreation } from '@tests/e2e/workspace'
 import { _electron as electron, expect, test } from '@playwright/test'
 import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { createDocument, createWorkbook } from '../../src/core'
-import { encodeTrelyx } from '../../src/formats/trelyx'
-import { decodeFile } from '../../src/formats'
-import { modernXmind } from '../fixtures/xmind/archive'
-import { imageBase64, attachmentBytes } from '../fixtures/content'
+import { createDocument, createWorkbook } from '@core'
+import { encodeTrelyx } from '@formats/trelyx'
+import { decodeFile } from '@formats'
+import { modernXmind } from '@tests/fixtures/xmind/archive'
+import { imageBase64, attachmentBytes } from '@tests/fixtures/content'
 
 test('生产 Electron 启动、sandbox preload 和恢复闭环', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'trelyx-desktop-'))

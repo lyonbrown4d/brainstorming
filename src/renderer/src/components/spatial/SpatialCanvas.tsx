@@ -1,18 +1,18 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { PCFShadowMap } from 'three'
-import { layoutSpatialDocument, spatialSubtreeIds } from '../../../../layout/spatial'
-import { presentationDocument, usePresentation } from '../../state/presentation'
-import { CanvasOverlay } from '../workbench/CanvasOverlay'
-import { DragFeedback } from '../workbench/DragFeedback'
-import { SpatialControls } from './SpatialControls'
-import { SpatialScene } from './SpatialScene'
-import type { SpatialCameraActions, SpatialCanvasProps } from './types'
-import type { SpatialScreenRect } from '../../lib/spatialDrag'
+import { layoutSpatialDocument, spatialSubtreeIds } from '@layout/spatial'
+import { presentationDocument, usePresentation } from '@renderer/state/presentation'
+import { CanvasOverlay } from '@renderer/components/workbench/CanvasOverlay'
+import { DragFeedback } from '@renderer/components/workbench/DragFeedback'
+import { SpatialControls } from '@renderer/components/spatial/SpatialControls'
+import { SpatialScene } from '@renderer/components/spatial/SpatialScene'
+import type { SpatialCameraActions, SpatialCanvasProps } from '@renderer/components/spatial/types'
+import type { SpatialScreenRect } from '@renderer/lib/spatialDrag'
 
-export type { SpatialCameraState, SpatialCanvasProps } from './types'
+export type { SpatialCameraState, SpatialCanvasProps } from '@renderer/components/spatial/types'
 
-export default function SpatialCanvas({
+export const SpatialCanvas = ({
   document,
   selectedId,
   focusId,
@@ -21,7 +21,7 @@ export default function SpatialCanvas({
   onFocus,
   onCollapse,
   onCameraChange,
-}: SpatialCanvasProps) {
+}: SpatialCanvasProps) => {
   const presentation = usePresentation()
   const presentedId = presentation.playing
     ? presentation.steps[presentation.index]?.topicId
@@ -113,3 +113,5 @@ export default function SpatialCanvas({
     </section>
   )
 }
+
+export default SpatialCanvas

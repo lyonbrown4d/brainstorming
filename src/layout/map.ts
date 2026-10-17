@@ -1,11 +1,11 @@
 import { hierarchy, tree } from 'd3-hierarchy'
 import type { MindMapDocument, Topic } from '@core'
-import { measureTopic } from './measure'
+import { measureTopic } from '@layout/measure'
 
-import type { LayoutNode, LayoutEdge, MindMapLayout } from './types'
+import type { LayoutNode, LayoutEdge, MindMapLayout } from '@layout/types'
 
 /** Return top-left positions. The center of the root is (0, 0). */
-export function layoutMapDocument(document: MindMapDocument): MindMapLayout {
+export const layoutMapDocument = (document: MindMapDocument): MindMapLayout => {
   const root = document.topics[document.rootId]
   if (root === undefined) throw new Error('缺少中心主题')
   const rootSize = measureTopic(root.title, true, root.style?.fontSize, root)

@@ -1,9 +1,9 @@
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, type EdgeProps } from '@xyflow/react'
-import { useEditor } from '../../state/editor'
-import { selectAnnotation, useAnnotationInteraction } from '../../state/annotationInteraction'
-import { InlineAnnotationLabel } from './InlineAnnotationLabel'
+import { useEditor } from '@renderer/state/editor'
+import { selectAnnotation, useAnnotationInteraction } from '@renderer/state/annotationInteraction'
+import { InlineAnnotationLabel } from '@renderer/components/annotations/InlineAnnotationLabel'
 
-export function RelationEdge(props: EdgeProps) {
+export const RelationEdge = (props: EdgeProps) => {
   const selected = useAnnotationInteraction(
     (state) =>
       state.selected?.kind === 'relation' &&

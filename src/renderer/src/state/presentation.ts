@@ -6,11 +6,11 @@ import {
   type MindMapDocument,
   type PresentationStep,
 } from '@core'
-import { useEditor } from './editor'
-import type { SheetView } from './editorTypes'
-import { useSelection } from './selection'
-import { useSpatialView, type SpatialSheetView } from './spatial'
-import { useWorkspace } from './workspace'
+import { useEditor } from '@renderer/state/editor'
+import type { SheetView } from '@renderer/state/editorTypes'
+import { useSelection } from '@renderer/state/selection'
+import { useSpatialView, type SpatialSheetView } from '@renderer/state/spatial'
+import { useWorkspace } from '@renderer/state/workspace'
 
 interface PresentationSnapshot {
   history: HistoryState
@@ -48,19 +48,19 @@ export const usePresentation = create<PresentationState>(() => ({
 let unsubscribe: (() => void) | undefined
 
 /** Automatic routes are session state; only explicit step-builder commands save a route. */
-export function presentationSteps(document: MindMapDocument): readonly PresentationStep[] {
+export const presentationSteps = (document: MindMapDocument): readonly PresentationStep[] => {
   return document.presentation?.length
     ? document.presentation
     : getVisibleTopicIds(document).map((topicId) => ({ topicId }))
 }
 
-export function capturePresentationViewport(view: SheetView): void {
+export const capturePresentationViewport = (view: SheetView): void => {
   const state = usePresentation.getState()
   if (state.playing && state.snapshot && !state.snapshot.view)
     usePresentation.setState({ snapshot: { ...state.snapshot, view } })
 }
 
-export function showPresentationStep(index: number): void {
+export const showPresentationStep = (index: number): void => {
   let state = usePresentation.getState()
   if (!state.playing) {
     useEditor.getState().commitDraft()
@@ -120,7 +120,7 @@ export function showPresentationStep(index: number): void {
     )
 }
 
-export function stopPresentation(): void {
+export const stopPresentation = (): void => {
   const state = usePresentation.getState()
   unsubscribe?.()
   unsubscribe = undefined
@@ -179,10 +179,10 @@ export function stopPresentation(): void {
   })
 }
 
-export function presentationDocument(
+export const presentationDocument = (
   document: MindMapDocument,
   topicId: string | undefined,
-): MindMapDocument {
+): MindMapDocument => {
   if (!topicId || !document.topics[topicId]) return document
   let parent = getParentId(document, topicId)
   let topics = document.topics

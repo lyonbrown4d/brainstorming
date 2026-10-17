@@ -2,6 +2,41 @@
 
 使用 Node.js 24/26、pnpm 10.12.1。单 package 依赖通过冻结锁文件安装。Moon 依赖范围为 `@moonrepo/cli: ^2.6.1`，锁文件固定实际安装版本；不维护自制任务包装脚本。Vite 配置、Electron main/preload、共享 IPC 类型和测试均为 TypeScript。
 
+## 编码规范
+
+源码、测试、Storybook、工具配置和脚本使用 TypeScript。手写文件最多 300 行，空行与注释均计入；超出前按职责拆分。函数、React 组件、回调和普通方法统一使用箭头函数，命名函数写作 `const`；构造函数与 getter/setter 保留语言语法。断言函数显式标注变量的函数类型，函数初始化顺序不得依赖声明提升。
+
+项目内部导入、类型导入、再导出与动态导入统一使用 `@` 别名：
+
+| 别名                      | 目录                                   |
+| ------------------------- | -------------------------------------- |
+| `@core` / `@core/*`       | `src/core`                             |
+| `@formats` / `@formats/*` | `src/formats`                          |
+| `@layout` / `@layout/*`   | `src/layout`                           |
+| `@assets` / `@assets/*`   | `src/assets`                           |
+| `@main/*` / `@preload/*`  | `src/main` / `src/preload`             |
+| `@shared/*`               | `src/shared`                           |
+| `@renderer/*`             | `src/renderer/src`                     |
+| `@tests/*` / `@stories/*` | `tests` / `stories`                    |
+| `@project/*`              | 仓库根目录，仅用于工具配置等根目录模块 |
+
+```ts
+import type { MindMapDocument } from '@core'
+import { validateDocument } from '@core/validation'
+
+export const checkDocument: (value: unknown) => asserts value is MindMapDocument = (value) => {
+  validateDocument(value)
+}
+
+const loadSpatialCanvas = () => import('@renderer/components/spatial/SpatialCanvas')
+```
+
+第三方包和 Node 内置模块保留原包名；资源 URL、文件路径、测试目录和工具配置中的路径不受模块导入规则限制。`tsconfig.json` 是别名的唯一来源；Electron、浏览器、Vitest 和 Storybook 使用 Vite 8 内置的 `resolve.tsconfigPaths: true`，Playwright 使用 TypeScript 路径映射。`config/renderer.json` 共享预优化清单和 HTML 入口，配置文件读取这份数据，不依赖尚未生效的运行时模块别名。Core 的依赖边界仍由 ESLint 单独限制。
+
+实现前先检查现有依赖和成熟第三方库，优先复用通用能力，也可按需引入成熟库。选型核对维护状态、类型支持、许可证、Electron/浏览器兼容性、包体积和安全性；新增依赖使用 pnpm 并更新锁文件。自有代码主要承载主题树业务规则和必要集成。
+
+`pnpm lint` 检查相对模块导入、非箭头函数、单文件 300 行上限及新增 JavaScript 文件，`pnpm typecheck` 检查类型。shadcn/Dice UI 官方下载源码保持原样，沿用 ESLint 与 Prettier 的明确排除项，不手改或拆分上游组件。Husky 的 lint-staged 与 CI 继续执行这套规则；`tests/tooling/coding-standards.test.ts` 验证允许和拒绝的代码边界。
+
 ## 常用任务
 
 | 命令                                           | 用途                                            |

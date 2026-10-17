@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { applyCommand, validateDocument, type Command } from './index'
-import { extensionFixture } from './extension-test-fixture'
+import { applyCommand, validateDocument, type Command } from '@core'
+import { extensionFixture } from '@core/extension-test-fixture'
 
 describe('extension validation', () => {
   it.each<Command>([

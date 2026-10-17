@@ -1,18 +1,20 @@
-import type { MindMapDocument, Topic } from './types'
-import { validateDocumentExtensions } from './extension-references'
-import { validateLayoutKind, validateTopicMetadata } from './metadata-validation'
-import { validateTopicStyle } from './topic-style'
-import { validateDocumentContent, validateTopicContent } from './topic-content'
+import type { MindMapDocument, Topic } from '@core/types'
+import { validateDocumentExtensions } from '@core/extension-references'
+import { validateLayoutKind, validateTopicMetadata } from '@core/metadata-validation'
+import { validateTopicStyle } from '@core/topic-style'
+import { validateDocumentContent, validateTopicContent } from '@core/topic-content'
 
 const forbiddenIds = new Set(['__proto__', 'prototype', 'constructor'])
 
-export function assertId(id: unknown): asserts id is string {
+export const assertId: (id: unknown) => asserts id is string = (
+  id: unknown,
+): asserts id is string => {
   if (typeof id !== 'string' || id.trim().length === 0 || forbiddenIds.has(id)) {
     throw new Error('主题 ID 无效或使用了保留名称')
   }
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+const isRecord = (value: unknown): value is Record<string, unknown> => {
   return (
     typeof value === 'object' &&
     value !== null &&
@@ -21,11 +23,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   )
 }
 
-function own(record: Record<string, unknown>, key: string): unknown {
+const own = (record: Record<string, unknown>, key: string): unknown => {
   return Object.hasOwn(record, key) ? record[key] : undefined
 }
 
-function assertTopic(value: unknown, key: string): asserts value is Topic {
+const assertTopic: (value: unknown, key: string) => asserts value is Topic = (
+  value: unknown,
+  key: string,
+): asserts value is Topic => {
   if (!isRecord(value)) throw new Error(`主题 ${key} 的格式无效`)
   assertId(key)
   if (
@@ -46,7 +51,9 @@ function assertTopic(value: unknown, key: string): asserts value is Topic {
 }
 
 /** Validate the flat tree iteratively, including documents with thousands of levels. */
-export function validateDocument(value: unknown): asserts value is MindMapDocument {
+export const validateDocument: (value: unknown) => asserts value is MindMapDocument = (
+  value: unknown,
+): asserts value is MindMapDocument => {
   if (!isRecord(value) || own(value, 'format') !== 'trelyx') throw new Error('文件不是 Trelyx 文档')
   if (own(value, 'version') !== 1) throw new Error('不支持此 Trelyx 文档版本')
   if (

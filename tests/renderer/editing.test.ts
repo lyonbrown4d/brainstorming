@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { applyCommand, createDocument } from '../../src/core'
-import { useEditor } from '../../src/renderer/src/state/editor'
+import { applyCommand, createDocument } from '@core'
+import { useEditor } from '@renderer/state/editor'
 import {
   deleteSelectedTopics,
   moveSelectedTopics,
@@ -8,15 +8,15 @@ import {
   selectedTopicIds,
   setSelectedTopics,
   updateSelectedStyle,
-} from '../../src/renderer/src/state/selection'
+} from '@renderer/state/selection'
 import {
   currentSearchResults,
   replaceSearchResults,
   revealSearchMatch,
   useSearch,
-} from '../../src/renderer/src/state/search'
+} from '@renderer/state/search'
 
-function fixture() {
+const fixture = () => {
   let document = createDocument('路线')
   for (const [id, parentId, title] of [
     ['a', 'root', 'Alpha alpha'],

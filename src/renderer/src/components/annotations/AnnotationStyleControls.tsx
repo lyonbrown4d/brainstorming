@@ -1,14 +1,20 @@
 import { useState } from 'react'
 import { Popover } from 'radix-ui'
 import { Paintbrush, Trash2 } from 'lucide-react'
-import { useEditor } from '../../state/editor'
-import { useAnnotationInteraction } from '../../state/annotationInteraction'
-import { Button } from '../ui/button'
-import { Input } from '../ui/input'
-import { FieldSelect } from '../FieldSelect'
-import { runAnnotationCommand } from './commands'
+import { useEditor } from '@renderer/state/editor'
+import { useAnnotationInteraction } from '@renderer/state/annotationInteraction'
+import { Button } from '@renderer/components/ui/button'
+import { Input } from '@renderer/components/ui/input'
+import { FieldSelect } from '@renderer/components/FieldSelect'
+import { runAnnotationCommand } from '@renderer/components/annotations/commands'
 
-function AnnotationStyleForm({ id, kind }: { id: string; kind: 'relation' | 'group' | 'callout' }) {
+const AnnotationStyleForm = ({
+  id,
+  kind,
+}: {
+  id: string
+  kind: 'relation' | 'group' | 'callout'
+}) => {
   const document = useEditor((state) => state.history.document)
   const item =
     kind === 'relation'
@@ -102,7 +108,7 @@ function AnnotationStyleForm({ id, kind }: { id: string; kind: 'relation' | 'gro
     </form>
   )
 }
-export function AnnotationStyleControls() {
+export const AnnotationStyleControls = () => {
   const selection = useAnnotationInteraction((state) => state.selected)
   const sheetId = useEditor((state) => state.activeSheetId)
   if (selection?.sheetId !== sheetId) return null

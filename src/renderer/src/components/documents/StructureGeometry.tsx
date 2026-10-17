@@ -6,17 +6,17 @@ import { layoutDecorationPath } from '@shared/layout-geometry'
 
 type StructureFlowEdge = Edge<{ path: string }, 'structure'>
 
-export function StructureEdge({ id, data, style }: EdgeProps<StructureFlowEdge>) {
+export const StructureEdge = ({ id, data, style }: EdgeProps<StructureFlowEdge>) => {
   return <BaseEdge id={id} path={data?.path ?? ''} style={style} interactionWidth={0} />
 }
 
-export function StructureGeometry({
+export const StructureGeometry = ({
   document,
   decorations,
 }: {
   document: MindMapDocument
   decorations: readonly LayoutDecoration[]
-}) {
+}) => {
   return (
     <ViewportPortal>
       <svg

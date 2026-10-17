@@ -1,9 +1,9 @@
-import { assertNonRoot, deleteTopics, moveTopics } from './selection-commands'
-import { requireTopic } from './tree'
-import type { Command, MindMapDocument } from './types'
-import { assertId } from './validation'
+import { assertNonRoot, deleteTopics, moveTopics } from '@core/selection-commands'
+import { requireTopic } from '@core/tree'
+import type { Command, MindMapDocument } from '@core/types'
+import { assertId } from '@core/validation'
 
-function structuralParent(document: MindMapDocument, topicId: string): string {
+const structuralParent = (document: MindMapDocument, topicId: string): string => {
   requireTopic(document, topicId)
   const parentId = assertNonRoot(document, topicId)
   if (document.floatingIds?.includes(topicId)) throw new Error('游离主题不支持此结构操作')
@@ -11,10 +11,10 @@ function structuralParent(document: MindMapDocument, topicId: string): string {
 }
 
 /** Wrap one existing branch without changing topic IDs or annotation endpoints. */
-export function insertParentTopic(
+export const insertParentTopic = (
   document: MindMapDocument,
   command: Extract<Command, { type: 'insertParentTopic' }>,
-): MindMapDocument {
+): MindMapDocument => {
   const parentId = structuralParent(document, command.topicId)
   assertId(command.id)
   if (Object.hasOwn(document.topics, command.id)) throw new Error(`主题 ${command.id} 已存在`)
@@ -42,7 +42,7 @@ export function insertParentTopic(
 }
 
 /** Promote children into their parent's slot, then prune only the removed topic's references. */
-export function removeTopicOnly(document: MindMapDocument, topicId: string): MindMapDocument {
+export const removeTopicOnly = (document: MindMapDocument, topicId: string): MindMapDocument => {
   const parentId = structuralParent(document, topicId)
   const topic = requireTopic(document, topicId)
   const parent = requireTopic(document, parentId)

@@ -1,23 +1,23 @@
 import { DOMParser, type Node as XmlNode } from '@xmldom/xmldom'
-import { validateDocumentAsset, type DocumentAsset, type Topic, type TopicImage } from '../../core'
-import { createAsset, imageDimensions, safeAssetName } from '../../assets'
-import { ASSET_LIMITS } from '../trelyx/assets'
-import type { SourceRecord, Warnings } from './common'
+import { validateDocumentAsset, type DocumentAsset, type Topic, type TopicImage } from '@core'
+import { createAsset, imageDimensions, safeAssetName } from '@assets'
+import { ASSET_LIMITS } from '@formats/trelyx/assets'
+import type { SourceRecord, Warnings } from '@formats/xmind/common'
 
-function object(value: unknown): SourceRecord | undefined {
+const object = (value: unknown): SourceRecord | undefined => {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
     ? (value as SourceRecord)
     : undefined
 }
 
-function plain(value: unknown): string | undefined {
+const plain = (value: unknown): string | undefined => {
   if (typeof value === 'string') return value
   const source = object(value)
   return typeof source?.content === 'string' ? source.content : undefined
 }
 
 /** Read rich notes as text only; no third-party markup reaches the renderer. */
-function richText(value: unknown): string {
+const richText = (value: unknown): string => {
   const text = plain(value)
   if (text !== undefined) {
     if (!text.includes('<')) return text
@@ -49,7 +49,7 @@ function richText(value: unknown): string {
     .trimEnd()
 }
 
-function notes(value: unknown, warnings: Warnings): string | undefined {
+const notes = (value: unknown, warnings: Warnings): string | undefined => {
   if (value === undefined) return undefined
   const source = object(value)
   const content = plain(source?.plain)
@@ -73,7 +73,7 @@ function notes(value: unknown, warnings: Warnings): string | undefined {
   return undefined
 }
 
-function embeddedPath(value: unknown): string | undefined {
+const embeddedPath = (value: unknown): string | undefined => {
   if (typeof value !== 'string') return undefined
   let path: string
   try {
@@ -97,7 +97,7 @@ export class EmbeddedContent {
     private readonly warnings: Warnings,
   ) {}
 
-  topic(source: SourceRecord): Pick<Topic, 'notes' | 'image' | 'attachments'> {
+  topic = (source: SourceRecord): Pick<Topic, 'notes' | 'image' | 'attachments'> => {
     const text = notes(source.notes, this.warnings)
     const result: { notes?: string; image?: TopicImage; attachments?: string[] } = {}
     if (text !== undefined) {
@@ -115,12 +115,12 @@ export class EmbeddedContent {
     return result
   }
 
-  resource(
+  resource = (
     value: unknown,
     image: boolean,
     name?: unknown,
     mimeType?: unknown,
-  ): DocumentAsset | undefined {
+  ): DocumentAsset | undefined => {
     const kind = image ? '图片' : '附件或外部链接'
     const path = embeddedPath(value)
     const bytes = path ? this.entries.get(path) : undefined

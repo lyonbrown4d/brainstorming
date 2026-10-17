@@ -1,10 +1,16 @@
-import { DialogContent } from './DialogContent'
+import { DialogContent } from '@renderer/components/DialogContent'
 import { FileCheck2, X } from 'lucide-react'
-import { useEditor } from '../state/editor'
-import { Button } from './ui/button'
-import { Dialog, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
+import { useEditor } from '@renderer/state/editor'
+import { Button } from '@renderer/components/ui/button'
+import {
+  Dialog,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@renderer/components/ui/dialog'
 
-export function ImportNotice() {
+export const ImportNotice = () => {
   const report = useEditor((state) => state.importReport)
   const path = useEditor((state) => state.path)
   if (!report) return null

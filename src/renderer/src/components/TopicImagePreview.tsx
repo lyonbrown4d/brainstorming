@@ -1,11 +1,17 @@
-import { DialogContent } from './DialogContent'
+import { DialogContent } from '@renderer/components/DialogContent'
 import type { TopicImage as TopicImageData } from '@core'
 import { Expand } from 'lucide-react'
-import { TopicImage } from './TopicImage'
-import { Button } from './ui/button'
-import { Dialog, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
+import { TopicImage } from '@renderer/components/TopicImage'
+import { Button } from '@renderer/components/ui/button'
+import {
+  Dialog,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@renderer/components/ui/dialog'
 
-export function TopicImagePreview({ image }: { image: TopicImageData }) {
+export const TopicImagePreview = ({ image }: { image: TopicImageData }) => {
   return (
     <Dialog>
       <DialogTrigger asChild>

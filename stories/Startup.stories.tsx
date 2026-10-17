@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import startupHtml from '../src/renderer/splash.html?raw'
-import startupStyles from '../src/renderer/src/styles/ui.css?inline'
-import { showStartupIssue } from '../src/renderer/src/startupStatus'
+import startupHtml from '@project/src/renderer/splash.html?raw'
+import startupStyles from '@renderer/styles/ui.css?inline'
+import { showStartupIssue } from '@renderer/startupStatus'
 
 // Preview the actual pre-React markup rather than maintaining a second React copy.
 const preview = startupHtml

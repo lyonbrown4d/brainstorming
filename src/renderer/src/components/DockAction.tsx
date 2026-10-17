@@ -1,6 +1,6 @@
 import type { ComponentProps, ReactNode } from 'react'
-import { cn } from '../lib/utils'
-import { Button } from './ui/button'
+import { cn } from '@renderer/lib/utils'
+import { Button } from '@renderer/components/ui/button'
 
 type DockActionProps = ComponentProps<typeof Button> & {
   caption: string
@@ -8,7 +8,7 @@ type DockActionProps = ComponentProps<typeof Button> & {
 }
 
 /** Canvas action cell. The caption is part of the button's stable hit target. */
-export function DockAction({ caption, children, className, ...props }: DockActionProps) {
+export const DockAction = ({ caption, children, className, ...props }: DockActionProps) => {
   return (
     <Button
       variant="ghost"

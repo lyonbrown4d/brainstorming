@@ -1,22 +1,22 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createDocument } from '../../src/core'
-import { decodeTrelyx, encodeTrelyx } from '../../src/formats/trelyx'
+import { createDocument } from '@core'
+import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx'
 import {
   beginCreation,
   cancelCreation,
   createFromRequest,
   exploreExample,
   showWorkspaceHome,
-} from '../../src/renderer/src/state/creation'
-import { isDirty, useEditor } from '../../src/renderer/src/state/editor'
-import { newDocument } from '../../src/renderer/src/state/files'
+} from '@renderer/state/creation'
+import { isDirty, useEditor } from '@renderer/state/editor'
+import { newDocument } from '@renderer/state/files'
 import {
   browserPasswordFor,
   resetBrowserPassword,
   setBrowserPassword,
-} from '../../src/renderer/src/state/password'
-import { enterWorkspaceEditor, useWorkspace } from '../../src/renderer/src/state/workspace'
-import { useSearch } from '../../src/renderer/src/state/search'
+} from '@renderer/state/password'
+import { enterWorkspaceEditor, useWorkspace } from '@renderer/state/workspace'
+import { useSearch } from '@renderer/state/search'
 
 const discardPrompt = vi.fn(() => true)
 const request = { title: ' 新的计划 ', layout: 'brace-left', template: 'blank' } as const
@@ -32,7 +32,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-function dirty() {
+const dirty = () => {
   useEditor.getState().command({ type: 'renameTopic', topicId: 'root', title: '未保存的内容' })
 }
 

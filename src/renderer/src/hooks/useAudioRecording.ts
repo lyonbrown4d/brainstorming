@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { persistRecordedAudio } from '../state/recordedAudio'
-import { AudioRecordingSession } from '../state/audioRecording'
-import { useEditor } from '../state/editor'
+import { persistRecordedAudio } from '@renderer/state/recordedAudio'
+import { AudioRecordingSession } from '@renderer/state/audioRecording'
+import { useEditor } from '@renderer/state/editor'
 
-export function useAudioRecording(topicId: string) {
+export const useAudioRecording = (topicId: string) => {
   const [status, setStatus] = useState<'idle' | 'requesting' | 'recording' | 'saving'>('idle')
   const [message, setMessage] = useState<string | null>(null)
   const [seconds, setSeconds] = useState(0)

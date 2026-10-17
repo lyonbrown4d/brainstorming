@@ -1,6 +1,6 @@
 import { open } from 'node:fs/promises'
 export const MAX_FILE_BYTES = 32 * 1024 * 1024
-export async function readDocumentBytes(path: string): Promise<Uint8Array> {
+export const readDocumentBytes = async (path: string): Promise<Uint8Array> => {
   const handle = await open(path, 'r')
   try {
     if ((await handle.stat()).size > MAX_FILE_BYTES) throw new Error('文件超过 32 MiB')

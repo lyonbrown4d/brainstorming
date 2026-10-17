@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import type { TopicMetadata, TopicTask } from '@core'
-import { useEditor } from '../../state/editor'
-import { Button } from '../ui/button'
-import { Input } from '../ui/input'
-import { FieldSelect } from '../FieldSelect'
-import { setMetadataField } from './commands'
+import { useEditor } from '@renderer/state/editor'
+import { Button } from '@renderer/components/ui/button'
+import { Input } from '@renderer/components/ui/input'
+import { FieldSelect } from '@renderer/components/FieldSelect'
+import { setMetadataField } from '@renderer/components/metadata/commands'
 
-export function TaskPanel({ topicId, metadata }: { topicId: string; metadata: TopicMetadata }) {
+export const TaskPanel = ({ topicId, metadata }: { topicId: string; metadata: TopicMetadata }) => {
   const document = useEditor((state) => state.history.document)
   const task = metadata.task
   const [done, setDone] = useState(task?.done ?? false)

@@ -6,9 +6,9 @@ import {
   createWorkbook,
   validateWorkbook,
   type MindMapWorkbook,
-} from './index'
+} from '@core'
 
-function fixture(): MindMapWorkbook {
+const fixture = (): MindMapWorkbook => {
   const first = createWorkbook(createDocument('First', 'first'))
   const second = applyCommand(createDocument('Second', 'second'), {
     type: 'addTopic',

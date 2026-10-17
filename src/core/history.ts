@@ -1,21 +1,21 @@
-import { applyCommand } from './commands'
-import type { Command, HistoryState, MindMapDocument } from './types'
-import { validateDocument } from './validation'
+import { applyCommand } from '@core/commands'
+import type { Command, HistoryState, MindMapDocument } from '@core/types'
+import { validateDocument } from '@core/validation'
 
 const HISTORY_LIMIT = 100
 
-export function createHistory(document: MindMapDocument): HistoryState {
+export const createHistory = (document: MindMapDocument): HistoryState => {
   validateDocument(document)
   return { document, past: [], future: [] }
 }
 
-export function executeCommand(history: HistoryState, command: Command): HistoryState {
+export const executeCommand = (history: HistoryState, command: Command): HistoryState => {
   const document = applyCommand(history.document, command)
   if (document === history.document) return history
   return { document, past: [...history.past, history.document].slice(-HISTORY_LIMIT), future: [] }
 }
 
-export function undo(history: HistoryState): HistoryState {
+export const undo = (history: HistoryState): HistoryState => {
   const document = history.past.at(-1)
   return document === undefined
     ? history
@@ -26,7 +26,7 @@ export function undo(history: HistoryState): HistoryState {
       }
 }
 
-export function redo(history: HistoryState): HistoryState {
+export const redo = (history: HistoryState): HistoryState => {
   const document = history.future[0]
   return document === undefined
     ? history

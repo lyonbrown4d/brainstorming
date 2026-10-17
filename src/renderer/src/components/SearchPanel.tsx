@@ -1,13 +1,19 @@
 import { useMemo, useState } from 'react'
 import { searchWorkbook, type SearchMatch } from '@core'
-import { useEditor } from '../state/editor'
-import { isCompositionKey } from '../state/keyboard'
-import { replaceSearchResults, revealSearchMatch, useSearch } from '../state/search'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
+import { useEditor } from '@renderer/state/editor'
+import { isCompositionKey } from '@renderer/state/keyboard'
+import { replaceSearchResults, revealSearchMatch, useSearch } from '@renderer/state/search'
+import { Button } from '@renderer/components/ui/button'
+import { Input } from '@renderer/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@renderer/components/ui/dialog'
 
-export function SearchPanel() {
+export const SearchPanel = () => {
   const search = useSearch()
   const workbook = useEditor((state) => state.workbook)
   const sheetId = useEditor((state) => state.activeSheetId)

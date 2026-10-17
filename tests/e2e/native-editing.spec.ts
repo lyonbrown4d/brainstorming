@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
-import { openExample } from './workspace'
-import { dockAction } from './dock'
+import { openExample } from '@tests/e2e/workspace'
+import { dockAction } from '@tests/e2e/dock'
 
 for (const mode of ['2d', '3d'] as const) {
   test(`${mode} 选择与文字编辑分开，Space 续写、文本选择删除和 Enter 确认`, async ({ page }) => {

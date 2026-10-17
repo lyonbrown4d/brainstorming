@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { MindMapDocument } from '@core'
-import type { CanvasDrop } from '../lib/canvasDrop'
+import type { CanvasDrop } from '@renderer/lib/canvasDrop'
 
 export interface CanvasDragInteraction {
   readonly token: symbol
@@ -15,17 +15,17 @@ export const useCanvasInteraction = create<{ drag: CanvasDragInteraction | null 
   drag: null,
 }))
 
-export function beginCanvasDrag(
+export const beginCanvasDrag = (
   document: MindMapDocument,
   sheetId: string,
   roots: readonly string[],
-): symbol {
+): symbol => {
   const token = Symbol('canvas-drag')
   useCanvasInteraction.setState({ drag: { token, document, sheetId, roots, drop: null } })
   return token
 }
 
-export function updateCanvasDrag(token: symbol, drop: CanvasDrop | undefined): void {
+export const updateCanvasDrag = (token: symbol, drop: CanvasDrop | undefined): void => {
   const drag = useCanvasInteraction.getState().drag
   if (drag?.token !== token) return
   const previous = drag.drop
@@ -39,12 +39,12 @@ export function updateCanvasDrag(token: symbol, drop: CanvasDrop | undefined): v
   useCanvasInteraction.setState({ drag: { ...drag, drop: drop ?? null } })
 }
 
-export function clearCanvasDrag(token: symbol): void {
+export const clearCanvasDrag = (token: symbol): void => {
   if (useCanvasInteraction.getState().drag?.token === token)
     useCanvasInteraction.setState({ drag: null })
 }
 
-export function canvasDragMessage(drag: CanvasDragInteraction): string {
+export const canvasDragMessage = (drag: CanvasDragInteraction): string => {
   const { document, roots, drop } = drag
   if (!drop)
     return roots.every((id) => document.floatingIds?.includes(id))

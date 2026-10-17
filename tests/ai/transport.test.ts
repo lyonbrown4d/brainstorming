@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { boundedAIFetch } from '../../src/main/ai/transport'
+import { boundedAIFetch } from '@main/ai/transport'
 
 describe('AI response transport bounds', () => {
   it('only sends POST to the configured completion endpoint and disables redirects', async () => {

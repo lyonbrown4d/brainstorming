@@ -1,8 +1,8 @@
-import type { LayoutDecoration, LayoutEdge, LayoutNode } from '../layout/types'
-import type { MindMapDocument } from '../core'
+import type { LayoutDecoration, LayoutEdge, LayoutNode } from '@layout/types'
+import type { MindMapDocument } from '@core'
 
 /** Structural view changes reframe the camera; typing and appearance changes do not. */
-export function documentStructureKey(document: MindMapDocument): string {
+export const documentStructureKey = (document: MindMapDocument): string => {
   return `${document.settings?.layout ?? 'map'}:${Object.values(document.topics)
     .filter((topic) => topic.structure !== undefined)
     .map((topic) => `${topic.id}/${topic.structure}`)
@@ -10,12 +10,12 @@ export function documentStructureKey(document: MindMapDocument): string {
 }
 
 /** Shared by the editable canvas and full-sheet export, in layout coordinates. */
-export function layoutEdgePath(
+export const layoutEdgePath = (
   edge: LayoutEdge,
   source: LayoutNode,
   target: LayoutNode,
   straight = false,
-): string {
+): string => {
   if (edge.routing === 'hidden') return ''
   if (edge.waypoints?.length)
     return edge.waypoints.map(({ x, y }, index) => `${index ? 'L' : 'M'} ${x} ${y}`).join(' ')
@@ -42,7 +42,7 @@ export function layoutEdgePath(
     : `M ${x1} ${y1} C ${x1} ${my}, ${x2} ${my}, ${x2} ${y2}`
 }
 
-export function layoutDecorationPath(decoration: LayoutDecoration): string {
+export const layoutDecorationPath = (decoration: LayoutDecoration): string => {
   const { x, y, width, height, kind, direction } = decoration
   if (kind === 'spine' || kind === 'grid-line') return `M ${x} ${y} L ${x + width} ${y + height}`
   if (kind === 'cell') return ''

@@ -1,17 +1,21 @@
 import { Popover } from 'radix-ui'
 import { Filter } from 'lucide-react'
-import { useEditor } from '../../state/editor'
-import { revealSearchMatch } from '../../state/search'
-import { useSpatialView } from '../../state/spatial'
-import { markerOptions } from '../metadata/markers'
-import { Button } from '../ui/button'
-import { Input } from '../ui/input'
-import { FieldSelect } from '../FieldSelect'
-import { defaultTopicFilters, filterTopics, useTopicFilters } from './filterTopics'
+import { useEditor } from '@renderer/state/editor'
+import { revealSearchMatch } from '@renderer/state/search'
+import { useSpatialView } from '@renderer/state/spatial'
+import { markerOptions } from '@renderer/components/metadata/markers'
+import { Button } from '@renderer/components/ui/button'
+import { Input } from '@renderer/components/ui/input'
+import { FieldSelect } from '@renderer/components/FieldSelect'
+import {
+  defaultTopicFilters,
+  filterTopics,
+  useTopicFilters,
+} from '@renderer/components/documents/filterTopics'
 
 const ALL = `trelyx:any:${'0'.repeat(65)}`
 
-export function TopicFilter() {
+export const TopicFilter = () => {
   const document = useEditor((state) => state.history.document)
   const selectedId = useEditor((state) => state.selectedId)
   const sheetId = useEditor((state) => state.activeSheetId)

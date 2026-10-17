@@ -1,15 +1,15 @@
-import { useEditor } from '../state/editor'
-import { usePresentation } from '../state/presentation'
+import { useEditor } from '@renderer/state/editor'
+import { usePresentation } from '@renderer/state/presentation'
 
 /** Panels cover the canvas without resizing its rendering surface. */
-export function useWorkbenchInsets() {
+export const useWorkbenchInsets = () => {
   const outline = useEditor((state) => state.outlineOpen)
   const inspector = useEditor((state) => state.inspectorOpen)
   const playing = usePresentation((state) => state.playing)
   return { left: !playing && outline ? 216 : 0, right: !playing && inspector ? 256 : 0 }
 }
 
-export function canvasFitPadding() {
+export const canvasFitPadding = () => {
   const state = useEditor.getState()
   const playing = usePresentation.getState().playing
   return {

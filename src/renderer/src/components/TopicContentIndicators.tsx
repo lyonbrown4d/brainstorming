@@ -1,9 +1,9 @@
 import { FileText, Paperclip } from 'lucide-react'
-import { useEditor } from '../state/editor'
-import { Button } from './ui/button'
-import { Badge } from './ui/badge'
+import { useEditor } from '@renderer/state/editor'
+import { Button } from '@renderer/components/ui/button'
+import { Badge } from '@renderer/components/ui/badge'
 
-export function TopicContentIndicators({
+export const TopicContentIndicators = ({
   topicId,
   hasNotes,
   attachmentCount,
@@ -11,7 +11,7 @@ export function TopicContentIndicators({
   topicId: string
   hasNotes: boolean
   attachmentCount: number
-}) {
+}) => {
   if (!hasNotes && attachmentCount === 0) return null
   const openInspector = (): void => {
     useEditor.getState().select(topicId)

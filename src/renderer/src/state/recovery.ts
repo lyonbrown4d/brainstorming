@@ -5,7 +5,7 @@ import {
   requestPassword,
   setBrowserPassword,
   useFileSecurityState,
-} from './password'
+} from '@renderer/state/password'
 
 export const RECOVERY_KEY = 'trelyx.recovery.native-v1'
 const store = createStore('trelyx', 'recovery')
@@ -13,7 +13,7 @@ interface EncryptedRecovery {
   readonly encrypted: true
   readonly bytes: Uint8Array
 }
-function encryptedRecovery(value: unknown): value is EncryptedRecovery {
+const encryptedRecovery = (value: unknown): value is EncryptedRecovery => {
   return (
     typeof value === 'object' &&
     value !== null &&
@@ -25,16 +25,16 @@ function encryptedRecovery(value: unknown): value is EncryptedRecovery {
 }
 let pendingPassword: { documentId: string; password: string } | null = null
 let recoveryQueue: Promise<void> = Promise.resolve()
-export function adoptBrowserRecoveryPassword(documentId: string): void {
+export const adoptBrowserRecoveryPassword = (documentId: string): void => {
   if (pendingPassword?.documentId === documentId)
     setBrowserPassword(documentId, pendingPassword.password, true)
   pendingPassword = null
 }
-export async function readBrowserRecovery(): Promise<string | null> {
+export const readBrowserRecovery = async (): Promise<string | null> => {
   const contents: unknown = await get(RECOVERY_KEY, store)
   if (contents === undefined) return null
   if (encryptedRecovery(contents)) {
-    const { decryptTrelyx } = await import('../../../formats/encrypted')
+    const { decryptTrelyx } = await import('@formats/encrypted')
     let error: string | undefined
     for (let attempt = 0; attempt < 32; attempt += 1) {
       const password = await requestPassword(
@@ -62,10 +62,10 @@ export async function readBrowserRecovery(): Promise<string | null> {
   deserializeWorkbook(contents)
   return contents
 }
-async function writeNow(contents: string, password: string | null): Promise<void> {
+const writeNow = async (contents: string, password: string | null): Promise<void> => {
   const workbook = deserializeWorkbook(contents)
   if (password !== null) {
-    const { encryptTrelyx } = await import('../../../formats/encrypted')
+    const { encryptTrelyx } = await import('@formats/encrypted')
     await set(
       RECOVERY_KEY,
       {
@@ -76,20 +76,20 @@ async function writeNow(contents: string, password: string | null): Promise<void
     )
   } else await set(RECOVERY_KEY, contents, store)
 }
-export function writeBrowserRecovery(contents: string): Promise<void> {
+export const writeBrowserRecovery = (contents: string): Promise<void> => {
   const password = browserPasswordFor(deserializeWorkbook(contents).id)
   const write = recoveryQueue.then(() => writeNow(contents, password))
   recoveryQueue = write.catch(() => undefined)
   return write
 }
-async function protectNow(
+const protectNow = async (
   documentId: string,
   previous: string | null,
   password: string | null,
-): Promise<void> {
+): Promise<void> => {
   const contents: unknown = await get(RECOVERY_KEY, store)
   if (contents === undefined) return
-  const { decryptTrelyx, encryptTrelyx } = await import('../../../formats/encrypted')
+  const { decryptTrelyx, encryptTrelyx } = await import('@formats/encrypted')
   if (encryptedRecovery(contents) && previous === null) return
   const workbook =
     encryptedRecovery(contents) && previous !== null
@@ -110,16 +110,16 @@ async function protectNow(
     store,
   )
 }
-export function protectBrowserRecovery(
+export const protectBrowserRecovery = (
   documentId: string,
   previous: string | null,
   password: string | null,
-): Promise<void> {
+): Promise<void> => {
   const change = recoveryQueue.then(() => protectNow(documentId, previous, password))
   recoveryQueue = change.catch(() => undefined)
   return change
 }
-export async function clearBrowserRecovery(): Promise<void> {
+export const clearBrowserRecovery = async (): Promise<void> => {
   await recoveryQueue
   await del(RECOVERY_KEY, store)
 }

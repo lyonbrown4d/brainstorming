@@ -1,8 +1,8 @@
 import { getParentId, type Command } from '@core'
-import { useEditor } from './editor'
+import { useEditor } from '@renderer/state/editor'
 
 /** Reveal a folded parent and create its child as a single undoable operation. */
-export function addTopic(kind: 'child' | 'sibling'): void {
+export const addTopic = (kind: 'child' | 'sibling'): void => {
   useEditor.getState().commitDraft()
   if (useEditor.getState().editingId) return
   const {

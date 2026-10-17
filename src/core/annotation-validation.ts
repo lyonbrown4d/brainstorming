@@ -4,11 +4,13 @@ import type {
   TopicCallout,
   PresentationStep,
   FloatingPosition,
-} from './extensions'
-import * as v from './extension-validation'
-import { assertId } from './validation'
+} from '@core/extensions'
+import * as v from '@core/extension-validation'
+import { assertId } from '@core/validation'
 
-export function validateRelation(value: unknown): asserts value is Relation {
+export const validateRelation: (value: unknown) => asserts value is Relation = (
+  value: unknown,
+): asserts value is Relation => {
   const relation = v.record(value, [
     'id',
     'from',
@@ -35,7 +37,9 @@ export function validateRelation(value: unknown): asserts value is Relation {
     v.oneOf(entry, ['none', 'end', 'both'])
   })
 }
-export function validateTopicGroup(value: unknown): asserts value is TopicGroup {
+export const validateTopicGroup: (value: unknown) => asserts value is TopicGroup = (
+  value: unknown,
+): asserts value is TopicGroup => {
   const group = v.record(value, ['id', 'topicIds', 'title', 'kind', 'color'])
   assertId(group.id)
   v.ids(group.topicIds, 512, 1)
@@ -45,21 +49,27 @@ export function validateTopicGroup(value: unknown): asserts value is TopicGroup 
   })
   v.optional(group, 'color', v.color)
 }
-export function validateTopicCallout(value: unknown): asserts value is TopicCallout {
+export const validateTopicCallout: (value: unknown) => asserts value is TopicCallout = (
+  value: unknown,
+): asserts value is TopicCallout => {
   const callout = v.record(value, ['id', 'topicId', 'text'])
   assertId(callout.id)
   assertId(callout.topicId)
   v.text(callout.text, 10_000)
 }
-export function validateFloatingPosition(value: unknown): asserts value is FloatingPosition {
+export const validateFloatingPosition: (value: unknown) => asserts value is FloatingPosition = (
+  value: unknown,
+): asserts value is FloatingPosition => {
   const position = v.record(value, ['x', 'y'])
   v.number(position.x, -1_000_000, 1_000_000)
   v.number(position.y, -1_000_000, 1_000_000)
 }
-function vector(value: unknown): void {
+const vector = (value: unknown): void => {
   for (const component of v.list(value, 3, 3)) v.number(component, -10_000_000, 10_000_000)
 }
-export function validatePresentationStep(value: unknown): asserts value is PresentationStep {
+export const validatePresentationStep: (value: unknown) => asserts value is PresentationStep = (
+  value: unknown,
+): asserts value is PresentationStep => {
   const step = v.record(value, ['topicId', 'camera'])
   assertId(step.topicId)
   v.optional(step, 'camera', (entry) => {

@@ -14,13 +14,13 @@ import {
 } from 'lexical'
 import { mergeRegister } from '@lexical/utils'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { usePresentation } from '../state/presentation'
-import { useEditor } from '../state/editor'
-import type { EditingSurface } from '../state/editorTypes'
-import { handleTopicNavigation, handleTopicShortcut } from '../state/editingShortcuts'
-import { isCompositionKey } from '../state/keyboard'
+import { usePresentation } from '@renderer/state/presentation'
+import { useEditor } from '@renderer/state/editor'
+import type { EditingSurface } from '@renderer/state/editorTypes'
+import { handleTopicNavigation, handleTopicShortcut } from '@renderer/state/editingShortcuts'
+import { isCompositionKey } from '@renderer/state/keyboard'
 
-export function TopicEditorPlugin({
+export const TopicEditorPlugin = ({
   id,
   title,
   surface,
@@ -30,7 +30,7 @@ export function TopicEditorPlugin({
   title: string
   surface: EditingSurface
   active: boolean
-}) {
+}) => {
   const [editor] = useLexicalComposerContext()
   const nativeActivation = useRef(false)
   const playing = usePresentation((state) => state.playing)

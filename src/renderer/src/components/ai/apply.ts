@@ -7,23 +7,17 @@ import {
   type MindMapWorkbook,
   type Topic,
 } from '@core'
-import {
-  AI_LIMITS,
-  assertAITree,
-  type AIContextTopic,
-  type AIMode,
-  type AITree,
-} from '../../../../shared/ai'
-import { useEditor } from '../../state/editor'
-import { truncateSheetName } from '../../../../core/workbook'
-import { validateBoundedWorkbook } from '../../../../formats/trelyx/validation'
+import { AI_LIMITS, assertAITree, type AIContextTopic, type AIMode, type AITree } from '@shared/ai'
+import { useEditor } from '@renderer/state/editor'
+import { truncateSheetName } from '@core/workbook'
+import { validateBoundedWorkbook } from '@formats/trelyx/validation'
 
 export interface AISnapshot {
   readonly workbook: MindMapWorkbook
   readonly sheetId: string
   readonly targetId: string
 }
-export function captureAISnapshot(): AISnapshot {
+export const captureAISnapshot = (): AISnapshot => {
   const state = useEditor.getState()
   state.commitDraft()
   const current = useEditor.getState()
@@ -34,7 +28,7 @@ export function captureAISnapshot(): AISnapshot {
     targetId: current.selectedId,
   }
 }
-export function aiContext(snapshot: AISnapshot, includeNotes: boolean): AIContextTopic[] {
+export const aiContext = (snapshot: AISnapshot, includeNotes: boolean): AIContextTopic[] => {
   const document = snapshot.workbook.sheets.find((sheet) => sheet.id === snapshot.sheetId)?.document
   if (!document) throw new Error('当前画布不存在')
   const result: AIContextTopic[] = []
@@ -55,7 +49,7 @@ export function aiContext(snapshot: AISnapshot, includeNotes: boolean): AIContex
   }
   return result
 }
-export function aiTreeDocument(tree: AITree): MindMapDocument {
+export const aiTreeDocument = (tree: AITree): MindMapDocument => {
   assertAITree(tree)
   const base = createDocument(tree.title, crypto.randomUUID())
   const topics: Record<string, Topic> = {}
@@ -75,12 +69,12 @@ export function aiTreeDocument(tree: AITree): MindMapDocument {
   validateDocument(document)
   return document
 }
-export function applyAIResult(
+export const applyAIResult = (
   snapshot: AISnapshot,
   tree: AITree,
   mode: AIMode,
   addSheet: (document: MindMapDocument) => boolean,
-): boolean {
+): boolean => {
   const state = useEditor.getState()
   if (
     state.workbook !== snapshot.workbook ||

@@ -1,9 +1,9 @@
 import { applyCommand, type DocumentAsset } from '@core'
-import { useEditor } from './editor'
+import { useEditor } from '@renderer/state/editor'
 
-async function selectBrowserAsset(
+const selectBrowserAsset = async (
   kind: 'image' | 'attachment' | 'audio',
-): Promise<DocumentAsset | null> {
+): Promise<DocumentAsset | null> => {
   const file = await new Promise<File | null>((resolve) => {
     const input = document.createElement('input')
     input.type = 'file'
@@ -21,7 +21,7 @@ async function selectBrowserAsset(
   if (file.size > 8 * 1024 * 1024) throw new Error('单个资源不能超过 8 MiB')
   const [buffer, { createAsset, imageDimensions }] = await Promise.all([
     file.arrayBuffer(),
-    import('../../../assets'),
+    import('@assets'),
   ])
   const asset = createAsset(new Uint8Array(buffer), file.name)
   if (kind === 'audio' && !asset.mimeType.startsWith('audio/'))
@@ -34,10 +34,10 @@ async function selectBrowserAsset(
   return asset
 }
 
-export async function importTopicAssets(
+export const importTopicAssets = async (
   topicId: string,
   kind: 'image' | 'attachment' | 'audio',
-): Promise<void> {
+): Promise<void> => {
   const state = useEditor.getState()
   if (state.busy) return
   state.commitDraft()
@@ -51,8 +51,8 @@ export async function importTopicAssets(
       : await selectBrowserAsset(kind)
     if (!asset) return
     const [{ encodeTrelyx }, { imageDimensions }] = await Promise.all([
-      import('../../../formats/trelyx'),
-      import('../../../assets'),
+      import('@formats/trelyx'),
+      import('@assets'),
     ])
     const current = useEditor.getState()
     if (
@@ -83,13 +83,13 @@ export async function importTopicAssets(
   }
 }
 
-export async function exportTopicAsset(asset: DocumentAsset): Promise<void> {
+export const exportTopicAsset = async (asset: DocumentAsset): Promise<void> => {
   if (useEditor.getState().busy) return
   useEditor.setState({ busy: true, error: null })
   try {
     if (window.trelyx) await window.trelyx.exportAsset(asset)
     else {
-      const { assetBytes, safeAssetName } = await import('../../../assets')
+      const { assetBytes, safeAssetName } = await import('@assets')
       const url = URL.createObjectURL(
         new Blob([new Uint8Array(assetBytes(asset)).buffer], { type: asset.mimeType }),
       )

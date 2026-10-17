@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useEditor } from '../state/editor'
-import { useAnnotationInteraction } from '../state/annotationInteraction'
-import { isCompositionKey } from '../state/keyboard'
+import { useEditor } from '@renderer/state/editor'
+import { useAnnotationInteraction } from '@renderer/state/annotationInteraction'
+import { isCompositionKey } from '@renderer/state/keyboard'
 
-function hasOpenPanel(): boolean {
+const hasOpenPanel = (): boolean => {
   return Boolean(
     document.querySelector(
       '[role="dialog"][data-state="open"], [role="menu"][data-state="open"], [role="listbox"][data-state="open"]',
@@ -11,7 +11,7 @@ function hasOpenPanel(): boolean {
   )
 }
 
-function isInteractionPinned(): boolean {
+const isInteractionPinned = (): boolean => {
   const state = useAnnotationInteraction.getState()
   return (
     Boolean(state.fromId) ||
@@ -21,7 +21,7 @@ function isInteractionPinned(): boolean {
   )
 }
 
-export function useDockToolbar() {
+export const useDockToolbar = () => {
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   const handle = useRef<HTMLButtonElement>(null)

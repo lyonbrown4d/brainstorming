@@ -1,21 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createDocument, createWorkbook, serializeWorkbook } from '../../src/core'
-import { isDirty, useEditor } from '../../src/renderer/src/state/editor'
-import { openDocument } from '../../src/renderer/src/state/files'
-import {
-  readRecoveryContents,
-  restoreBackup,
-} from '../../src/renderer/src/state/fileSecurityActions'
-import {
-  answerPassword,
-  resetBrowserPassword,
-  usePasswordPrompt,
-} from '../../src/renderer/src/state/password'
+import { createDocument, createWorkbook, serializeWorkbook } from '@core'
+import { isDirty, useEditor } from '@renderer/state/editor'
+import { openDocument } from '@renderer/state/files'
+import { readRecoveryContents, restoreBackup } from '@renderer/state/fileSecurityActions'
+import { answerPassword, resetBrowserPassword, usePasswordPrompt } from '@renderer/state/password'
 
 const contents = serializeWorkbook(
   createWorkbook(createDocument('Protected document', 'protected-book')),
 )
-function setup() {
+const setup = () => {
   const bridge = {
     openDocument: vi.fn(() =>
       Promise.resolve({
@@ -55,7 +48,7 @@ afterEach(() => {
   answerPassword(null)
   vi.unstubAllGlobals()
 })
-async function prompt(): Promise<void> {
+const prompt = async (): Promise<void> => {
   await vi.waitFor(() => {
     expect(usePasswordPrompt.getState().request).not.toBeNull()
   })

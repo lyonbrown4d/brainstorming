@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
-import { dismissStartupScreen } from '../startupStatus'
+import { dismissStartupScreen } from '@renderer/startupStatus'
 
 /** Keep the static splash until the application has committed and painted its first frame. */
-export function useStartupScreen(): void {
+export const useStartupScreen = (): void => {
   useEffect(() => {
     let secondFrame = 0
     const firstFrame = requestAnimationFrame(() => {

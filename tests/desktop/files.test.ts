@@ -2,12 +2,12 @@ import { mkdtemp, readFile, readdir, mkdir, rm, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { createDocument, createWorkbook, serializeWorkbook } from '../../src/core'
-import { encodeTrelyx } from '../../src/formats/trelyx'
-import { decodeFile } from '../../src/formats'
+import { createDocument, createWorkbook, serializeWorkbook } from '@core'
+import { encodeTrelyx } from '@formats/trelyx'
+import { decodeFile } from '@formats'
 import { zipSync, strToU8 } from 'fflate'
-import { OpenFileRequests } from '../../src/main/openFiles'
-import { atomicWrite, DocumentFiles, MAX_FILE_BYTES } from '../../src/main/files'
+import { OpenFileRequests } from '@main/openFiles'
+import { atomicWrite, DocumentFiles, MAX_FILE_BYTES } from '@main/files'
 
 let directory: string
 let files: DocumentFiles

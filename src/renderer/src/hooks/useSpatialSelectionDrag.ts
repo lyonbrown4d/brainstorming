@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useThree } from '@react-three/fiber'
-import { layoutDocument } from '../../../layout'
-import type { SpatialPoint } from '../../../layout/spatial'
-import { canvasDropCommand } from '../lib/canvasDrop'
-import { findSpatialDrop, spatialPointerTopic } from '../lib/spatialDrop'
+import { layoutDocument } from '@layout'
+import type { SpatialPoint } from '@layout/spatial'
+import { canvasDropCommand } from '@renderer/lib/canvasDrop'
+import { findSpatialDrop, spatialPointerTopic } from '@renderer/lib/spatialDrop'
 import {
   createSpatialDrag,
   previewSpatialDrag,
@@ -11,27 +11,31 @@ import {
   spatialDragDelta,
   spatialDragSelection,
   spatialRectangleSelection,
-} from '../lib/spatialDrag'
+} from '@renderer/lib/spatialDrag'
 import {
   bindSpatialDragEvents,
   type SpatialSelectionDragOptions,
   type SpatialSelectionGesture,
-} from '../lib/spatialDragGesture'
-import { useEditor } from '../state/editor'
-import { usePresentation } from '../state/presentation'
-import { selectedTopicIds, setSelectedTopics } from '../state/selection'
-import { useAnnotationInteraction } from '../state/annotationInteraction'
-import { beginCanvasDrag, clearCanvasDrag, updateCanvasDrag } from '../state/canvasInteraction'
+} from '@renderer/lib/spatialDragGesture'
+import { useEditor } from '@renderer/state/editor'
+import { usePresentation } from '@renderer/state/presentation'
+import { selectedTopicIds, setSelectedTopics } from '@renderer/state/selection'
+import { useAnnotationInteraction } from '@renderer/state/annotationInteraction'
+import {
+  beginCanvasDrag,
+  clearCanvasDrag,
+  updateCanvasDrag,
+} from '@renderer/state/canvasInteraction'
 
 /** Three.js owns projection/ray math; the application owns selection and one final command. */
-export function useSpatialSelectionDrag({
+export const useSpatialSelectionDrag = ({
   document,
   layout,
   focusIds,
   controls,
   enabled,
   onSelectionBox,
-}: SpatialSelectionDragOptions) {
+}: SpatialSelectionDragOptions) => {
   const { camera, gl, scene, invalidate } = useThree()
   const [preview, setPreview] = useState<{ ids: ReadonlySet<string>; delta: SpatialPoint } | null>(
     null,

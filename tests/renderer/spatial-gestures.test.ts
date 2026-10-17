@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { spatialWheelGesture } from '../../src/renderer/src/lib/spatialGestures'
+import { spatialWheelGesture } from '@renderer/lib/spatialGestures'
 
 const wheel = {
   deltaX: 12,

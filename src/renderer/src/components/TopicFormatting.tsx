@@ -1,11 +1,11 @@
 import { Bold, Italic, MoreHorizontal } from 'lucide-react'
 import { Popover } from 'radix-ui'
 import { type TopicStyle } from '@core'
-import { defaultTopicStyle } from '../lib/topicAppearance'
-import { useEditor } from '../state/editor'
-import { updateSelectedStyle } from '../state/selection'
-import { Button } from './ui/button'
-import { FieldSelect } from './FieldSelect'
+import { defaultTopicStyle } from '@renderer/lib/topicAppearance'
+import { useEditor } from '@renderer/state/editor'
+import { updateSelectedStyle } from '@renderer/state/selection'
+import { Button } from '@renderer/components/ui/button'
+import { FieldSelect } from '@renderer/components/FieldSelect'
 
 const fontSizes = Array.from({ length: 21 }, (_, index) => ({
   value: String(index + 12),
@@ -40,7 +40,7 @@ const textColors = [
   { value: '#ffffff', name: '白色' },
 ]
 
-function ColorPalette({
+const ColorPalette = ({
   colors,
   value,
   label,
@@ -50,7 +50,7 @@ function ColorPalette({
   value: string
   label: string
   onChange: (value: string) => void
-}) {
+}) => {
   return (
     <div className="color-palette flex items-center gap-2" role="group" aria-label={label}>
       {colors.map((color) => (
@@ -73,13 +73,13 @@ function ColorPalette({
   )
 }
 
-export function TopicFormatting({
+export const TopicFormatting = ({
   compact = false,
   topicId,
 }: {
   compact?: boolean
   topicId?: string
-}) {
+}) => {
   const document = useEditor((state) => state.history.document)
   const selectedId = useEditor((state) => state.selectedId)
   const topic = document.topics[topicId ?? selectedId]

@@ -1,11 +1,11 @@
 import { useId, useRef, useState } from 'react'
-import type { AIAPI, AISettings } from '../../../../shared/ai'
-import { Button } from '../ui/button'
-import { Checkbox } from '../ui/checkbox'
-import { Input } from '../ui/input'
-import { Label } from '../ui/label'
+import type { AIAPI, AISettings } from '@shared/ai'
+import { Button } from '@renderer/components/ui/button'
+import { Checkbox } from '@renderer/components/ui/checkbox'
+import { Input } from '@renderer/components/ui/input'
+import { Label } from '@renderer/components/ui/label'
 
-export function AISettingsForm({
+export const AISettingsForm = ({
   api,
   settings,
   onSave,
@@ -13,7 +13,7 @@ export function AISettingsForm({
   api: AIAPI
   settings: AISettings | null
   onSave: (value: AISettings) => void
-}) {
+}) => {
   const [baseURL, setBaseURL] = useState(settings?.baseURL ?? 'https://api.openai.com/v1')
   const [model, setModel] = useState(settings?.model ?? '')
   const [key, setKey] = useState('')

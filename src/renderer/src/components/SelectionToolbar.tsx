@@ -1,10 +1,10 @@
 import { useMemo } from 'react'
-import { useEditor } from '../state/editor'
-import { deleteSelectedTopics, moveSelectedTopics, useSelectedIds } from '../state/selection'
-import { Button } from './ui/button'
-import { FieldSelect } from './FieldSelect'
+import { useEditor } from '@renderer/state/editor'
+import { deleteSelectedTopics, moveSelectedTopics, useSelectedIds } from '@renderer/state/selection'
+import { Button } from '@renderer/components/ui/button'
+import { FieldSelect } from '@renderer/components/FieldSelect'
 
-export function SelectionToolbar() {
+export const SelectionToolbar = () => {
   const document = useEditor((state) => state.history.document)
   const selectedIds = useSelectedIds()
   const ids = useMemo(

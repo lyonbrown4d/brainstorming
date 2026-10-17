@@ -1,9 +1,9 @@
 import { Mic, Square, X } from 'lucide-react'
-import { useAudioRecording } from '../../hooks/useAudioRecording'
-import { useEditor } from '../../state/editor'
-import { Button } from '../ui/button'
+import { useAudioRecording } from '@renderer/hooks/useAudioRecording'
+import { useEditor } from '@renderer/state/editor'
+import { Button } from '@renderer/components/ui/button'
 
-export function AudioRecorder({ topicId }: { topicId: string }) {
+export const AudioRecorder = ({ topicId }: { topicId: string }) => {
   const recording = useAudioRecording(topicId)
   const busy = useEditor((state) => state.busy)
   return (

@@ -12,15 +12,15 @@ vi.mock('idb-keyval', () => ({
     return Promise.resolve()
   },
 }))
-import { createDocument, createWorkbook, serializeWorkbook } from '../../src/core'
-import { isEncryptedTrelyx } from '../../src/formats/encrypted'
+import { createDocument, createWorkbook, serializeWorkbook } from '@core'
+import { isEncryptedTrelyx } from '@formats/encrypted'
 import {
   readBrowserRecovery,
   writeBrowserRecovery,
   RECOVERY_KEY,
   protectBrowserRecovery,
   adoptBrowserRecoveryPassword,
-} from '../../src/renderer/src/state/recovery'
+} from '@renderer/state/recovery'
 import {
   answerPassword,
   browserPasswordFor,
@@ -28,7 +28,7 @@ import {
   setBrowserPassword,
   useFileSecurityState,
   usePasswordPrompt,
-} from '../../src/renderer/src/state/password'
+} from '@renderer/state/password'
 
 const workbook = createWorkbook(createDocument('Browser encrypted draft', 'browser-protected'))
 const contents = serializeWorkbook(workbook)
@@ -42,7 +42,7 @@ afterEach(() => {
   answerPassword(null)
   resetBrowserPassword()
 })
-function encryptedBytes(): Uint8Array {
+const encryptedBytes = (): Uint8Array => {
   const value = storage.get(RECOVERY_KEY)
   if (
     !value ||

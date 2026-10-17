@@ -1,6 +1,6 @@
-import { openExample } from './workspace'
+import { openExample } from '@tests/e2e/workspace'
 import { expect, test } from '@playwright/test'
-import { dockAction, openDock } from './dock'
+import { dockAction, openDock } from '@tests/e2e/dock'
 
 test.beforeEach(async ({ page }) => {
   await openExample(page)

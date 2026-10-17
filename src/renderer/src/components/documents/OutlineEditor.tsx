@@ -1,10 +1,10 @@
 import { useEffect } from 'react'
 import { ArrowDown, ArrowUp, ListTree, Plus, Trash2 } from 'lucide-react'
 import { getParentId } from '@core'
-import { useEditor } from '../../state/editor'
-import { runAnnotationCommand } from '../annotations/commands'
-import { TopicEditor } from '../TopicEditor'
-import { Button } from '../ui/button'
+import { useEditor } from '@renderer/state/editor'
+import { runAnnotationCommand } from '@renderer/components/annotations/commands'
+import { TopicEditor } from '@renderer/components/TopicEditor'
+import { Button } from '@renderer/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -12,9 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '../ui/dialog'
+} from '@renderer/components/ui/dialog'
 
-function OutlineEditorRow({ id, depth }: { id: string; depth: number }) {
+const OutlineEditorRow = ({ id, depth }: { id: string; depth: number }) => {
   const document = useEditor((state) => state.history.document)
   const active = useEditor((state) => state.editingId === id && state.editingSurface === 'outline')
   const topic = document.topics[id]
@@ -93,7 +93,7 @@ function OutlineEditorRow({ id, depth }: { id: string; depth: number }) {
     </div>
   )
 }
-export function OutlineEditor() {
+export const OutlineEditor = () => {
   const document = useEditor((state) => state.history.document)
   const rows: { id: string; depth: number }[] = [],
     stack = [document.rootId, ...(document.floatingIds ?? [])]

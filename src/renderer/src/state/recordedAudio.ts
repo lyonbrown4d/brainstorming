@@ -1,20 +1,20 @@
 import { applyCommand } from '@core'
-import { useEditor } from './editor'
+import { useEditor } from '@renderer/state/editor'
 
 export interface RecordingTarget {
   readonly workbookId: string
   readonly sheetId: string
   readonly topicId: string
 }
-export async function persistRecordedAudio(
+export const persistRecordedAudio = async (
   blob: Blob,
   target: RecordingTarget,
   isCurrent: () => boolean,
-): Promise<boolean> {
+): Promise<boolean> => {
   if (!blob.size || blob.size > 8 * 1024 * 1024) throw new Error('录音为空或超过 8 MiB')
   const [{ createAsset }, { encodeTrelyx }, buffer] = await Promise.all([
-    import('../../../assets'),
-    import('../../../formats/trelyx'),
+    import('@assets'),
+    import('@formats/trelyx'),
     blob.arrayBuffer(),
   ])
   const current = useEditor.getState()

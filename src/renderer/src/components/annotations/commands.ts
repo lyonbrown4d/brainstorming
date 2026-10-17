@@ -1,7 +1,7 @@
 import type { Command } from '@core'
-import { useEditor } from '../../state/editor'
+import { useEditor } from '@renderer/state/editor'
 
-export function runAnnotationCommand(command: Command): boolean {
+export const runAnnotationCommand = (command: Command): boolean => {
   const editor = useEditor.getState()
   if (editor.busy) return false
   editor.commitDraft()

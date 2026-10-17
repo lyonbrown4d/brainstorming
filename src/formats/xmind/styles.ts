@@ -1,5 +1,5 @@
-import type { TopicStyle } from '../../core'
-import { record, type SourceRecord, type Warnings } from './common'
+import type { TopicStyle } from '@core'
+import { record, type SourceRecord, type Warnings } from '@formats/xmind/common'
 
 type MutableStyle = { -readonly [Key in keyof TopicStyle]?: TopicStyle[Key] }
 
@@ -9,7 +9,7 @@ const shapes: Readonly<Record<string, NonNullable<TopicStyle['shape']>>> = {
   'org.xmind.topicShape.ellipse': 'ellipse',
 }
 
-export function importStyle(value: unknown, warnings: Warnings): TopicStyle | undefined {
+export const importStyle = (value: unknown, warnings: Warnings): TopicStyle | undefined => {
   if (value === undefined) return undefined
   const source = record(value, 'style')
   const properties = record(source.properties ?? {}, 'style.properties')
@@ -22,7 +22,7 @@ export function importStyle(value: unknown, warnings: Warnings): TopicStyle | un
   return Object.keys(result).length > 0 ? result : undefined
 }
 
-function mapProperty(style: MutableStyle, key: string, value: unknown): boolean {
+const mapProperty = (style: MutableStyle, key: string, value: unknown): boolean => {
   if ((key === 'fill' || key === 'color') && typeof value === 'string') {
     if (!/^#[\da-f]{6}$/i.test(value)) return false
     style[key] = value
@@ -56,7 +56,7 @@ function mapProperty(style: MutableStyle, key: string, value: unknown): boolean 
   return false
 }
 
-export function legacyStyleMap(value: SourceRecord): Map<string, unknown> {
+export const legacyStyleMap = (value: SourceRecord): Map<string, unknown> => {
   const result = new Map<string, unknown>()
   for (const group of ['styles', 'automatic-styles']) {
     const container = value[group]

@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test'
-import { dockAction } from './dock'
-import { openExample } from './workspace'
+import { dockAction } from '@tests/e2e/dock'
+import { openExample } from '@tests/e2e/workspace'
 
-async function createRelation(page: Page): Promise<void> {
+const createRelation = async (page: Page): Promise<void> => {
   await page.getByTestId('topic-vision').click()
   await dockAction(page, '关联线')
   await page.getByTestId('topic-experience').click()
@@ -11,7 +11,7 @@ async function createRelation(page: Page): Promise<void> {
   await input.press('Enter')
 }
 
-async function selectRelationLine(page: Page): Promise<void> {
+const selectRelationLine = async (page: Page): Promise<void> => {
   const line = page.locator('.react-flow__edge-relation .react-flow__edge-interaction')
   const point = await line.evaluate((element) => {
     const path = element as SVGPathElement

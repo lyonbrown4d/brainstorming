@@ -1,12 +1,12 @@
-import { layoutDecorationPath, layoutEdgePath } from '../shared/layout-geometry'
+import { layoutDecorationPath, layoutEdgePath } from '@shared/layout-geometry'
 import type {
   LayoutDecoration,
   LayoutDirection,
   LayoutEdge,
   LayoutNode,
   MindMapLayout,
-} from './types'
-import type { SpatialLayout, SpatialNode, SpatialPoint } from './spatial'
+} from '@layout/types'
+import type { SpatialLayout, SpatialNode, SpatialPoint } from '@layout/spatial'
 
 export interface SpatialEdge extends Omit<LayoutEdge, 'waypoints'> {
   /** SVG in world units, with SVG's downward Y axis. Three.js projects it with Y reversed. */
@@ -28,7 +28,7 @@ export interface SpatialDecoration {
   readonly path: string
 }
 
-function planarCard(node: SpatialNode): LayoutNode {
+const planarCard = (node: SpatialNode): LayoutNode => {
   return {
     id: node.id,
     x: node.position[0] - node.width / 2,
@@ -39,7 +39,7 @@ function planarCard(node: SpatialNode): LayoutNode {
   }
 }
 
-function anchor(node: SpatialNode, direction: LayoutDirection, source: boolean): SpatialPoint {
+const anchor = (node: SpatialNode, direction: LayoutDirection, source: boolean): SpatialPoint => {
   const sign = (direction === 'left' || direction === 'up' ? -1 : 1) * (source ? 1 : -1)
   return direction === 'left' || direction === 'right'
     ? [node.position[0] + (sign * node.width) / 2, node.position[1], node.position[2]]
@@ -47,12 +47,12 @@ function anchor(node: SpatialNode, direction: LayoutDirection, source: boolean):
 }
 
 /** Project existing planar routes/decorations, retaining their semantic geometry and logical edges. */
-export function projectSpatialGeometry(
+export const projectSpatialGeometry = (
   planar: MindMapLayout,
   nodes: readonly SpatialNode[],
   rootId: string,
   straightIds: ReadonlySet<string>,
-): { edges: SpatialEdge[]; decorations: SpatialDecoration[] } {
+): { edges: SpatialEdge[]; decorations: SpatialDecoration[] } => {
   const byId = new Map(nodes.map((node) => [node.id, node]))
   const planarById = new Map(planar.nodes.map((node) => [node.id, node]))
   const offset = (id: string): { x: number; y: number } => {
@@ -146,10 +146,10 @@ export function projectSpatialGeometry(
 }
 
 /** Camera-only bounds proxies keep full spanning cells/braces in frame, including during branch focus. */
-export function spatialFramingNodes(
+export const spatialFramingNodes = (
   layout: SpatialLayout,
   focusIds: ReadonlySet<string> | null,
-): SpatialNode[] {
+): SpatialNode[] => {
   return [
     ...layout.nodes.filter((node) => focusIds === null || focusIds.has(node.id)),
     ...layout.decorations

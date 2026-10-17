@@ -8,10 +8,10 @@ import {
   validateDocument,
   type Command,
   type MindMapDocument,
-} from './index'
-import { extensionFixture } from './extension-test-fixture'
+} from '@core'
+import { extensionFixture } from '@core/extension-test-fixture'
 
-function fixture(): MindMapDocument {
+const fixture = (): MindMapDocument => {
   return applyCommand(extensionFixture(), {
     type: 'batch',
     commands: [

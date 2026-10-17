@@ -3,7 +3,7 @@ const MAX_FILE_NAME_BYTES = 160
 const encoder = new TextEncoder()
 
 /** Keep document titles intact while offering a portable, bounded file name. */
-export function suggestedFileName(title: string): string {
+export const suggestedFileName = (title: string): string => {
   const sanitized = Array.from(title.normalize('NFC'), (character) => {
     const code = character.codePointAt(0) ?? 0
     return code < 32 || code === 127 || /[<>:"/\\|?*]/u.test(character) ? '-' : character

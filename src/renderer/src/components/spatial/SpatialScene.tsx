@@ -9,23 +9,27 @@ import {
   Grid,
   CameraControlsImpl,
 } from '@react-three/drei'
-import type { SpatialLayout } from '../../../../layout/spatial'
-import { spatialFramingNodes } from '../../../../layout/spatial-geometry'
-import { useSpatialSelectionVisibility } from '../../hooks/useSpatialSelectionVisibility'
-import { useSpatialCamera } from '../../hooks/useSpatialCamera'
-import { useSpatialGestures } from '../../hooks/useSpatialGestures'
-import { useSpatialSelectionDrag } from '../../hooks/useSpatialSelectionDrag'
-import { usePresentation } from '../../state/presentation'
-import type { SpatialScreenRect } from '../../lib/spatialDrag'
+import type { SpatialLayout } from '@layout/spatial'
+import { spatialFramingNodes } from '@layout/spatial-geometry'
+import { useSpatialSelectionVisibility } from '@renderer/hooks/useSpatialSelectionVisibility'
+import { useSpatialCamera } from '@renderer/hooks/useSpatialCamera'
+import { useSpatialGestures } from '@renderer/hooks/useSpatialGestures'
+import { useSpatialSelectionDrag } from '@renderer/hooks/useSpatialSelectionDrag'
+import { usePresentation } from '@renderer/state/presentation'
+import type { SpatialScreenRect } from '@renderer/lib/spatialDrag'
 import { documentAppearance, topicAppearance } from '@shared/appearance'
 import { documentStructureKey } from '@shared/layout-geometry'
-import { useEditor } from '../../state/editor'
-import { useSelectedIds } from '../../state/selection'
-import { SpatialAnnotations } from '../annotations/SpatialAnnotations'
-import { SpatialConnections } from './SpatialConnections'
-import { SpatialStructureGeometry } from './SpatialStructureGeometry'
-import { SpatialTopic } from './SpatialTopic'
-import type { SpatialCameraActions, SpatialCameraState, SpatialCanvasProps } from './types'
+import { useEditor } from '@renderer/state/editor'
+import { useSelectedIds } from '@renderer/state/selection'
+import { SpatialAnnotations } from '@renderer/components/annotations/SpatialAnnotations'
+import { SpatialConnections } from '@renderer/components/spatial/SpatialConnections'
+import { SpatialStructureGeometry } from '@renderer/components/spatial/SpatialStructureGeometry'
+import { SpatialTopic } from '@renderer/components/spatial/SpatialTopic'
+import type {
+  SpatialCameraActions,
+  SpatialCameraState,
+  SpatialCanvasProps,
+} from '@renderer/components/spatial/types'
 
 const CUBE_FACES = ['右', '左', '上', '下', '前', '后']
 const MOUSE_ACTIONS = {
@@ -46,7 +50,7 @@ interface SpatialSceneProps extends Omit<SpatialCanvasProps, 'cameraState'> {
   readonly onSelectionBox: (box: SpatialScreenRect | null) => void
 }
 
-export function SpatialScene({
+export const SpatialScene = ({
   document,
   selectedId,
   focusId,
@@ -62,7 +66,7 @@ export function SpatialScene({
   onZoomChange,
   onContextLost,
   onSelectionBox,
-}: SpatialSceneProps) {
+}: SpatialSceneProps) => {
   const selectedIds = useSelectedIds()
   const controls = useRef<CameraControlsImpl | null>(null)
   const gl = useThree((state) => state.gl)

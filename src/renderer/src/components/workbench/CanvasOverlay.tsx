@@ -1,15 +1,15 @@
 import type { ReactNode } from 'react'
-import { useWorkbenchInsets } from '../../hooks/useWorkbenchInsets'
-import { cn } from '../../lib/utils'
+import { useWorkbenchInsets } from '@renderer/hooks/useWorkbenchInsets'
+import { cn } from '@renderer/lib/utils'
 
 /** Constrain canvas controls to the visible strip between the overlay panels. */
-export function CanvasOverlay({
+export const CanvasOverlay = ({
   children,
   className,
 }: {
   children: ReactNode
   className?: string
-}) {
+}) => {
   const insets = useWorkbenchInsets()
   return (
     <div

@@ -1,16 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { applyCommand, createDocument, createTopicClipboard } from '../../src/core'
-import { useEditor } from '../../src/renderer/src/state/editor'
-import { selectedTopicIds, setSelectedTopics } from '../../src/renderer/src/state/selection'
+import { applyCommand, createDocument, createTopicClipboard } from '@core'
+import { useEditor } from '@renderer/state/editor'
+import { selectedTopicIds, setSelectedTopics } from '@renderer/state/selection'
 import {
   copySelectedTopics,
   duplicateSelectedTopics,
   parseTopicClipboard,
   pasteSelectedTopics,
   TOPIC_CLIPBOARD_PREFIX,
-} from '../../src/renderer/src/state/clipboard'
+} from '@renderer/state/clipboard'
 
-function fixture() {
+const fixture = () => {
   let document = applyCommand(createDocument('中心'), {
     type: 'addTopic',
     id: 'a',

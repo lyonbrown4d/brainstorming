@@ -1,10 +1,10 @@
 import { queryOptions, useQuery, type QueryClient } from '@tanstack/react-query'
 import type { RecentFile } from '@shared/contracts'
-import { queryClient } from '../lib/queryClient'
+import { queryClient } from '@renderer/lib/queryClient'
 
 const recentFilesKey = ['recent-files'] as const
 
-export function recentFilesOptions() {
+export const recentFilesOptions = () => {
   const bridge = window.trelyx
   return queryOptions({
     queryKey: [...recentFilesKey, bridge ? 'desktop' : 'browser'],
@@ -17,11 +17,11 @@ export function recentFilesOptions() {
   })
 }
 
-export function useRecentFiles(enabled = true, client: QueryClient = queryClient) {
+export const useRecentFiles = (enabled = true, client: QueryClient = queryClient) => {
   return useQuery({ ...recentFilesOptions(), enabled }, client)
 }
 
 /** Call after a successful desktop open/save that changes the recent-file list. */
-export function invalidateRecentFiles(client: QueryClient = queryClient): Promise<void> {
+export const invalidateRecentFiles = (client: QueryClient = queryClient): Promise<void> => {
   return client.invalidateQueries({ queryKey: recentFilesKey })
 }

@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within, waitFor } from 'storybook/test'
-import { applyCommand, createExampleDocument } from '../src/core'
-import { App } from '../src/renderer/src/App'
-import { useEditor } from '../src/renderer/src/state/editor'
-import { setSelectedTopics, useSelection } from '../src/renderer/src/state/selection'
-import { useSpatialView } from '../src/renderer/src/state/spatial'
-import { clearBrowserRecovery } from '../src/renderer/src/state/recovery'
+import { applyCommand, createExampleDocument } from '@core'
+import { App } from '@renderer/App'
+import { useEditor } from '@renderer/state/editor'
+import { setSelectedTopics, useSelection } from '@renderer/state/selection'
+import { useSpatialView } from '@renderer/state/spatial'
+import { clearBrowserRecovery } from '@renderer/state/recovery'
 
 const meta = {
   title: 'Trelyx/结构工作台',

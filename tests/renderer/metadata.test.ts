@@ -1,13 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { applyCommand, createDocument } from '../../src/core'
-import { useEditor, isDirty } from '../../src/renderer/src/state/editor'
-import { draftCommand } from '../../src/renderer/src/state/editorDraft'
-import { setMetadataField } from '../../src/renderer/src/components/metadata/commands'
-import { runAnnotationCommand } from '../../src/renderer/src/components/annotations/commands'
-import {
-  groupBounds,
-  relationEdges,
-} from '../../src/renderer/src/components/annotations/projection'
+import { applyCommand, createDocument } from '@core'
+import { useEditor, isDirty } from '@renderer/state/editor'
+import { draftCommand } from '@renderer/state/editorDraft'
+import { setMetadataField } from '@renderer/components/metadata/commands'
+import { runAnnotationCommand } from '@renderer/components/annotations/commands'
+import { groupBounds, relationEdges } from '@renderer/components/annotations/projection'
 
 beforeEach(() => {
   useEditor.getState().replace(

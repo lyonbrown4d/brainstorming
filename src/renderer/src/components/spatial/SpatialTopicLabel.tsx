@@ -1,14 +1,14 @@
 import type { Topic } from '@core'
 import { useEffect, useRef } from 'react'
 import { flushSync } from 'react-dom'
-import { isCompositionKey } from '../../state/keyboard'
-import { usePresentation } from '../../state/presentation'
-import { useEditor } from '../../state/editor'
-import { interactAnnotationTopic } from '../../state/annotationInteraction'
-import { selectTopic } from '../../state/selection'
-import { handleTopicNavigation } from '../../state/editingShortcuts'
-import { TopicTitleDisplay } from '../metadata/TopicTitleDisplay'
-import { TopicEditor } from '../TopicEditor'
+import { isCompositionKey } from '@renderer/state/keyboard'
+import { usePresentation } from '@renderer/state/presentation'
+import { useEditor } from '@renderer/state/editor'
+import { interactAnnotationTopic } from '@renderer/state/annotationInteraction'
+import { selectTopic } from '@renderer/state/selection'
+import { handleTopicNavigation } from '@renderer/state/editingShortcuts'
+import { TopicTitleDisplay } from '@renderer/components/metadata/TopicTitleDisplay'
+import { TopicEditor } from '@renderer/components/TopicEditor'
 
 interface SpatialTopicLabelProps {
   readonly topic: Topic
@@ -20,7 +20,7 @@ interface SpatialTopicLabelProps {
   readonly onSelect: (id: string) => void
 }
 
-export function SpatialTopicLabel({
+export const SpatialTopicLabel = ({
   topic,
   root,
   depth,
@@ -28,7 +28,7 @@ export function SpatialTopicLabel({
   maxHeight,
   color,
   onSelect,
-}: SpatialTopicLabelProps) {
+}: SpatialTopicLabelProps) => {
   const label = useRef<HTMLButtonElement>(null)
   // Only this topic changes when its editor opens; draft keystrokes remain inside Lexical.
   const editing = useEditor(

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { ZipWriter, Uint8ArrayReader, Uint8ArrayWriter } from '@zip.js/zip.js'
-import { createDocument, createWorkbook } from '../core'
-import { encryptTrelyx, decryptTrelyx, isEncryptedTrelyx } from './encrypted'
-import { encodeTrelyx } from './trelyx'
+import { createDocument, createWorkbook } from '@core'
+import { encryptTrelyx, decryptTrelyx, isEncryptedTrelyx } from '@formats/encrypted'
+import { encodeTrelyx } from '@formats/trelyx'
 
 const workbook = createWorkbook(createDocument('Protected 中文文档', 'encrypted-test'))
 const password = 'test-password-123'

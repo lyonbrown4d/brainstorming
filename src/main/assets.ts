@@ -1,14 +1,14 @@
 import { dialog, ipcMain, nativeImage, type BrowserWindow, type IpcMainInvokeEvent } from 'electron'
 import { open } from 'node:fs/promises'
 import { basename } from 'node:path'
-import { createAsset, assetBytes, imageDimensions, MAX_ASSET_BYTES, safeAssetName } from '../assets'
-import { validateDocumentAsset, type DocumentAsset } from '../core'
-import { atomicWrite } from './files'
+import { createAsset, assetBytes, imageDimensions, MAX_ASSET_BYTES, safeAssetName } from '@assets'
+import { validateDocumentAsset, type DocumentAsset } from '@core'
+import { atomicWrite } from '@main/files'
 
-export async function readSelectedAsset(
+export const readSelectedAsset = async (
   path: string,
   kind: 'image' | 'attachment' | 'audio',
-): Promise<DocumentAsset> {
+): Promise<DocumentAsset> => {
   const handle = await open(path, 'r')
   try {
     if ((await handle.stat()).size > MAX_ASSET_BYTES) throw new Error('单个资源不能超过 8 MiB')
@@ -35,7 +35,7 @@ export async function readSelectedAsset(
   }
 }
 
-export function registerAssetIPC(trusted: (event: IpcMainInvokeEvent) => BrowserWindow): void {
+export const registerAssetIPC = (trusted: (event: IpcMainInvokeEvent) => BrowserWindow): void => {
   ipcMain.handle('asset:select', async (event, kind: unknown) => {
     const window = trusted(event)
     if (kind !== 'image' && kind !== 'attachment' && kind !== 'audio')

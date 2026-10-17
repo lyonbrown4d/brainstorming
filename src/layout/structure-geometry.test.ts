@@ -7,23 +7,23 @@ import {
   type LayoutKind,
   type MindMapDocument,
 } from '@core'
-import { layoutDocument, type LayoutNode, type MindMapLayout } from './index'
+import { layoutDocument, type LayoutNode, type MindMapLayout } from '@layout'
 
-function node(layout: MindMapLayout, id: string): LayoutNode {
+const node = (layout: MindMapLayout, id: string): LayoutNode => {
   const found = layout.nodes.find((item) => item.id === id)
   if (!found) throw new Error(`Missing topic: ${id}`)
   return found
 }
-function withLayout(kind: LayoutKind): MindMapDocument {
+const withLayout = (kind: LayoutKind): MindMapDocument => {
   return { ...createExampleDocument(), settings: { layout: kind } }
 }
-function center(item: LayoutNode): { x: number; y: number } {
+const center = (item: LayoutNode): { x: number; y: number } => {
   return { x: item.x + item.width / 2, y: item.y + item.height / 2 }
 }
-function contains(
+const contains = (
   outer: { x: number; y: number; width: number; height: number },
   inner: { x: number; y: number; width: number; height: number },
-): void {
+): void => {
   expect(inner.x).toBeGreaterThanOrEqual(outer.x - 0.001)
   expect(inner.y).toBeGreaterThanOrEqual(outer.y - 0.001)
   expect(inner.x + inner.width).toBeLessThanOrEqual(outer.x + outer.width + 0.001)

@@ -1,11 +1,11 @@
 import { Unzip, UnzipInflate } from 'fflate'
 import CRC32 from 'crc-32'
-import { archiveDirectory, ARCHIVE_LIMITS } from './archive-directory'
+import { archiveDirectory, ARCHIVE_LIMITS } from '@formats/archive-directory'
 
-export { ARCHIVE_LIMITS } from './archive-directory'
+export { ARCHIVE_LIMITS } from '@formats/archive-directory'
 
 /** Read ZIP entries in bounded chunks without writing archive paths to disk. */
-export function readArchive(bytes: Uint8Array): Map<string, Uint8Array> {
+export const readArchive = (bytes: Uint8Array): Map<string, Uint8Array> => {
   const { entries: directory, dataEnd } = archiveDirectory(bytes)
   const expected = new Map(directory.map((entry) => [entry.name, entry]))
   const result = new Map<string, Uint8Array>()

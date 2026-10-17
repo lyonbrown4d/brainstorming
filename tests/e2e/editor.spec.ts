@@ -1,7 +1,7 @@
-import { completeDocumentCreation, openExample } from './workspace'
-import { dockAction } from './dock'
+import { completeDocumentCreation, openExample } from '@tests/e2e/workspace'
+import { dockAction } from '@tests/e2e/dock'
 import { expect, test } from '@playwright/test'
-import { composeChinese } from './ime'
+import { composeChinese } from '@tests/e2e/ime'
 
 test.beforeEach(async ({ page }) => {
   await openExample(page)

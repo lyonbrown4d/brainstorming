@@ -1,6 +1,6 @@
-import type { MindMapDocument, MindMapSheet, MindMapWorkbook, Topic } from './types'
+import type { MindMapDocument, MindMapSheet, MindMapWorkbook, Topic } from '@core/types'
 
-export function validateWorkbookLinks(sourceSheets: readonly MindMapSheet[]): void {
+export const validateWorkbookLinks = (sourceSheets: readonly MindMapSheet[]): void => {
   const sheets = new Map(sourceSheets.map((sheet) => [sheet.id, sheet.document]))
   for (const sheet of sourceSheets) {
     for (const topic of Object.values(sheet.document.topics)) {
@@ -14,11 +14,11 @@ export function validateWorkbookLinks(sourceSheets: readonly MindMapSheet[]): vo
 }
 
 /** Duplicated self-sheet links follow the copy; links to other sheets retain their destination. */
-export function remapSheetLinks(
+export const remapSheetLinks = (
   document: MindMapDocument,
   from: string,
   to: string,
-): MindMapDocument {
+): MindMapDocument => {
   const topics: Record<string, Topic> = { ...document.topics }
   let changed = false
   for (const topic of Object.values(topics)) {
@@ -31,10 +31,10 @@ export function remapSheetLinks(
 }
 
 /** Cleanup applies only to targets removed by this edit, never to newly invalid links. */
-export function cleanupRemovedWorkbookTargets(
+export const cleanupRemovedWorkbookTargets = (
   before: MindMapWorkbook,
   after: MindMapWorkbook,
-): MindMapWorkbook {
+): MindMapWorkbook => {
   const nextSheets = new Map(after.sheets.map((sheet) => [sheet.id, sheet.document]))
   const removed = new Map<string, Set<string>>()
   for (const sheet of before.sheets) {

@@ -7,10 +7,10 @@ import {
   type SpatialLayout,
   type SpatialNode,
   type SpatialPoint,
-} from '../../../layout/spatial'
-import { projectSpatialGeometry } from '../../../layout/spatial-geometry'
-import type { LayoutDirection, MindMapLayout } from '../../../layout/types'
-import type { DropNode } from './canvasDrop'
+} from '@layout/spatial'
+import { projectSpatialGeometry } from '@layout/spatial-geometry'
+import type { LayoutDirection, MindMapLayout } from '@layout/types'
+import type { DropNode } from '@renderer/lib/canvasDrop'
 
 interface Point {
   readonly x: number
@@ -29,11 +29,11 @@ export interface SpatialDragPlane {
 }
 
 /** Match SpatialTopic's camera-facing card, including its local tilt and thickness. */
-export function projectSpatialNode(
+export const projectSpatialNode = (
   node: SpatialNode,
   camera: Camera,
   viewport: SpatialViewport,
-): SpatialScreenRect | undefined {
+): SpatialScreenRect | undefined => {
   if (viewport.width <= 0 || viewport.height <= 0) return undefined
   camera.updateWorldMatrix(true, false)
   const facing = camera.getWorldQuaternion(new Quaternion())
@@ -62,12 +62,12 @@ export function projectSpatialNode(
   }
 }
 
-export function projectSpatialDropNodes(
+export const projectSpatialDropNodes = (
   nodes: readonly SpatialNode[],
   camera: Camera,
   viewport: SpatialViewport,
   directions?: ReadonlyMap<string, LayoutDirection>,
-): DropNode[] {
+): DropNode[] => {
   return nodes.flatMap((node): DropNode[] => {
     const rect = projectSpatialNode(node, camera, viewport)
     return rect
@@ -85,13 +85,13 @@ export function projectSpatialDropNodes(
 }
 
 /** Either drag direction selects only cards wholly contained by the rectangle. */
-export function spatialRectangleSelection(
+export const spatialRectangleSelection = (
   nodes: readonly SpatialNode[],
   camera: Camera,
   viewport: SpatialViewport,
   start: Point,
   end: Point,
-): string[] {
+): string[] => {
   const left = Math.min(start.x, end.x),
     right = Math.max(start.x, end.x)
   const top = Math.min(start.y, end.y),
@@ -108,7 +108,7 @@ export function spatialRectangleSelection(
   })
 }
 
-function planePoint(camera: Camera, viewport: SpatialViewport, point: Point, plane: Plane) {
+const planePoint = (camera: Camera, viewport: SpatialViewport, point: Point, plane: Plane) => {
   if (viewport.width <= 0 || viewport.height <= 0) return undefined
   camera.updateWorldMatrix(true, false)
   const raycaster = new Raycaster()
@@ -122,12 +122,12 @@ function planePoint(camera: Camera, viewport: SpatialViewport, point: Point, pla
   return raycaster.ray.intersectPlane(plane, new Vector3()) ?? undefined
 }
 
-export function createSpatialDrag(
+export const createSpatialDrag = (
   camera: Camera,
   viewport: SpatialViewport,
   start: Point,
   anchor: SpatialPoint,
-): SpatialDragPlane | undefined {
+): SpatialDragPlane | undefined => {
   camera.updateWorldMatrix(true, false)
   const plane = new Plane().setFromNormalAndCoplanarPoint(
     camera.getWorldDirection(new Vector3()),
@@ -137,17 +137,17 @@ export function createSpatialDrag(
   return origin ? { plane, origin: [origin.x, origin.y, origin.z] } : undefined
 }
 
-export function spatialDragDelta(
+export const spatialDragDelta = (
   camera: Camera,
   viewport: SpatialViewport,
   point: Point,
   drag: SpatialDragPlane,
-): SpatialPoint | undefined {
+): SpatialPoint | undefined => {
   const hit = planePoint(camera, viewport, point, drag.plane)
   return hit ? [hit.x - drag.origin[0], hit.y - drag.origin[1], hit.z - drag.origin[2]] : undefined
 }
 
-export function spatialDragSelection(document: MindMapDocument, selected: readonly string[]) {
+export const spatialDragSelection = (document: MindMapDocument, selected: readonly string[]) => {
   const roots = normalizeTopicSelection(
     document,
     selected.filter((id) => id !== document.rootId),
@@ -156,13 +156,13 @@ export function spatialDragSelection(document: MindMapDocument, selected: readon
 }
 
 /** Reproject routes and owner-bound structures from the unchanged document's planar layout. */
-export function previewSpatialDrag(
+export const previewSpatialDrag = (
   document: MindMapDocument,
   layout: SpatialLayout,
   ids: ReadonlySet<string>,
   delta: SpatialPoint,
   planar: MindMapLayout = layoutDocument(document),
-): SpatialLayout {
+): SpatialLayout => {
   const nodes = layout.nodes.map((node): SpatialNode =>
     ids.has(node.id)
       ? {
@@ -208,6 +208,6 @@ export function previewSpatialDrag(
 }
 
 /** Depth is preview-only; floating topic persistence uses the document's planar coordinates. */
-export function spatialDocumentDelta(delta: SpatialPoint): Point {
+export const spatialDocumentDelta = (delta: SpatialPoint): Point => {
   return { x: delta[0] * 100, y: -delta[1] * 100 }
 }

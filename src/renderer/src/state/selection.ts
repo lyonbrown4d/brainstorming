@@ -1,20 +1,20 @@
 import { create } from 'zustand'
 import { getParentId, normalizeTopicSelection, type TopicStyle } from '@core'
-import type { EditorData } from './editorTypes'
-import { useEditor } from './editor'
+import type { EditorData } from '@renderer/state/editorTypes'
+import { useEditor } from '@renderer/state/editor'
 
 const empty: readonly string[] = []
 export const useSelection = create<{
   sheets: Readonly<Record<string, readonly string[]>>
 }>(() => ({ sheets: {} }))
 
-export function selectedTopicIds(state: EditorData): readonly string[] {
+export const selectedTopicIds = (state: EditorData): readonly string[] => {
   const ids = useSelection.getState().sheets[state.activeSheetId] ?? [state.selectedId]
   const valid = ids.filter((id) => state.history.document.topics[id])
   return valid.length ? valid : [state.selectedId]
 }
 
-export function setSelectedTopics(ids: readonly string[]): void {
+export const setSelectedTopics = (ids: readonly string[]): void => {
   const state = useEditor.getState()
   state.commitDraft()
   if (useEditor.getState().editingId) return
@@ -27,7 +27,7 @@ export function setSelectedTopics(ids: readonly string[]): void {
   useEditor.setState({ selectedId: valid.at(-1) ?? current.selectedId })
 }
 
-export function selectTopic(id: string, additive = false): void {
+export const selectTopic = (id: string, additive = false): void => {
   const state = useEditor.getState()
   const current = selectedTopicIds(state)
   if (!additive && current.length === 1 && current[0] === id) return
@@ -40,7 +40,7 @@ export function selectTopic(id: string, additive = false): void {
   )
 }
 
-export function useTopicSelected(id: string): boolean {
+export const useTopicSelected = (id: string): boolean => {
   const sheetId = useEditor((state) => state.activeSheetId)
   const primary = useEditor((state) => state.selectedId === id)
   return useSelection((state) => {
@@ -49,12 +49,12 @@ export function useTopicSelected(id: string): boolean {
   })
 }
 
-export function useSelectedIds(): readonly string[] {
+export const useSelectedIds = (): readonly string[] => {
   const sheetId = useEditor((state) => state.activeSheetId)
   return useSelection((state) => state.sheets[sheetId] ?? empty)
 }
 
-export function deleteSelectedTopics(): void {
+export const deleteSelectedTopics = (): void => {
   const state = useEditor.getState()
   state.commitDraft()
   if (useEditor.getState().editingId) return
@@ -69,7 +69,7 @@ export function deleteSelectedTopics(): void {
     setSelectedTopics([parentId ?? current.history.document.rootId])
 }
 
-export function updateSelectedStyle(patch: TopicStyle, topicId?: string): void {
+export const updateSelectedStyle = (patch: TopicStyle, topicId?: string): void => {
   const state = useEditor.getState()
   state.commitDraft()
   if (useEditor.getState().editingId) return
@@ -87,7 +87,7 @@ export function updateSelectedStyle(patch: TopicStyle, topicId?: string): void {
   })
 }
 
-export function moveSelectedTopics(parentId: string): void {
+export const moveSelectedTopics = (parentId: string): void => {
   const state = useEditor.getState()
   state.commitDraft()
   if (useEditor.getState().editingId) return

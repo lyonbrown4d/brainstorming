@@ -1,7 +1,7 @@
-import { withPlainTitle } from './extension-data'
-import { getSubtreeIds, requireTopic } from './tree'
-import type { Command, MindMapDocument, MindMapWorkbook, Topic } from './types'
-import { validateTopicNotes } from './topic-content'
+import { withPlainTitle } from '@core/extension-data'
+import { getSubtreeIds, requireTopic } from '@core/tree'
+import type { Command, MindMapDocument, MindMapWorkbook, Topic } from '@core/types'
+import { validateTopicNotes } from '@core/topic-content'
 
 export interface SearchOptions {
   readonly matchCase?: boolean
@@ -23,7 +23,7 @@ export interface SearchMatch extends DocumentSearchMatch {
 
 const wordSegmenter = new Intl.Segmenter(undefined, { granularity: 'word' })
 
-function matches(text: string, query: string, options: SearchOptions): RegExpExecArray[] {
+const matches = (text: string, query: string, options: SearchOptions): RegExpExecArray[] => {
   if (query.length === 0) return []
   const expression = new RegExp(
     query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
@@ -41,11 +41,11 @@ function matches(text: string, query: string, options: SearchOptions): RegExpExe
 }
 
 /** Searches the complete tree, including descendants hidden by collapsed branches. */
-export function searchDocument(
+export const searchDocument = (
   document: MindMapDocument,
   query: string,
   options: SearchOptions = {},
-): DocumentSearchMatch[] {
+): DocumentSearchMatch[] => {
   const result: DocumentSearchMatch[] = []
   if (query.length === 0) return result
   for (const topicId of getSubtreeIds(document, document.rootId)) {
@@ -60,11 +60,11 @@ export function searchDocument(
   return result
 }
 
-export function searchWorkbook(
+export const searchWorkbook = (
   workbook: MindMapWorkbook,
   query: string,
   options: SearchOptions = {},
-): SearchMatch[] {
+): SearchMatch[] => {
   return workbook.sheets.flatMap((sheet) =>
     options.sheetId !== undefined && options.sheetId !== sheet.id
       ? []
@@ -75,12 +75,12 @@ export function searchWorkbook(
   )
 }
 
-function replaceText(
+const replaceText = (
   text: string,
   query: string,
   replacement: string,
   options: SearchOptions,
-): string {
+): string => {
   const found = matches(text, query, options)
   let result = ''
   let cursor = 0
@@ -91,15 +91,15 @@ function replaceText(
   return found.length === 0 ? text : result + text.slice(cursor)
 }
 
-function assertReplaceField(field: unknown): void {
+const assertReplaceField = (field: unknown): void => {
   if (field !== undefined && field !== 'title' && field !== 'notes') throw new Error('替换字段无效')
 }
 
-export function replaceTopicText(
+export const replaceTopicText = (
   document: MindMapDocument,
   topic: Topic,
   command: Extract<Command, { type: 'replaceTopicText' }>,
-): MindMapDocument {
+): MindMapDocument => {
   if (typeof command.query !== 'string' || command.query.length === 0)
     throw new Error('查找文本不能为空')
   if (typeof command.replacement !== 'string') throw new Error('替换内容必须是文本')

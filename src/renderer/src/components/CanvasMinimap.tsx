@@ -1,14 +1,14 @@
-import { CanvasOverlay } from './workbench/CanvasOverlay'
+import { CanvasOverlay } from '@renderer/components/workbench/CanvasOverlay'
 import { MiniMap, Panel, type Node } from '@xyflow/react'
 import { memo } from 'react'
 
 const nodeColor = (node: Node): string => (node.selected ? '#8b79d9' : '#d9d1ed')
 import { Map, X } from 'lucide-react'
-import { useCanvasPreferences } from '../state/canvasPreferences'
-import { Button } from './ui/button'
+import { useCanvasPreferences } from '@renderer/state/canvasPreferences'
+import { Button } from '@renderer/components/ui/button'
 
 /** Use React Flow's viewport projection and interaction, without duplicating the graph. */
-export const CanvasMinimap = memo(function CanvasMinimap() {
+export const CanvasMinimap = memo(() => {
   const visible = useCanvasPreferences((state) => state.minimap)
   const setVisible = useCanvasPreferences((state) => state.setMinimap)
   return (
@@ -56,3 +56,5 @@ export const CanvasMinimap = memo(function CanvasMinimap() {
     </CanvasOverlay>
   )
 })
+
+CanvasMinimap.displayName = 'CanvasMinimap'

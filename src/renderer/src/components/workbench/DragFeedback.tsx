@@ -1,10 +1,10 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { MoveRight } from 'lucide-react'
-import { canvasDragMessage, useCanvasInteraction } from '../../state/canvasInteraction'
-import { useEditor } from '../../state/editor'
+import { canvasDragMessage, useCanvasInteraction } from '@renderer/state/canvasInteraction'
+import { useEditor } from '@renderer/state/editor'
 
 /** Shared screen-space feedback for both canvas projections. */
-export function DragFeedback() {
+export const DragFeedback = () => {
   const drag = useCanvasInteraction((state) => state.drag)
   const sheetId = useEditor((state) => state.activeSheetId)
   const document = useEditor((state) => state.history.document)

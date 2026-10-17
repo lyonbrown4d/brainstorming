@@ -1,32 +1,23 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { applyCommand, createDocument, validateDocument } from '../../src/core'
-import { documentAppearance, topicAppearance } from '../../src/shared/appearance'
-import { useEditor } from '../../src/renderer/src/state/editor'
-import {
-  createTemplate,
-  templateOptions,
-} from '../../src/renderer/src/components/documents/templates'
-import {
-  edgeHandles,
-  projectCanvas,
-} from '../../src/renderer/src/components/documents/projectCanvas'
+import { applyCommand, createDocument, validateDocument } from '@core'
+import { documentAppearance, topicAppearance } from '@shared/appearance'
+import { useEditor } from '@renderer/state/editor'
+import { createTemplate, templateOptions } from '@renderer/components/documents/templates'
+import { edgeHandles, projectCanvas } from '@renderer/components/documents/projectCanvas'
 import {
   armFloatingTopic,
   createFloatingAt,
   interactAnnotationTopic,
   toggleRelationMode,
   useAnnotationInteraction,
-} from '../../src/renderer/src/state/annotationInteraction'
+} from '@renderer/state/annotationInteraction'
 import {
   presentationDocument,
   showPresentationStep,
   stopPresentation,
   usePresentation,
-} from '../../src/renderer/src/state/presentation'
-import {
-  defaultTopicFilters,
-  filterTopics,
-} from '../../src/renderer/src/components/documents/filterTopics'
+} from '@renderer/state/presentation'
+import { defaultTopicFilters, filterTopics } from '@renderer/components/documents/filterTopics'
 
 beforeEach(() => {
   useEditor.getState().replace(

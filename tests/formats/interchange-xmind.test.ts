@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { strToU8, zipSync } from 'fflate'
-import { applyCommand, createDocument, createWorkbook } from '../../src/core'
-import { createAsset } from '../../src/assets'
-import { encodeXmind } from '../../src/formats/interchange/xmind'
-import { exportSheets } from '../../src/formats/interchange/outline'
-import { importXmind } from '../../src/formats/xmind'
+import { applyCommand, createDocument, createWorkbook } from '@core'
+import { createAsset } from '@assets'
+import { encodeXmind } from '@formats/interchange/xmind'
+import { exportSheets } from '@formats/interchange/outline'
+import { importXmind } from '@formats/xmind'
 
 const provider = 'org.trelyx.interchange'
 describe('XMind Trelyx extension interchange', () => {

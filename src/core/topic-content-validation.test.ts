@@ -6,8 +6,8 @@ import {
   MAX_TOPIC_NOTES_LENGTH,
   validateDocument,
   validateDocumentAsset,
-} from './index'
-import type { DocumentAsset, MindMapDocument } from './index'
+} from '@core'
+import type { DocumentAsset, MindMapDocument } from '@core'
 
 const asset: DocumentAsset = {
   id: 'file',
@@ -16,14 +16,14 @@ const asset: DocumentAsset = {
   data: 'AA==',
 }
 
-function zeroData(bytes: number): string {
+const zeroData = (bytes: number): string => {
   return 'AAAA'.repeat(Math.floor(bytes / 3)) + (['', 'AA==', 'AAA='][bytes % 3] ?? '')
 }
 
-function documentWith(
+const documentWith = (
   content: Record<string, unknown>,
   assets: unknown = { file: asset },
-): unknown {
+): unknown => {
   const document = createDocument()
   return { ...document, assets, topics: { root: { ...document.topics.root, ...content } } }
 }

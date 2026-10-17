@@ -7,12 +7,12 @@ import { LinkExtension } from '@lexical/link'
 import { $convertFromMarkdownString } from '@lexical/markdown'
 import { LexicalExtensionComposer } from '@lexical/react/LexicalExtensionComposer'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
-import { useEditor } from '../../state/editor'
-import { RichDraftPlugin } from './RichDraftPlugin'
-import { RichTextToolbar } from './RichTextToolbar'
-import { richTransformers } from './richTransformers'
+import { useEditor } from '@renderer/state/editor'
+import { RichDraftPlugin } from '@renderer/components/metadata/RichDraftPlugin'
+import { RichTextToolbar } from '@renderer/components/metadata/RichTextToolbar'
+import { richTransformers } from '@renderer/components/metadata/richTransformers'
 
-export function RichTextEditor({
+export const RichTextEditor = ({
   topicId,
   source,
   title = false,
@@ -20,7 +20,7 @@ export function RichTextEditor({
   topicId: string
   source: string
   title?: boolean
-}) {
+}) => {
   const [extension] = useState(() =>
     defineExtension({
       name: `trelyx/rich-${title ? 'title' : 'notes'}-${topicId}`,

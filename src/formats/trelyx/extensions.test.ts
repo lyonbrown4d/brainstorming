@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { strToU8, zipSync } from 'fflate'
-import { createWorkbook, validateWorkbook } from '../../core'
-import { extensionFixture } from '../../core/extension-test-fixture'
-import { readArchive } from '../archive'
-import { decodeTrelyx, encodeTrelyx } from './index'
+import { createWorkbook, validateWorkbook } from '@core'
+import { extensionFixture } from '@core/extension-test-fixture'
+import { readArchive } from '@formats/archive'
+import { decodeTrelyx, encodeTrelyx } from '@formats/trelyx/index'
 
 /** A complete PCM WAV header plus one silent 16-bit sample, generated locally. */
-function wavBytes(): Uint8Array {
+const wavBytes = (): Uint8Array => {
   const bytes = new Uint8Array(46)
   bytes.set(new TextEncoder().encode('RIFF'), 0)
   bytes.set(new TextEncoder().encode('WAVEfmt '), 8)
@@ -24,7 +24,7 @@ function wavBytes(): Uint8Array {
   return bytes
 }
 
-function workbook() {
+const workbook = () => {
   const document = extensionFixture()
   const asset = document.assets?.voice
   if (!asset) throw new Error('Missing audio fixture')

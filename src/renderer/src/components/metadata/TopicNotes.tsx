@@ -1,10 +1,10 @@
-import { useEditor } from '../../state/editor'
-import { TopicEditor } from '../TopicEditor'
-import { Button } from '../ui/button'
-import { setMetadataField } from './commands'
-import { RichTextEditor } from './RichTextEditor'
+import { useEditor } from '@renderer/state/editor'
+import { TopicEditor } from '@renderer/components/TopicEditor'
+import { Button } from '@renderer/components/ui/button'
+import { setMetadataField } from '@renderer/components/metadata/commands'
+import { RichTextEditor } from '@renderer/components/metadata/RichTextEditor'
 
-export function TopicNotes({ topicId }: { topicId: string }) {
+export const TopicNotes = ({ topicId }: { topicId: string }) => {
   const topic = useEditor((state) => state.history.document.topics[topicId])
   if (!topic) return null
   const rich = topic.metadata?.notesFormat === 'markdown'

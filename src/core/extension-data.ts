@@ -1,8 +1,8 @@
-import type { DocumentExtensions } from './extensions'
-import type { MindMapDocument, Topic } from './types'
+import type { DocumentExtensions } from '@core/extensions'
+import type { MindMapDocument, Topic } from '@core/types'
 
 /** Extension validators admit only bounded JSON data; snapshots never share mutable arrays. */
-export function documentExtensionData(document: MindMapDocument): DocumentExtensions {
+export const documentExtensionData = (document: MindMapDocument): DocumentExtensions => {
   return {
     ...(document.settings === undefined ? {} : { settings: structuredClone(document.settings) }),
     ...(document.relations === undefined ? {} : { relations: structuredClone(document.relations) }),
@@ -17,7 +17,7 @@ export function documentExtensionData(document: MindMapDocument): DocumentExtens
       : { presentation: structuredClone(document.presentation) }),
   }
 }
-export function topicExtensionData(topic: Topic): Pick<Topic, 'metadata' | 'structure'> {
+export const topicExtensionData = (topic: Topic): Pick<Topic, 'metadata' | 'structure'> => {
   return {
     ...(topic.metadata === undefined ? {} : { metadata: structuredClone(topic.metadata) }),
     ...(topic.structure === undefined ? {} : { structure: topic.structure }),
@@ -25,7 +25,7 @@ export function topicExtensionData(topic: Topic): Pick<Topic, 'metadata' | 'stru
 }
 
 /** Plain editing invalidates portable title markup; rich editors restore it in their own batch. */
-export function withPlainTitle(topic: Topic, title: string): Topic {
+export const withPlainTitle = (topic: Topic, title: string): Topic => {
   const result = { ...topic, title }
   if (title !== topic.title && result.metadata?.richTitle !== undefined) {
     const metadata = { ...result.metadata }

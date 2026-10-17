@@ -1,9 +1,9 @@
 import { useMemo, useRef, useState } from 'react'
 import type { Edge, ReactFlowProps } from '@xyflow/react'
-import { usePresentation } from '../state/presentation'
-import { useEditor } from '../state/editor'
-import { selectAnnotation, useAnnotationInteraction } from '../state/annotationInteraction'
-import { runAnnotationCommand } from '../components/annotations/commands'
+import { usePresentation } from '@renderer/state/presentation'
+import { useEditor } from '@renderer/state/editor'
+import { selectAnnotation, useAnnotationInteraction } from '@renderer/state/annotationInteraction'
+import { runAnnotationCommand } from '@renderer/components/annotations/commands'
 
 type RelationHandlers = Pick<
   ReactFlowProps,
@@ -11,10 +11,12 @@ type RelationHandlers = Pick<
 >
 
 /** React Flow owns the drag preview; only a valid completed reconnection changes the document. */
-export function useCanvasRelations(projectedEdges: Edge[]): RelationHandlers & {
+export const useCanvasRelations = (
+  projectedEdges: Edge[],
+): RelationHandlers & {
   edges: Edge[]
   reconnecting: boolean
-} {
+} => {
   const playing = usePresentation((state) => state.playing)
   const selected = useAnnotationInteraction((state) => state.selected)
   const sheetId = useEditor((state) => state.activeSheetId)

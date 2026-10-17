@@ -15,12 +15,12 @@ import {
   KEY_DOWN_COMMAND,
   SKIP_DOM_SELECTION_TAG,
 } from 'lexical'
-import { useEditor } from '../../state/editor'
-import { isCompositionKey } from '../../state/keyboard'
-import { handleTopicShortcut } from '../../state/editingShortcuts'
-import { richTransformers } from './richTransformers'
+import { useEditor } from '@renderer/state/editor'
+import { isCompositionKey } from '@renderer/state/keyboard'
+import { handleTopicShortcut } from '@renderer/state/editingShortcuts'
+import { richTransformers } from '@renderer/components/metadata/richTransformers'
 
-export function RichDraftPlugin({
+export const RichDraftPlugin = ({
   topicId,
   source,
   title,
@@ -28,7 +28,7 @@ export function RichDraftPlugin({
   topicId: string
   source: string
   title: boolean
-}) {
+}) => {
   const [editor] = useLexicalComposerContext()
   const surface = title ? 'rich-title' : 'notes'
   const active = useEditor(

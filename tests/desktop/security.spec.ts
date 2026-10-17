@@ -1,5 +1,5 @@
-import { mainWindow } from './windows'
-import { enterExampleIfHome } from '../e2e/workspace'
+import { mainWindow } from '@tests/desktop/windows'
+import { enterExampleIfHome } from '@tests/e2e/workspace'
 import {
   _electron as electron,
   expect,
@@ -10,11 +10,11 @@ import {
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { decryptTrelyx, isEncryptedTrelyx } from '../../src/formats/encrypted'
-import { openDock } from '../e2e/dock'
+import { decryptTrelyx, isEncryptedTrelyx } from '@formats/encrypted'
+import { openDock } from '@tests/e2e/dock'
 
 const password = 'desktop-security-test'
-async function fileAction(page: Page, name: string): Promise<void> {
+const fileAction = async (page: Page, name: string): Promise<void> => {
   if (
     name === '打开导图' &&
     (await page.getByRole('button', { name: '打开本地文件', exact: true }).isVisible())
@@ -25,20 +25,20 @@ async function fileAction(page: Page, name: string): Promise<void> {
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name, exact: true }).click()
 }
-async function editTitle(page: Page, text: string): Promise<void> {
+const editTitle = async (page: Page, text: string): Promise<void> => {
   await page.getByTestId('topic-root').dblclick()
   await page.getByTestId('topic-root').locator('[contenteditable="true"]').fill(text)
   await page.locator('.react-flow__pane').click({ position: { x: 20, y: 20 } })
   await expect(page.getByTestId('topic-root')).toContainText(text)
 }
-async function diskTitle(path: string): Promise<string> {
+const diskTitle = async (path: string): Promise<string> => {
   try {
     return (await decryptTrelyx(await readFile(path), password)).sheets[0]?.document.title ?? ''
   } catch {
     return ''
   }
 }
-async function stop(app: ElectronApplication): Promise<void> {
+const stop = async (app: ElectronApplication): Promise<void> => {
   const exited = new Promise<void>((resolve) => {
     app.process().once('exit', () => {
       resolve()
@@ -47,7 +47,7 @@ async function stop(app: ElectronApplication): Promise<void> {
   app.process().kill('SIGKILL')
   await exited
 }
-async function unlock(page: Page, title: string, wrong = false): Promise<void> {
+const unlock = async (page: Page, title: string, wrong = false): Promise<void> => {
   const dialog = page.getByRole('dialog', { name: title, exact: true })
   await expect(dialog).toBeVisible()
   if (wrong) {

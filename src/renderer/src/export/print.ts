@@ -1,12 +1,12 @@
 import { prepareMarkerIcons } from '@shared/markerIcons'
 import type { MindMapDocument } from '@core'
-import { renderSheetSvg } from './svg'
+import { renderSheetSvg } from '@renderer/export/svg'
 
 /** Print the complete pure-layout SVG in an isolated, scriptless document. */
-export async function printSheet(
+export const printSheet = async (
   document: MindMapDocument,
   includeCollapsed = false,
-): Promise<void> {
+): Promise<void> => {
   await prepareMarkerIcons(document)
   const source = renderSheetSvg(document, includeCollapsed)
   const url = URL.createObjectURL(new Blob([source.svg], { type: 'image/svg+xml;charset=utf-8' }))

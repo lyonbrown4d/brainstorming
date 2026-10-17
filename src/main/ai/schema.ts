@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { AI_LIMITS, assertAITree, type AITree } from '../../shared/ai'
-import { createDocument, validateDocument, type MindMapDocument, type Topic } from '../../core'
+import { AI_LIMITS, assertAITree, type AITree } from '@shared/ai'
+import { createDocument, validateDocument, type MindMapDocument, type Topic } from '@core'
 
 const title = z.string().trim().min(1).max(AI_LIMITS.title)
 // Recursive references are supported by OpenAI structured outputs. Depth and total count
@@ -11,7 +11,7 @@ export const aiTreeSchema: z.ZodType<AITree> = z
     children: z.array(z.lazy(() => aiTreeSchema)).max(AI_LIMITS.children),
   })
   .strict()
-export function aiDocument(value: unknown): MindMapDocument {
+export const aiDocument = (value: unknown): MindMapDocument => {
   assertAITree(value)
   const base = createDocument(value.title, crypto.randomUUID())
   const topics: Record<string, Topic> = {}

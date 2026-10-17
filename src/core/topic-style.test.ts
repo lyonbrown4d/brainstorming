@@ -8,8 +8,8 @@ import {
   redo,
   serializeDocument,
   undo,
-} from './index'
-import type { TopicStyle } from './index'
+} from '@core'
+import type { TopicStyle } from '@core'
 
 describe('topic presentation commands', () => {
   it('replaces approved style fields atomically, isolates caller data and supports undo/redo', () => {

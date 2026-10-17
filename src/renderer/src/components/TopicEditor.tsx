@@ -14,14 +14,14 @@ import { LexicalExtensionComposer } from '@lexical/react/LexicalExtensionCompose
 import { PlainTextExtension } from '@lexical/plain-text'
 import { HistoryExtension } from '@lexical/history'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
-import { usePresentation } from '../state/presentation'
-import { useEditor } from '../state/editor'
-import { interactAnnotationTopic } from '../state/annotationInteraction'
-import { selectTopic } from '../state/selection'
-import type { EditingSurface } from '../state/editorTypes'
-import { TopicEditorPlugin } from './TopicEditorPlugin'
+import { usePresentation } from '@renderer/state/presentation'
+import { useEditor } from '@renderer/state/editor'
+import { interactAnnotationTopic } from '@renderer/state/annotationInteraction'
+import { selectTopic } from '@renderer/state/selection'
+import type { EditingSurface } from '@renderer/state/editorTypes'
+import { TopicEditorPlugin } from '@renderer/components/TopicEditorPlugin'
 
-export function TopicEditor({
+export const TopicEditor = ({
   id,
   title,
   surface = 'canvas',
@@ -29,7 +29,7 @@ export function TopicEditor({
   id: string
   title: string
   surface?: EditingSurface
-}) {
+}) => {
   const active = useEditor((state) => state.editingId === id && state.editingSurface === surface)
   const committedTitle = useEditor((state) => {
     const topic = state.history.document.topics[id]

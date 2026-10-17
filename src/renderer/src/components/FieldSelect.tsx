@@ -1,6 +1,12 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@renderer/components/ui/select'
 
-export function FieldSelect<T extends string>({
+export const FieldSelect = <T extends string>({
   label,
   value,
   options,
@@ -12,7 +18,7 @@ export function FieldSelect<T extends string>({
   options: readonly { readonly value: T; readonly label: string }[]
   onChange: (value: T) => void
   className?: string
-}) {
+}) => {
   return (
     <Select
       value={value}

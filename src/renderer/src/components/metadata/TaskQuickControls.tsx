@@ -1,16 +1,16 @@
 import type { TopicTask } from '@core'
-import { useEditor } from '../../state/editor'
-import { Button } from '../ui/button'
-import { FieldSelect } from '../FieldSelect'
-import { setMetadataField } from './commands'
+import { useEditor } from '@renderer/state/editor'
+import { Button } from '@renderer/components/ui/button'
+import { FieldSelect } from '@renderer/components/FieldSelect'
+import { setMetadataField } from '@renderer/components/metadata/commands'
 
-export function TaskQuickControls({
+export const TaskQuickControls = ({
   topicId,
   task,
 }: {
   topicId: string
   task: TopicTask | undefined
-}) {
+}) => {
   const update = (patch: Partial<TopicTask>): void => {
     const current = useEditor.getState().history.document.topics[topicId]?.metadata?.task ?? {
       done: false,

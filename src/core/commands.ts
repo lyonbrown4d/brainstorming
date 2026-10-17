@@ -1,11 +1,11 @@
-import { withPlainTitle } from './extension-data'
-import { applyExtensionCommand, isExtensionCommand } from './extension-commands'
-import { clearFloatingRoots } from './extension-references'
-import { requireTopic } from './tree'
-import type { Command, MindMapDocument } from './types'
-import { assertId, validateDocument } from './validation'
-import { normalizeTopicStyle, validateTopicStyle } from './topic-style'
-import { applyTopicContentCommand } from './content-commands'
+import { withPlainTitle } from '@core/extension-data'
+import { applyExtensionCommand, isExtensionCommand } from '@core/extension-commands'
+import { clearFloatingRoots } from '@core/extension-references'
+import { requireTopic } from '@core/tree'
+import type { Command, MindMapDocument } from '@core/types'
+import { assertId, validateDocument } from '@core/validation'
+import { normalizeTopicStyle, validateTopicStyle } from '@core/topic-style'
+import { applyTopicContentCommand } from '@core/content-commands'
 import {
   assertNonRoot,
   assertSide,
@@ -14,15 +14,15 @@ import {
   insertionIndex,
   moveTopics,
   updateSide,
-} from './selection-commands'
-import { pasteTopics } from './clipboard'
-import { replaceTopicText } from './search'
-import { insertParentTopic, removeTopicOnly } from './structural-commands'
+} from '@core/selection-commands'
+import { pasteTopics } from '@core/clipboard'
+import { replaceTopicText } from '@core/search'
+import { insertParentTopic, removeTopicOnly } from '@core/structural-commands'
 
-function add(
+const add = (
   document: MindMapDocument,
   command: Extract<Command, { type: 'addTopic' }>,
-): MindMapDocument {
+): MindMapDocument => {
   assertId(command.id)
   if (Object.hasOwn(document.topics, command.id)) throw new Error(`主题 ${command.id} 已存在`)
   if (typeof command.title !== 'string') throw new Error('标题必须是文本')
@@ -41,10 +41,10 @@ function add(
 }
 
 /** All document edits pass through this atomic, immutable command boundary. */
-function applySingleCommand(
+const applySingleCommand = (
   document: MindMapDocument,
   command: Exclude<Command, { type: 'batch' }>,
-): MindMapDocument {
+): MindMapDocument => {
   if (isExtensionCommand(command)) return applyExtensionCommand(document, command)
   if (command.type === 'deleteTopics') return deleteTopics(document, command.topicIds)
   if (command.type === 'moveTopics')
@@ -105,12 +105,12 @@ function applySingleCommand(
   }
 }
 
-function assertBatchCommands(value: unknown): void {
+const assertBatchCommands = (value: unknown): void => {
   if (!Array.isArray(value)) throw new Error('批量命令列表无效')
 }
 
 /** One command, including a nested batch, commits exactly one immutable snapshot. */
-export function applyCommand(document: MindMapDocument, command: Command): MindMapDocument {
+export const applyCommand = (document: MindMapDocument, command: Command): MindMapDocument => {
   validateDocument(document)
   const pending = [{ command, depth: 0 }]
   let result = document

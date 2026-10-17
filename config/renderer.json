@@ -1,0 +1,19 @@
+{
+  "optimizeDeps": {
+    "include": [
+      "clsx",
+      "tailwind-merge",
+      "radix-ui/internal",
+      "@react-three/fiber",
+      "@react-three/drei",
+      "three",
+      "three/addons/loaders/SVGLoader.js",
+      "@iconify/react/offline",
+      "@iconify-json/simple-icons"
+    ]
+  },
+  "inputs": {
+    "index": "./src/renderer/index.html",
+    "splash": "./src/renderer/splash.html"
+  }
+}

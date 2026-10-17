@@ -7,28 +7,33 @@ import {
   type BrowserWindow,
   type IpcMainInvokeEvent,
 } from 'electron'
-import { validateTopicClipboard } from '../core'
-import { safeAssetName } from '../assets'
-import { exportFormats, type ExportRequest } from '../shared/exports'
-import { atomicWrite } from './files'
+import { validateTopicClipboard } from '@core'
+import { safeAssetName } from '@assets'
+import { exportFormats, type ExportRequest } from '@shared/exports'
+import { atomicWrite } from '@main/files'
 
 const CLIPBOARD_TYPE = 'web application/vnd.trelyx.topics+json'
 const PREFIX = 'Trelyx topics v1\n'
 const CLIPBOARD_LIMIT = 56 * 1024 * 1024
 
-function assertText(value: unknown, limit: number): asserts value is string {
+const assertText: (value: unknown, limit: number) => asserts value is string = (
+  value: unknown,
+  limit: number,
+): asserts value is string => {
   if (typeof value !== 'string' || Buffer.byteLength(value, 'utf8') > limit)
     throw new Error('文本内容无效或超过大小限制')
 }
 
-function assertTopics(value: unknown): asserts value is string {
+const assertTopics: (value: unknown) => asserts value is string = (
+  value: unknown,
+): asserts value is string => {
   assertText(value, CLIPBOARD_LIMIT)
   if (!value.startsWith(PREFIX)) throw new Error('剪贴板主题格式无效')
   const parsed: unknown = JSON.parse(value.slice(PREFIX.length))
   validateTopicClipboard(parsed)
 }
 
-export function registerEditingIPC(trusted: (event: IpcMainInvokeEvent) => BrowserWindow): void {
+export const registerEditingIPC = (trusted: (event: IpcMainInvokeEvent) => BrowserWindow): void => {
   ipcMain.handle('clipboard:write-topics', async (event, contents: unknown, plainText: unknown) => {
     trusted(event)
     assertTopics(contents)

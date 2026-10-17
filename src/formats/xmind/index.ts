@@ -1,16 +1,28 @@
-import { type MindMapSheet, type MindMapWorkbook, type Side, type Topic } from '../../core'
-import { truncateSheetName } from '../../core/workbook'
-import { readArchive } from '../archive'
-import type { ImportedWorkbook } from '../types'
-import { encodeTrelyx } from '../trelyx'
-import { EmbeddedContent } from './content'
-import { validateBoundedWorkbook } from '../trelyx/validation'
-import { idAllocator, list, record, text, topicIds, Warnings, type SourceRecord } from './common'
-import { parseLegacy } from './legacy'
-import { importStructure } from './structures'
-import { importStyle } from './styles'
-import { standardMetadata } from './metadata'
-import { restoreDocumentExtension, restoreTopicExtension, trelyxExtension } from './extensions'
+import { type MindMapSheet, type MindMapWorkbook, type Side, type Topic } from '@core'
+import { truncateSheetName } from '@core/workbook'
+import { readArchive } from '@formats/archive'
+import type { ImportedWorkbook } from '@formats/types'
+import { encodeTrelyx } from '@formats/trelyx'
+import { EmbeddedContent } from '@formats/xmind/content'
+import { validateBoundedWorkbook } from '@formats/trelyx/validation'
+import {
+  idAllocator,
+  list,
+  record,
+  text,
+  topicIds,
+  Warnings,
+  type SourceRecord,
+} from '@formats/xmind/common'
+import { parseLegacy } from '@formats/xmind/legacy'
+import { importStructure } from '@formats/xmind/structures'
+import { importStyle } from '@formats/xmind/styles'
+import { standardMetadata } from '@formats/xmind/metadata'
+import {
+  restoreDocumentExtension,
+  restoreTopicExtension,
+  trelyxExtension,
+} from '@formats/xmind/extensions'
 
 const topicFields = new Set([
   'id',
@@ -29,7 +41,7 @@ const topicFields = new Set([
 const sheetFields = new Set(['id', 'title', 'rootTopic', 'extensions', 'class'])
 
 /** Import supported XMind content only; all discarded presentation/features are reported. */
-export function importXmind(bytes: Uint8Array): ImportedWorkbook {
+export const importXmind = (bytes: Uint8Array): ImportedWorkbook => {
   const entries = readArchive(bytes)
   const warnings = new Warnings()
   const decoder = new TextDecoder('utf-8', { fatal: true })
@@ -97,7 +109,7 @@ class WorkbookImporter {
     this.sheetId = idAllocator('xmind-sheet', warnings, reservedSheetIds)
   }
 
-  sheet(source: SourceRecord, index: number): MindMapSheet {
+  sheet = (source: SourceRecord, index: number): MindMapSheet => {
     this.warnings.omitted(source, sheetFields)
     const originalName = text(source.title, '画布标题', `画布 ${index + 1}`)
     const name = truncateSheetName(originalName).trim()
@@ -144,14 +156,14 @@ class WorkbookImporter {
     }
   }
 
-  private topic(
+  private topic = (
     source: SourceRecord,
     topics: Record<string, Topic>,
     allocate: (value: unknown) => string,
     depth: number,
     side: Side,
     content: EmbeddedContent,
-  ): string {
+  ): string => {
     this.reserve(depth)
     const id = allocate(source.id)
     const title = text(source.title, '主题标题')
@@ -218,7 +230,7 @@ class WorkbookImporter {
     return id
   }
 
-  private reserve(depth: number): void {
+  private reserve = (depth: number): void => {
     if (depth >= 128) throw new Error('XMind 主题层级超过 128')
     if (++this.count > 20_000) throw new Error('XMind 主题数量超过 20000')
   }

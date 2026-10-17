@@ -1,10 +1,10 @@
 import { generateText, Output, zodSchema } from 'ai'
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
-import { AI_LIMITS, assertAITree, type AIGenerateRequest, type AIResult } from '../../shared/ai'
-import type { PrivateAISettings } from './settings'
-import { aiDocument, aiTreeSchema } from './schema'
-import { boundedAIFetch } from './transport'
-import { validateRequest, validateEndpoint } from './validation'
+import { AI_LIMITS, assertAITree, type AIGenerateRequest, type AIResult } from '@shared/ai'
+import type { PrivateAISettings } from '@main/ai/settings'
+import { aiDocument, aiTreeSchema } from '@main/ai/schema'
+import { boundedAIFetch } from '@main/ai/transport'
+import { validateRequest, validateEndpoint } from '@main/ai/validation'
 
 // Provider diagnostics can contain user-controlled values; expose only the bounded UI errors below.
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -20,10 +20,10 @@ const instructions = {
   expand: '为当前主题提出一个新的扩展分支；不要假装修改已有内容。',
   organize: '根据选定分支提出结构更清晰的主题副本，不生成删除或修改已有主题的指令。',
 } as const
-export async function sdkGenerate(
+export const sdkGenerate = async (
   input: AIGenerationInput,
   transport: typeof fetch = fetch,
-): Promise<AIResult> {
+): Promise<AIResult> => {
   const provider = createOpenAICompatible({
     name: 'trelyx',
     baseURL: input.settings.baseURL,
@@ -54,15 +54,15 @@ export async function sdkGenerate(
     outputTokens: result.usage.outputTokens ?? null,
   }
 }
-function countTopics(tree: AIResult['tree']): number {
+const countTopics = (tree: AIResult['tree']): number => {
   return 1 + tree.children.reduce((count, child) => count + countTopics(child), 0)
 }
-export async function generateMindMap(
+export const generateMindMap = async (
   settings: PrivateAISettings,
   value: unknown,
   signal: AbortSignal,
   generator: AIGenerator = sdkGenerate,
-): Promise<AIResult> {
+): Promise<AIResult> => {
   const request = validateRequest(value)
   const baseURL = validateEndpoint(settings.baseURL)
   if (!settings.model.trim()) throw new Error('请先配置 AI 模型名称')
@@ -95,7 +95,7 @@ export async function generateMindMap(
     throw new Error('AI 生成失败：请检查服务地址、密钥、模型及结构化输出支持，或减少内容后重试')
   }
 }
-async function withAbort<T>(operation: Promise<T>, signal: AbortSignal): Promise<T> {
+const withAbort = async <T>(operation: Promise<T>, signal: AbortSignal): Promise<T> => {
   let abort: () => void = () => undefined
   const canceled = new Promise<never>((_resolve, reject) => {
     abort = () => {
@@ -110,6 +110,6 @@ async function withAbort<T>(operation: Promise<T>, signal: AbortSignal): Promise
     signal.removeEventListener('abort', abort)
   }
 }
-function validTokens(value: number | null): number | null {
+const validTokens = (value: number | null): number | null => {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : null
 }

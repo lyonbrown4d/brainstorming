@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { WindowState } from '@shared/window'
 
 /** Synchronize native focus/fullscreen without putting window state into the document. */
-export function useWindowChrome() {
+export const useWindowChrome = () => {
   const bridge = window.trelyx
   const [state, setState] = useState<WindowState>({ focused: true, fullScreen: false })
   useEffect(() => {

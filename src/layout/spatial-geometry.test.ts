@@ -2,21 +2,21 @@
 import { describe, expect, it } from 'vitest'
 import { SVGLoader } from 'three/addons/loaders/SVGLoader.js'
 import { applyCommand, createExampleDocument, LAYOUT_KINDS, type LayoutKind } from '@core'
-import { layoutDocument } from './index'
+import { layoutDocument } from '@layout'
 import {
   layoutSpatialDocument,
   spatialBounds,
   spatialSubtreeIds,
   type SpatialPoint,
-} from './spatial'
-import { spatialFramingNodes } from './spatial-geometry'
-import { layoutDecorationPath } from '../shared/layout-geometry'
+} from '@layout/spatial'
+import { spatialFramingNodes } from '@layout/spatial-geometry'
+import { layoutDecorationPath } from '@shared/layout-geometry'
 
 const numbers = (path: string): number[] =>
   (path.match(/-?(?:\d*\.)?\d+(?:e[+-]?\d+)?/gi) ?? []).map(Number)
 const loader = new SVGLoader()
 const documentFor = (layout: LayoutKind) => ({ ...createExampleDocument(), settings: { layout } })
-function pointClose(actual: SpatialPoint | undefined, expected: SpatialPoint): void {
+const pointClose = (actual: SpatialPoint | undefined, expected: SpatialPoint): void => {
   expect(actual).toBeDefined()
   for (const [index, value] of expected.entries()) expect(actual?.[index]).toBeCloseTo(value)
 }

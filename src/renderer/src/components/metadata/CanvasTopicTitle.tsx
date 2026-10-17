@@ -1,10 +1,10 @@
 import type { Topic } from '@core'
-import { useEditor } from '../../state/editor'
-import { TopicEditor } from '../TopicEditor'
-import { TopicTitleDisplay } from './TopicTitleDisplay'
+import { useEditor } from '@renderer/state/editor'
+import { TopicEditor } from '@renderer/components/TopicEditor'
+import { TopicTitleDisplay } from '@renderer/components/metadata/TopicTitleDisplay'
 
 /** Keep Lexical mounted throughout typing and composition while showing stored inline formatting. */
-export function CanvasTopicTitle({ topic }: { topic: Topic }) {
+export const CanvasTopicTitle = ({ topic }: { topic: Topic }) => {
   const editing = useEditor(
     (state) => state.editingId === topic.id && state.editingSurface === 'canvas',
   )

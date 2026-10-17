@@ -1,4 +1,4 @@
-import { type MindMapDocument } from '../core'
+import { type MindMapDocument } from '@core'
 
 const themes = {
   trelyx: {
@@ -37,7 +37,7 @@ const themes = {
     fills: ['#e2e3e6', '#ededef', '#e5e6e9', '#f0f0f2', '#dcdfe4'],
   },
 } as const
-export function documentAppearance(document: MindMapDocument) {
+export const documentAppearance = (document: MindMapDocument) => {
   const theme = themes[document.settings?.theme ?? 'trelyx']
   return {
     ...theme,
@@ -54,7 +54,7 @@ export interface TopicAppearance {
   readonly lineWidth: number
 }
 const appearances = new WeakMap<MindMapDocument, ReadonlyMap<string, TopicAppearance>>()
-export function topicAppearance(document: MindMapDocument, topicId: string): TopicAppearance {
+export const topicAppearance = (document: MindMapDocument, topicId: string): TopicAppearance => {
   let cached = appearances.get(document)
   const palette = documentAppearance(document)
   if (!cached) {

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { LayoutTemplate } from 'lucide-react'
-import { isDirty, useEditor } from '../../state/editor'
-import { Button } from '../ui/button'
+import { isDirty, useEditor } from '@renderer/state/editor'
+import { Button } from '@renderer/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -9,10 +9,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '../ui/dialog'
-import { createTemplate, templateOptions, type TemplateId } from './templates'
+} from '@renderer/components/ui/dialog'
+import {
+  createTemplate,
+  templateOptions,
+  type TemplateId,
+} from '@renderer/components/documents/templates'
 
-export function TemplateDialog() {
+export const TemplateDialog = () => {
   const [open, setOpen] = useState(false)
   const create = (id: TemplateId): void => {
     const state = useEditor.getState()

@@ -1,21 +1,21 @@
-import { completeDocumentCreation, openExample } from './workspace'
+import { completeDocumentCreation, openExample } from '@tests/e2e/workspace'
 import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
-import { isEncryptedTrelyx, decryptTrelyx } from '../../src/formats/encrypted'
-import { openDock } from './dock'
+import { isEncryptedTrelyx, decryptTrelyx } from '@formats/encrypted'
+import { openDock } from '@tests/e2e/dock'
 
 const password = 'browser-test-password'
-async function fileAction(page: Page, name: string): Promise<void> {
+const fileAction = async (page: Page, name: string): Promise<void> => {
   await page.getByRole('button', { name: '文件菜单', exact: true }).click()
   await page.getByRole('menuitem', { name, exact: true }).click()
   if (name === '新建导图') await completeDocumentCreation(page)
 }
-async function openFile(page: Page, path: string): Promise<void> {
+const openFile = async (page: Page, path: string): Promise<void> => {
   const chooser = page.waitForEvent('filechooser')
   await fileAction(page, '打开导图')
   await (await chooser).setFiles(path)
 }
-async function recoveryEncrypted(page: Page): Promise<boolean> {
+const recoveryEncrypted = async (page: Page): Promise<boolean> => {
   return page.evaluate(
     () =>
       new Promise<boolean>((resolve, reject) => {

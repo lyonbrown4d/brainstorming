@@ -1,9 +1,9 @@
 import { getParentId, searchWorkbook, type SearchMatch, type SearchOptions } from '@core'
-import { useEditor } from './editor'
-import { useSpatialView } from './spatial'
-import { useSearch } from './searchState'
-export { useSearch } from './searchState'
-export function searchOptions(): SearchOptions {
+import { useEditor } from '@renderer/state/editor'
+import { useSpatialView } from '@renderer/state/spatial'
+import { useSearch } from '@renderer/state/searchState'
+export { useSearch } from '@renderer/state/searchState'
+export const searchOptions = (): SearchOptions => {
   const state = useSearch.getState()
   return {
     matchCase: state.matchCase,
@@ -12,10 +12,10 @@ export function searchOptions(): SearchOptions {
     ...(state.allSheets ? {} : { sheetId: useEditor.getState().activeSheetId }),
   }
 }
-export function currentSearchResults(): SearchMatch[] {
+export const currentSearchResults = (): SearchMatch[] => {
   return searchWorkbook(useEditor.getState().workbook, useSearch.getState().query, searchOptions())
 }
-export function revealSearchMatch(match: SearchMatch): void {
+export const revealSearchMatch = (match: SearchMatch): void => {
   const editor = useEditor.getState()
   editor.commitDraft()
   if (useEditor.getState().editingId) return
@@ -35,7 +35,7 @@ export function revealSearchMatch(match: SearchMatch): void {
   useSpatialView.getState().setFocus(match.sheetId, null)
   if (match.field === 'notes') useEditor.setState({ inspectorOpen: true })
 }
-export function replaceSearchResults(match?: SearchMatch): void {
+export const replaceSearchResults = (match?: SearchMatch): void => {
   const editor = useEditor.getState()
   editor.commitDraft()
   if (useEditor.getState().editingId) return

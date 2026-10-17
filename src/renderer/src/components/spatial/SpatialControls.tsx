@@ -1,9 +1,9 @@
 import { Focus, Maximize2, Minus, Plus, Rotate3D } from 'lucide-react'
 import type { RefObject } from 'react'
-import { Button } from '../ui/button'
-import type { SpatialCameraActions } from './types'
+import { Button } from '@renderer/components/ui/button'
+import type { SpatialCameraActions } from '@renderer/components/spatial/types'
 
-export function SpatialControls({
+export const SpatialControls = ({
   actions,
   focused,
   zoom,
@@ -11,7 +11,7 @@ export function SpatialControls({
   actions: RefObject<SpatialCameraActions | null>
   focused: boolean
   zoom: number
-}) {
+}) => {
   return (
     <div
       className="pointer-events-auto absolute right-4 bottom-4 z-30 flex h-9 items-center gap-0.5 rounded-lg border border-border bg-background/95 p-0.5 text-muted-foreground shadow-sm @max-[640px]:bottom-32"

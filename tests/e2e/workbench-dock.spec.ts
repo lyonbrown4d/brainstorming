@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { openExample } from './workspace'
+import { openExample } from '@tests/e2e/workspace'
 
 for (const reducedMotion of ['no-preference', 'reduce'] as const) {
   test.describe(`稳定 Dock 入口：${reducedMotion}`, () => {

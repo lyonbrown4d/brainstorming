@@ -1,4 +1,4 @@
-import type { OpenedDocument } from './contracts'
+import type { OpenedDocument } from '@shared/contracts'
 
 export interface FileSecurityState {
   readonly encrypted: boolean
@@ -19,7 +19,10 @@ export interface FileSecurityAPI {
   listDocumentBackups(documentId: string): Promise<DocumentBackup[]>
   restoreDocumentBackup(id: string): Promise<OpenedDocument>
 }
-export function validateFilePassword(value: unknown, creating = true): asserts value is string {
+export const validateFilePassword: (
+  value: unknown,
+  creating?: boolean,
+) => asserts value is string = (value: unknown, creating = true): asserts value is string => {
   if (
     typeof value !== 'string' ||
     value.length < (creating ? 8 : 1) ||
@@ -27,7 +30,9 @@ export function validateFilePassword(value: unknown, creating = true): asserts v
   )
     throw new Error(creating ? '密码须为 8 至 128 个字符' : '请输入有效密码')
 }
-export function validateSecurityDocumentId(value: unknown): asserts value is string {
+export const validateSecurityDocumentId: (value: unknown) => asserts value is string = (
+  value: unknown,
+): asserts value is string => {
   if (typeof value !== 'string' || !value.trim() || value.length > 4096)
     throw new Error('文档标识无效')
 }

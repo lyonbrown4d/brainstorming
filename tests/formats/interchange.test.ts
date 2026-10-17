@@ -1,18 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { applyCommand, createDocument, createWorkbook, type MindMapWorkbook } from '../../src/core'
+import { applyCommand, createDocument, createWorkbook, type MindMapWorkbook } from '@core'
 import {
   decodeMarkdown,
   decodeOpml,
   encodeMarkdown,
   encodeOpml,
   encodeXmind,
-} from '../../src/formats/interchange'
-import { importXmind } from '../../src/formats/xmind'
-import { readArchive } from '../../src/formats/archive'
-import { createAsset } from '../../src/assets'
-import { checkRasterSize, renderSheetSvg } from '../../src/renderer/src/export/svg'
+} from '@formats/interchange'
+import { importXmind } from '@formats/xmind'
+import { readArchive } from '@formats/archive'
+import { createAsset } from '@assets'
+import { checkRasterSize, renderSheetSvg } from '@renderer/export/svg'
 
-function fixture(): MindMapWorkbook {
+const fixture = (): MindMapWorkbook => {
   let document = createDocument('中文中心\n第二行 <script>&"', 'map')
   document = applyCommand(document, {
     type: 'addTopic',

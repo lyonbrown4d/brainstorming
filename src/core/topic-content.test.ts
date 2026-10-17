@@ -13,8 +13,8 @@ import {
   serializeWorkbook,
   undo,
   validateDocument,
-} from './index'
-import type { DocumentAsset, MindMapDocument } from './index'
+} from '@core'
+import type { DocumentAsset, MindMapDocument } from '@core'
 
 const image: DocumentAsset = { id: 'photo', name: '照片.png', mimeType: 'image/png', data: 'AA==' }
 const attachment: DocumentAsset = {
@@ -24,7 +24,7 @@ const attachment: DocumentAsset = {
   data: '/wABAg==',
 }
 
-function withImage(document = createDocument()): MindMapDocument {
+const withImage = (document = createDocument()): MindMapDocument => {
   return applyCommand(document, {
     type: 'setTopicImage',
     topicId: 'root',

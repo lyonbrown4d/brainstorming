@@ -1,21 +1,24 @@
-import { CanvasOverlay } from './workbench/CanvasOverlay'
+import { CanvasOverlay } from '@renderer/components/workbench/CanvasOverlay'
 import { motion, useReducedMotion } from 'motion/react'
 import { Component, lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react'
 import { ArrowLeft, Focus } from 'lucide-react'
 import { getParentId, type MindMapDocument } from '@core'
-import { interactAnnotationTopic, useAnnotationInteraction } from '../state/annotationInteraction'
-import { useEditor } from '../state/editor'
-import { defaultSpatialView, useSpatialView, visibleSpatialFocus } from '../state/spatial'
-import { isCompositionKey } from '../state/keyboard'
-import { usePresentation } from '../state/presentation'
-import { FloatingToolbar } from './FloatingToolbar'
-import { changeViewMode } from './ViewModeSwitch'
-import { Button } from './ui/button'
-import type { SpatialCameraState } from './spatial/SpatialCanvas'
+import {
+  interactAnnotationTopic,
+  useAnnotationInteraction,
+} from '@renderer/state/annotationInteraction'
+import { useEditor } from '@renderer/state/editor'
+import { defaultSpatialView, useSpatialView, visibleSpatialFocus } from '@renderer/state/spatial'
+import { isCompositionKey } from '@renderer/state/keyboard'
+import { usePresentation } from '@renderer/state/presentation'
+import { FloatingToolbar } from '@renderer/components/FloatingToolbar'
+import { changeViewMode } from '@renderer/components/ViewModeSwitch'
+import { Button } from '@renderer/components/ui/button'
+import type { SpatialCameraState } from '@renderer/components/spatial/SpatialCanvas'
 
-const SpatialCanvas = lazy(() => import('./spatial/SpatialCanvas'))
+const SpatialCanvas = lazy(() => import('@renderer/components/spatial/SpatialCanvas'))
 
-function supportsSpatialCanvas(): boolean {
+const supportsSpatialCanvas = (): boolean => {
   try {
     const canvas = window.document.createElement('canvas')
     const context = canvas.getContext('webgl2')
@@ -27,7 +30,7 @@ function supportsSpatialCanvas(): boolean {
   }
 }
 
-function SpatialUnavailable() {
+const SpatialUnavailable = () => {
   return (
     <div
       role="alert"
@@ -46,15 +49,15 @@ function SpatialUnavailable() {
 
 class SpatialBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   override state = { failed: false }
-  static getDerivedStateFromError(): { failed: boolean } {
+  static getDerivedStateFromError = (): { failed: boolean } => {
     return { failed: true }
   }
-  override render() {
+  override render = () => {
     return this.state.failed ? <SpatialUnavailable /> : this.props.children
   }
 }
 
-function focusPath(document: MindMapDocument, focusId: string): readonly string[] {
+const focusPath = (document: MindMapDocument, focusId: string): readonly string[] => {
   const path = [focusId]
   let parentId = getParentId(document, focusId)
   while (parentId) {
@@ -64,7 +67,7 @@ function focusPath(document: MindMapDocument, focusId: string): readonly string[
   return path
 }
 
-export function SpatialWorkspace() {
+export const SpatialWorkspace = () => {
   const reduced = useReducedMotion()
   const presentation = usePresentation()
   const playing = presentation.playing

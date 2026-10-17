@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
 
-export default function FormulaPreview({ source }: { source: string }) {
+export const FormulaPreview = ({ source }: { source: string }) => {
   const target = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!target.current) return
@@ -23,3 +23,5 @@ export default function FormulaPreview({ source }: { source: string }) {
     />
   )
 }
+
+export default FormulaPreview

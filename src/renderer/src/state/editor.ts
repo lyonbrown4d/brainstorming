@@ -7,7 +7,7 @@ import {
   type WorkbookCommand,
   type MindMapDocument,
 } from '@core'
-import type { EditorState } from './editorTypes'
+import type { EditorState } from '@renderer/state/editorTypes'
 import {
   loadWorkbook,
   serializedWorkbook,
@@ -16,16 +16,16 @@ import {
   restoreStructure,
   travelHistory,
   withHistory,
-} from './workbookState'
-import { usePresentation } from './presentation'
-import { useSpatialView } from './spatial'
-import { enterWorkspaceEditor } from './workspace'
-import { draftCommand } from './editorDraft'
-import { deleteSelectedTopics, useSelection } from './selection'
-import { addTopic } from './topicCreation'
+} from '@renderer/state/workbookState'
+import { usePresentation } from '@renderer/state/presentation'
+import { useSpatialView } from '@renderer/state/spatial'
+import { enterWorkspaceEditor } from '@renderer/state/workspace'
+import { draftCommand } from '@renderer/state/editorDraft'
+import { deleteSelectedTopics, useSelection } from '@renderer/state/selection'
+import { addTopic } from '@renderer/state/topicCreation'
 
 const initial = loadWorkbook(createDocument('未命名'))
-function editSheets(command: WorkbookCommand, nextId?: string): void {
+const editSheets = (command: WorkbookCommand, nextId?: string): void => {
   const state = useEditor.getState()
   if (usePresentation.getState().playing) return
   state.commitDraft()
@@ -63,7 +63,7 @@ function editSheets(command: WorkbookCommand, nextId?: string): void {
     state.setError(error instanceof Error ? error.message : '画布操作失败')
   }
 }
-export function addDocumentSheet(document: MindMapDocument): boolean {
+export const addDocumentSheet = (document: MindMapDocument): boolean => {
   if (useEditor.getState().busy) return false
   const id = crypto.randomUUID()
   const name = truncateSheetName(document.title.replace(/[\p{Cc}]/gu, ' ').trim()) || '新画布'
@@ -275,10 +275,10 @@ export const useEditor = create<EditorState>((set, get) => ({
   },
 }))
 
-export function editorIsDirty(state: EditorState): boolean {
+export const editorIsDirty = (state: EditorState): boolean => {
   return serializedWorkbook(state.workbook) !== state.baseline || draftCommand(state) !== null
 }
 
-export function isDirty(): boolean {
+export const isDirty = (): boolean => {
   return editorIsDirty(useEditor.getState())
 }

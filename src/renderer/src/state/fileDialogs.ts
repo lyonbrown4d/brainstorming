@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { DocumentBackup } from '@shared/fileSecurity'
-import { useEditor } from './editor'
+import { useEditor } from '@renderer/state/editor'
 export const useFileDialogs = create<{
   security: boolean
   history: boolean
@@ -15,7 +15,7 @@ export const useFileDialogs = create<{
   backups: [],
 }))
 let historyRequest = 0
-export async function openHistoryDialog(): Promise<void> {
+export const openHistoryDialog = async (): Promise<void> => {
   historyRequest += 1
   const request = historyRequest
   const documentId = useEditor.getState().workbook.id

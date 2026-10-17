@@ -1,9 +1,9 @@
 import { app, ipcMain, safeStorage, type BrowserWindow, type IpcMainInvokeEvent } from 'electron'
-import { AISettingsStore } from './settings'
-import { generateMindMap } from './service'
-import { validateRequest } from './validation'
+import { AISettingsStore } from '@main/ai/settings'
+import { generateMindMap } from '@main/ai/service'
+import { validateRequest } from '@main/ai/validation'
 
-export function registerAIIPC(trusted: (event: IpcMainInvokeEvent) => BrowserWindow): void {
+export const registerAIIPC = (trusted: (event: IpcMainInvokeEvent) => BrowserWindow): void => {
   const store = new AISettingsStore(app.getPath('userData'), {
     isEncryptionAvailable: () => safeStorage.isEncryptionAvailable(),
     ...(process.platform === 'linux'

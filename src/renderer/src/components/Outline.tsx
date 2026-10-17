@@ -1,10 +1,10 @@
 import { ChevronDown, ChevronRight, PanelLeftClose } from 'lucide-react'
 import { topicAppearance } from '@shared/appearance'
-import { useEditor } from '../state/editor'
-import { selectTopic, useTopicSelected } from '../state/selection'
-import { Button } from './ui/button'
+import { useEditor } from '@renderer/state/editor'
+import { selectTopic, useTopicSelected } from '@renderer/state/selection'
+import { Button } from '@renderer/components/ui/button'
 
-function OutlineBranch({ id, depth }: { id: string; depth: number }) {
+const OutlineBranch = ({ id, depth }: { id: string; depth: number }) => {
   const topic = useEditor((state) => state.history.document.topics[id])
   const stroke = useEditor((state) => topicAppearance(state.history.document, id).stroke)
   const selected = useTopicSelected(id)
@@ -62,7 +62,7 @@ function OutlineBranch({ id, depth }: { id: string; depth: number }) {
   )
 }
 
-export function Outline() {
+export const Outline = () => {
   const rootId = useEditor((state) => state.history.document.rootId)
   const floatingIds = useEditor((state) => state.history.document.floatingIds)
   const count = useEditor((state) => Object.keys(state.history.document.topics).length)
