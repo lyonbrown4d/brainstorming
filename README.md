@@ -44,4 +44,4 @@ pnpm build:e2e
 pnpm test:e2e
 ```
 
-Vitest 保留共享 TS 模型、布局、格式和编辑器测试；Rust 测试运行真实 SQLite / SQLCipher 与资源服务；WebdriverIO 官方 Tauri service 启动真实原生应用。E2E 插件和文件选择器替代入口只进入独立的测试构建。Storybook 继续提供组件预览和 Playwright 组件测试。
+Vitest 保留共享 TS 模型、布局、格式和编辑器测试；Rust 测试运行真实 SQLite / SQLCipher 与资源服务；使用 [Tauri 官方推荐的 WebDriver 方案](https://v2.tauri.app/develop/tests/webdriver/)（WebdriverIO + `@wdio/tauri-service` embedded 驱动）启动真实原生应用，支持 macOS、Windows、Linux。E2E 插件和文件选择器替代入口只进入独立的测试构建。Storybook 继续提供组件预览和 Playwright 组件测试。

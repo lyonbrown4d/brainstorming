@@ -36,6 +36,8 @@ pnpm dev
 
 macOS 桌面验证先安装 `brew install pkgconf vips`。`desktop-test`、`desktop-check` 和 `build:e2e` 使用本机开发库；`package` 使用构建脚本准备并打包固定版本的 macOS 图片库，不依赖目标机器上的 Homebrew。直接运行 `pnpm test:e2e` 不会编译应用；通常使用 Moon 的 `e2e` 任务，或先运行 `pnpm build:e2e`。
 
+原生 E2E 遵循 [Tauri 官方 WebDriver 指南](https://v2.tauri.app/develop/tests/webdriver/)，使用 WebdriverIO 与 `@wdio/tauri-service` 的 embedded 驱动，覆盖 macOS、Windows 和 Linux。插件只在独立 E2E 构建启用；生产应用不启用测试驱动。直接使用 `tauri-driver` 的外部驱动仅支持 Windows、Linux，本项目不为 macOS 维护另一套驱动实现。验收使用当前源码生成的完整测试二进制，不将旧二进制与新的开发 renderer 混用；构建超时或失败时记录阻塞，不能用组件测试结果代替原生 E2E 通过。
+
 CI 保留 Node 24 / 26 的前端、Storybook 构建与浏览器检查；Ubuntu 单独运行无 UI 的 Rust 测试，macOS 运行 Clippy、完整桌面 Rust 测试、真实 WDIO E2E 和 app bundle 构建。预览包使用 Tauri 的 [ad-hoc 签名](https://v2.tauri.app/distribute/sign/macos/#ad-hoc-signing)，经 `codesign` 校验后用 `ditto` 打包，保留 app 的执行权限；此步骤不代表完成公证或正式发布。本轮 CI 不构建、不测试 iOS / Android。
 
 移动工程使用 Tauri 官方生成结构 `src-tauri/gen/apple` 和 `src-tauri/gen/android`。原生依赖、签名和模拟器必须独立验证，前端构建成功不代表手机端可以发布。

@@ -57,7 +57,7 @@ Brainstorming 是基于 React Flow + Tauri 2 / Rust 的本地优先跨平台思�
 - 已有路径的导图按 Tab 自动保存，使用不修改编辑器的草稿快照；手动保存、另存为、密码变更、版本读取和释放共用按路径队列。保存结果只能更新原 Tab、原工作簿和原路径的保存基线，期间的新修改保持未保存状态。无路径导图只留内存，不写自动保存或恢复快照，关闭后丢失；继续保留未保存关闭确认。
 - 原生文件通过 SQLite 事务写入，不能先截断原文件；处理取消、损坏 SQLite/第三方 ZIP/JSON/XML、保存失败和恢复失败。
 - 测试覆盖主题树合法性、命令边界、撤销重做、序列化和恢复。
-- UI 使用 WebdriverIO 官方 Tauri service 启动真实原生应用；WDIO 插件与文件选择器测试入口仅在 e2e feature、独立应用标识下启用。Storybook 保留 Playwright 浏览器组件测试。
+- UI 遵循 [Tauri 官方 WebDriver 指南](https://v2.tauri.app/develop/tests/webdriver/)，使用 WebdriverIO + `@wdio/tauri-service` 的 embedded 驱动启动真实原生应用，覆盖 macOS、Windows、Linux；原生验收必须使用当前源码构建的完整 E2E 二进制，不混用旧二进制与新的开发 renderer；WDIO 插件与文件选择器测试入口仅在 e2e feature、独立应用标识下启用。Storybook 保留 Playwright 浏览器组件测试。
 - Storybook 提供主题和编辑器交互预览；性能使用固定 fixtures、多次采样。
 - CI 至少执行 format:check、lint、typecheck、test、build、Storybook、E2E。
 
