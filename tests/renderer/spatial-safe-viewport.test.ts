@@ -9,10 +9,10 @@ describe('spatial canvas safe area', () => {
   it('deducts the exact open panel widths from a full canvas', () => {
     expect(spatialSafeViewport(viewport, false, false)).toEqual(viewport)
     expect(spatialSafeViewport(viewport, true, false)).toMatchObject({ left: 240, width: 1224 })
-    expect(spatialSafeViewport(viewport, false, true)).toMatchObject({ left: 24, width: 1184 })
+    expect(spatialSafeViewport(viewport, false, true)).toMatchObject({ left: 24, width: 1168 })
     const safe = spatialSafeViewport(viewport, true, true)
-    expect(safe).toEqual({ ...viewport, left: 240, width: 968 })
-    expect(safe.left + safe.width / 2).toBe(viewport.left + viewport.width / 2 - 20)
+    expect(safe).toEqual({ ...viewport, left: 240, width: 952 })
+    expect(safe.left + safe.width / 2).toBe(viewport.left + viewport.width / 2 - 28)
   })
 
   it.each([false, true])('fits the center into the visible area with reset=%s', (reset) => {

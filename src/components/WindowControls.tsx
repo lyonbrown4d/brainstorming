@@ -20,7 +20,7 @@ export const WindowControls = () => {
         <Button
           key={key}
           variant="ghost"
-          className="h-full w-10 rounded-none px-0"
+          className={`h-full w-10 rounded-none px-0 text-muted-foreground ${key === 'closeWindow' ? 'hover:bg-destructive hover:text-white' : 'hover:bg-accent hover:text-foreground'}`}
           aria-label={translate(key)}
           title={translate(key)}
           onClick={() => {

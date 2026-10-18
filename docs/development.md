@@ -100,3 +100,11 @@ macOS `build:desktop --debug`（未指定证书）或显式 `APPLE_SIGNING_IDENT
 文档迁移放在 `src-tauri/src/document/migrations`，本机设置迁移放在 `src-tauri/src/storage/migrations`。两组使用独立 Migrator；执行入口是应用内配置好的 Migrator，不对用户文件执行默认 CLI 迁移。履历表均为 `_brainstorming_migrations`，由 SQLx 维护版本与校验和。不要手写履历 INSERT，也不要运行用户文件内的 SQL。
 
 新变更追加有序编号 SQL，例如 `002_add_topic_index.sql`；不修改已发布的迁移。迁移编号独立于文件协议的 `application_id` / `user_version`。Cargo build.rs 追踪两个迁移目录，新增文件会重新嵌入。迁移或校验失败必须保留原文件，相关测试使用真实 SQLCipher 和有界资源。
+
+### 暖白与石墨界面
+
+界面沿用浅色、深色与跟随系统，使用 `src/styles/ui.css` 的语义变量统一标题栏、Dock、属性栏、启动页和 Three.js 控件。默认导图的画布与派生节点底色跟随界面外观；其他导图预设、自定义背景和显式节点颜色保持文档设置。外观投影不写入工作簿、撤销记录或导出颜色。
+
+三个桌面平台共用 56px 标题栏；macOS 保留原生交通灯，Windows、Linux 使用右侧窗口操作区。大纲和属性栏宽度由 `src/shared/workbench.ts` 统一供二维、三维取景使用。
+
+属性折叠复用官方 shadcn Accordion，由固定版本 `shadcn@4.22.0` CLI 下载；上层 `PropertySection` 组合样式并保留折叠内容的编辑器 DOM，不修改下载源码。

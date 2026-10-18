@@ -28,7 +28,7 @@ export const FieldSelect = <T extends string>({
       }}
     >
       <SelectTrigger
-        className={`field-select h-9 min-w-0 rounded-[7px] border-border bg-background px-2.5 py-0 text-[13px] text-foreground ${className}`}
+        className={`field-select h-8 min-w-0 rounded-[7px] border-border bg-background px-2.5 py-0 text-[13px] text-foreground ${className}`}
         aria-label={label}
       >
         <SelectValue />

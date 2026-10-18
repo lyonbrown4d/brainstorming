@@ -56,8 +56,8 @@
   border-radius: inherit;
   background: var(--topic-fill);
   box-shadow:
-    0 0 0 2px #9480d9,
-    0 4px 18px #352d4d18;
+    0 0 0 2px var(--ui-primary),
+    var(--ui-shadow-floating);
 }
 .topic.is-editing .fold-button,
 .topic.is-editing::after {

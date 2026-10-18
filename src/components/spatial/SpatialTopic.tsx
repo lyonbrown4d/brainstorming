@@ -26,6 +26,8 @@ interface SpatialTopicProps {
   readonly muted: boolean
   readonly fill: string
   readonly branchColor: string
+  readonly selectionColor: string
+  readonly dropColor: string
   readonly textColor: string
   readonly fontFamily: string
   readonly imageAsset: DocumentAsset | undefined
@@ -46,6 +48,8 @@ export const SpatialTopic = memo(
     fill,
     branchColor,
     textColor,
+    selectionColor,
+    dropColor,
     fontFamily,
     imageAsset,
     onSelect,
@@ -73,14 +77,14 @@ export const SpatialTopic = memo(
         <group rotation={[0.025, -0.09, 0]}>
           {(selected || dropTarget) && (
             <RoundedBox
-              args={[width + 0.065, height + 0.065, 0.17]}
+              args={[width + 0.035, height + 0.035, 0.17]}
               position={[0, 0, -0.03]}
               radius={Math.min(0.08, radius + 0.015)}
               smoothness={2}
               bevelSegments={2}
             >
               <meshBasicMaterial
-                color={dropTarget ? '#72a98d' : '#8b78ee'}
+                color={dropTarget ? dropColor : selectionColor}
                 transparent
                 opacity={muted ? 0.25 : 0.9}
               />
@@ -145,7 +149,7 @@ export const SpatialTopic = memo(
               role="presentation"
               data-spatial-card-id={topic.id}
               data-drop-target={dropTarget || undefined}
-              className={`pointer-events-auto relative flex flex-col items-center justify-center gap-1 rounded-md px-4 py-2 ${dropTarget ? 'outline-2 outline-offset-4 outline-dashed outline-[#72a98d]' : ''}`}
+              className={`pointer-events-auto relative flex flex-col items-center justify-center gap-1 rounded-md px-4 py-2 ${dropTarget ? 'outline-2 outline-offset-4 outline-dashed outline-drop-target' : ''}`}
               style={{
                 width: width * 100,
                 height: height * 100,

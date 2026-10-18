@@ -35,7 +35,7 @@ export const DockToolbar = ({
       ref={root}
       data-slot={edge === 'top' ? 'document-dock' : 'canvas-dock'}
       data-edge={edge}
-      className={`pointer-events-none absolute left-1/2 z-40 flex w-[min(calc(100%-2rem),34rem)] -translate-x-1/2 justify-center ${edge === 'top' ? 'top-3' : 'bottom-3'}`}
+      className={`pointer-events-none absolute left-1/2 z-40 flex ${edge === 'top' ? 'w-[min(calc(100%-2rem),30rem)]' : 'w-[min(calc(100%-2rem),32rem)]'} -translate-x-1/2 justify-center ${edge === 'top' ? 'top-3' : 'bottom-3'}`}
       onPointerEnter={(event) => {
         if (event.pointerType !== 'touch') enter()
       }}
@@ -60,7 +60,7 @@ export const DockToolbar = ({
         ref={handle}
         variant="ghost"
         size="sm"
-        className="pointer-events-auto h-10 shrink-0 gap-1.5 sm:h-8 rounded-full border border-border/80 bg-background/95 px-3 text-[11px] text-muted-foreground shadow-sm backdrop-blur-xl hover:bg-accent hover:text-accent-foreground"
+        className="pointer-events-auto h-10 shrink-0 gap-1.5 sm:h-7 rounded-full border border-border/70 bg-background/95 px-3 text-[11px] text-muted-foreground shadow-sm backdrop-blur-md hover:bg-accent hover:text-accent-foreground"
         aria-label={label ?? translate('expandFloatingToolbar')}
         aria-expanded={open}
         aria-controls={id}
@@ -80,9 +80,9 @@ export const DockToolbar = ({
         id={id}
         aria-hidden={!open}
         inert={!open}
-        className={`absolute ${edge === 'top' ? 'top-[calc(100%+0.5rem)]' : 'bottom-[calc(100%+0.5rem)]'} w-full rounded-2xl border border-border/80 bg-background/95 p-1.5 shadow-xl shadow-black/10 ring-1 ring-background/80 backdrop-blur-xl ${open ? 'pointer-events-auto' : 'pointer-events-none'}`}
+        className={`absolute ${edge === 'top' ? 'top-[calc(100%+0.5rem)]' : 'bottom-[calc(100%+0.5rem)]'} w-full rounded-xl border border-border/80 bg-background/95 p-1 shadow-floating backdrop-blur-md ${open ? 'pointer-events-auto' : 'pointer-events-none'}`}
       >
-        <ScrollArea type="auto" className="h-[3.25rem] w-full">
+        <ScrollArea type="auto" className={edge === 'top' ? 'h-10 w-full' : 'h-[3.25rem] w-full'}>
           <div className="w-max pb-1">{children}</div>
           <ScrollBar orientation="horizontal" className="h-1.5" />
         </ScrollArea>

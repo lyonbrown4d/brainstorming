@@ -1,3 +1,4 @@
+import { useAppearanceColors } from '@renderer/hooks/useAppearanceColors'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { topicAppearance, documentAppearance } from '@shared/appearance'
@@ -19,6 +20,7 @@ import { Button } from '@renderer/components/ui/button'
 export const CanvasMinimap = memo(() => {
   const { translate } = useMessages()
 
+  const colors = useAppearanceColors()
   const document = useEditor((state) => state.history.document)
   const visible = useCanvasPreferences((state) => state.minimap)
   const setVisible = useCanvasPreferences((state) => state.setMinimap)
@@ -33,9 +35,9 @@ export const CanvasMinimap = memo(() => {
             zoomable
             nodeColor={nodeColor}
             nodeStrokeWidth={0}
-            maskColor={`${documentAppearance(document).background}b8`}
-            bgColor={documentAppearance(document).background}
-            className="!relative !h-28 !w-44 !bottom-auto !left-auto !m-0 overflow-hidden rounded-xl border border-border bg-background shadow-sm @max-[640px]:!h-20 @max-[640px]:!w-28"
+            maskColor={`${documentAppearance(document, colors.canvas).background}b8`}
+            bgColor={documentAppearance(document, colors.canvas).background}
+            className="!relative !h-28 !w-44 !bottom-auto !left-auto !m-0 overflow-hidden rounded-lg border border-border/80 bg-background shadow-floating @max-[640px]:!h-20 @max-[640px]:!w-28"
           />
           <Button
             variant="ghost"

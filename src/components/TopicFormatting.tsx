@@ -1,3 +1,4 @@
+import { useAppearanceColors } from '@renderer/hooks/useAppearanceColors'
 import { useMessages } from '@renderer/i18n/useMessages'
 import {
   fontSizes,
@@ -33,7 +34,7 @@ const ColorPalette = ({
           variant="ghost"
           size="icon"
           key={color.value}
-          className="color-swatch size-8 shrink-0 rounded-[7px] border border-foreground/5 p-0 hover:-translate-y-px aria-pressed:outline-2 aria-pressed:outline-offset-[3px] aria-pressed:outline-ring motion-reduce:hover:translate-y-0"
+          className="color-swatch size-6 shrink-0 rounded-full border border-foreground/5 p-0 hover:-translate-y-px aria-pressed:outline-2 aria-pressed:outline-offset-[3px] aria-pressed:outline-ring motion-reduce:hover:translate-y-0"
           type="button"
           aria-label={`${label}：${color.name}`}
           aria-pressed={value.toLowerCase() === color.value}
@@ -56,13 +57,14 @@ export const TopicFormatting = ({
   topicId?: string
 }) => {
   const { translate } = useMessages()
+  const colors = useAppearanceColors()
   const { shapeOptions, lineOptions, fillColors, textColors } = getTopicFormattingOptions(translate)
 
   const document = useEditor((state) => state.history.document)
   const selectedId = useEditor((state) => state.selectedId)
   const topic = document.topics[topicId ?? selectedId]
   if (!topic) return null
-  const defaults = defaultTopicStyle(document, topic.id)
+  const defaults = defaultTopicStyle(document, topic.id, colors.canvas)
   const style = topic.style ?? {}
   const fontSize = style.fontSize ?? defaults.fontSize
   const bold = style.bold ?? defaults.bold
@@ -102,7 +104,7 @@ export const TopicFormatting = ({
   if (compact)
     return (
       <div
-        className="topic-context-toolbar nodrag nopan flex items-center rounded-[10px] border border-border bg-background px-[7px] py-[5px] shadow-[0_5px_16px_#352d4d0d] [&_[data-slot=button]]:h-[29px] [&_[data-slot=button]]:w-[31px]"
+        className="topic-context-toolbar nodrag nopan flex items-center rounded-[10px] border border-border bg-background px-[7px] py-[5px] shadow-floating [&_[data-slot=button]]:h-[29px] [&_[data-slot=button]]:w-[31px]"
         role="toolbar"
         aria-label={translate('topicFormatting')}
       >
@@ -120,7 +122,7 @@ export const TopicFormatting = ({
           </Popover.Trigger>
           <Popover.Portal>
             <Popover.Content
-              className="formatting-popover color-popover z-[65] w-auto rounded-xl border border-border bg-popover p-3.5 shadow-[0_6px_24px_#352d4d12]"
+              className="formatting-popover color-popover z-[65] w-auto rounded-xl border border-border bg-popover p-3.5 shadow-floating"
               side="top"
               sideOffset={10}
               aria-label={translate('fillColor')}
@@ -145,7 +147,7 @@ export const TopicFormatting = ({
           </Popover.Trigger>
           <Popover.Portal>
             <Popover.Content
-              className="formatting-popover z-[65] w-[250px] rounded-xl border border-border bg-popover px-4 shadow-[0_6px_24px_#352d4d12] [&_.format-group:first-child]:mt-0 [&_.format-group:first-child]:border-t-0"
+              className="formatting-popover z-[65] w-[250px] rounded-xl border border-border bg-popover px-4 shadow-floating [&_.format-group:first-child]:mt-0 [&_.format-group:first-child]:border-t-0"
               side="top"
               sideOffset={10}
               align="end"
@@ -159,7 +161,7 @@ export const TopicFormatting = ({
     )
   return (
     <div className="topic-formatting">
-      <section className="format-group border-t border-border py-4 first:mt-4 [&_h3]:mb-2.5 [&_h3]:text-sm [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-[18px]">
+      <section className="format-group border-t border-border/70 py-3 first:border-0 [&_h3]:mb-2.5 [&_h3]:text-xs [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-[18px]">
         <h3>{translate('appearance')}</h3>
         <span className="mb-2 block text-xs text-muted-foreground">{translate('shape')}</span>
         <div className="select-control relative flex items-center [&_.field-select]:w-full [&_.field-select]:pr-8 [&_.field-select]:pl-11">
@@ -185,9 +187,9 @@ export const TopicFormatting = ({
           }}
         />
       </section>
-      <section className="format-group border-t border-border py-4 first:mt-4 [&_h3]:mb-2.5 [&_h3]:text-sm [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-[18px]">
+      <section className="format-group border-t border-border/70 py-3 first:border-0 [&_h3]:mb-2.5 [&_h3]:text-xs [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-[18px]">
         <h3>{translate('text')}</h3>
-        <div className="font-controls mb-[15px] flex items-end gap-2 [&_[data-slot=button]]:h-9 [&_[data-slot=button]]:w-[35px] [&_[data-slot=button]]:border [&_[data-slot=button]]:border-border [&_[data-slot=button]]:bg-background [&_[data-slot=button][aria-pressed=true]]:border-primary/20 [&_[data-slot=button][aria-pressed=true]]:bg-accent [&_[data-slot=button][aria-pressed=true]]:text-accent-foreground">
+        <div className="font-controls mb-3 flex items-end gap-2 [&_[data-slot=button]]:h-8 [&_[data-slot=button]]:w-8 [&_[data-slot=button]]:border [&_[data-slot=button]]:border-border [&_[data-slot=button]]:bg-background [&_[data-slot=button][aria-pressed=true]]:border-primary/20 [&_[data-slot=button][aria-pressed=true]]:bg-accent [&_[data-slot=button][aria-pressed=true]]:text-accent-foreground">
           <div className="format-field flex flex-1 items-center gap-2.5 text-xs text-muted-foreground">
             <span>{translate('fontSize')}</span>
             {sizeControl}
@@ -217,7 +219,7 @@ export const TopicFormatting = ({
           }}
         />
       </section>
-      <section className="format-group border-t border-border py-4 first:mt-4 [&_h3]:mb-2.5 [&_h3]:text-sm [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-[18px]">
+      <section className="format-group border-t border-border/70 py-3 first:border-0 [&_h3]:mb-2.5 [&_h3]:text-xs [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-[18px]">
         <h3>{translate('branch')}</h3>
         <div className="branch-controls flex gap-2.5 [&_.format-field]:flex [&_.format-field]:flex-1 [&_.format-field]:flex-col [&_.format-field]:gap-2 [&_.format-field]:text-[11px] [&_.format-field]:text-muted-foreground [&_.field-select]:w-full">
           <div className="format-field">

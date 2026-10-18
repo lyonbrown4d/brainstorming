@@ -1,3 +1,4 @@
+import { requireDesktopAPI } from '@renderer/lib/desktop'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { ChevronDown, Download, FilePlus2, FolderOpen, History, Save } from 'lucide-react'
@@ -75,6 +76,7 @@ const RecentFilesMenu = () => {
 }
 
 export const ToolbarFileMenu = () => {
+  const mac = requireDesktopAPI().platform === 'macos'
   const { translate } = useMessages()
 
   const title = useEditor((state) => state.workbook.title)
@@ -105,7 +107,7 @@ export const ToolbarFileMenu = () => {
           <DropdownMenuItem disabled={busy} aria-label={translate('newMap')} onSelect={newDocument}>
             <FilePlus2 />
             {translate('newMap')}
-            <DropdownMenuShortcut>⌘N</DropdownMenuShortcut>
+            <DropdownMenuShortcut>{mac ? '⌘N' : 'Ctrl+N'}</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem
             disabled={busy}
@@ -114,7 +116,7 @@ export const ToolbarFileMenu = () => {
           >
             <FolderOpen />
             {translate('openMap')}
-            <DropdownMenuShortcut>⌘O</DropdownMenuShortcut>
+            <DropdownMenuShortcut>{mac ? '⌘O' : 'Ctrl+O'}</DropdownMenuShortcut>
           </DropdownMenuItem>
           <RecentFilesMenu />
         </DropdownMenuGroup>
@@ -127,7 +129,7 @@ export const ToolbarFileMenu = () => {
           >
             <Save />
             {translate('saveMap')}
-            <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
+            <DropdownMenuShortcut>{mac ? '⌘S' : 'Ctrl+S'}</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem
             disabled={busy}
@@ -136,7 +138,7 @@ export const ToolbarFileMenu = () => {
           >
             <Download />
             {translate('saveAs')}
-            <DropdownMenuShortcut>⇧⌘S</DropdownMenuShortcut>
+            <DropdownMenuShortcut>{mac ? '⇧⌘S' : 'Ctrl+Shift+S'}</DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>

@@ -29,7 +29,7 @@ export const ViewModeSwitch = () => {
       role="group"
       aria-label={translate('canvasDimension')}
       data-no-drag
-      className="shrink-0 rounded-lg border border-border bg-background p-0.5"
+      className="shrink-0 rounded-lg border border-border/70 bg-secondary/50 p-0.5"
     >
       {(['2d', '3d'] as const).map((value) => (
         <ToggleGroupItem
@@ -40,7 +40,7 @@ export const ViewModeSwitch = () => {
           size="sm"
           aria-label={value === '2d' ? translate('2dView') : translate('3dView')}
           aria-pressed={mode === value}
-          className="h-8 min-w-10 px-2 sm:min-w-12 sm:px-3"
+          className="h-7 min-w-9 rounded-md px-2 text-xs sm:min-w-10 sm:px-3 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground"
         >
           {value === '2d' ? '2D' : '3D'}
         </ToggleGroupItem>

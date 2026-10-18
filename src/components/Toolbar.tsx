@@ -24,16 +24,15 @@ export const Toolbar = () => {
   const dirty = useEditor(editorIsDirty)
   return (
     <WindowTitlebar className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-4">
-      <div className="flex min-w-0 items-center gap-2 xl:gap-4">
+      <div className="flex min-w-0 items-center gap-2 xl:gap-3">
         <Button
           variant="ghost"
-          className="shrink-0 gap-2 px-0 text-xl font-semibold tracking-tight"
+          className="size-8 shrink-0 rounded-md p-0"
           aria-label={translate('returnToHome')}
           disabled={busy}
           onClick={showWorkspaceHome}
         >
-          <BrandLogo />
-          <span className="hidden min-[1100px]:inline">Brainstorming</span>
+          <BrandLogo className="size-6" />
         </Button>
         <Separator
           orientation="vertical"
@@ -41,7 +40,7 @@ export const Toolbar = () => {
         />
         <ToolbarFileMenu />
         <span
-          className="save-status hidden shrink-0 items-center gap-1.5 whitespace-nowrap text-xs text-muted-foreground min-[1280px]:inline-flex"
+          className="save-status hidden shrink-0 items-center gap-1.5 whitespace-nowrap text-[11px] text-muted-foreground min-[1100px]:inline-flex"
           title={path ?? translate('notSavedToALocalFile')}
           aria-live="polite"
         >
@@ -66,7 +65,7 @@ export const Toolbar = () => {
         <AppAppearance />
         <Button
           variant="ghost"
-          className="h-8 gap-2 px-2 aria-pressed:bg-accent aria-pressed:text-accent-foreground"
+          className="h-8 gap-1.5 rounded-md px-2 text-xs text-muted-foreground aria-pressed:bg-accent aria-pressed:text-accent-foreground"
           aria-label={translate('documentOutline')}
           aria-pressed={outline}
           title={translate('documentOutline')}
@@ -88,7 +87,7 @@ export const Toolbar = () => {
         />
         <Button
           variant="ghost"
-          className="h-8 gap-2 px-2 aria-pressed:bg-accent aria-pressed:text-accent-foreground"
+          className="h-8 gap-1.5 rounded-md px-2 text-xs text-muted-foreground aria-pressed:bg-accent aria-pressed:text-accent-foreground"
           aria-label={translate('propertiesPanel')}
           aria-pressed={inspector}
           title={translate('propertiesPanel')}

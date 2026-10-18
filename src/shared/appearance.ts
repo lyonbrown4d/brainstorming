@@ -2,11 +2,21 @@ import { type MindMapDocument } from '@core'
 
 import { findPalette, paletteAppearance, readableText } from '@shared/palettes'
 
-const resolveDocumentAppearance = (document: MindMapDocument) => {
+/** A UI canvas color is a view projection; explicit document colors always win. */
+export const canvasBackground = (document: MindMapDocument, surface?: string): string => {
+  const settings = document.settings
+  const selected = settings?.customPalette ?? findPalette(settings?.theme)
+  if (settings?.background !== undefined) return settings.background
+  if (settings?.customPalette || (settings?.theme && settings.theme !== 'brainstorming'))
+    return selected.background
+  return surface ?? selected.background
+}
+
+const resolveDocumentAppearance = (document: MindMapDocument, surface?: string) => {
   const selected = document.settings?.customPalette ?? findPalette(document.settings?.theme)
   const theme = paletteAppearance({
     ...selected,
-    background: document.settings?.background ?? selected.background,
+    background: canvasBackground(document, surface),
   })
   return {
     ...theme,
@@ -16,13 +26,19 @@ const resolveDocumentAppearance = (document: MindMapDocument) => {
 }
 const documentAppearances = new WeakMap<
   MindMapDocument,
-  ReturnType<typeof resolveDocumentAppearance>
+  Map<string, ReturnType<typeof resolveDocumentAppearance>>
 >()
-export const documentAppearance = (document: MindMapDocument) => {
-  const cached = documentAppearances.get(document)
+export const documentAppearance = (document: MindMapDocument, surface?: string) => {
+  const key = canvasBackground(document, surface)
+  let variants = documentAppearances.get(document)
+  if (!variants) {
+    variants = new Map()
+    documentAppearances.set(document, variants)
+  }
+  const cached = variants.get(key)
   if (cached) return cached
-  const appearance = resolveDocumentAppearance(document)
-  documentAppearances.set(document, appearance)
+  const appearance = resolveDocumentAppearance(document, surface)
+  variants.set(key, appearance)
   return appearance
 }
 export interface TopicAppearance {
@@ -32,10 +48,22 @@ export interface TopicAppearance {
   readonly fontFamily: string
   readonly lineWidth: number
 }
-const appearances = new WeakMap<MindMapDocument, ReadonlyMap<string, TopicAppearance>>()
-export const topicAppearance = (document: MindMapDocument, topicId: string): TopicAppearance => {
-  let cached = appearances.get(document)
-  const palette = documentAppearance(document)
+const appearances = new WeakMap<
+  MindMapDocument,
+  Map<string, ReadonlyMap<string, TopicAppearance>>
+>()
+export const topicAppearance = (
+  document: MindMapDocument,
+  topicId: string,
+  surface?: string,
+): TopicAppearance => {
+  const palette = documentAppearance(document, surface)
+  let variants = appearances.get(document)
+  if (!variants) {
+    variants = new Map()
+    appearances.set(document, variants)
+  }
+  let cached = variants.get(palette.background)
   if (!cached) {
     const values = new Map<string, TopicAppearance>()
     const pending = [
@@ -76,7 +104,7 @@ export const topicAppearance = (document: MindMapDocument, topicId: string): Top
       })
     }
     cached = values
-    appearances.set(document, cached)
+    variants.set(palette.background, cached)
   }
   return (
     cached.get(topicId) ?? {

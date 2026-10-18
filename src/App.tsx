@@ -76,7 +76,7 @@ export const App = () => {
       <MotionConfig reducedMotion="user">
         <TooltipProvider>
           <div
-            className="app-shell group/shell relative flex h-full w-full min-w-0 flex-col pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]"
+            className="app-shell group/shell relative flex h-full bg-canvas text-foreground w-full min-w-0 flex-col pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]"
             {...fileDrop.handlers}
             data-platform={chrome.platform}
             data-focused={chrome.focused}
@@ -158,7 +158,7 @@ export const App = () => {
                     </div>
                     <PresentationPlayback />
                     {!playing && (
-                      <footer className="status-bar z-[8] flex h-12 min-h-12 shrink-0 items-center gap-2 border-t border-border bg-background pr-2 text-muted-foreground lg:gap-3 lg:pr-4">
+                      <footer className="status-bar z-[8] flex h-12 min-h-12 sm:h-10 sm:min-h-10 shrink-0 items-center gap-2 border-t border-border/80 bg-background pr-2 text-muted-foreground lg:gap-3 lg:pr-4">
                         <SheetTabs />
                         <span className="topic-count hidden shrink-0 text-xs whitespace-nowrap lg:inline">
                           {translate('topicCount', { count })}

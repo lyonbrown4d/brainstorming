@@ -40,7 +40,7 @@ export const SheetTabItem = ({ sheet, index, count, busy, onDialog }: SheetTabIt
   return (
     <div
       ref={setNodeRef}
-      className="sheet-tab-item group relative flex shrink-0 items-center pr-1 pl-0.5 transition-colors after:absolute after:right-0 after:h-5 after:border-r after:border-border/70 data-[active=true]:bg-accent/60 data-[active=true]:text-primary data-[dragging=true]:z-2 data-[dragging=true]:bg-background data-[dragging=true]:opacity-70 motion-reduce:transition-none"
+      className="sheet-tab-item group relative flex shrink-0 items-center pr-1 pl-0.5 transition-colors after:absolute after:right-0 after:h-5 after:border-r after:border-border/70 data-[active=true]:bg-accent/40 data-[active=true]:text-primary data-[dragging=true]:z-2 data-[dragging=true]:bg-background data-[dragging=true]:opacity-70 motion-reduce:transition-none"
       data-active={active}
       data-dragging={isDragging}
       style={{ transform: CSS.Transform.toString(transform), transition }}

@@ -1,3 +1,4 @@
+import { OUTLINE_WIDTH, INSPECTOR_WIDTH } from '@shared/workbench'
 import { useMessages } from '@renderer/i18n/useMessages'
 import { useAppearanceColors } from '@renderer/hooks/useAppearanceColors'
 /* eslint react/no-unknown-property: "off" -- React Three Fiber uses Three.js JSX properties. */
@@ -121,13 +122,16 @@ export const SpatialScene = ({
     () => new Map(layout.nodes.map((node) => [node.id, node])),
     [layout.nodes],
   )
-  const appearance = documentAppearance(document)
+  const appearance = documentAppearance(document, chromeColors.canvas)
   const colors = useMemo(
     () =>
       new Map(
-        layout.nodes.map((node) => [node.branchId, topicAppearance(document, node.id).stroke]),
+        layout.nodes.map((node) => [
+          node.branchId,
+          topicAppearance(document, node.id, chromeColors.canvas).stroke,
+        ]),
       ),
-    [document, layout.nodes],
+    [document, layout.nodes, chromeColors.canvas],
   )
   const floor = layout.bounds.min[1] - 1.05
   const shadowExtent = Math.max(8, Math.min(40, layout.bounds.max[0] - layout.bounds.min[0]))
@@ -171,18 +175,18 @@ export const SpatialScene = ({
       <directionalLight position={[8, 3, -5]} intensity={0.65} color="#e4ddff" />
       <mesh position={[0, floor, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[240, 240]} />
-        <shadowMaterial transparent opacity={0.08} />
+        <shadowMaterial transparent opacity={0.045} />
       </mesh>
       <Grid
         position={[0, floor - 0.015, 0]}
         args={[100, 100]}
         cellSize={1}
         sectionSize={5}
-        cellThickness={0.45}
-        sectionThickness={0.55}
+        cellThickness={0.25}
+        sectionThickness={0.35}
         cellColor={appearance.grid}
         sectionColor={appearance.grid}
-        fadeDistance={35}
+        fadeDistance={24}
         fadeStrength={2.4}
         infiniteGrid
       />
@@ -220,9 +224,11 @@ export const SpatialScene = ({
             }
             dropTarget={interaction.dropTargetId === node.id}
             muted={focusIds !== null && !focusIds.has(node.id)}
-            fill={topicAppearance(document, node.id).fill}
-            branchColor={topicAppearance(document, node.id).stroke}
-            textColor={topicAppearance(document, node.id).color}
+            fill={topicAppearance(document, node.id, chromeColors.canvas).fill}
+            branchColor={topicAppearance(document, node.id, chromeColors.canvas).stroke}
+            selectionColor={chromeColors.primary}
+            dropColor={chromeColors.dropTarget}
+            textColor={topicAppearance(document, node.id, chromeColors.canvas).color}
             fontFamily={appearance.fontFamily}
             imageAsset={topic.image ? document.assets?.[topic.image.assetId] : undefined}
             onSelect={onSelect}
@@ -251,10 +257,12 @@ export const SpatialScene = ({
         onSleep={report}
       />
       <AdaptiveDpr />
-      {(playing || surfaceWidth - (outlineOpen ? 216 : 0) - (inspectorOpen ? 256 : 0) > 640) && (
+      {(playing ||
+        surfaceWidth - (outlineOpen ? OUTLINE_WIDTH : 0) - (inspectorOpen ? INSPECTOR_WIDTH : 0) >
+          640) && (
         <GizmoHelper
           alignment="bottom-right"
-          margin={[62 + (!playing && inspectorOpen ? 256 : 0), 124]}
+          margin={[62 + (!playing && inspectorOpen ? INSPECTOR_WIDTH : 0), 124]}
         >
           <GizmoViewcube
             faces={CUBE_FACES.map(translateLabel)}

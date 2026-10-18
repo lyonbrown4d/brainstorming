@@ -1,3 +1,4 @@
+import { OUTLINE_WIDTH, INSPECTOR_WIDTH } from '@shared/workbench'
 import { canvasFitPadding } from '@renderer/hooks/useWorkbenchInsets'
 import { useEffect, useRef } from 'react'
 import { useReducedMotion } from 'motion/react'
@@ -39,8 +40,8 @@ export const SelectionVisibility = () => {
       if (!node || width === 0 || height === 0) return
       const viewport = flow.getViewport()
       const { outlineOpen, inspectorOpen } = useEditor.getState()
-      const safeLeft = width >= 768 && outlineOpen ? 216 : 0
-      const safeRight = width >= 768 && inspectorOpen ? 256 : 0
+      const safeLeft = width >= 768 && outlineOpen ? OUTLINE_WIDTH : 0
+      const safeRight = width >= 768 && inspectorOpen ? INSPECTOR_WIDTH : 0
       const nodeWidth = Number(node.style?.width ?? 160)
       const nodeHeight = Number(node.style?.height ?? 48)
       const left = node.position.x * viewport.zoom + viewport.x

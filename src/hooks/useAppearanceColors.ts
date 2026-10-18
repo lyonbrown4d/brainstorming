@@ -1,25 +1,33 @@
 import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
 
-/** Three.js needs concrete colors; keep CSS theme variables as their single source. */
+const defaults = {
+  surface: '#ffffff',
+  canvas: '#f7f7f2',
+  foreground: '#696871',
+  accent: '#efecf8',
+  primary: '#7564cc',
+  border: '#e4e3df',
+  dropTarget: '#4b866b',
+}
+
+/** DOM overlays and Three.js share the concrete values of the CSS semantic tokens. */
 export const useAppearanceColors = () => {
   const { resolvedTheme } = useTheme()
-  const [colors, setColors] = useState({
-    surface: '#ffffff',
-    foreground: '#272832',
-    accent: '#f0eef9',
-    border: '#e7e7ed',
-  })
+  const [colors, setColors] = useState(defaults)
   useEffect(() => {
-    const styles = getComputedStyle(document.documentElement)
-    const read = (name: string, fallback: string) =>
-      styles.getPropertyValue(name).trim() || fallback
     const sync = () => {
+      const styles = getComputedStyle(document.documentElement)
+      const read = (name: string, fallback: string) =>
+        styles.getPropertyValue(name).trim() || fallback
       setColors({
-        surface: read('--ui-background', '#ffffff'),
-        foreground: read('--ui-muted-foreground', '#707580'),
-        accent: read('--ui-accent', '#f0eef9'),
-        border: read('--ui-border', '#e7e7ed'),
+        surface: read('--ui-background', defaults.surface),
+        canvas: read('--ui-canvas', defaults.canvas),
+        foreground: read('--ui-muted-foreground', defaults.foreground),
+        accent: read('--ui-accent', defaults.accent),
+        primary: read('--ui-primary', defaults.primary),
+        border: read('--ui-border', defaults.border),
+        dropTarget: read('--ui-drop-target', defaults.dropTarget),
       })
     }
     sync()

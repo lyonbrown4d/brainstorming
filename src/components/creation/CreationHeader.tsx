@@ -37,8 +37,8 @@ export const CreationHeader = ({
   return (
     <WindowTitlebar className="flex justify-between gap-3">
       <div className="flex min-w-0 items-center gap-4">
-        <div className="flex items-center gap-2 text-xl font-semibold tracking-tight">
-          <BrandLogo />
+        <div className="flex items-center gap-2 text-[13px] font-semibold tracking-tight">
+          <BrandLogo className="size-6" />
           <span className="hidden sm:inline">Brainstorming</span>
         </div>
         {onCancel && (

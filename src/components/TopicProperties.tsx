@@ -1,3 +1,4 @@
+import { PropertySection } from '@renderer/components/workbench/PropertySection'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Trash2 } from 'lucide-react'
@@ -84,104 +85,118 @@ export const TopicProperties = () => {
           </span>
         </div>
       )}
+      {!multiple && (
+        <section className="py-3">
+          <TopicRichTitle key={`title:${selectedId}`} topicId={selectedId} />
+        </section>
+      )}
       <TopicFormatting />
-      {multiple ? <SelectionMarkers ids={selectedIds} /> : <MarkerAction inline />}
+      {multiple ? (
+        <SelectionMarkers ids={selectedIds} />
+      ) : (
+        <PropertySection title={translate('iconsAndTaskMarkers')}>
+          <MarkerAction inline />
+        </PropertySection>
+      )}
       {!multiple && (
         <>
-          <section className="border-t border-border py-4">
-            <TopicRichTitle key={`title:${selectedId}`} topicId={selectedId} />
-          </section>
-          <TopicContentPanel key={selectedId} topicId={selectedId} />
-          <TopicMetadataPanel key={`metadata:${selectedId}`} topicId={selectedId} />
+          <PropertySection title={translate('topicContent')} defaultOpen>
+            <TopicContentPanel key={selectedId} topicId={selectedId} />
+          </PropertySection>
+          <PropertySection title={translate('topicMetadata')}>
+            <TopicMetadataPanel key={`metadata:${selectedId}`} topicId={selectedId} />
+          </PropertySection>
         </>
       )}
       {!multiple && !root && (
-        <section className="format-group border-t border-border py-[18px] [&_h3]:mb-2.5 [&_h3]:text-[13px] [&_h3]:font-medium [&_h3]:text-secondary-foreground position-group pb-0">
-          <h3>{translate('branchPosition')}</h3>
-          {firstLevel && (
+        <PropertySection title={translate('branchPosition')}>
+          <section className="format-group border-t border-border py-[18px] [&_h3]:mb-2.5 [&_h3]:text-[13px] [&_h3]:font-medium [&_h3]:text-secondary-foreground position-group pb-0">
+            <h3>{translate('branchPosition')}</h3>
+            {firstLevel && (
+              <div className="position-row mb-2 flex gap-2 [&_[data-slot=button]]:h-8 [&_[data-slot=button]]:flex-1 [&_[data-slot=button]]:border [&_[data-slot=button]]:border-border [&_[data-slot=button]]:bg-background [&_[data-slot=button]]:text-xs [&_[data-slot=button][aria-pressed=true]]:bg-accent [&_[data-slot=button][aria-pressed=true]]:text-accent-foreground">
+                <Button
+                  variant="ghost"
+                  aria-pressed={topic.side === 'left'}
+                  onClick={() => {
+                    run(() =>
+                      useEditor
+                        .getState()
+                        .command({ type: 'setSide', topicId: selectedId, side: 'left' }),
+                    )
+                  }}
+                >
+                  <ArrowLeft size={14} />
+                  {translate('left')}
+                </Button>
+                <Button
+                  variant="ghost"
+                  aria-pressed={topic.side === 'right'}
+                  onClick={() => {
+                    run(() =>
+                      useEditor
+                        .getState()
+                        .command({ type: 'setSide', topicId: selectedId, side: 'right' }),
+                    )
+                  }}
+                >
+                  <ArrowRight size={14} />
+                  {translate('right')}
+                </Button>
+              </div>
+            )}
             <div className="position-row mb-2 flex gap-2 [&_[data-slot=button]]:h-8 [&_[data-slot=button]]:flex-1 [&_[data-slot=button]]:border [&_[data-slot=button]]:border-border [&_[data-slot=button]]:bg-background [&_[data-slot=button]]:text-xs [&_[data-slot=button][aria-pressed=true]]:bg-accent [&_[data-slot=button][aria-pressed=true]]:text-accent-foreground">
               <Button
                 variant="ghost"
-                aria-pressed={topic.side === 'left'}
+                disabled={index <= 0}
                 onClick={() => {
-                  run(() =>
-                    useEditor
-                      .getState()
-                      .command({ type: 'setSide', topicId: selectedId, side: 'left' }),
-                  )
+                  reorder(-1)
                 }}
               >
-                <ArrowLeft size={14} />
-                {translate('left')}
+                <ArrowUp size={14} />
+                {translate('moveUp')}
               </Button>
               <Button
                 variant="ghost"
-                aria-pressed={topic.side === 'right'}
+                disabled={index >= (parent?.children.length ?? 0) - 1}
                 onClick={() => {
-                  run(() =>
-                    useEditor
-                      .getState()
-                      .command({ type: 'setSide', topicId: selectedId, side: 'right' }),
-                  )
+                  reorder(1)
                 }}
               >
-                <ArrowRight size={14} />
-                {translate('right')}
+                <ArrowDown size={14} />
+                {translate('moveDown')}
               </Button>
             </div>
-          )}
-          <div className="position-row mb-2 flex gap-2 [&_[data-slot=button]]:h-8 [&_[data-slot=button]]:flex-1 [&_[data-slot=button]]:border [&_[data-slot=button]]:border-border [&_[data-slot=button]]:bg-background [&_[data-slot=button]]:text-xs [&_[data-slot=button][aria-pressed=true]]:bg-accent [&_[data-slot=button][aria-pressed=true]]:text-accent-foreground">
+            <div className="move-parent-field mt-3 flex flex-col gap-[9px] text-xs text-secondary-foreground [&_.field-select]:w-full">
+              <span>{translate('moveToTopic')}</span>
+              <FieldSelect
+                label={translate('moveToParentTopic')}
+                value={parentId ?? ''}
+                options={Object.values(document.topics)
+                  .filter((candidate) => !forbidden.has(candidate.id))
+                  .map((candidate) => ({ value: candidate.id, label: candidate.title }))}
+                onChange={(value) => {
+                  run(() =>
+                    useEditor.getState().command({
+                      type: 'moveTopic',
+                      topicId: selectedId,
+                      parentId: value,
+                    }),
+                  )
+                }}
+              />
+            </div>
             <Button
               variant="ghost"
-              disabled={index <= 0}
+              className="remove-branch mt-3.5 justify-start px-0 py-2 text-xs text-destructive"
               onClick={() => {
-                reorder(-1)
+                useEditor.getState().remove()
               }}
             >
-              <ArrowUp size={14} />
-              {translate('moveUp')}
+              <Trash2 size={14} />
+              {translate('deleteBranch')}
             </Button>
-            <Button
-              variant="ghost"
-              disabled={index >= (parent?.children.length ?? 0) - 1}
-              onClick={() => {
-                reorder(1)
-              }}
-            >
-              <ArrowDown size={14} />
-              {translate('moveDown')}
-            </Button>
-          </div>
-          <div className="move-parent-field mt-3 flex flex-col gap-[9px] text-xs text-secondary-foreground [&_.field-select]:w-full">
-            <span>{translate('moveToTopic')}</span>
-            <FieldSelect
-              label={translate('moveToParentTopic')}
-              value={parentId ?? ''}
-              options={Object.values(document.topics)
-                .filter((candidate) => !forbidden.has(candidate.id))
-                .map((candidate) => ({ value: candidate.id, label: candidate.title }))}
-              onChange={(value) => {
-                run(() =>
-                  useEditor.getState().command({
-                    type: 'moveTopic',
-                    topicId: selectedId,
-                    parentId: value,
-                  }),
-                )
-              }}
-            />
-          </div>
-          <Button
-            variant="ghost"
-            className="remove-branch mt-3.5 justify-start px-0 py-2 text-xs text-destructive"
-            onClick={() => {
-              useEditor.getState().remove()
-            }}
-          >
-            <Trash2 size={14} />
-            {translate('deleteBranch')}
-          </Button>
-        </section>
+          </section>
+        </PropertySection>
       )}
     </>
   )

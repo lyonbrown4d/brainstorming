@@ -77,11 +77,11 @@ export const Outline = () => {
   const count = useEditor((state) => Object.keys(state.history.document.topics).length)
   return (
     <aside
-      className="outline-panel flex min-h-0 w-[216px] shrink-0 basis-[216px] flex-col border-r border-border bg-background text-sm"
+      className="outline-panel flex min-h-0 w-[216px] shrink-0 basis-[216px] flex-col border-r border-border/80 bg-background text-sm"
       aria-label={translate('documentOutline')}
     >
-      <div className="flex h-14 shrink-0 items-center justify-between px-4">
-        <h2 className="text-sm font-semibold">{translate('outline')}</h2>
+      <div className="flex h-12 shrink-0 items-center justify-between px-4">
+        <h2 className="text-xs font-semibold">{translate('outline')}</h2>
         <Button
           variant="ghost"
           size="icon"

@@ -35,23 +35,9 @@ export const Inspector = () => {
       : choice.mode
   return (
     <aside
-      className="flex min-h-0 w-[256px] shrink-0 basis-[256px] flex-col border-l border-border bg-background text-sm"
+      className="flex min-h-0 w-[272px] shrink-0 basis-[272px] flex-col border-l border-border bg-background text-sm"
       aria-label={translate('propertiesPanel')}
     >
-      <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
-        <h2 className="text-sm font-semibold">{translate('properties')}</h2>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-7 text-muted-foreground"
-          aria-label={translate('closePropertiesPanel')}
-          onClick={() => {
-            useEditor.setState({ inspectorOpen: false })
-          }}
-        >
-          <ChevronRight size={19} />
-        </Button>
-      </div>
       <Tabs
         value={mode}
         onValueChange={(value) => {
@@ -59,17 +45,38 @@ export const Inspector = () => {
         }}
         className="min-h-0 flex-1 gap-0 overflow-hidden"
       >
-        <TabsList
-          aria-label={translate('propertyCategories')}
-          className="mx-4 mt-4 mb-2 grid w-auto shrink-0 grid-cols-2"
-        >
-          <TabsTrigger value="topic" className="text-xs">
-            {translate('topic')}
-          </TabsTrigger>
-          <TabsTrigger value="canvas" className="text-xs">
-            {translate('sheet')}
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex h-12 shrink-0 items-center gap-2 border-b border-border/80 px-4">
+          <h2 className="sr-only">{translate('properties')}</h2>
+          <TabsList
+            variant="line"
+            aria-label={translate('propertyCategories')}
+            className="h-12 flex-1 justify-start gap-4 p-0"
+          >
+            <TabsTrigger
+              value="topic"
+              className="h-12 flex-none rounded-none px-1 text-xs after:bottom-0 after:bg-primary"
+            >
+              {translate('topic')}
+            </TabsTrigger>
+            <TabsTrigger
+              value="canvas"
+              className="h-12 flex-none rounded-none px-1 text-xs after:bottom-0 after:bg-primary"
+            >
+              {translate('sheet')}
+            </TabsTrigger>
+          </TabsList>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 text-muted-foreground"
+            aria-label={translate('closePropertiesPanel')}
+            onClick={() => {
+              useEditor.setState({ inspectorOpen: false })
+            }}
+          >
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
         <TabsContent
           value="topic"
           forceMount

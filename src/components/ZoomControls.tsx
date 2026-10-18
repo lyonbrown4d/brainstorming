@@ -16,7 +16,7 @@ export const ZoomControls = () => {
   const { zoom } = useViewport()
   return (
     <div
-      className="canvas-controls flex shrink-0 items-center rounded-lg border border-border bg-background p-0.5 text-muted-foreground [&_button]:size-7"
+      className="canvas-controls flex shrink-0 items-center rounded-md border border-border/70 bg-background p-0.5 text-muted-foreground [&_button]:size-7"
       aria-label={translate('canvasView')}
     >
       <Button

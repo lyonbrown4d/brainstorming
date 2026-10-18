@@ -23,7 +23,7 @@ export const SheetTabs = () => {
   const [dialog, setDialog] = useState<SheetDialogAction | null>(null)
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
   return (
-    <div className="sheet-bar flex h-12 min-w-0 flex-1 items-center bg-background text-muted-foreground">
+    <div className="sheet-bar flex h-full min-w-0 flex-1 items-center bg-background text-muted-foreground">
       <span className="sheet-bar-label flex h-5 shrink-0 items-center border-r border-border px-5 text-xs">
         {translate('sheet')}
       </span>
@@ -37,14 +37,14 @@ export const SheetTabs = () => {
         }}
       >
         <Tabs.Root
-          className="sheet-tabs min-w-0 overflow-x-auto [scrollbar-width:thin]"
+          className="sheet-tabs h-full min-w-0 overflow-x-auto [scrollbar-width:thin]"
           value={activeId}
           onValueChange={(id) => {
             useEditor.getState().switchSheet(id)
           }}
         >
           <Tabs.List
-            className="sheet-tab-list flex h-12 w-max min-w-full"
+            className="sheet-tab-list flex h-full w-max min-w-full"
             aria-label={translate('workbookSheets')}
           >
             <LayoutGroup id={layoutId}>

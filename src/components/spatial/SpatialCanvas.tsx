@@ -56,7 +56,7 @@ export const SpatialCanvas = ({
 
   return (
     <section
-      className="relative h-full w-full overflow-hidden bg-background [container-type:inline-size]"
+      className="relative h-full w-full overflow-hidden bg-canvas [container-type:inline-size]"
       aria-label={translate('3dMindMap')}
       data-spatial-surface
     >

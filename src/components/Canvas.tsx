@@ -1,3 +1,4 @@
+import { useAppearanceColors } from '@renderer/hooks/useAppearanceColors'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { useMemo, useState } from 'react'
@@ -32,6 +33,7 @@ export { ZoomControls } from '@renderer/components/ZoomControls'
 export const Canvas = () => {
   const { translate } = useMessages()
 
+  const colors = useAppearanceColors()
   const flow = useReactFlow<TopicFlowNode>()
   useCanvasViewport()
   const reduceMotion = useReducedMotion()
@@ -45,8 +47,8 @@ export const Canvas = () => {
       ? presentation.steps[presentation.index]?.topicId
       : undefined
   const projection = useMemo(
-    () => projectCanvas(presentationDocument(document, presentedId)),
-    [document, presentedId],
+    () => projectCanvas(presentationDocument(document, presentedId), colors.canvas),
+    [document, presentedId, colors.canvas],
   )
   const { reconnecting, ...relations } = useCanvasRelations(projection.edges)
   const drag = useCanvasDrag(projection.nodes)
@@ -54,7 +56,7 @@ export const Canvas = () => {
     <motion.section
       className="canvas relative min-w-0 flex-1 [container-name:mindmap] [container-type:inline-size]"
       style={{
-        backgroundColor: documentAppearance(document).background,
+        backgroundColor: documentAppearance(document, colors.canvas).background,
         fontFamily: documentAppearance(document).fontFamily,
       }}
       id="sheet-panel"

@@ -1,3 +1,4 @@
+import { OUTLINE_WIDTH, INSPECTOR_WIDTH } from '@shared/workbench'
 import { PerspectiveCamera, Vector3, type Camera } from 'three'
 
 export interface ViewportBounds {
@@ -13,8 +14,8 @@ export const spatialSafeViewport = (
   outlineOpen: boolean,
   inspectorOpen: boolean,
 ): ViewportBounds => {
-  const left = outlineOpen ? 216 : 0
-  const right = inspectorOpen ? 256 : 0
+  const left = outlineOpen ? OUTLINE_WIDTH : 0
+  const right = inspectorOpen ? INSPECTOR_WIDTH : 0
   const occupied = left + right
   const minimum = Math.min(80, viewport.width / 4)
   const scale = occupied ? Math.min(1, Math.max(0, viewport.width - minimum) / occupied) : 1

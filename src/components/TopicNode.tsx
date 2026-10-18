@@ -63,18 +63,17 @@ const TopicNodeContent = ({ data, id }: NodeProps<TopicFlowNode>) => {
       className={cn(
         'topic nopan relative flex h-full w-full flex-col items-center rounded-lg border-[1.5px] transition-[box-shadow,border-color] duration-150 select-none',
         root
-          ? 'topic-root rounded-[14px] bg-[#8070c6] text-white'
+          ? 'topic-root rounded-xl bg-primary text-primary-foreground'
           : branch
-            ? 'topic-branch bg-[color-mix(in_srgb,var(--branch-color)_32%,#fff)] text-[#30313b]'
-            : 'topic-leaf text-[#30313b]',
+            ? 'topic-branch'
+            : 'topic-leaf',
         selected
-          ? root
-            ? 'is-selected border-[#6653af] shadow-[0_0_0_3px_#9480d919]'
-            : 'is-selected border-[#9480d9] shadow-[0_0_0_2px_#9480d918]'
-          : 'border-transparent',
+          ? 'is-selected border-primary ring-2 ring-primary/15'
+          : root || branch
+            ? 'border-transparent'
+            : 'border-[color-mix(in_srgb,var(--branch-color)_28%,transparent)]',
         editingHere && 'is-editing',
-        dropTarget &&
-          'drop-target border-dashed border-[#72a98d] text-[#48775e] shadow-[0_0_0_5px_#90bba42e]',
+        dropTarget && 'drop-target border-dashed border-drop-target ring-4 ring-drop-target/15',
         `side-${side}`,
         hasContent && 'has-content',
       )}
@@ -153,7 +152,7 @@ const TopicNodeContent = ({ data, id }: NodeProps<TopicFlowNode>) => {
           variant="ghost"
           size="icon"
           type="button"
-          className={`fold-button nodrag absolute z-[2] size-[18px] rounded-full border border-[#d9d3e9] bg-white p-0 text-[9px] ${root ? 'text-[#8070c6]' : 'text-[var(--branch-color)]'} ${foldPosition}`}
+          className={`fold-button nodrag absolute z-[2] size-[18px] rounded-full border border-border bg-background p-0 text-[9px] ${root ? 'text-primary' : 'text-[var(--branch-color)]'} ${foldPosition}`}
           aria-label={`${topic.collapsed ? translate('expand') : translate('collapse')} ${topic.title}`}
           onClick={(event) => {
             event.stopPropagation()

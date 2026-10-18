@@ -2,58 +2,71 @@
 
 :root {
   --ui-background: #ffffff;
-  --ui-foreground: #272832;
-  --ui-primary: #6d5bd0;
+  --ui-canvas: #f7f7f2;
+  --ui-foreground: #27262d;
+  --ui-primary: #7564cc;
   --ui-primary-foreground: #ffffff;
-  --ui-secondary: #f3f4f7;
-  --ui-secondary-foreground: #565b69;
-  --ui-muted-foreground: #707580;
-  --ui-accent: #f0eef9;
-  --ui-accent-foreground: #5845bd;
-  --ui-border: #e7e7ed;
-  --ui-ring: #8170d5;
+  --ui-secondary: #f1f0ec;
+  --ui-secondary-foreground: #55545e;
+  --ui-muted-foreground: #696871;
+  --ui-accent: #efecf8;
+  --ui-accent-foreground: #5e4cae;
+  --ui-border: #e4e3df;
+  --ui-ring: #7564cc;
+  --ui-drop-target: #4b866b;
   --ui-destructive: #b54049;
+  --ui-shadow-floating: 0 6px 22px #27262d0d, 0 1px 4px #27262d0a;
   --surface: var(--ui-background);
   --muted: var(--ui-muted-foreground);
   --border: var(--ui-border);
   --accent: var(--ui-primary);
 }
 
+/* The same semantic tokens apply before React mounts and in manual dark mode. */
 :root[data-theme='dark'] {
-  --ui-background: #252830;
-  --ui-foreground: #eceff5;
-  --ui-primary: #a398ef;
-  --ui-primary-foreground: #1b162f;
-  --ui-secondary: #1d2027;
-  --ui-secondary-foreground: #c6cbd7;
-  --ui-muted-foreground: #aab0bd;
-  --ui-accent: #39354e;
-  --ui-accent-foreground: #c6bdf8;
-  --ui-border: #414650;
-  --ui-ring: #b1a5f6;
+  --ui-background: #25282d;
+  --ui-canvas: #1c1e22;
+  --ui-foreground: #ecedef;
+  --ui-primary: #ae9ceb;
+  --ui-primary-foreground: #241e36;
+  --ui-secondary: #2d3036;
+  --ui-secondary-foreground: #c4c4cd;
+  --ui-muted-foreground: #b0b2ba;
+  --ui-accent: #383244;
+  --ui-accent-foreground: #d4c8f6;
+  --ui-border: #383c44;
+  --ui-ring: #ae9ceb;
+  --ui-drop-target: #91c3a8;
   --ui-destructive: #ee979c;
+  --ui-shadow-floating: 0 8px 24px #00000026, 0 1px 4px #0000001a;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --ui-background: #252830;
-    --ui-foreground: #eceff5;
-    --ui-primary: #a398ef;
-    --ui-primary-foreground: #1b162f;
-    --ui-secondary: #1d2027;
-    --ui-secondary-foreground: #c6cbd7;
-    --ui-muted-foreground: #aab0bd;
-    --ui-accent: #39354e;
-    --ui-accent-foreground: #c6bdf8;
-    --ui-border: #414650;
-    --ui-ring: #b1a5f6;
+    --ui-background: #25282d;
+    --ui-canvas: #1c1e22;
+    --ui-foreground: #ecedef;
+    --ui-primary: #ae9ceb;
+    --ui-primary-foreground: #241e36;
+    --ui-secondary: #2d3036;
+    --ui-secondary-foreground: #c4c4cd;
+    --ui-muted-foreground: #b0b2ba;
+    --ui-accent: #383244;
+    --ui-accent-foreground: #d4c8f6;
+    --ui-border: #383c44;
+    --ui-ring: #ae9ceb;
+    --ui-drop-target: #91c3a8;
     --ui-destructive: #ee979c;
+    --ui-shadow-floating: 0 8px 24px #00000026, 0 1px 4px #0000001a;
   }
 }
 
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
 @theme inline {
+  --color-canvas: var(--ui-canvas);
+  --color-drop-target: var(--ui-drop-target);
+  --shadow-floating: var(--ui-shadow-floating);
   --color-background: var(--ui-background);
   --color-foreground: var(--ui-foreground);
   --color-primary: var(--ui-primary);

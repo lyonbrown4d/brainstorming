@@ -27,13 +27,13 @@ export const edgeHandles = (
   const to = vertical ? (dy > 0 ? 'top' : 'bottom') : dx > 0 ? 'left' : 'right'
   return { sourceHandle: `source-${from}`, targetHandle: `target-${to}` }
 }
-export const projectCanvas = (document: MindMapDocument) => {
+export const projectCanvas = (document: MindMapDocument, surface?: string) => {
   const layout = layoutDocument(document)
   const byId = new Map(layout.nodes.map((node) => [node.id, node]))
   const nodes: TopicFlowNode[] = layout.nodes.flatMap((node) => {
     const topic = document.topics[node.id]
     if (!topic) return []
-    const appearance = topicAppearance(document, node.id)
+    const appearance = topicAppearance(document, node.id, surface)
     return [
       {
         id: node.id,
@@ -86,8 +86,8 @@ export const projectCanvas = (document: MindMapDocument) => {
           ? edgeHandles(source, target, edge.direction ?? document.topics[edge.target]?.side)
           : {}),
         style: {
-          stroke: topicAppearance(document, edge.target).stroke,
-          strokeWidth: topicAppearance(document, edge.target).lineWidth,
+          stroke: topicAppearance(document, edge.target, surface).stroke,
+          strokeWidth: topicAppearance(document, edge.target, surface).lineWidth,
         },
         selectable: false,
       }

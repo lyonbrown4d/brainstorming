@@ -9,8 +9,8 @@ export const mapPalettes = [
   {
     id: 'brainstorming',
     name: 'Brainstorming',
-    root: '#6d5bd0',
-    background: '#fafafc',
+    root: '#7564cc',
+    background: '#f7f7f2',
     branches: ['#d87578', '#399f91', '#c8953d', '#5c86c6', '#9784c6'],
   },
   {
