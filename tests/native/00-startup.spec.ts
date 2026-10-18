@@ -1,3 +1,4 @@
+import { nativeArtifact } from '@tests/native/artifacts'
 import { browser, expect } from '@wdio/globals'
 import { Key } from 'webdriverio'
 import { checkMacChrome } from '@tests/native/chrome'
@@ -16,7 +17,7 @@ describe('native startup, window chrome and menu shortcuts', () => {
     await browser.waitUntil(async () => (await browser.tauri.listWindows()).includes('main'))
     await browser.waitUntil(async () => !(await browser.tauri.listWindows()).includes('splash'))
     await browser.tauri.switchWindow('main')
-    await browser.saveScreenshot('/private/tmp/brainstorming-native-startup.png')
+    await browser.saveScreenshot(await nativeArtifact('brainstorming-native-startup.png'))
     await browser.waitUntil(
       async () => (await fixture<NativeWindowState>('windowState', {})).focused,
       { timeoutMsg: 'The native main window did not receive focus after the splash handoff' },

@@ -5,8 +5,8 @@ const defaults = {
   surface: '#ffffff',
   canvas: '#f7f7f2',
   foreground: '#696871',
-  accent: '#efecf8',
-  primary: '#7564cc',
+  accent: '#ecebe6',
+  primary: '#3b3e45',
   border: '#e4e3df',
   dropTarget: '#4b866b',
 }

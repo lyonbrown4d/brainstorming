@@ -1,3 +1,4 @@
+import { nativeArtifact } from '@tests/native/artifacts'
 import { browser, expect } from '@wdio/globals'
 import { Key } from 'webdriverio'
 import { validateTopicClipboard } from '@core'
@@ -36,7 +37,7 @@ describe('native editor and document workflow', () => {
     await rootHasText('原生创作')
     await dockAction('重做')
     await rootHasText('中文原生保存')
-    await browser.saveScreenshot('/private/tmp/brainstorming-native-2d.png')
+    await browser.saveScreenshot(await nativeArtifact('brainstorming-native-2d.png'))
     await root().click()
     await browser.keys(Key.Tab)
     await editor().setValue('子主题 A')
@@ -93,7 +94,7 @@ describe('native editor and document workflow', () => {
     await fileAction('另存为')
     await expect(named('文件菜单')).toBeEnabled()
     await rootHasText('中文原生保存')
-    await browser.saveScreenshot('/private/tmp/brainstorming-native-2d.png')
+    await browser.saveScreenshot(await nativeArtifact('brainstorming-native-2d.png'))
   })
 
   it('keeps independent sheets and open documents with one-step sheet undo', async () => {
@@ -150,7 +151,7 @@ describe('native editor and document workflow', () => {
     const document = workbook.sheets[0]?.document
     expect(document?.title).toBe('三维中文主题')
     expect(Object.values(document?.topics ?? {}).map((topic) => topic.title)).toContain('空间分支')
-    await browser.saveScreenshot('/private/tmp/brainstorming-native-3d.png')
+    await browser.saveScreenshot(await nativeArtifact('brainstorming-native-3d.png'))
     await named('二维视图').click()
     await rootHasText('三维中文主题')
     await textContains('.react-flow__nodes', '空间分支')

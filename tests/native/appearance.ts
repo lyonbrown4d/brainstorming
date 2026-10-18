@@ -1,3 +1,4 @@
+import { nativeArtifact } from '@tests/native/artifacts'
 import { browser, expect } from '@wdio/globals'
 import { Key } from 'webdriverio'
 import { named, reloadNativePage } from '@tests/native/driver'
@@ -41,12 +42,12 @@ export const checkBrandAppearance = async (): Promise<void> => {
   await chooseAppearance('浅色')
   await expect(browser.$('html')).toHaveAttribute('data-theme', 'light')
   const lightLogo = await loadedLogo()
-  await browser.saveScreenshot('/private/tmp/brainstorming-native-brand-light.png')
+  await browser.saveScreenshot(await nativeArtifact('brainstorming-native-brand-light.png'))
   await chooseAppearance('深色')
   await expect(browser.$('html')).toHaveAttribute('data-theme', 'dark')
   const darkLogo = await loadedLogo()
   expect(darkLogo).not.toBe(lightLogo)
-  await browser.saveScreenshot('/private/tmp/brainstorming-native-brand-dark.png')
+  await browser.saveScreenshot(await nativeArtifact('brainstorming-native-brand-dark.png'))
 
   await reloadNativePage()
   await expect(browser.$('button[aria-label="应用外观"]')).toBeEnabled()

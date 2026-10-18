@@ -1,3 +1,4 @@
+import { nativeArtifact } from '@tests/native/artifacts'
 import { browser, expect } from '@wdio/globals'
 import { writeFile } from 'node:fs/promises'
 import { fixture } from '@tests/native/driver'
@@ -31,7 +32,7 @@ export const checkMacChrome = async (): Promise<void> => {
     }
   })
   await writeFile(
-    '/private/tmp/brainstorming-native-chrome-metrics.json',
+    await nativeArtifact('brainstorming-native-chrome-metrics.json'),
     JSON.stringify({ native, header }, null, 2),
   )
   expect(native.coordinateSystem).toBe('content-top-left-points')

@@ -1,0 +1,70 @@
+{
+  "native": {
+    "buttons": {
+      "close": {
+        "centerX": 27,
+        "centerY": 26,
+        "enabled": true,
+        "height": 14,
+        "hidden": false,
+        "visible": true,
+        "width": 14,
+        "x": 20,
+        "y": 19
+      },
+      "minimize": {
+        "centerX": 50,
+        "centerY": 26,
+        "enabled": true,
+        "height": 14,
+        "hidden": false,
+        "visible": true,
+        "width": 14,
+        "x": 43,
+        "y": 19
+      },
+      "zoom": {
+        "centerX": 73,
+        "centerY": 26,
+        "enabled": true,
+        "height": 14,
+        "hidden": false,
+        "visible": true,
+        "width": 14,
+        "x": 66,
+        "y": 19
+      }
+    },
+    "contentLayout": {
+      "centerX": 720,
+      "centerY": 466,
+      "height": 868,
+      "width": 1440,
+      "x": 0,
+      "y": 32
+    },
+    "contentView": {
+      "flipped": false,
+      "height": 900,
+      "width": 1440
+    },
+    "coordinateSystem": "content-top-left-points",
+    "window": {
+      "backingScaleFactor": 2,
+      "fullSizeContentView": true,
+      "height": 900,
+      "miniaturized": false,
+      "styleMask": 32783,
+      "titleHidden": true,
+      "titlebarTransparent": true,
+      "titled": true,
+      "visible": true,
+      "width": 1440
+    }
+  },
+  "header": {
+    "centerY": 28,
+    "height": 56,
+    "left": 112
+  }
+}

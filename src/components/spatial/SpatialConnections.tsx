@@ -22,7 +22,7 @@ export const SpatialConnections = ({
     const target = nodesById.get(edge.target)
     if (!source || !target || edge.routing === 'hidden' || !edge.path) return null
     const faded = focusIds !== null && (!focusIds.has(source.id) || !focusIds.has(target.id))
-    const color = colors.get(target.branchId) ?? '#9788d3'
+    const color = colors.get(target.branchId) ?? '#70757c'
     const lineWidth = topicAppearance(document, target.id).lineWidth
     const opacity = faded ? 0.16 : 0.82
     if (

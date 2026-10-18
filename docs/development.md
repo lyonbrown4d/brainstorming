@@ -105,8 +105,16 @@ macOS `build:desktop --debug`（未指定证书）或显式 `APPLE_SIGNING_IDENT
 
 ### 暖白与石墨界面
 
-界面沿用浅色、深色与跟随系统，使用 `src/styles/ui.css` 的语义变量统一标题栏、Dock、属性栏、启动页和 Three.js 控件。默认导图的画布与派生节点底色跟随界面外观；其他导图预设、自定义背景和显式节点颜色保持文档设置。外观投影不写入工作簿、撤销记录或导出颜色。
+主操作和选中态采用石墨 / 暖白反色，默认导图中心为石墨色，界面不使用紫色选中底色；紫色仍可作为用户的导图配色。界面沿用浅色、深色与跟随系统，使用 `src/styles/ui.css` 的语义变量统一标题栏、Dock、属性栏、启动页和 Three.js 控件。默认导图的画布与派生节点底色跟随界面外观；其他导图预设、自定义背景和显式节点颜色保持文档设置。外观投影不写入工作簿、撤销记录或导出颜色。
 
 三个桌面平台共用 56px 标题栏；macOS 保留原生交通灯，Windows、Linux 使用右侧窗口操作区。大纲和属性栏宽度由 `src/shared/workbench.ts` 统一供二维、三维取景使用。
 
 属性折叠复用官方 shadcn Accordion，由固定版本 `shadcn@4.22.0` CLI 下载；上层 `PropertySection` 组合样式并保留折叠内容的编辑器 DOM，不修改下载源码。
+
+### 原生验收输出与构建存储
+
+原生 E2E 截图、窗口指标和失败页面统一写入 `test-results/native`，可通过 `BRAINSTORMING_E2E_ARTIFACTS` 指定输出目录，适用于 macOS、Windows、Linux。诊断采集失败仍保留原始测试失败。测试复用单实例窗口时，使用现有 `home()` 流程重置 renderer，不假定启动后总处于首页。
+
+外部存储发生归档写入或依赖读取停滞时，先检查进程与文件活动；可使用本机 SSD 的 Cargo 目录（`CARGO_TARGET_DIR`），并将 `BRAINSTORMING_E2E_BINARY` 指向该目录生成的当前测试应用。若依赖缓存也在外部卷，使用当前源码的本机临时验收副本和独立 pnpm 缓存；必须按锁文件安装并完整构建，不能混用旧二进制与新 renderer。
+
+macOS WebDriver 的 WKWebView snapshot 可能遗漏三维 CSS3D 文字层。三维视觉验收需补充系统窗口截图，并核对实际文字及交互；不要仅凭 DOM 可见性或驱动截图认定视觉结果，也不要为截图修改产品渲染。

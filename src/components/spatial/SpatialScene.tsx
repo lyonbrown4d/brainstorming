@@ -156,7 +156,7 @@ export const SpatialScene = ({
     <>
       <color attach="background" args={[appearance.background]} />
       <ambientLight intensity={1.9} />
-      <hemisphereLight args={['#ffffff', '#c4bed7', 1.2]} />
+      <hemisphereLight args={['#ffffff', '#d6d2c9', 1.2]} />
       <directionalLight
         position={[-5, 12, 10]}
         intensity={2.6}
@@ -172,7 +172,7 @@ export const SpatialScene = ({
         shadow-normalBias={0.035}
         shadow-radius={5}
       />
-      <directionalLight position={[8, 3, -5]} intensity={0.65} color="#e4ddff" />
+      <directionalLight position={[8, 3, -5]} intensity={0.65} color="#eef0ed" />
       <mesh position={[0, floor, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[240, 240]} />
         <shadowMaterial transparent opacity={0.045} />
