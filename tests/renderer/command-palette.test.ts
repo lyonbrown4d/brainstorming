@@ -15,6 +15,15 @@ import { useViewportRequest } from '@renderer/state/viewport'
 import { useShortcutPreferences } from '@renderer/state/shortcutPreferences'
 import { desktop } from '@tests/fixtures/desktop'
 
+// Node 25 exposes a partial localStorage; browser persistence has real-input E2E coverage.
+vi.hoisted(() => {
+  vi.stubGlobal('localStorage', {
+    getItem: () => null,
+    setItem: () => undefined,
+    removeItem: () => undefined,
+  })
+})
+
 beforeEach(() => {
   desktop()
   useEditor.getState().replace(createDocument('现有导图'))

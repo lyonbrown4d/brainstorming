@@ -12,6 +12,15 @@ import {
 } from '@renderer/state/shortcutPreferences'
 import { chordFromEvent } from '@renderer/state/shortcutMatching'
 
+// Node 25 exposes a partial localStorage; browser persistence has real-input E2E coverage.
+vi.hoisted(() => {
+  vi.stubGlobal('localStorage', {
+    getItem: () => null,
+    setItem: () => undefined,
+    removeItem: () => undefined,
+  })
+})
+
 const key = (value: string, options: Partial<KeyboardEvent> = {}): KeyboardEvent =>
   ({
     key: value,
