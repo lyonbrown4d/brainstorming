@@ -159,7 +159,10 @@
     "zx": "8.8.5"
   },
   "lint-staged": {
-    "*.{ts,tsx,json,md,css,yml,yaml}": "prettier --write",
-    "*.{ts,tsx,js,jsx,mjs,cjs}": "eslint --fix"
+    "*.{ts,tsx,js,jsx,mjs,cjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,css,yml,yaml}": "prettier --write"
   }
 }

@@ -146,7 +146,9 @@ describe('读取期间的更改保护', () => {
       ),
     })
     const operation = openDocument()
-    await vi.waitFor(() => { expect(finish).toBeTypeOf('function'); })
+    await vi.waitFor(() => {
+      expect(finish).toBeTypeOf('function')
+    })
     const state = useEditor.getState()
     state.add('child')
     state.cancelEdit()
@@ -189,7 +191,9 @@ describe('读取期间的更改保护', () => {
     const confirm = vi.fn(() => true)
     window.confirm = confirm
     const operation = openDocument()
-    await vi.waitFor(() => { expect(finish).toBeTypeOf('function'); })
+    await vi.waitFor(() => {
+      expect(finish).toBeTypeOf('function')
+    })
     useEditor.getState().startEdit('root')
     useEditor.getState().setDraft('等待期间的编辑')
     finish?.({
