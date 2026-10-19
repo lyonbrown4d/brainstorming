@@ -1,3 +1,4 @@
+import { CommandPalette } from '@renderer/components/commands/CommandPalette'
 import { WorkspaceRouterBoundary, WorkspaceRoutes } from '@renderer/routing/WorkspaceRouter'
 import { SettingsRoute } from '@renderer/routing/SettingsRoute'
 import { useLinkPreviewQueue } from '@renderer/hooks/useLinkPreviewQueue'
@@ -10,7 +11,8 @@ import { queryClient } from '@renderer/lib/queryClient'
 import { usePresentation } from '@renderer/state/presentation'
 import { ReactFlowProvider } from '@xyflow/react'
 import { X } from 'lucide-react'
-import { lazy, Suspense, useMemo } from 'react'
+import { lazy, Suspense, useEffect, useMemo } from 'react'
+import { startContentIndexSync } from '@renderer/state/contentIndex'
 import { AnimatePresence, MotionConfig } from 'motion/react'
 import { WorkbenchPanel } from '@renderer/components/WorkbenchPanel'
 import { useNativeViewport } from '@renderer/hooks/useNativeViewport'
@@ -55,6 +57,7 @@ const PresentationWorkspace = lazy(
 const AppWorkspace = () => {
   const { translate } = useMessages()
 
+  useEffect(startContentIndexSync, [])
   useNativeViewport()
   useStartupScreen()
   useMCPBridge()
@@ -87,6 +90,7 @@ const AppWorkspace = () => {
           >
             <FileDropOverlay {...fileDrop} />
             <SettingsRoute />
+            <CommandPalette />
             {!playing && (screen === 'editor' ? <Toolbar /> : <WorkspaceHeader />)}
             <div className="app-body relative flex min-h-0 flex-1">
               <main className="workspace-main relative flex min-h-0 min-w-0 flex-1 flex-col">

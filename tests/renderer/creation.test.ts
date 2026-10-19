@@ -119,6 +119,26 @@ describe('full-page document and sheet creation', () => {
     expect(useFileSecurityState.getState()).toMatchObject({ documentId: oldId, encrypted: true })
   })
 
+  it.each(['document', 'sheet'] as const)(
+    'creates only a center topic without a preset for %s',
+    (mode) => {
+      const previous = useEditor.getState().workbook
+      beginCreation(mode)
+      expect(createFromRequest({ ...request, layout: 'none', template: 'project' })).toBe(true)
+      const state = useEditor.getState()
+      expect(Object.keys(state.history.document.topics)).toEqual(['root'])
+      expect(state.history.document.topics.root?.children).toEqual([])
+      expect(state.history.document.title).toBe('新的计划')
+      expect(state.history.document.settings?.layout).toBe('map')
+      expect(state.history.past).toHaveLength(0)
+      if (mode === 'sheet') {
+        expect(state.workbook.sheets).toHaveLength(previous.sheets.length + 1)
+        state.undo()
+        expect(useEditor.getState().workbook).toEqual(previous)
+      } else expect(state.path).toBeNull()
+    },
+  )
+
   it.each(['document', 'sheet'] as const)('uses the default blank %s name', (mode) => {
     beginCreation(mode)
     expect(createFromRequest({ ...request, title: ' \n ' })).toBe(true)

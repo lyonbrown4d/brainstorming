@@ -59,7 +59,7 @@ export const DocumentSettingsPanel = ({ inline = false }: { inline?: boolean }) 
         }}
       />
       <div className={inline ? 'mb-3 grid gap-3' : 'mb-3 flex items-center justify-between gap-2'}>
-        <h2 className="text-sm font-semibold">{translate('mapColors')}</h2>
+        <h2 className="text-xs font-medium text-secondary-foreground">{translate('mapColors')}</h2>
         <ToggleGroup
           type="single"
           value={tab}
@@ -92,7 +92,7 @@ export const DocumentSettingsPanel = ({ inline = false }: { inline?: boolean }) 
           </ScrollArea>
           <Button
             variant="ghost"
-            className="mt-2 w-full text-muted-foreground"
+            className="mt-2 h-8 w-full text-xs text-muted-foreground"
             onClick={() => {
               setTab('custom')
             }}
@@ -189,7 +189,7 @@ export const DocumentSettingsPanel = ({ inline = false }: { inline?: boolean }) 
   if (inline)
     return (
       <section
-        className="border-t border-border py-4 [&_[data-palette-options]]:grid-cols-2 [&_form>.grid]:grid-cols-1"
+        className="py-3 [&_[data-palette-options]]:grid-cols-2 [&_form>.grid]:grid-cols-1"
         aria-label={translate('layoutAndTheme')}
       >
         {content}

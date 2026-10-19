@@ -1,10 +1,11 @@
 use super::{
     document::DocumentServices, integration::IntegrationServices, platform::RuntimeConfig,
-    session::SessionService,
+    search::SearchServices, session::SessionService,
 };
 use crate::{
     document::DocumentStore,
     runtime::{AppState, ai::AIService, mcp::MCPService},
+    search::SearchService,
     storage::{MetadataStore, ResourceVault},
 };
 use fluxdi::{Error, Shared, static_module};
@@ -18,6 +19,9 @@ static_module! {
             async vault: ResourceVault;
             documents: DocumentStore;
             async session: SessionService;
+        };
+        import searches: SearchServices {
+            async search: SearchService;
         };
         import integrations: IntegrationServices {
             ai: AIService;
@@ -48,6 +52,7 @@ impl AppState {
             language: session.language.clone(),
             ai: services.ai()?,
             mcp: services.mcp()?,
+            search: services.search().await?,
             resource_origin: RwLock::new("http://brainstorming.localhost".into()),
         }))
     }

@@ -3,6 +3,7 @@ use crate::{
     document::DocumentStore,
     media::MediaState,
     runtime::{AppState, ai::AIService, mcp::MCPService},
+    search::SearchService,
     storage::{MetadataStore, ResourceVault},
 };
 use fluxdi::{Error, Injector, Module, Shared, module::ModuleLifecycleFuture, static_module};
@@ -16,6 +17,7 @@ static_module! {
             async vault: ResourceVault;
             documents: DocumentStore;
             async session: SessionService;
+            async search: SearchService;
             ai: AIService;
             mcp: MCPService;
         };

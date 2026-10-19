@@ -1,9 +1,17 @@
 import { useMessages } from '@renderer/i18n/useMessages'
 
-import { Check, LayoutTemplate, Minus } from 'lucide-react'
+import { Check, FolderKanban, Lightbulb, Minus, ScanLine, BookOpen } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import { templateOptions } from '@renderer/components/documents/templates'
 import type { CreationRequest } from '@renderer/components/creation/types'
+
+const iconColors = {
+  blank: 'bg-secondary text-muted-foreground',
+  brainstorm: 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
+  project: 'bg-sky-500/10 text-sky-700 dark:text-sky-300',
+  swot: 'bg-teal-500/10 text-teal-700 dark:text-teal-300',
+  study: 'bg-rose-500/10 text-rose-700 dark:text-rose-300',
+} as const
 
 export const TemplateChoices = ({
   value,
@@ -24,7 +32,13 @@ export const TemplateChoices = ({
       aria-label={translate('chooseInitialContent')}
     >
       {choices.map((template) => {
-        const Icon = template.id === 'blank' ? Minus : LayoutTemplate
+        const Icon = {
+          blank: Minus,
+          brainstorm: Lightbulb,
+          project: FolderKanban,
+          swot: ScanLine,
+          study: BookOpen,
+        }[template.id]
         return (
           <Button
             key={template.id}
@@ -40,11 +54,17 @@ export const TemplateChoices = ({
             onClick={() => {
               onChange(template.id)
             }}
-            className="h-14 justify-start rounded-lg border-border px-4 shadow-none aria-pressed:border-primary aria-pressed:bg-primary/5 aria-pressed:text-primary"
+            className="h-11 min-w-0 justify-start rounded-lg border-border px-3 text-xs shadow-none transition-[border-color,background-color] aria-pressed:border-primary aria-pressed:bg-primary/5 aria-pressed:text-primary"
           >
-            <Icon data-icon="inline-start" />
-            <span className="flex-1 text-left">{translateLabel(template.title)}</span>
-            {value === template.id && <Check data-icon="inline-end" />}
+            <span
+              className={`flex size-7 shrink-0 items-center justify-center rounded-md ${iconColors[template.id]}`}
+            >
+              <Icon aria-hidden="true" className="size-3.5" />
+            </span>
+            <span className="min-w-0 flex-1 text-left leading-snug whitespace-normal">
+              {translateLabel(template.title)}
+            </span>
+            {value === template.id && <Check aria-hidden="true" data-icon="inline-end" />}
           </Button>
         )
       })}

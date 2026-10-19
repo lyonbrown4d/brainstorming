@@ -63,9 +63,20 @@ async fn typed_module_imports_preserve_provider_identity_for_the_application() {
     ));
     assert!(Arc::ptr_eq(&state.ai, &sibling.ai().unwrap()));
     assert!(Arc::ptr_eq(&state.mcp, &sibling.mcp().unwrap()));
+    assert!(Arc::ptr_eq(&state.search, &sibling.search().await.unwrap()));
     app.shutdown().await.unwrap();
     assert!(state.metadata.language().await.is_err());
     assert!(state.vault.import_bytes(vec![1]).await.is_err());
+    assert!(
+        state
+            .search
+            .search(crate::search::SearchContent {
+                query: "closed".into(),
+                limit: None,
+            })
+            .await
+            .is_err()
+    );
     assert!(
         core.upgrade().is_none(),
         "the cached container must not retain itself after shutdown"
@@ -202,6 +213,16 @@ async fn an_unclaimed_backend_runs_async_cleanup() {
     .await
     .unwrap();
     assert!(state.vault.import_bytes(vec![1]).await.is_err());
+    assert!(
+        state
+            .search
+            .search(crate::search::SearchContent {
+                query: "closed".into(),
+                limit: None,
+            })
+            .await
+            .is_err()
+    );
     assert!(
         tokio::fs::read_dir(folder.path().join("resource-vault"))
             .await

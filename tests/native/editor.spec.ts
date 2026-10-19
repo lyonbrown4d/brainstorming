@@ -29,7 +29,8 @@ describe('native editor and document workflow', () => {
   })
 
   it('creates, edits Chinese topics, undoes/redoes, saves/reopens SQLite and preserves cancellation', async () => {
-    await expect(browser.$$('button[aria-label^="选择"]')).toBeElementsArrayOfSize(15)
+    await expect(browser.$$('button[aria-label^="选择"]')).toBeElementsArrayOfSize(3)
+    await named('层级结构').click()
     await named('选择向下树形图').click()
     await create('原生创作')
     await renameRoot('中文原生保存')
@@ -101,6 +102,7 @@ describe('native editor and document workflow', () => {
     await create('设计原稿')
     const firstSheet = await browser.$('.sheet-tab[aria-selected="true"]').getText()
     await named('新建画布').click()
+    await named('时间线').click()
     await named('选择垂直时间线').click()
     await named('下一步').click()
     await named('画布名称').setValue('发布排期')

@@ -75,6 +75,20 @@ describe('Tauri platform adapter', () => {
     dispose()
     expect(native.events.size).toBe(0)
   })
+  it('forwards typed content indexing and querying through the native input envelope', async () => {
+    const native = fixture()
+    const { api, dispose } = await createNativeAPI(native.transport, initial)
+    const input = { upserts: [], retainedWorkbookIds: ['open-workbook'] }
+    await api.syncContentIndex(input)
+    expect(native.calls.at(-1)).toEqual({ method: 'syncContentIndex', args: { input } })
+    native.setResult([])
+    await expect(api.searchContent({ query: '备注', limit: 12 })).resolves.toEqual([])
+    expect(native.calls.at(-1)).toEqual({
+      method: 'searchContent',
+      args: { input: { query: '备注', limit: 12 } },
+    })
+    dispose()
+  })
   it('validates events and stops delivering after unsubscription', async () => {
     const native = fixture()
     const { api } = await createNativeAPI(native.transport, initial)

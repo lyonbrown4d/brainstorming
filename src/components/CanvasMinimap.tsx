@@ -47,12 +47,12 @@ export const CanvasMinimap = memo(() => {
             nodeStrokeWidth={0}
             maskColor={`${documentAppearance(document, colors.canvas).background}b8`}
             bgColor={documentAppearance(document, colors.canvas).background}
-            className="!relative !h-28 !w-44 !bottom-auto !left-auto !m-0 overflow-hidden rounded-lg border border-border/80 bg-background shadow-floating @max-[640px]:!h-20 @max-[640px]:!w-28"
+            className="!relative !h-28 !w-44 !bottom-auto !left-auto !m-0 overflow-hidden rounded-lg border border-border/80 bg-background @max-[640px]:!h-20 @max-[640px]:!w-28"
           />
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-1 right-1 z-10 size-6 rounded-md bg-background/90"
+            className="absolute top-1 right-1 z-10 size-6 rounded-md bg-background text-muted-foreground"
             aria-label={translate('hideMinimap')}
             title={translate('hideMinimap')}
             onClick={() => {
@@ -67,6 +67,7 @@ export const CanvasMinimap = memo(() => {
           <Button
             variant="outline"
             size="icon"
+            className="size-8 rounded-lg bg-background text-muted-foreground shadow-none"
             aria-label={translate('showMinimap')}
             title={translate('showMinimap')}
             onClick={() => {

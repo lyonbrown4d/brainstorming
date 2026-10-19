@@ -1,3 +1,4 @@
+import { CommandPaletteTrigger } from '@renderer/components/commands/CommandPaletteTrigger'
 import { closeInspector, toggleInspector } from '@renderer/state/inspectorNavigation'
 import { BrandLogo } from '@renderer/components/BrandLogo'
 import { WindowTitlebar } from '@renderer/components/WindowTitlebar'
@@ -59,6 +60,7 @@ export const Toolbar = () => {
       </div>
       <div className="toolbar-actions flex min-w-0 shrink-0 items-center justify-end gap-1 overflow-x-auto sm:col-span-1">
         <PresentationLauncher />
+        <CommandPaletteTrigger />
         <SettingsButton />
         <Button
           variant="ghost"

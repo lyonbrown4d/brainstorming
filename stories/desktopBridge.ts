@@ -5,6 +5,8 @@ import { inactiveMCP } from '@tests/fixtures/mcp'
 export const createStoryDesktop = (): DesktopAPI => {
   let clipboard = ''
   return {
+    syncContentIndex: () => Promise.resolve(),
+    searchContent: () => Promise.resolve([]),
     platform: 'macos',
     getLanguage: () => Promise.resolve('zh-CN'),
     setLanguage: (language) => Promise.resolve(language),

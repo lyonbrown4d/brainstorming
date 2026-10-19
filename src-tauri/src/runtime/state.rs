@@ -1,6 +1,7 @@
 use super::{ai::AIService, mcp::MCPService, session::Session};
 use crate::{
     document::DocumentStore,
+    search::SearchService,
     storage::{MetadataStore, ResourceVault},
 };
 use std::{
@@ -20,6 +21,7 @@ pub struct AppState {
     pub recovery: Arc<Mutex<()>>,
     pub ai: Arc<AIService>,
     pub mcp: Arc<MCPService>,
+    pub search: Arc<SearchService>,
     pub language: Arc<RwLock<String>>,
     pub resource_origin: RwLock<String>,
 }

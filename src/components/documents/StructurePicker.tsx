@@ -8,12 +8,10 @@ import { useEditor } from '@renderer/state/editor'
 import { selectedTopicIds, useSelectedIds } from '@renderer/state/selection'
 import { runAnnotationCommand } from '@renderer/components/annotations/commands'
 import { Button } from '@renderer/components/ui/button'
-import { StructurePreview } from '@renderer/components/documents/StructurePreview'
-import { getStructureOptions } from '@renderer/components/documents/structureOptions'
+import { StructureBrowser } from '@renderer/components/documents/StructureBrowser'
 
 export const StructurePicker = ({ inline = false }: { inline?: boolean }) => {
   const { translate } = useMessages()
-  const structureOptions = getStructureOptions(translate)
 
   const [scope, setScope] = useState<'sheet' | 'branch'>('sheet')
   const document = useEditor((state) => state.history.document)
@@ -84,30 +82,13 @@ export const StructurePicker = ({ inline = false }: { inline?: boolean }) => {
               value1: mixed ? translate('theSelectionContainsDifferentStructures') : '',
             })}
       </p>
-      <div
-        className="grid grid-cols-3 gap-2"
-        role="group"
-        aria-label={translate('availableStructures')}
-        data-structure-options
-      >
-        {structureOptions.map(({ value, label }) => (
-          <Button
-            key={value}
-            variant="outline"
-            aria-label={translate('applyValue0', { value0: label })}
-            aria-pressed={!mixed && current === value}
-            onClick={() => {
-              apply(value)
-            }}
-            className="h-auto min-w-0 flex-col gap-1 rounded-lg p-2 text-xs aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:text-primary"
-          >
-            <StructurePreview kind={value} />
-            <span className="w-full min-w-0 text-center leading-snug break-words whitespace-normal">
-              {label}
-            </span>
-          </Button>
-        ))}
-      </div>
+      <StructureBrowser
+        key={scope}
+        {...(!mixed && current ? { value: current } : {})}
+        onChange={apply}
+        compact={inline}
+        action="apply"
+      />
       {scope === 'branch' && (
         <Button
           variant="outline"
@@ -128,10 +109,7 @@ export const StructurePicker = ({ inline = false }: { inline?: boolean }) => {
   )
   if (inline)
     return (
-      <section
-        className="border-t border-border py-4 [&_[data-structure-options]]:grid-cols-2"
-        aria-label={translate('structure')}
-      >
+      <section className="py-1" aria-label={translate('structure')}>
         {content}
       </section>
     )

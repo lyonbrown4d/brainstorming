@@ -20,11 +20,9 @@ export const WorkspaceHeader = () => {
 
   const screen = useWorkspace((state) => state.screen)
   const hasDocument = useWorkspace((state) => state.hasDocument)
-  const step = useWorkspace((state) => state.creationStep)
   const busy = useEditor((state) => state.busy)
   return (
     <CreationHeader
-      step={step}
       busy={busy}
       {...(screen === 'home' ? { onOpen: () => void openDocument() } : {})}
       {...(screen !== 'home' || hasDocument

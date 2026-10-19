@@ -6,6 +6,7 @@ import type { FileSecurityAPI } from '@shared/fileSecurity'
 import type { AIAPI } from '@shared/ai'
 import type { MCPAPI } from '@shared/mcp'
 import type { ExportRequest } from '@shared/exports'
+import type { ContentSearchAPI } from '@shared/contentSearch'
 
 export type MenuAction =
   | 'closeTab'
@@ -44,7 +45,7 @@ export interface SaveRequest {
   readonly openDocumentIds?: readonly string[]
   password?: string | null
 }
-export interface DesktopAPI extends FileSecurityAPI, AIAPI, MCPAPI, LanguageAPI {
+export interface DesktopAPI extends FileSecurityAPI, AIAPI, MCPAPI, LanguageAPI, ContentSearchAPI {
   minimizeWindow?(): Promise<void>
   toggleFullScreen?(): Promise<void>
   toggleMaximizeWindow?(): Promise<void>

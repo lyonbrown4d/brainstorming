@@ -9,6 +9,9 @@ export const settingsMessages = {
   settingsCanvas: ['画布', 'Canvas'],
   settingsShortcuts: ['快捷键', 'Shortcuts'],
   settingsAbout: ['关于', 'About'],
+  settingsShortcutEditing: ['主题编辑', 'Topic editing'],
+  settingsShortcutNavigation: ['画布与导航', 'Canvas and navigation'],
+  settingsShortcutFiles: ['历史与文件', 'History and files'],
   settingsLanguageDescription: [
     '更改界面语言，不修改导图内容。',
     'Change the interface language without changing map content.',

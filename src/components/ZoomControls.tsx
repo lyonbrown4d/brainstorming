@@ -16,7 +16,7 @@ export const ZoomControls = () => {
   const { zoom } = useViewport()
   return (
     <div
-      className="canvas-controls flex shrink-0 items-center rounded-md border border-border/70 bg-background p-0.5 text-muted-foreground [&_button]:size-7"
+      className="canvas-controls flex shrink-0 items-center rounded-md bg-muted/50 p-0.5 text-secondary-foreground [&_button]:size-7"
       aria-label={translate('canvasView')}
     >
       <Button
@@ -28,7 +28,7 @@ export const ZoomControls = () => {
       >
         <Minus size={16} />
       </Button>
-      <span className="zoom-value w-11 text-center text-xs tabular-nums">
+      <span className="zoom-value w-11 text-center text-[11px] tabular-nums">
         {Math.round(zoom * 100)}%
       </span>
       <Button

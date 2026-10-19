@@ -24,6 +24,7 @@ export const ThumbnailSelection: Story = {
     const canvas = within(canvasElement)
     let panel = await openCanvasProperties(canvasElement)
     let picker = within(panel.getByRole('region', { name: '图形结构' }))
+    await user.click(picker.getByRole('tab', { name: '层级结构' }))
     const tree = picker.getByRole('button', { name: '应用向下树形图' })
     tree.focus()
     await user.keyboard('{Enter}')
@@ -40,6 +41,7 @@ export const ThumbnailSelection: Story = {
     panel = await openCanvasProperties(canvasElement)
     picker = within(panel.getByRole('region', { name: '图形结构' }))
     await user.click(picker.getByRole('button', { name: '所选分支' }))
+    await user.type(picker.getByRole('searchbox', { name: '搜索图类型' }), 'brace right')
     await user.click(picker.getByRole('button', { name: '应用向右括号图' }))
     await waitFor(() =>
       expect(useEditor.getState().history.document.topics.vision?.structure).toBe('brace-right'),

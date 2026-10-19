@@ -123,6 +123,7 @@ export const CreationStepHistory: Story = {
     const canvas = within(canvasElement)
     const page = within(canvasElement.ownerDocument.body)
     await userEvent.click(page.getByRole('button', { name: '前往创建引导' }))
+    await userEvent.click(await canvas.findByRole('tab', { name: '分析归纳' }))
     const structure = await canvas.findByRole('button', { name: '选择向右括号图' })
     await userEvent.click(structure)
     await userEvent.click(canvas.getByRole('button', { name: '下一步' }))

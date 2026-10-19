@@ -1,0 +1,15 @@
+export const creationMessages = {
+  presetSearch: ['搜索图类型', 'Search diagram types'],
+  presetSearchPlaceholder: ['搜索名称或关键词…', 'Search names or keywords…'],
+  presetClearSearch: ['清除图类型搜索', 'Clear diagram search'],
+  presetNoResults: ['没有匹配的图类型', 'No matching diagram types'],
+  presetCategories: ['图类型分组', 'Diagram categories'],
+  presetAll: ['全部', 'All'],
+  presetThought: ['思维与逻辑', 'Mind & logic'],
+  presetHierarchy: ['层级结构', 'Hierarchy'],
+  presetAnalysis: ['分析归纳', 'Analysis'],
+  presetTime: ['时间线', 'Timelines'],
+  presetTable: ['表格矩阵', 'Tables & matrices'],
+  presetNone: ['不使用预设', 'Without a preset'],
+  presetCenterOnly: ['仅创建中心主题', 'Start with a central topic'],
+} as const

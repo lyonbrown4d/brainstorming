@@ -2,9 +2,11 @@ import type { LayoutKind } from '@core'
 import type { TemplateId } from '@renderer/components/documents/templates'
 import type { ReactNode } from 'react'
 
+export type CreationLayout = LayoutKind | 'none'
+
 export interface CreationRequest {
   readonly title: string
-  readonly layout: LayoutKind
+  readonly layout: CreationLayout
   readonly template: 'blank' | TemplateId
 }
 

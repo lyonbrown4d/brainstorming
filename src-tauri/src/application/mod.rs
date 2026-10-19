@@ -3,6 +3,7 @@ mod document;
 mod integration;
 mod media;
 mod platform;
+mod search;
 mod session;
 mod storage;
 #[cfg(test)]
@@ -27,6 +28,7 @@ impl Module for BackendModule {
             Box::new(storage::StorageModule(self.graph.clone())),
             Box::new(document::DocumentModule(self.graph.clone())),
             Box::new(integration::IntegrationModule(self.graph.clone())),
+            Box::new(search::SearchModule(self.graph.clone())),
         ];
         if self.native {
             modules.push(Box::new(media::MediaModule(self.graph.clone())));
@@ -47,7 +49,11 @@ fn services(directory: PathBuf, app: Option<AppHandle>) -> BackendModule {
     let storage = storage::StorageServices::new(config.clone());
     let document = document::DocumentServices::new(storage);
     let integrations = integration::IntegrationServices::new(config);
-    let core = Arc::new(core::CoreServices::new(document, integrations));
+    let core = Arc::new(core::CoreServices::new(
+        document,
+        search::SearchServices::new(),
+        integrations,
+    ));
     // Reuse the context while keeping the container reference in the cached
     // provider weak: Root -> cache -> strong container -> Root would leak.
     let graph = media::BackendServices::new((*core).clone(), Arc::new(Arc::downgrade(&core)))

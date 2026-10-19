@@ -7,9 +7,13 @@ import { usePresentation } from '@renderer/state/presentation'
 import { useEditor } from '@renderer/state/editor'
 import type { TopicFlowNode } from '@renderer/components/TopicNode'
 import { documentStructureKey } from '@shared/layout-geometry'
+import { useTopicFocusRequest } from '@renderer/state/viewport'
+import { useTopicFocusViewport } from '@renderer/hooks/useTopicFocusViewport'
 
 /** Keep keyboard navigation and newly created editors inside the visible canvas. */
 export const SelectionVisibility = () => {
+  useTopicFocusViewport()
+  const topicFocus = useTopicFocusRequest((state) => state.request)
   const reduceMotion = useReducedMotion()
   const playing = usePresentation((state) => state.playing)
   const restoreRequest = usePresentation((state) => state.viewportRequest)
@@ -24,7 +28,7 @@ export const SelectionVisibility = () => {
     const prior = previous.current
     previous.current = { document, selectedId, structure, restoreRequest }
     // Playback owns framing; its exit snapshot must also preserve an offscreen selection.
-    if (playing || prior.restoreRequest !== restoreRequest) return
+    if (playing || topicFocus || prior.restoreRequest !== restoreRequest) return
     // Mounting a sheet restores its viewport; only subsequent navigation should reveal topics.
     if (prior.document === document && prior.selectedId === selectedId) return
     const frame = requestAnimationFrame(() => {
@@ -64,6 +68,17 @@ export const SelectionVisibility = () => {
     return () => {
       cancelAnimationFrame(frame)
     }
-  }, [document, selectedId, structure, flow, width, height, reduceMotion, playing, restoreRequest])
+  }, [
+    document,
+    selectedId,
+    structure,
+    flow,
+    width,
+    height,
+    reduceMotion,
+    playing,
+    restoreRequest,
+    topicFocus,
+  ])
   return null
 }

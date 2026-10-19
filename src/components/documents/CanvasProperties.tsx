@@ -17,20 +17,19 @@ export const CanvasProperties = () => {
       onValueChange={(value) => {
         if (isCanvasSection(value)) selectCanvasSection(value)
       }}
-      className="gap-0 pt-2"
+      className="gap-0 pt-3"
     >
       <TabsList
         aria-label={translate('sheetSettings')}
-        variant="line"
-        className="mb-3 grid w-full grid-cols-3"
+        className="mb-1 grid h-8 w-full grid-cols-3 gap-0.5 p-0.5"
       >
-        <TabsTrigger value="structure" className="text-xs">
+        <TabsTrigger value="structure" className="text-xs data-[state=active]:shadow-none">
           {translate('structureLabel735')}
         </TabsTrigger>
-        <TabsTrigger value="appearance" className="text-xs">
+        <TabsTrigger value="appearance" className="text-xs data-[state=active]:shadow-none">
           {translate('colors')}
         </TabsTrigger>
-        <TabsTrigger value="template" className="text-xs">
+        <TabsTrigger value="template" className="text-xs data-[state=active]:shadow-none">
           {translate('template')}
         </TabsTrigger>
       </TabsList>
@@ -56,8 +55,10 @@ export const CanvasProperties = () => {
         hidden={section !== 'template'}
         tabIndex={section === 'template' ? 0 : -1}
       >
-        <section className="space-y-3 py-4" aria-label={translate('contentTemplate')}>
-          <h3 className="text-sm font-medium">{translate('contentTemplate')}</h3>
+        <section className="space-y-3 py-3" aria-label={translate('contentTemplate')}>
+          <h3 className="text-xs font-medium text-secondary-foreground">
+            {translate('contentTemplate')}
+          </h3>
           <TemplateDialog />
         </section>
       </TabsContent>

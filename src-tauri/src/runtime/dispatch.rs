@@ -1,5 +1,5 @@
 use super::{
-    clipboard, dialogs, documents,
+    clipboard, content_search, dialogs, documents,
     input::{self, Result},
     native_files, recovery,
     state::AppState,
@@ -105,6 +105,8 @@ pub async fn dispatch(
             if let Some(window) = app.get_webview_window("main") { let _ = window.set_title(if dirty { "● Brainstorming" } else { "Brainstorming" }); }
             Ok(Value::Null)
         }
+        "syncContentIndex" => content_search::sync(state, &args).await,
+        "searchContent" => content_search::search(state, &args).await,
         "getAISettings" => state.ai.get(app).await,
         "saveAISettings" => state.ai.save(app, input::required(&args, "settings")?).await,
         "generateMindMap" => state.ai.generate(app, input::required(&args, "request")?).await,

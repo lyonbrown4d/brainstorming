@@ -117,6 +117,8 @@ export const createNativeAPI = async (
           closeWindow: () => windowAction('close'),
         }
       : {}),
+    syncContentIndex: (input) => request('syncContentIndex', { input }),
+    searchContent: (input) => request('searchContent', { input }),
     platform: initial.platform,
     resourceOrigin: initial.resourceOrigin.replace(/\/$/, ''),
     getLanguage: () => request('getLanguage'),

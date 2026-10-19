@@ -51,7 +51,7 @@ export const showWorkspaceHome = (): boolean => {
 
 const initialDocument = (request: CreationRequest, sheet: boolean): MindMapDocument => {
   const base =
-    request.template === 'blank'
+    request.layout === 'none' || request.template === 'blank'
       ? createDocument(
           sheet ? translate('newSheetLabel402') : translate('newIdea'),
           crypto.randomUUID(),
@@ -62,7 +62,7 @@ const initialDocument = (request: CreationRequest, sheet: boolean): MindMapDocum
   const named = applyCommand(base, { type: 'renameTopic', topicId: base.rootId, title })
   const document = applyCommand(named, {
     type: 'setDocumentSettings',
-    settings: { ...named.settings, layout: request.layout },
+    settings: { ...named.settings, layout: request.layout === 'none' ? 'map' : request.layout },
   })
   validateDocument(document)
   return document

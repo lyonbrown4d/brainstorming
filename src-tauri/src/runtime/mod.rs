@@ -3,6 +3,7 @@ mod ai_transport;
 mod ai_validation;
 mod atomic;
 mod clipboard;
+mod content_search;
 pub mod dialogs;
 mod dispatch;
 pub mod documents;
@@ -30,6 +31,9 @@ mod tests;
 pub async fn renderer_started(app: &tauri::AppHandle) {
     use tauri::Manager;
     if let Some(state) = app.try_state::<std::sync::Arc<AppState>>() {
+        if let Err(error) = state.search.clear().await {
+            tracing::error!("Content search reset failed: {error}");
+        }
         state.mcp.stop(app).await;
         state.ai.cancel_all().await;
     }

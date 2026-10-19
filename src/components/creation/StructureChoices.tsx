@@ -1,50 +1,43 @@
+import { CircleDot, Check } from 'lucide-react'
 import { useMessages } from '@renderer/i18n/useMessages'
-
-import type { LayoutKind } from '@core'
-import { Circle, CircleCheck } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
-import { StructurePreview } from '@renderer/components/documents/StructurePreview'
-import { getStructureOptions } from '@renderer/components/documents/structureOptions'
+import { StructureBrowser } from '@renderer/components/documents/StructureBrowser'
+import type { CreationLayout } from '@renderer/components/creation/types'
 
 export const StructureChoices = ({
   value,
   onChange,
   disabled,
 }: {
-  value: LayoutKind
-  onChange: (layout: LayoutKind) => void
+  value: CreationLayout
+  onChange: (layout: CreationLayout) => void
   disabled: boolean
 }) => {
   const { translate } = useMessages()
-  const structureOptions = getStructureOptions(translate)
-
   return (
-    <div
-      className="grid grid-cols-2 gap-3 md:grid-cols-3"
-      role="group"
-      aria-label={translate('chooseStructure')}
-    >
-      {structureOptions.map(({ value: kind, label }) => {
-        const SelectedIcon = value === kind ? CircleCheck : Circle
-        return (
+    <div className="space-y-4" role="group" aria-label={translate('chooseStructure')}>
+      <StructureBrowser
+        {...(value === 'none' ? {} : { value })}
+        onChange={onChange}
+        disabled={disabled}
+        trailing={
           <Button
-            key={kind}
             type="button"
             variant="outline"
+            size="sm"
             disabled={disabled}
-            aria-label={translate('chooseValue0', { value0: label })}
-            aria-pressed={value === kind}
+            aria-pressed={value === 'none'}
             onClick={() => {
-              onChange(kind)
+              onChange('none')
             }}
-            className="relative h-[clamp(6rem,calc((100dvh-20rem)/5),8.5rem)] min-w-0 flex-col gap-2 rounded-lg border-border px-3 py-3 text-sm shadow-none aria-pressed:border-primary aria-pressed:bg-primary/5 aria-pressed:text-primary [&_svg]:h-[clamp(2.5rem,calc((100dvh-33rem)/5),4.25rem)] [&_svg]:w-full"
+            className="gap-2 border-border bg-background text-xs shadow-none aria-pressed:border-primary aria-pressed:bg-accent"
           >
-            <SelectedIcon className="absolute top-3 left-3 !size-4 text-primary/65" />
-            <StructurePreview kind={kind} />
-            <span>{label}</span>
+            <CircleDot aria-hidden="true" className="size-3.5" />
+            {translate('presetNone')}
+            {value === 'none' && <Check aria-hidden="true" className="size-3.5" />}
           </Button>
-        )
-      })}
+        }
+      />
     </div>
   )
 }

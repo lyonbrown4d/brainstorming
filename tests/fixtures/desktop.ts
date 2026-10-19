@@ -11,6 +11,8 @@ afterEach(resetDesktopFixture)
 
 export const desktop = (overrides: Partial<DesktopAPI> = {}): DesktopAPI => {
   const api: DesktopAPI = {
+    syncContentIndex: () => Promise.resolve(),
+    searchContent: () => Promise.resolve([]),
     platform: 'macos',
     getLanguage: () => Promise.resolve('zh-CN'),
     setLanguage: (language) => Promise.resolve(language),

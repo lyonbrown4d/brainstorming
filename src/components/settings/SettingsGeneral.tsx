@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
+import { LoaderCircle } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useTranslation } from 'react-i18next'
 import { changeLanguage } from '@renderer/i18n'
@@ -17,6 +18,8 @@ export const SettingsGeneral = () => {
   const { translate } = useMessages()
   const { i18n } = useTranslation()
   const { theme = 'system', setTheme } = useTheme()
+  const languageDescriptionId = useId()
+  const appearanceDescriptionId = useId()
   const [pending, setPending] = useState(false)
   const [failed, setFailed] = useState(false)
   const selectLanguage = (value: string): void => {
@@ -32,16 +35,30 @@ export const SettingsGeneral = () => {
       })
   }
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="max-w-sm space-y-1">
+    <div className="divide-y divide-border">
+      <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3 py-4 first:pt-1">
+        <div className="min-w-0 flex-1 basis-48 space-y-1">
           <p className="text-sm font-medium">{translate('interfaceLanguage')}</p>
-          <p className="text-xs leading-5 text-muted-foreground">
+          <p
+            id={languageDescriptionId}
+            className="max-w-72 text-xs leading-5 text-muted-foreground"
+          >
             {translate('settingsLanguageDescription')}
           </p>
         </div>
         <Select value={i18n.language} onValueChange={selectLanguage} disabled={pending}>
-          <SelectTrigger aria-label={translate('interfaceLanguage')} className="w-40">
+          <SelectTrigger
+            aria-label={translate('interfaceLanguage')}
+            aria-describedby={languageDescriptionId}
+            aria-busy={pending}
+            className="w-40 shrink-0 text-xs"
+          >
+            {pending && (
+              <LoaderCircle
+                aria-hidden
+                className="size-3.5 animate-spin motion-reduce:animate-none"
+              />
+            )}
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -51,14 +68,17 @@ export const SettingsGeneral = () => {
         </Select>
       </div>
       {failed && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="py-3 text-xs leading-5 text-destructive">
           {translate('languageSaveFailed')}
         </p>
       )}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="max-w-sm space-y-1">
+      <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3 py-4 first:pt-1">
+        <div className="min-w-0 flex-1 basis-48 space-y-1">
           <p className="text-sm font-medium">{translate('appAppearance')}</p>
-          <p className="text-xs leading-5 text-muted-foreground">
+          <p
+            id={appearanceDescriptionId}
+            className="max-w-72 text-xs leading-5 text-muted-foreground"
+          >
             {translate('settingsAppearanceDescription')}
           </p>
         </div>
@@ -68,7 +88,11 @@ export const SettingsGeneral = () => {
             if (isAppearanceMode(value)) setTheme(value)
           }}
         >
-          <SelectTrigger aria-label={translate('appAppearance')} className="w-40">
+          <SelectTrigger
+            aria-label={translate('appAppearance')}
+            aria-describedby={appearanceDescriptionId}
+            className="w-40 shrink-0 text-xs"
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

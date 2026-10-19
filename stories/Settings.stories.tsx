@@ -1,3 +1,5 @@
+import '@renderer/styles/ui.css'
+import '@renderer/styles/base.css'
 import type { DesktopAPI } from '@shared/contracts'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
@@ -155,5 +157,23 @@ export const DirectSettingsURL: Story = {
     await waitFor(() => expect(page.getByLabelText('当前路径')).toHaveTextContent('/home'))
     await userEvent.click(page.getByRole('button', { name: '历史后退' }))
     await expect(page.getByLabelText('当前路径')).toHaveTextContent('/home')
+  },
+}
+
+export const SettingsOverview: Story = {
+  args: { initialPath: '/settings' },
+}
+
+export const DarkSettings: Story = {
+  args: { initialPath: '/settings' },
+  beforeEach: () => {
+    localStorage.setItem(APPEARANCE_STORAGE_KEY, 'dark')
+  },
+}
+
+export const EnglishSettings: Story = {
+  args: { initialPath: '/settings' },
+  beforeEach: async () => {
+    await initializeI18n('en')
   },
 }

@@ -1,4 +1,5 @@
 import type { LayoutKind } from '@core'
+import { cn } from '@renderer/lib/utils'
 
 type Point = readonly [number, number]
 const horizontal: readonly Point[] = [
@@ -20,7 +21,10 @@ const vertical: readonly Point[] = [
   [96, 60],
 ]
 
+const branchColor = (index: number): string => `var(--structure-branch-${index % 5}, currentColor)`
+
 const node = ([x, y]: Point, index: number) => {
+  const color = index === 0 ? 'var(--structure-color, currentColor)' : branchColor(index - 1)
   return (
     <rect
       key={index}
@@ -29,15 +33,15 @@ const node = ([x, y]: Point, index: number) => {
       width={18}
       height={10}
       rx={3}
-      fill={index === 0 ? 'currentColor' : 'var(--ui-background)'}
-      stroke="currentColor"
+      fill={index === 0 ? color : `color-mix(in srgb, ${color} 12%, var(--ui-background))`}
+      stroke={color}
       strokeWidth={1.5}
     />
   )
 }
 
 /** Small code-native diagrams keep each structure recognizable without raster assets. */
-export const StructurePreview = ({ kind }: { kind: LayoutKind }) => {
+export const StructurePreview = ({ kind, className }: { kind: LayoutKind; className?: string }) => {
   const verticalLayout = [
     'org-down',
     'org-up',
@@ -141,7 +145,7 @@ export const StructurePreview = ({ kind }: { kind: LayoutKind }) => {
   return (
     <svg
       viewBox="0 0 120 72"
-      className="size-auto h-14 w-full text-primary"
+      className={cn('size-auto h-14 w-full text-primary', className)}
       aria-hidden="true"
       focusable="false"
     >
@@ -151,7 +155,7 @@ export const StructurePreview = ({ kind }: { kind: LayoutKind }) => {
             key={index}
             d={path}
             fill="none"
-            stroke="currentColor"
+            stroke={branchColor(index)}
             strokeWidth={1.5}
             strokeLinejoin="round"
           />

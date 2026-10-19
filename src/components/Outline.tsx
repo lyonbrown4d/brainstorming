@@ -16,7 +16,7 @@ const OutlineBranch = ({ id, depth }: { id: string; depth: number }) => {
   return (
     <li>
       <div
-        className="flex min-h-9 items-center gap-1 rounded-md pr-2 text-sm transition-colors data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground"
+        className="flex min-h-8 items-center gap-1 rounded-md pr-1 text-xs transition-colors hover:bg-muted/60 data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground"
         data-selected={selected}
         style={{ paddingLeft: depth * 14 + 4 }}
       >
@@ -46,7 +46,7 @@ const OutlineBranch = ({ id, depth }: { id: string; depth: number }) => {
         <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: stroke }} />
         <Button
           variant="ghost"
-          className="h-auto min-h-9 min-w-0 flex-1 justify-start rounded-none px-2 py-1 text-left text-sm font-normal hover:bg-transparent"
+          className="h-auto min-h-8 min-w-0 flex-1 justify-start rounded-md px-1.5 py-1 text-left text-xs font-normal hover:bg-transparent aria-pressed:font-medium"
           aria-pressed={selected}
           onClick={(event) => {
             selectTopic(id, event.metaKey || event.ctrlKey || event.shiftKey)
@@ -80,8 +80,13 @@ export const Outline = () => {
       className="outline-panel flex min-h-0 w-[216px] shrink-0 basis-[216px] flex-col border-r border-border/80 bg-background text-sm"
       aria-label={translate('documentOutline')}
     >
-      <div className="flex h-12 shrink-0 items-center justify-between px-4">
-        <h2 className="text-xs font-semibold">{translate('outline')}</h2>
+      <div className="flex h-11 shrink-0 items-center justify-between border-b border-border/70 px-4">
+        <div className="flex min-w-0 items-baseline gap-2">
+          <h2 className="text-xs font-semibold">{translate('outline')}</h2>
+          <span className="text-[11px] tabular-nums text-muted-foreground">
+            {count} {translate('topics')}
+          </span>
+        </div>
         <Button
           variant="ghost"
           size="icon"
@@ -94,16 +99,12 @@ export const Outline = () => {
           <PanelLeftClose className="size-4" />
         </Button>
       </div>
-      <ul className="m-0 flex-1 list-none overflow-auto px-2 pb-4">
+      <ul className="m-0 flex-1 list-none overflow-auto px-2 py-2">
         <OutlineBranch id={rootId} depth={0} />
         {floatingIds?.map((id) => (
           <OutlineBranch key={id} id={id} depth={0} />
         ))}
       </ul>
-      <p className="border-t border-border px-4 py-3 text-xs text-muted-foreground">
-        {count}
-        {translate('topics')}
-      </p>
     </aside>
   )
 }

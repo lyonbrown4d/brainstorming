@@ -25,10 +25,10 @@ export const PropertySection = ({
       onValueChange={(value) => {
         setOpen(value === 'section')
       }}
-      className="border-t border-border/70"
+      className="border-t border-border/60"
     >
       <AccordionItem value="section" className="border-0">
-        <AccordionTrigger className="items-center rounded-none py-3 text-xs font-medium text-secondary-foreground hover:bg-transparent hover:no-underline">
+        <AccordionTrigger className="items-center rounded-sm py-2.5 text-xs font-medium text-secondary-foreground hover:bg-transparent hover:text-foreground hover:no-underline [&>svg]:size-3.5 [&>svg]:translate-y-0">
           {title}
         </AccordionTrigger>
         <AccordionContent

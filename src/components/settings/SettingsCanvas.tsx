@@ -10,17 +10,20 @@ export const SettingsCanvas = () => {
   const setMinimap = useCanvasPreferences((state) => state.setMinimap)
   const [failed, setFailed] = useState(false)
   const id = useId()
+  const descriptionId = useId()
   return (
-    <div className="space-y-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-2">
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-5 py-1">
+        <div className="space-y-1">
           <Label htmlFor={id}>{translate('canvasMinimap')}</Label>
-          <p className="max-w-sm text-xs leading-5 text-muted-foreground">
+          <p id={descriptionId} className="max-w-sm text-xs leading-5 text-muted-foreground">
             {translate('settingsMinimapDescription')}
           </p>
         </div>
         <Checkbox
           id={id}
+          aria-describedby={descriptionId}
+          className="shrink-0"
           checked={minimap}
           onCheckedChange={(value) => {
             setFailed(false)
@@ -33,7 +36,7 @@ export const SettingsCanvas = () => {
         />
       </div>
       {failed && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="text-xs leading-5 text-destructive">
           {translate('settingsPreferenceFailed')}
         </p>
       )}

@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useCommandPaletteState } from '@renderer/state/commandPalette'
 import { usePresentation } from '@renderer/state/presentation'
 import { useEditor } from '@renderer/state/editor'
 import { newDocument, openDocument, saveDocument } from '@renderer/state/files'
@@ -12,7 +13,12 @@ import { closeActiveDocument, nextDocumentTab } from '@renderer/state/documentTa
 export const useKeyboardShortcuts = (): void => {
   useEffect(() => {
     const handler = (event: KeyboardEvent): void => {
-      if (isCompositionKey(event) || event.defaultPrevented) return
+      if (
+        isCompositionKey(event) ||
+        event.defaultPrevented ||
+        useCommandPaletteState.getState().open
+      )
+        return
       if (
         event.target instanceof HTMLElement &&
         event.target.closest('[role="menu"], [role="dialog"], [role="menuitem"]')

@@ -34,28 +34,32 @@ const SettingsDialog = ({ onClose }: SettingsDialogProps) => {
     >
       <DialogContent
         closeLabel={translate('closeApplicationSettings')}
-        className="flex max-h-[calc(100dvh-2rem)] flex-col sm:max-w-2xl"
+        className="flex max-h-[calc(100dvh-2rem)] flex-col gap-5 overflow-hidden p-5 sm:max-w-2xl sm:p-6"
         onCloseAutoFocus={(event) => {
           event.preventDefault()
           document.querySelector<HTMLButtonElement>('[data-settings-trigger]')?.focus()
         }}
       >
-        <DialogHeader>
-          <DialogTitle>{translate('applicationSettings')}</DialogTitle>
-          <DialogDescription>{translate('settingsDescription')}</DialogDescription>
+        <DialogHeader className="gap-1.5 pr-8 text-left">
+          <DialogTitle className="text-lg tracking-tight">
+            {translate('applicationSettings')}
+          </DialogTitle>
+          <DialogDescription className="text-xs leading-5">
+            {translate('settingsDescription')}
+          </DialogDescription>
         </DialogHeader>
-        <Tabs defaultValue="general" className="min-h-0 flex-1 gap-5">
+        <Tabs defaultValue="general" className="min-h-0 flex-1 gap-4">
           <TabsList
             aria-label={translate('applicationSettings')}
-            className="grid w-full shrink-0 grid-cols-4"
+            className="grid h-10 w-full shrink-0 grid-cols-4 rounded-lg bg-secondary/70 p-1"
           >
             {sections.map(([value, label]) => (
-              <TabsTrigger key={value} value={value}>
+              <TabsTrigger key={value} value={value} className="text-xs">
                 {translate(label)}
               </TabsTrigger>
             ))}
           </TabsList>
-          <div className="h-72 min-h-0 overflow-y-auto px-0.5 py-1">
+          <div className="max-h-[min(55dvh,28rem)] min-h-40 overflow-y-auto overscroll-contain px-0.5">
             <TabsContent value="general">
               <SettingsGeneral />
             </TabsContent>
@@ -70,8 +74,10 @@ const SettingsDialog = ({ onClose }: SettingsDialogProps) => {
             </TabsContent>
           </div>
         </Tabs>
-        <div className="flex justify-end border-t border-border pt-4">
-          <Button onClick={onClose}>{translate('settingsDone')}</Button>
+        <div className="flex shrink-0 justify-end border-t border-border pt-4">
+          <Button className="min-w-20" onClick={onClose}>
+            {translate('settingsDone')}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

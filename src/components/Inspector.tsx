@@ -25,7 +25,7 @@ export const Inspector = () => {
   const topics = useSelectedIds()
   return (
     <aside
-      className="flex min-h-0 w-[272px] shrink-0 basis-[272px] flex-col border-l border-border bg-background text-sm"
+      className="flex min-h-0 w-[272px] shrink-0 basis-[272px] flex-col border-l border-border/80 bg-background text-sm"
       aria-label={translate('propertiesPanel')}
     >
       <Tabs
@@ -35,22 +35,22 @@ export const Inspector = () => {
         }}
         className="min-h-0 flex-1 gap-0 overflow-hidden"
       >
-        <div className="flex h-12 shrink-0 items-center gap-2 border-b border-border/80 px-4">
+        <div className="flex h-11 shrink-0 items-center gap-2 border-b border-border/70 px-4">
           <h2 className="sr-only">{translate('properties')}</h2>
           <TabsList
             variant="line"
             aria-label={translate('propertyCategories')}
-            className="h-12 flex-1 justify-start gap-4 p-0"
+            className="h-11 flex-1 justify-start gap-4 p-0"
           >
             <TabsTrigger
               value="topic"
-              className="h-12 flex-none rounded-none px-1 text-xs after:bottom-0 after:bg-primary"
+              className="h-11 flex-none rounded-none px-1 text-xs after:bottom-0 after:bg-foreground"
             >
               {translate('topic')}
             </TabsTrigger>
             <TabsTrigger
               value="canvas"
-              className="h-12 flex-none rounded-none px-1 text-xs after:bottom-0 after:bg-primary"
+              className="h-11 flex-none rounded-none px-1 text-xs after:bottom-0 after:bg-foreground"
             >
               {translate('sheet')}
             </TabsTrigger>

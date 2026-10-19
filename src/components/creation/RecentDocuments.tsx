@@ -12,10 +12,10 @@ export const RecentDocuments = ({ busy, onExample }: { busy: boolean; onExample:
   const recent = useRecentFiles()
   return (
     <aside
-      className="flex min-w-0 flex-col items-start border-t border-border pt-6 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8"
+      className="flex min-w-0 flex-col items-start border-t border-border pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-5"
       aria-label={translate('recentFiles')}
     >
-      <h2 className="mb-5 text-lg font-semibold">{translate('recentlyOpened')}</h2>
+      <h2 className="mb-3 text-sm font-semibold">{translate('recentlyOpened')}</h2>
       {recent.isPending && (
         <p role="status" className="text-xs text-muted-foreground">
           {translate('loadingRecentFiles')}
@@ -34,7 +34,7 @@ export const RecentDocuments = ({ busy, onExample }: { busy: boolean; onExample:
               void recent.refetch()
             }}
           >
-            <RefreshCw data-icon="inline-start" />
+            <RefreshCw aria-hidden="true" data-icon="inline-start" />
             {translate('retry')}
           </Button>
         </div>
@@ -49,10 +49,14 @@ export const RecentDocuments = ({ busy, onExample }: { busy: boolean; onExample:
                 disabled={busy}
                 aria-label={translate('openRecentFileValue0', { value0: file.name })}
                 title={file.path}
-                className="h-20 w-full justify-start gap-3 px-2 text-left"
+                className="h-11 w-full justify-start gap-3 px-2 text-left"
                 onClick={() => void openDocument(file.path)}
               >
-                <File data-icon="inline-start" className="text-primary" />
+                <File
+                  aria-hidden="true"
+                  data-icon="inline-start"
+                  className="text-muted-foreground"
+                />
                 <span className="truncate">{file.name}</span>
               </Button>
             ))}
@@ -60,9 +64,9 @@ export const RecentDocuments = ({ busy, onExample }: { busy: boolean; onExample:
         ) : (
           <p className="text-xs leading-6 text-muted-foreground">{translate('noRecentFiles')}</p>
         ))}
-      <Separator className="my-6" />
+      <Separator className="my-4" />
       <Button type="button" variant="ghost" disabled={busy} onClick={onExample}>
-        <BookOpen data-icon="inline-start" />
+        <BookOpen aria-hidden="true" data-icon="inline-start" />
         {translate('exploreExample')}
       </Button>
     </aside>

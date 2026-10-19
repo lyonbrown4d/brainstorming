@@ -161,3 +161,15 @@ DevTools CLI 自身使用 Electron，仅作为开发依赖，产品运行时仍�
 画板工具参考 [官方白板指南](https://reactflow.dev/learn/advanced-use/whiteboard)，沿用 React Flow 坐标转换和视口，笔迹复用 perfect-freehand。画笔输入层高于 React Flow renderer；擦除模式让已绘笔迹直接接收输入，并禁用节点拖动和画布拖动。选择模式恢复正常导图操作。笔迹使用独立 React Flow 节点，复用官方 [NodeResizer](https://reactflow.dev/api-reference/components/node-resizer)、框选和组拖动；原始采样不在缩放过程中重写。混合选区只平移，不改变主题父级；主题与笔迹通过同一批量命令提交，预览、选择和取消不进入历史。真实鼠标回归位于 `tests/canvas/ink-editing.spec.ts`。
 
 演示参考 [官方幻灯片教程](https://reactflow.dev/learn/tutorials/slide-shows-with-react-flow) 的内容与导航状态分离、键盘导航和有限目标聚焦思路。当前产品保留已确认的页面编排、观众与演讲者视图；播放不改变底层导图布局，也不为每页复制整张导图。
+
+## 全局命令与内容索引
+
+命令面板组合官方 shadcn Command / Dialog 和 cmdk，使用 ⌘/Ctrl+K 打开；编辑快捷键在面板打开时暂停。操作复用既有文件、历史与视口命令。异步内容查询由 TanStack Query 管理，输入经 ahooks 防抖，关闭面板取消过期结果。结果以普通文本呈现，不执行备注中的 HTML。
+
+`state/contentIndexSync.ts` 监听文档会话与已提交工作簿，复用 lodash 防抖，并通过串行队列同步发生变化的文档；查询前等待同步完成。选区、编辑草稿与拖动预览不建立索引。定位只接受仍存在于当前打开会话的文档、Sheet 和主题，复用现有查找定位与视口入口。
+
+Rust 的 `search` 模块通过 FluxDI 装配到 AppState。索引复用 SQLx 和现有 SQLite FTS5：三字及以上词使用 trigram 全文索引，一至两字使用同一内存库中的受限文本匹配，多词按 AND 匹配，标题优先。所有输入使用绑定参数，FTS 操作符按字面文本处理。同步在事务内替换或移除文档，非法批次不改变现有索引。
+
+索引只存已打开且解锁文档的标题、Sheet 名、主题标题与备注；不含资源二进制、文件路径或密码，不创建明文磁盘索引。单进程最多保留 32 份文档、100000 个主题、128 MiB 原始文本，单工作簿最多 20000 个主题；超过限制返回可见错误。重载或关闭会话清除索引，应用退出关闭连接池。此索引无需文件格式迁移。
+
+`tests/native/content-search.spec.ts` 使用真实 Rust IPC 和 SQLite 索引验收跨文档、跨 Sheet 定位、未保存内容更新和关闭清理；前端同步竞态与取消由 renderer 测试覆盖。

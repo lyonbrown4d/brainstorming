@@ -1,3 +1,5 @@
+import { commandMessages } from '@renderer/i18n/commandMessages'
+import { creationMessages } from '@renderer/i18n/creationMessages'
 import { sketchMessages } from '@renderer/i18n/sketchMessages'
 import { settingsMessages } from '@renderer/i18n/settingsMessages'
 import { inkMessages } from '@renderer/i18n/inkMessages'
@@ -21,6 +23,8 @@ import { messages7 } from '@renderer/i18n/messages7'
 import { messages8 } from '@renderer/i18n/messages8'
 
 const messages = {
+  ...commandMessages,
+  ...creationMessages,
   ...sketchMessages,
   ...settingsMessages,
   ...inkMessages,

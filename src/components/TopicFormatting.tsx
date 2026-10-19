@@ -35,7 +35,7 @@ const ColorPalette = ({
           variant="ghost"
           size="icon"
           key={color.value}
-          className="color-swatch size-6 shrink-0 rounded-full border border-foreground/5 p-0 hover:-translate-y-px aria-pressed:outline-2 aria-pressed:outline-offset-[3px] aria-pressed:outline-ring motion-reduce:hover:translate-y-0"
+          className="color-swatch size-6 shrink-0 rounded-full border border-foreground/10 p-0 aria-pressed:outline-2 aria-pressed:outline-offset-[3px] aria-pressed:outline-ring"
           type="button"
           aria-label={`${label}：${color.name}`}
           aria-pressed={value.toLowerCase() === color.value}
@@ -162,7 +162,7 @@ export const TopicFormatting = ({
     )
   return (
     <div className="topic-formatting">
-      <section className="format-group border-t border-border/70 py-3 first:border-0 [&_h3]:mb-2.5 [&_h3]:text-xs [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-[18px]">
+      <section className="format-group border-t border-border/60 py-3 first:border-0 [&_h3]:mb-2 [&_h3]:text-xs [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-3">
         <h3>{translate('topicAppearance')}</h3>
         <TopicAppearancePicker
           value={style.shape ?? 'rounded'}
@@ -180,7 +180,7 @@ export const TopicFormatting = ({
           }}
         />
       </section>
-      <section className="format-group border-t border-border/70 py-3 first:border-0 [&_h3]:mb-2.5 [&_h3]:text-xs [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-[18px]">
+      <section className="format-group border-t border-border/60 py-3 first:border-0 [&_h3]:mb-2 [&_h3]:text-xs [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-3">
         <h3>{translate('text')}</h3>
         <div className="font-controls mb-3 flex items-end gap-2 [&_[data-slot=button]]:h-8 [&_[data-slot=button]]:w-8 [&_[data-slot=button]]:border [&_[data-slot=button]]:border-border [&_[data-slot=button]]:bg-background [&_[data-slot=button][aria-pressed=true]]:border-primary/20 [&_[data-slot=button][aria-pressed=true]]:bg-accent [&_[data-slot=button][aria-pressed=true]]:text-accent-foreground">
           <div className="format-field flex flex-1 items-center gap-2.5 text-xs text-muted-foreground">
@@ -212,7 +212,7 @@ export const TopicFormatting = ({
           }}
         />
       </section>
-      <section className="format-group border-t border-border/70 py-3 first:border-0 [&_h3]:mb-2.5 [&_h3]:text-xs [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-[18px]">
+      <section className="format-group border-t border-border/60 py-3 first:border-0 [&_h3]:mb-2 [&_h3]:text-xs [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-3">
         <h3>{translate('branch')}</h3>
         <div className="branch-controls flex gap-2.5 [&_.format-field]:flex [&_.format-field]:flex-1 [&_.format-field]:flex-col [&_.format-field]:gap-2 [&_.format-field]:text-[11px] [&_.format-field]:text-muted-foreground [&_.field-select]:w-full">
           <div className="format-field">
