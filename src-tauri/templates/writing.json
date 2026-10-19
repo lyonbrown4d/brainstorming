@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "id": "writing",
+  "title": ["写作与表达", "Writing outline"],
+  "description": [
+    "围绕读者组织主张、证据、结构和修改",
+    "Organize a message, evidence, structure and revisions for readers"
+  ],
+  "group": "learn",
+  "icon": "pen-line",
+  "layout": "logic-right",
+  "topics": [
+    {
+      "title": ["读者与目的", "Audience and purpose"],
+      "children": [
+        {
+          "title": ["谁会阅读？已有多少背景？", "Who will read this and what do they know?"],
+          "children": []
+        },
+        {
+          "title": [
+            "读后希望理解或采取什么行动？",
+            "What should readers understand or do afterward?"
+          ],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["中心主张", "Main message"],
+      "children": [
+        {
+          "title": ["一句话写出结论", "Write the conclusion in one sentence"],
+          "children": []
+        },
+        {
+          "title": ["范围与必要限制", "Scope and necessary limits"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["内容结构", "Outline"],
+      "children": [
+        {
+          "title": ["开头：提出问题与背景", "Opening: question and context"],
+          "children": []
+        },
+        {
+          "title": ["主体：逐步支撑结论", "Body: build support for the conclusion"],
+          "children": [
+            {
+              "title": ["论点一与证据", "Point one and supporting evidence"],
+              "children": []
+            },
+            {
+              "title": ["论点二与例子", "Point two and example"],
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": ["结尾：行动或待解决问题", "Ending: action or open question"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["素材与核实", "Material and verification"],
+      "children": [
+        {
+          "title": ["事实、引用和来源", "Facts, quotations and sources"],
+          "children": []
+        },
+        {
+          "title": ["可能的反对意见", "Possible objections"],
+          "children": []
+        },
+        {
+          "title": ["缺少证据的断言", "Claims missing evidence"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["修改检查", "Revision checklist"],
+      "children": [
+        {
+          "title": ["删去重复与无关段落", "Remove repetition and irrelevant sections"],
+          "children": []
+        },
+        {
+          "title": ["术语、逻辑与可读性", "Terms, reasoning and readability"],
+          "children": []
+        },
+        {
+          "title": ["请一位目标读者反馈", "Ask a target reader for feedback"],
+          "children": []
+        }
+      ],
+      "notes": [
+        "先检查结构和事实，再润色句子。",
+        "Check structure and facts before polishing sentences."
+      ]
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+import { builtinArtAPI } from '@tests/fixtures/builtinArt'
+import { templateAPI } from '@tests/fixtures/templates'
 import { afterEach } from 'vitest'
 import { installPlatformAPI } from '@renderer/lib/desktop'
 import type { DesktopAPI } from '@shared/contracts'
@@ -11,6 +13,8 @@ afterEach(resetDesktopFixture)
 
 export const desktop = (overrides: Partial<DesktopAPI> = {}): DesktopAPI => {
   const api: DesktopAPI = {
+    ...templateAPI,
+    ...builtinArtAPI,
     syncContentIndex: () => Promise.resolve(),
     searchContent: () => Promise.resolve([]),
     platform: 'macos',
@@ -43,6 +47,10 @@ export const desktop = (overrides: Partial<DesktopAPI> = {}): DesktopAPI => {
     queueLinkPreviews: () => Promise.resolve(),
     getLinkPreview: () => Promise.resolve(null),
     onLinkPreview: () => () => undefined,
+    getDocumentPreviewRevision: () => Promise.resolve(null),
+    writeDocumentPreviews: () => Promise.resolve(false),
+    exportImage: () => Promise.resolve(null),
+    onExportProgress: () => () => undefined,
     releaseDocument: () => Promise.resolve(),
     selectAsset: () => Promise.resolve(null),
     exportFile: () => Promise.resolve(null),

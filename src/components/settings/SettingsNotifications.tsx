@@ -1,5 +1,5 @@
 import { useId } from 'react'
-import { LoaderCircle } from 'lucide-react'
+import { LoadingIndicator } from '@renderer/components/feedback/LoadingIndicator'
 import { Button } from '@renderer/components/ui/button'
 import { useMessages } from '@renderer/i18n/useMessages'
 import { useNotificationSettings } from '@renderer/components/settings/hooks/useNotificationSettings'
@@ -38,12 +38,7 @@ export const SettingsNotifications = () => {
             void toggle()
           }}
         >
-          {pending && (
-            <LoaderCircle
-              aria-hidden
-              className="size-3.5 animate-spin motion-reduce:animate-none"
-            />
-          )}
+          {pending && <LoadingIndicator className="size-3.5" />}
           {translate(settings?.enabled ? 'notificationDisable' : 'notificationEnable')}
         </Button>
       </div>

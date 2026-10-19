@@ -37,6 +37,7 @@ const topicFields = new Set([
   'extensions',
   'class',
   'labels',
+  'markers',
 ])
 const sheetFields = new Set(['id', 'title', 'rootTopic', 'extensions', 'class'])
 

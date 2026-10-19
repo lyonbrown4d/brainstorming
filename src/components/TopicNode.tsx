@@ -71,7 +71,7 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
   return (
     <div
       className={cn(
-        'topic nopan relative flex h-full w-full flex-col items-center rounded-lg border-[1.5px] transition-[box-shadow,border-color] duration-150 select-none',
+        'topic group/topic nopan relative flex h-full w-full flex-col items-center rounded-lg border-[1.5px] transition-[box-shadow,border-color] duration-150 select-none',
         root
           ? 'topic-root rounded-xl bg-primary text-primary-foreground'
           : branch
@@ -111,6 +111,7 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
       <TopicShapeVisual
         shape={shape}
         visualStyle={data.visualStyle}
+        sketchFill={root || branch || Boolean(style?.fill) || shape === 'sticky'}
         seedKey={id}
         width={width ?? 100}
         height={height ?? 100}
@@ -130,6 +131,7 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
           key={`source-${position}`}
           id={`source-${position}`}
           type="source"
+          className="!size-3 !border-2 !border-primary !bg-background hover:!opacity-100 group-hover/topic:!pointer-events-auto group-hover/topic:!opacity-100 group-focus-within/topic:!pointer-events-auto group-focus-within/topic:!opacity-100"
           position={position}
         />
       ))}

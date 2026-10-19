@@ -1,6 +1,6 @@
 import { APPEARANCE_STORAGE_KEY } from '@shared/appAppearance'
 
-/** Small entry integration for the React-free splash and the pre-React loading screen. */
+/** Shared appearance setup for the independent splash and pre-React main loading screen. */
 export const initializeAppearance = (): void => {
   try {
     const preference = localStorage.getItem(APPEARANCE_STORAGE_KEY)

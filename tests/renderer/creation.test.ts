@@ -1,3 +1,6 @@
+import { fixtureCatalog } from '@tests/fixtures/templates'
+import { desktop } from '@tests/fixtures/desktop'
+const templateOptions = fixtureCatalog.templates
 import { useDocumentTabs, switchDocumentTab } from '@renderer/state/documentTabs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDocument } from '@core'
@@ -18,6 +21,7 @@ import { useSearch } from '@renderer/state/search'
 const discardPrompt = vi.fn(() => true)
 const request = { title: ' 新的计划 ', layout: 'brace-left', template: 'blank' } as const
 beforeEach(() => {
+  desktop()
   useDocumentTabs.setState({ tabs: [], activeId: null, recovery: [] })
   discardPrompt.mockReset().mockReturnValue(true)
   vi.stubGlobal('window', { confirm: discardPrompt })
@@ -74,12 +78,12 @@ describe('full-page document and sheet creation', () => {
     expect(useEditor.getState().workbook).toBe(before)
   })
 
-  it('creates a new tab without discarding the dirty document when discard would be declined', () => {
+  it('creates a new tab without discarding the dirty document when discard would be declined', async () => {
     dirty()
     beginCreation('document')
     const before = useEditor.getState().workbook
     discardPrompt.mockReturnValue(false)
-    expect(createFromRequest(request)).toBe(true)
+    expect(await createFromRequest(request)).toBe(true)
     expect(discardPrompt).not.toHaveBeenCalled()
     expect(useEditor.getState().history.document.title).toBe('新的计划')
     expect(useWorkspace.getState().screen).toBe('editor')
@@ -94,23 +98,25 @@ describe('full-page document and sheet creation', () => {
     expect(isDirty()).toBe(true)
   })
 
-  it('creates a trimmed title with the selected structure, no seed history and a fresh password state', () => {
+  it('creates a trimmed title with the selected structure, no seed history and a fresh password state', async () => {
     const oldId = useEditor.getState().workbook.id
     useFileSecurityState.setState({ documentId: oldId, encrypted: true })
     dirty()
     beginCreation('document')
-    expect(createFromRequest({ ...request, template: 'project' })).toBe(true)
+    expect(await createFromRequest({ ...request, template: 'project' })).toBe(true)
     const state = useEditor.getState()
     expect(state.history.document.title).toBe('新的计划')
     expect(state.history.document.settings?.layout).toBe('brace-left')
-    expect(Object.keys(state.history.document.topics)).toHaveLength(13)
+    expect(Object.keys(state.history.document.topics)).toHaveLength(
+      templateOptions.find((item) => item.id === 'project')?.count ?? 0,
+    )
     expect(state.history.past).toHaveLength(0)
     expect(state.structurePast).toHaveLength(0)
     expect(state.path).toBeNull()
     expect(isDirty()).toBe(true)
     expect(useFileSecurityState.getState()).toMatchObject({ documentId: null, encrypted: false })
     expect(useWorkspace.getState().screen).toBe('editor')
-    expect(createFromRequest(request)).toBe(false)
+    expect(await createFromRequest(request)).toBe(false)
     expect(useEditor.getState().workbook).toBe(state.workbook)
     const original = useDocumentTabs.getState().tabs.find((tab) => tab.editor.workbook.id === oldId)
     expect(original?.security).toMatchObject({ documentId: oldId, encrypted: true })
@@ -121,10 +127,12 @@ describe('full-page document and sheet creation', () => {
 
   it.each(['document', 'sheet'] as const)(
     'creates only a center topic without a preset for %s',
-    (mode) => {
+    async (mode) => {
       const previous = useEditor.getState().workbook
       beginCreation(mode)
-      expect(createFromRequest({ ...request, layout: 'none', template: 'project' })).toBe(true)
+      expect(await createFromRequest({ ...request, layout: 'none', template: 'project' })).toBe(
+        true,
+      )
       const state = useEditor.getState()
       expect(Object.keys(state.history.document.topics)).toEqual(['root'])
       expect(state.history.document.topics.root?.children).toEqual([])
@@ -139,20 +147,20 @@ describe('full-page document and sheet creation', () => {
     },
   )
 
-  it.each(['document', 'sheet'] as const)('uses the default blank %s name', (mode) => {
+  it.each(['document', 'sheet'] as const)('uses the default blank %s name', async (mode) => {
     beginCreation(mode)
-    expect(createFromRequest({ ...request, title: ' \n ' })).toBe(true)
+    expect(await createFromRequest({ ...request, title: ' \n ' })).toBe(true)
     expect(useEditor.getState().history.document.title).toBe(
       mode === 'document' ? '新的想法' : '新画布',
     )
   })
 
-  it('adds a Sheet in one undo with independent structure, preserving path, password and workbook serialization', () => {
+  it('adds a Sheet in one undo with independent structure, preserving path, password and workbook serialization', async () => {
     useEditor.getState().command({ type: 'setDocumentSettings', settings: { layout: 'tree-up' } })
     const original = useEditor.getState().workbook
     useFileSecurityState.setState({ documentId: original.id, encrypted: true })
     beginCreation('sheet')
-    expect(createFromRequest({ ...request, layout: 'timeline-vertical' })).toBe(true)
+    expect(await createFromRequest({ ...request, layout: 'timeline-vertical' })).toBe(true)
     const state = useEditor.getState()
     expect(state.workbook.sheets.map(({ document }) => document.settings?.layout)).toEqual([
       'tree-up',
@@ -173,19 +181,19 @@ describe('full-page document and sheet creation', () => {
     expect(discardPrompt).not.toHaveBeenCalled()
   })
 
-  it('rejects a stale Sheet guide and keeps its error visible', () => {
+  it('rejects a stale Sheet guide and keeps its error visible', async () => {
     beginCreation('sheet')
     useEditor.getState().replace(createDocument('另一份工作簿', 'other'))
     // Simulate a stale gallery submission retaining the old creation target.
     useWorkspace.setState({ screen: 'create-sheet', creationWorkbookId: 'stale-workbook' })
     const before = useEditor.getState().workbook
-    expect(createFromRequest(request)).toBe(false)
+    expect(await createFromRequest(request)).toBe(false)
     expect(useEditor.getState().workbook).toBe(before)
     expect(useEditor.getState().error).toContain('工作簿已更改')
     expect(useWorkspace.getState().screen).toBe('create-sheet')
   })
 
-  it('blocks busy actions and keeps a validation failure in the creation guide', () => {
+  it('blocks busy actions and keeps a validation failure in the creation guide', async () => {
     useEditor.setState({ busy: true })
     expect(beginCreation('document')).toBe(false)
     expect(showWorkspaceHome()).toBe(false)
@@ -194,11 +202,11 @@ describe('full-page document and sheet creation', () => {
     beginCreation('document')
     const before = useEditor.getState().workbook
     useEditor.setState({ busy: true })
-    expect(createFromRequest(request)).toBe(false)
+    expect(await createFromRequest(request)).toBe(false)
     cancelCreation()
     expect(useWorkspace.getState().screen).toBe('create-document')
     useEditor.setState({ busy: false })
-    expect(createFromRequest({ ...request, title: '长'.repeat(81) })).toBe(false)
+    expect(await createFromRequest({ ...request, title: '长'.repeat(81) })).toBe(false)
     expect(useEditor.getState().error).toContain('80')
     expect(useEditor.getState().workbook).toBe(before)
     expect(useWorkspace.getState().screen).toBe('create-document')

@@ -1,7 +1,8 @@
+import { creationReady, editorReady, fileMenuItemReady } from '@tests/native/readiness'
 import { browser, expect } from '@wdio/globals'
-import { Key } from 'webdriverio'
+import { Key, type ChainablePromiseElement } from 'webdriverio'
 import { randomUUID } from 'node:crypto'
-import type { MindMapWorkbook } from '@core'
+import { deserializeWorkbook, type MindMapWorkbook } from '@core'
 import type { OpenedDocument } from '@shared/contracts'
 
 export const named = (name: string) => browser.$(`aria/${name}`)
@@ -38,8 +39,9 @@ export const chooseFile = async (
   kind: 'open' | 'save' | 'asset',
   name: string,
   cancel = false,
-): Promise<void> => {
-  await fixture('dialog', { kind, name, cancel })
+): Promise<string> => {
+  const choice = await fixture<{ path: string }>('dialog', { kind, name, cancel })
+  return choice.path
 }
 /** Embedded clicks do not activate an inactive native app before keyboard input. */
 export const focusNativeWindow = async (): Promise<void> => {
@@ -56,7 +58,21 @@ export const shortcut = async (key: string): Promise<void> => {
   await browser.keys([process.platform === 'darwin' ? Key.Command : Key.Control, key])
   // WebdriverIO keys() releases actions; the embedded driver treats Key.NULL as text.
 }
+/** The embedded driver's clearElement replaces innerHTML without notifying Lexical. */
+export const fillContentEditable = async (
+  element: ChainablePromiseElement,
+  text: string,
+): Promise<void> => {
+  await focusNativeWindow()
+  await expect(element).toBeDisplayed()
+  await element.click()
+  await expect(element).toBeFocused()
+  await shortcut('a')
+  await element.addValue(text)
+  await expect(element).toHaveText(text)
+}
 export const reloadNativePage = async (): Promise<void> => {
+  await focusNativeWindow()
   const previousDocument = await browser.execute(() => performance.timeOrigin)
   await browser.refresh()
   // Embedded refresh returns before navigation; startupReady later focuses the window.
@@ -78,6 +94,10 @@ export const reloadNativePage = async (): Promise<void> => {
 }
 export const home = async (): Promise<void> => {
   await browser.tauri.switchWindow('main')
+  const pendingDialogs = await fixture<{ kinds: string[] }>('dialogState', {})
+  if (pendingDialogs.kinds.length)
+    console.warn('Discarding unused native picker fixtures before Home:', pendingDialogs.kinds)
+  await fixture('resetDialogs', {})
   await native('setLanguage', { language: 'zh-CN' })
   // Reload now preserves the HashRouter view, including an open Settings route.
   // Reset through the real router before starting a new workflow fixture.
@@ -90,32 +110,36 @@ export const home = async (): Promise<void> => {
     window.location.hash = '/home'
   })
   await browser.waitUntil(async () => (await browser.getUrl()).endsWith('#/home'))
+  await creationReady('structure')
   await expect(named('探索示例')).toBeDisplayed()
-  await expect(named('下一步')).toBeEnabled()
-  if ((await recovery()).length > 0) {
-    await expect(named('忽略记录')).toBeDisplayed()
+  // Test setup starts with no prior recovery. A save from the previous page
+  // can finish after the new renderer's initial read; do not infer UI state
+  // from a second backend read performed at a different point in time.
+  await native('writeWorkspaceRecovery', { contents: [] })
+  if (await named('忽略记录').isDisplayed()) {
     await named('忽略记录').click()
     await expect(named('忽略记录')).not.toBeDisplayed()
   }
+  await creationReady('structure')
 }
 export const create = async (title: string): Promise<void> => {
   await focusNativeWindow()
-  await expect(named('下一步')).toBeEnabled()
+  await creationReady('structure')
   await named('下一步').click()
+  await creationReady('configuration')
   await expect(named('文档名称')).toBeDisplayed()
   await named('文档名称').setValue(title)
   await named('创建文档').click()
+  await editorReady(title)
   await rootHasText(title)
   await expect(root()).toBeDisplayed()
-  await browser.waitUntil(async () => (await browser.getUrl()).includes('#/documents/'))
 }
 export const fileAction = async (action: string): Promise<void> => {
   await focusNativeWindow()
-  await expect(named('文件菜单')).toBeEnabled()
+  await editorReady()
   await named('文件菜单').click()
   await browser.keys(Key.ArrowDown)
-  await expect(browser.$('[role="menu"]')).toBeDisplayed()
-  await expect(named(action)).toBeEnabled()
+  await fileMenuItemReady(action)
   await named(action).click()
   await expect(browser.$('[role="menu"]')).not.toBeDisplayed()
 }
@@ -125,18 +149,24 @@ export const dockAction = async (action: string): Promise<void> => {
 }
 export const renameRoot = async (title: string): Promise<void> => {
   await focusNativeWindow()
+  await editorReady()
   await root().click()
   await browser.keys(Key.F2)
   await expect(editor()).toBeDisplayed()
   await expect(editor()).toBeFocused()
-  await editor().setValue(title)
+  await fillContentEditable(editor(), title)
   await browser.keys(Key.Enter)
   await rootHasText(title)
 }
 export const readDocument = async (name: string, password?: string): Promise<MindMapWorkbook> =>
-  await fixture('readDocument', { name, ...(password ? { password } : {}) })
+  deserializeWorkbook(
+    JSON.stringify(
+      await fixture<unknown>('readDocument', { name, ...(password ? { password } : {}) }),
+    ),
+  )
 export const save = async (name: string, password?: string): Promise<MindMapWorkbook> => {
-  await chooseFile('save', name)
+  await editorReady()
+  const destination = await chooseFile('save', name)
   await shortcut('s')
   let result: MindMapWorkbook | undefined
   await browser.waitUntil(
@@ -150,9 +180,22 @@ export const save = async (name: string, password?: string): Promise<MindMapWork
     },
     { timeoutMsg: 'The native save did not produce a readable SQLite document.' },
   )
-  await expect(named('文件菜单')).toBeEnabled()
+  await browser.waitUntil(
+    async () =>
+      browser.execute((path) => {
+        const status = document.querySelector('.save-status')
+        const menu = document.querySelector('button[aria-label="文件菜单"]')
+        return (
+          status?.getAttribute('title') === path &&
+          status.textContent.includes('已保存') &&
+          menu instanceof HTMLButtonElement &&
+          !menu.disabled
+        )
+      }, destination),
+    { timeoutMsg: 'The saved file did not become the active document save baseline.' },
+  )
   if (!result) throw new Error('Native document was not saved')
-  return result
+  return readDocument(name, password)
 }
 export const closeSaved = async (): Promise<void> => {
   await named('展开导图标签栏').click()
@@ -164,11 +207,13 @@ export const openSaved = async (name: string): Promise<void> => {
   await named('打开本地文件').click()
 }
 export const ensureProperties = async (): Promise<void> => {
-  const panel = browser.$('aside[aria-label="属性面板"]')
-  const toggle = browser.$('button[aria-label="属性面板"]')
-  if ((await toggle.getAttribute('aria-pressed')) !== 'true') await toggle.click()
-  await expect(toggle).toHaveAttribute('aria-pressed', 'true')
-  await expect(panel).toBeDisplayed()
+  await editorReady()
+  const panel = () => browser.$('aside[aria-label="属性面板"]')
+  const toggle = () => browser.$('button[aria-label="属性面板"]')
+  if ((await toggle().getAttribute('aria-pressed')) !== 'true') await toggle().click()
+  await browser.waitUntil(async () => (await browser.getUrl()).includes('/style/'))
+  await expect(toggle()).toHaveAttribute('aria-pressed', 'true')
+  await expect(panel()).toBeDisplayed()
 }
 export const recovery = async (): Promise<OpenedDocument[]> => {
   const items = await native<OpenedDocument[]>('readWorkspaceRecovery')

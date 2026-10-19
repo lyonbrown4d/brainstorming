@@ -1,7 +1,8 @@
 import { useMessages } from '@renderer/i18n/useMessages'
 
+import { PriorityPicker } from '@renderer/components/metadata/PriorityPicker'
 import { useState } from 'react'
-import type { TopicMetadata, TopicTask } from '@core'
+import type { TopicMetadata, TopicTask, TaskPriority } from '@core'
 import { useEditor } from '@renderer/state/editor'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
@@ -13,9 +14,11 @@ export const TaskPanel = ({ topicId, metadata }: { topicId: string; metadata: To
 
   const document = useEditor((state) => state.history.document)
   const task = metadata.task
-  const [done, setDone] = useState(task?.done ?? false)
-  const [priority, setPriority] = useState(String(task?.priority ?? 'none'))
-  const [progress, setProgress] = useState(String(task?.progress ?? 0))
+  const [done, setDone] = useState(task?.done)
+  const [priority, setPriority] = useState<TaskPriority | undefined>(task?.priority)
+  const [progress, setProgress] = useState(
+    task?.progress === undefined ? '' : String(task.progress),
+  )
   const [start, setStart] = useState(task?.start ?? '')
   const [due, setDue] = useState(task?.due ?? '')
   const [assignee, setAssignee] = useState(task?.assignee ?? '')
@@ -23,15 +26,15 @@ export const TaskPanel = ({ topicId, metadata }: { topicId: string; metadata: To
   const [dependency, setDependency] = useState('')
   const save = (): void => {
     const value: TopicTask = {
-      done,
-      ...(priority === 'none' ? {} : { priority: Number(priority) as 1 | 2 | 3 }),
-      progress: Number(progress),
+      ...(done === undefined ? {} : { done }),
+      ...(priority === undefined ? {} : { priority }),
+      ...(progress === '' ? {} : { progress: Number(progress) }),
       ...(start ? { start } : {}),
       ...(due ? { due } : {}),
       ...(assignee.trim() ? { assignee: assignee.trim() } : {}),
       ...(dependencies.length ? { dependencies } : {}),
     }
-    setMetadataField(topicId, 'task', value)
+    setMetadataField(topicId, 'task', Object.keys(value).length ? value : undefined)
   }
   return (
     <section className="space-y-3 border-t border-border py-4">
@@ -47,28 +50,15 @@ export const TaskPanel = ({ topicId, metadata }: { topicId: string; metadata: To
           type="button"
           variant="outline"
           size="sm"
-          aria-pressed={done}
+          aria-pressed={done ?? false}
           onClick={() => {
             setDone(!done)
-            if (!done) setProgress('100')
+            setProgress(done ? '0' : '100')
           }}
         >
           {done ? translate('completed') : translate('incomplete')}
         </Button>
-        <div className="grid gap-1.5 text-xs">
-          {translate('priority')}
-          <FieldSelect
-            label={translate('taskPriority')}
-            value={priority}
-            options={[
-              { value: 'none', label: translate('noPriority') },
-              { value: '1', label: translate('high') },
-              { value: '2', label: translate('medium') },
-              { value: '3', label: translate('low') },
-            ]}
-            onChange={setPriority}
-          />
-        </div>
+        <PriorityPicker value={priority} onChange={setPriority} />
         <label htmlFor={`task-progress-${topicId}`} className="grid gap-1.5 text-xs">
           {translate('progress')}
           <Input

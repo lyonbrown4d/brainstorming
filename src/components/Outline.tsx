@@ -3,7 +3,8 @@ import { useMessages } from '@renderer/i18n/useMessages'
 import { ChevronDown, ChevronRight, PanelLeftClose } from 'lucide-react'
 import { topicAppearance } from '@shared/appearance'
 import { useEditor } from '@renderer/state/editor'
-import { selectTopic, useTopicSelected } from '@renderer/state/selection'
+import { selectTopic, selectedTopicIds, useTopicSelected } from '@renderer/state/selection'
+import { requestTopicFocus } from '@renderer/state/viewport'
 import { Button } from '@renderer/components/ui/button'
 
 const OutlineBranch = ({ id, depth }: { id: string; depth: number }) => {
@@ -50,6 +51,8 @@ const OutlineBranch = ({ id, depth }: { id: string; depth: number }) => {
           aria-pressed={selected}
           onClick={(event) => {
             selectTopic(id, event.metaKey || event.ctrlKey || event.shiftKey)
+            const current = useEditor.getState()
+            if (!current.editingId && selectedTopicIds(current).includes(id)) requestTopicFocus(id)
           }}
           onDoubleClick={() => {
             useEditor.getState().startEdit(id)

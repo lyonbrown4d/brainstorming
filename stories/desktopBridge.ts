@@ -1,3 +1,5 @@
+import { builtinArtAPI } from '@tests/fixtures/builtinArt'
+import { templateAPI } from '@tests/fixtures/templates'
 import type { DesktopAPI } from '@shared/contracts'
 import { inactiveMCP } from '@tests/fixtures/mcp'
 
@@ -5,6 +7,8 @@ import { inactiveMCP } from '@tests/fixtures/mcp'
 export const createStoryDesktop = (): DesktopAPI => {
   let clipboard = ''
   return {
+    ...templateAPI,
+    ...builtinArtAPI,
     syncContentIndex: () => Promise.resolve(),
     searchContent: () => Promise.resolve([]),
     platform: 'macos',
@@ -28,6 +32,10 @@ export const createStoryDesktop = (): DesktopAPI => {
     queueLinkPreviews: () => Promise.resolve(),
     getLinkPreview: () => Promise.resolve(null),
     onLinkPreview: () => () => undefined,
+    getDocumentPreviewRevision: () => Promise.resolve(null),
+    writeDocumentPreviews: () => Promise.resolve(false),
+    exportImage: () => Promise.resolve(null),
+    onExportProgress: () => () => undefined,
     releaseDocument: () => Promise.resolve(),
     selectAsset: () => Promise.resolve(null),
     exportAsset: () => Promise.resolve(false),

@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "id": "reading",
+  "title": ["阅读拆解", "Reading map"],
+  "description": [
+    "追踪主张、论据、疑问与可应用的收获",
+    "Trace claims, evidence, questions and practical takeaways"
+  ],
+  "group": "learn",
+  "icon": "book-open",
+  "layout": "map",
+  "topics": [
+    {
+      "title": ["阅读背景", "Reading context"],
+      "children": [
+        {
+          "title": ["书名、作者与章节", "Title, author and chapter"],
+          "children": []
+        },
+        {
+          "title": ["我希望回答的问题", "Question I hope to answer"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["作者的主张", "Author’s claims"],
+      "children": [
+        {
+          "title": ["核心论点：用一句话概括", "Main claim: summarize in one sentence"],
+          "children": []
+        },
+        {
+          "title": ["论证结构", "Argument structure"],
+          "children": [
+            {
+              "title": ["前提是什么？", "What are the premises?"],
+              "children": []
+            },
+            {
+              "title": ["如何推到结论？", "How do they lead to the conclusion?"],
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": ["证据与例子", "Evidence and examples"],
+      "children": [
+        {
+          "title": ["关键引用与页码", "Key quotation and page number"],
+          "children": []
+        },
+        {
+          "title": ["证据支持到什么程度？", "How far does the evidence support the claim?"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["批判性思考", "Critical reflection"],
+      "children": [
+        {
+          "title": ["隐含假设与反例", "Hidden assumptions and counterexamples"],
+          "children": []
+        },
+        {
+          "title": ["与其他来源的异同", "Agreement and differences with other sources"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["应用与延伸", "Apply and explore"],
+      "children": [
+        {
+          "title": ["一个可以尝试的做法", "One practice to try"],
+          "children": []
+        },
+        {
+          "title": ["适用边界与预期结果", "Limits and expected outcome"],
+          "children": []
+        },
+        {
+          "title": ["下一本资料与待查问题", "Next source and questions to investigate"],
+          "children": []
+        }
+      ],
+      "notes": [
+        "把作者观点和自己的判断分开记录。",
+        "Record the author’s views separately from your own judgments."
+      ]
+    }
+  ]
+}

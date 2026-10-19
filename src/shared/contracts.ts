@@ -1,3 +1,7 @@
+import type { BuiltinArtAPI } from '@shared/builtinArt'
+import type { TemplatesAPI } from '@shared/templates'
+import type { ImageExportAPI } from '@shared/exportImages'
+import type { DocumentPreviewAPI } from '@shared/documentPreviews'
 import type { NotificationAPI } from '@shared/notifications'
 import type { LanguageAPI } from '@shared/language'
 import type { AppearanceMode } from '@shared/appAppearance'
@@ -47,7 +51,17 @@ export interface SaveRequest {
   password?: string | null
 }
 export interface DesktopAPI
-  extends FileSecurityAPI, AIAPI, MCPAPI, LanguageAPI, ContentSearchAPI, NotificationAPI {
+  extends
+    ImageExportAPI,
+    TemplatesAPI,
+    BuiltinArtAPI,
+    FileSecurityAPI,
+    AIAPI,
+    MCPAPI,
+    LanguageAPI,
+    ContentSearchAPI,
+    NotificationAPI,
+    DocumentPreviewAPI {
   minimizeWindow?(): Promise<void>
   toggleFullScreen?(): Promise<void>
   toggleMaximizeWindow?(): Promise<void>

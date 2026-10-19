@@ -1,3 +1,4 @@
+import { OUTLINE_WIDTH, INSPECTOR_WIDTH } from '@shared/workbench'
 import { useEffect, useRef } from 'react'
 import { useReactFlow, useStore } from '@xyflow/react'
 import { useReducedMotion } from 'motion/react'
@@ -12,6 +13,7 @@ export const useTopicFocusViewport = (): void => {
   const workbookId = useEditor((state) => state.workbook.id)
   const sheetId = useEditor((state) => state.activeSheetId)
   const node = useStore((state) => state.nodeLookup.get(request?.topicId ?? ''))
+  const width = useStore((state) => state.width)
   const ready = useStore((state) => state.width > 0 && state.height > 0 && state.panZoom !== null)
   const flow = useReactFlow<TopicFlowNode>()
   const reduced = useReducedMotion()
@@ -50,15 +52,20 @@ export const useTopicFocusViewport = (): void => {
       const target = flow.getNode(request.topicId)
       if (!target || target.data.topic !== request.document.topics[request.topicId]) return
       clearTopicFocus(request.sequence)
+      const zoom = flow.getZoom()
+      const safeLeft = width >= 768 && current.outlineOpen ? OUTLINE_WIDTH : 0
+      const safeRight = width >= 768 && current.inspectorOpen ? INSPECTOR_WIDTH : 0
       void flow.setCenter(
-        target.position.x + Number(target.style?.width ?? 160) / 2,
+        target.position.x +
+          Number(target.style?.width ?? 160) / 2 +
+          (safeRight - safeLeft) / (2 * zoom),
         target.position.y + Number(target.style?.height ?? 48) / 2,
-        { zoom: flow.getZoom(), duration: reduced ? 0 : 180 },
+        { zoom, duration: reduced ? 0 : 180 },
       )
       window.document.getElementById('sheet-panel')?.focus({ preventScroll: true })
     })
     return () => {
       cancelAnimationFrame(frame)
     }
-  }, [request, document, workbookId, sheetId, node, ready, flow, reduced])
+  }, [request, document, workbookId, sheetId, node, ready, width, flow, reduced])
 }

@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '@renderer/components/feedback/LoadingIndicator'
 import { requireDesktopAPI } from '@renderer/lib/desktop'
 import { useMessages } from '@renderer/i18n/useMessages'
 
@@ -44,7 +45,10 @@ const RecentFilesMenu = () => {
           <DropdownMenuGroup>
             <DropdownMenuLabel>{translate('recentFiles')}</DropdownMenuLabel>
             {recent.isFetching && (
-              <DropdownMenuItem disabled>{translate('loading')}</DropdownMenuItem>
+              <DropdownMenuItem disabled>
+                <LoadingIndicator />
+                {translate('loading')}
+              </DropdownMenuItem>
             )}
             {recent.isError && !recent.isFetching && (
               <DropdownMenuItem disabled>

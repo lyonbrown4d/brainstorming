@@ -1,0 +1,2 @@
+CREATE TABLE document_preview_state (id INTEGER PRIMARY KEY CHECK(id=1), content_hash TEXT NOT NULL CHECK(length(content_hash)=64), input_hash TEXT NOT NULL CHECK(length(input_hash)=64), cover_sheet_id TEXT);
+CREATE TABLE document_previews (sheet_id TEXT PRIMARY KEY, version INTEGER NOT NULL CHECK(version=1), source_hash TEXT NOT NULL CHECK(length(source_hash)=64), width INTEGER NOT NULL CHECK(width BETWEEN 1 AND 1600), height INTEGER NOT NULL CHECK(height BETWEEN 1 AND 1600), png BLOB NOT NULL CHECK(length(png) BETWEEN 1 AND 1048576));

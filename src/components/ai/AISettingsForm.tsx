@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '@renderer/components/feedback/LoadingIndicator'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { useId, useRef, useState } from 'react'
@@ -157,6 +158,7 @@ export const AISettingsForm = ({
         </p>
       )}
       <Button type="submit" variant="outline" disabled={busy || !model.trim()}>
+        {busy && <LoadingIndicator />}
         {busy ? translate('saving') : translate('saveServiceSettings')}
       </Button>
     </form>

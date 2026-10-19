@@ -1,3 +1,4 @@
+import { BuiltinArtPicker } from '@renderer/components/art/BuiltinArtPicker'
 import { AttachmentMedia } from '@renderer/components/metadata/AttachmentMedia'
 import { useMessages } from '@renderer/i18n/useMessages'
 
@@ -89,6 +90,7 @@ export const TopicContentPanel = ({ topicId }: { topicId: string }) => {
             <ImagePlus size={14} />
             {topic.image ? translate('replaceImage') : translate('addImage')}
           </Button>
+          <BuiltinArtPicker topicId={topicId} />
           {topic.image && <TopicImagePreview image={topic.image} />}
           {topic.image && (
             <Button

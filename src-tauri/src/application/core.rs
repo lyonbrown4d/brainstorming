@@ -1,12 +1,13 @@
 use super::{
-    document::DocumentServices, integration::IntegrationServices, platform::RuntimeConfig,
-    search::SearchServices, session::SessionService,
+  document::DocumentServices, integration::IntegrationServices, platform::RuntimeConfig,
+  search::SearchServices, session::SessionService,
 };
 use crate::{
-    document::DocumentStore,
-    runtime::{AppState, ai::AIService, mcp::MCPService, notifications::NotificationService},
-    search::SearchService,
-    storage::{MetadataStore, ResourceVault},
+  document::DocumentStore,
+  export_image::ImageExportService,
+  runtime::{AppState, ai::AIService, mcp::MCPService, notifications::NotificationService},
+  search::SearchService,
+  storage::{MetadataStore, ResourceVault},
 };
 use fluxdi::{Error, Shared, static_module};
 use std::sync::{RwLock, Weak};
@@ -27,35 +28,37 @@ static_module! {
             ai: AIService;
             mcp: MCPService;
             notifications: NotificationService;
+            image_exports: ImageExportService;
         };
     }
 }
 impl AppState {
-    /// Tauri's service facade is assembled from the typed DI container.
-    /// The root reuses this container's context, so these are the same services
-    /// that lifecycle modules initialize and shut down.
-    pub(super) async fn from_container(
-        container: Shared<Weak<CoreServices>>,
-    ) -> Result<Shared<Self>, Error> {
-        let services = container
-            .upgrade()
-            .ok_or_else(|| super::service_error("原生服务容器已释放"))?;
-        let session = services.session().await?;
-        Ok(Shared::new(Self {
-            #[cfg(feature = "e2e")]
-            test_dialogs: tokio::sync::Mutex::new(Default::default()),
-            directory: services.config()?.directory.clone(),
-            documents: services.documents()?,
-            metadata: services.metadata().await?,
-            vault: services.vault().await?,
-            session: session.session.clone(),
-            recovery: session.recovery.clone(),
-            language: session.language.clone(),
-            ai: services.ai()?,
-            mcp: services.mcp()?,
-            notifications: services.notifications()?,
-            search: services.search().await?,
-            resource_origin: RwLock::new("http://brainstorming.localhost".into()),
-        }))
-    }
+  /// Tauri's service facade is assembled from the typed DI container.
+  /// The root reuses this container's context, so these are the same services
+  /// that lifecycle modules initialize and shut down.
+  pub(super) async fn from_container(
+    container: Shared<Weak<CoreServices>>,
+  ) -> Result<Shared<Self>, Error> {
+    let services = container
+      .upgrade()
+      .ok_or_else(|| super::service_error("原生服务容器已释放"))?;
+    let session = services.session().await?;
+    Ok(Shared::new(Self {
+      #[cfg(feature = "e2e")]
+      test_dialogs: tokio::sync::Mutex::new(Default::default()),
+      directory: services.config()?.directory.clone(),
+      documents: services.documents()?,
+      metadata: services.metadata().await?,
+      vault: services.vault().await?,
+      session: session.session.clone(),
+      recovery: session.recovery.clone(),
+      language: session.language.clone(),
+      ai: services.ai()?,
+      mcp: services.mcp()?,
+      notifications: services.notifications()?,
+      image_exports: services.image_exports()?,
+      search: services.search().await?,
+      resource_origin: RwLock::new("http://brainstorming.localhost".into()),
+    }))
+  }
 }

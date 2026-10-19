@@ -1,0 +1,23 @@
+export const artMessages = {
+  builtinArtOffline: ['离线素材', 'Offline'],
+  builtinArtOriginal: ['原创 AI 素材', 'Original AI artwork'],
+  builtinArtSources: ['来源与许可', 'Sources & license'],
+  builtinArtSourceNote: [
+    '4 张原创 AI 素材；54 个 Microsoft Fluent Emoji（MIT）',
+    '4 original AI assets; 54 Microsoft Fluent Emoji (MIT)',
+  ],
+  builtinArt: ['贴图与插画', 'Stickers & illustrations'],
+  builtinArtSearch: ['搜索素材或关键词', 'Search artwork or keywords'],
+  builtinArtAll: ['全部', 'All'],
+  builtinArtIdeas: ['想法', 'Ideas'],
+  builtinArtPlans: ['计划', 'Plans'],
+  builtinArtFeelings: ['情绪', 'Feelings'],
+  builtinArtNature: ['自然', 'Nature'],
+  builtinArtScenes: ['场景', 'Scenes'],
+  builtinArtEmpty: ['没有匹配素材，试试其他关键词', 'No artwork found. Try other keywords.'],
+  builtinArtLoading: ['正在加载素材…', 'Loading artwork…'],
+  builtinArtLoadFailed: ['素材未能加载，请重试', 'Could not load artwork. Try again.'],
+  builtinArtInsert: ['插入到当前主题', 'Insert into selected topic'],
+  builtinArtReplace: ['选择素材将替换当前主题图片', 'Choosing artwork replaces this topic’s image'],
+  builtinArtFailed: ['未能插入素材，请重试', 'Could not insert artwork. Try again.'],
+} as const

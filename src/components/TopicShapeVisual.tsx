@@ -1,4 +1,4 @@
-import { topicOutlinePath, visualPath } from '@shared/sketch'
+import { sketchFillPath, topicOutlinePath, visualPath } from '@shared/sketch'
 import type { SheetVisualStyle, TopicShape } from '@core'
 import { topicShapePath } from '@shared/topic-shapes'
 
@@ -10,6 +10,7 @@ export const TopicShapeVisual = ({
   width = 100,
   height = 100,
   visualStyle,
+  sketchFill = true,
   seedKey = shape,
 }: {
   shape: TopicShape
@@ -19,6 +20,7 @@ export const TopicShapeVisual = ({
   width?: number
   height?: number
   visualStyle?: SheetVisualStyle | undefined
+  sketchFill?: boolean
   seedKey?: string
 }) => (
   <svg
@@ -32,12 +34,26 @@ export const TopicShapeVisual = ({
       (visualStyle === 'sketch' ? (
         <>
           <path d={topicOutlinePath(shape, width, height)} fill={fill} stroke="none" />
+          {sketchFill && (
+            <path
+              data-sketch="fill"
+              d={sketchFillPath(topicOutlinePath(shape, width, height), `topic:${seedKey}`)}
+              fill="none"
+              stroke={stroke}
+              strokeOpacity="0.1"
+              strokeWidth="0.8"
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
           <path
             data-sketch="outline"
             d={visualPath(topicOutlinePath(shape, width, height), visualStyle, `topic:${seedKey}`)}
             fill="none"
             stroke={stroke}
             strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
             vectorEffect="non-scaling-stroke"
           />
         </>

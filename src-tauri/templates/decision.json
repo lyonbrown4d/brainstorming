@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "id": "decision",
+  "title": ["方案决策", "Decision comparison"],
+  "description": [
+    "对比方案与证据，记录取舍和回看条件",
+    "Compare options and evidence; record tradeoffs and review triggers"
+  ],
+  "group": "plan",
+  "icon": "git-branch",
+  "layout": "matrix",
+  "topics": [
+    {
+      "title": ["决策边界", "Decision frame"],
+      "children": [
+        {
+          "title": ["要做的决定与截止时间", "Decision and deadline"],
+          "children": []
+        },
+        {
+          "title": ["谁负责决定，谁受影响？", "Who decides and who is affected?"],
+          "children": []
+        },
+        {
+          "title": ["不可妥协的条件", "Non-negotiable conditions"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["评价标准", "Criteria"],
+      "children": [
+        {
+          "title": ["预期价值", "Expected value"],
+          "children": []
+        },
+        {
+          "title": ["成本与实施难度", "Cost and implementation effort"],
+          "children": []
+        },
+        {
+          "title": ["可逆性与风险", "Reversibility and risk"],
+          "children": []
+        }
+      ],
+      "notes": [
+        "在比较方案前确定标准与权重；不要把估计分数当作事实。",
+        "Agree on criteria and weights before comparing. Estimated scores are not facts."
+      ]
+    },
+    {
+      "title": ["方案 A", "Option A"],
+      "children": [
+        {
+          "title": ["收益与代价", "Benefits and costs"],
+          "children": []
+        },
+        {
+          "title": ["证据与不确定性", "Evidence and uncertainty"],
+          "children": []
+        },
+        {
+          "title": ["最小验证方法", "Smallest validation step"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["方案 B", "Option B"],
+      "children": [
+        {
+          "title": ["收益与代价", "Benefits and costs"],
+          "children": []
+        },
+        {
+          "title": ["证据与不确定性", "Evidence and uncertainty"],
+          "children": []
+        },
+        {
+          "title": ["不采取行动会怎样？", "What if we take no action?"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["结论与回看", "Decision and review"],
+      "children": [
+        {
+          "title": ["选择及放弃其他方案的理由", "Choice and reasons for rejecting alternatives"],
+          "children": []
+        },
+        {
+          "title": ["执行负责人和第一步", "Implementation owner and first step"],
+          "children": []
+        },
+        {
+          "title": ["什么新证据会改变决定？", "What new evidence would change the decision?"],
+          "children": []
+        }
+      ]
+    }
+  ]
+}

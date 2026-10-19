@@ -3,6 +3,7 @@ import { Key } from 'webdriverio'
 import { deserializeWorkbook } from '@core'
 import {
   artifact,
+  fillContentEditable,
   chooseFile,
   create,
   editor,
@@ -29,12 +30,11 @@ describe('native document autosave', () => {
     await save(name)
     await root().click()
     await browser.keys(Key.F2)
-    await editor().setValue('中文未提交草稿')
+    await fillContentEditable(editor(), '中文未提交草稿')
     const selection = await browser.execute(() => {
       const active = document.activeElement
       if (!(active instanceof HTMLElement)) throw new Error('Missing active Lexical editor')
       active.setAttribute('data-autosave-session', 'retained')
-      active.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }))
       const range = document.getSelection()
       return { anchor: range?.anchorOffset, focus: range?.focusOffset }
     })
@@ -49,21 +49,8 @@ describe('native document autosave', () => {
         return { anchor: range?.anchorOffset, focus: range?.focusOffset }
       }),
     ).toEqual(selection)
-    await browser.execute(() => {
-      const active = document.activeElement
-      // This synthetic composition added no text. WebKit finishes composition
-      // through beforeinput; compositionend alone leaves Lexical composing.
-      active?.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: '' }))
-      active?.dispatchEvent(
-        new InputEvent('beforeinput', {
-          bubbles: true,
-          cancelable: true,
-          inputType: 'insertFromComposition',
-          data: '',
-          isComposing: false,
-        }),
-      )
-    })
+    // The embedded driver inserts Chinese text without a native IME session.
+    // Partial synthetic composition events leave WebKit/Lexical in an invalid lifecycle.
     await browser.keys(Key.Escape)
     await rootHasText('自动保存原文')
     await browser.waitUntil(

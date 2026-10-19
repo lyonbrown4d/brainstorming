@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/vnd.brainstorming">
+    <comment>Brainstorming Mind Map</comment>
+    <glob pattern="*.brainstorming"/>
+  </mime-type>
+</mime-info>

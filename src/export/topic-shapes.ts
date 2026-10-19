@@ -1,4 +1,4 @@
-import { topicOutlinePath, visualPath } from '@shared/sketch'
+import { sketchFillPath, topicOutlinePath, visualPath } from '@shared/sketch'
 import type { Element } from '@xmldom/xmldom'
 import type { SheetVisualStyle, Topic } from '@core'
 import {
@@ -26,12 +26,27 @@ export const drawTopicShape = (
   fill: string,
   stroke: string,
   visualStyle?: SheetVisualStyle,
+  sketchFill = true,
 ) => {
   const shape = topic.style?.shape ?? 'rounded'
   const attributes = { fill, stroke, 'stroke-width': 1.5 }
   if (visualStyle === 'sketch' && shape !== 'text') {
     const outline = topicOutlinePath(shape, width, height)
     element('path', { d: outline, fill, stroke: 'none' }, group)
+    if (sketchFill)
+      element(
+        'path',
+        {
+          d: sketchFillPath(outline, `topic:${topic.id}`),
+          fill: 'none',
+          stroke,
+          'stroke-width': 0.8,
+          'stroke-opacity': 0.1,
+          'stroke-linecap': 'round',
+          'data-sketch': 'fill',
+        },
+        group,
+      )
     element(
       'path',
       {
@@ -39,6 +54,8 @@ export const drawTopicShape = (
         ...attributes,
         fill: 'none',
         'data-sketch': 'outline',
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
       },
       group,
     )

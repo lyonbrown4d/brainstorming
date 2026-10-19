@@ -1,4 +1,5 @@
 import { CommandPalette } from '@renderer/components/commands/CommandPalette'
+import { LoadingState } from '@renderer/components/feedback/LoadingState'
 import { WorkspaceRouterBoundary, WorkspaceRoutes } from '@renderer/routing/WorkspaceRouter'
 import { SettingsRoute } from '@renderer/routing/SettingsRoute'
 import { useLinkPreviewQueue } from '@renderer/hooks/useLinkPreviewQueue'
@@ -171,12 +172,11 @@ const AppWorkspace = () => {
                       >
                         <Suspense
                           fallback={
-                            <div
-                              className="flex h-full items-center justify-center text-sm text-muted-foreground"
-                              role="status"
-                            >
-                              {translate('presentation')}
-                            </div>
+                            <LoadingState
+                              variant="surface"
+                              className="h-full justify-center"
+                              label={translate('presentation')}
+                            />
                           }
                         >
                           <PresentationWorkspace />

@@ -1,3 +1,4 @@
+import { LoadingState } from '@renderer/components/feedback/LoadingState'
 import { getAssetUrl } from '@renderer/lib/resource'
 import { useMessages } from '@renderer/i18n/useMessages'
 
@@ -56,11 +57,7 @@ export const FormulaAudioPanel = ({
           </Button>
         </form>
         {metadata.equation && (
-          <Suspense
-            fallback={
-              <p className="text-xs text-muted-foreground">{translate('loadingFormula')}</p>
-            }
-          >
+          <Suspense fallback={<LoadingState label={translate('loadingFormula')} />}>
             <FormulaPreview source={metadata.equation} />
           </Suspense>
         )}

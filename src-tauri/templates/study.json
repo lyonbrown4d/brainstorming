@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "id": "study",
+  "title": ["学习笔记", "Study notes"],
+  "description": [
+    "理解概念、连接知识，再用练习检验掌握程度",
+    "Understand concepts, connect ideas and test understanding"
+  ],
+  "group": "learn",
+  "icon": "graduation-cap",
+  "layout": "org-down",
+  "topics": [
+    {
+      "title": ["学习目标", "Learning goal"],
+      "children": [
+        {
+          "title": ["学完后能够做什么？", "What will you be able to do?"],
+          "children": []
+        },
+        {
+          "title": ["已有基础与本次范围", "Prior knowledge and scope"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["核心概念", "Core concepts"],
+      "children": [
+        {
+          "title": ["概念一：用自己的话解释", "Concept one: explain in your own words"],
+          "children": [
+            {
+              "title": ["定义与适用条件", "Definition and conditions"],
+              "children": []
+            },
+            {
+              "title": ["一个例子与一个反例", "One example and one counterexample"],
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": ["概念二：与概念一的区别", "Concept two: how it differs from concept one"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["知识关联", "Connections"],
+      "children": [
+        {
+          "title": ["与已有知识有什么联系？", "How does this connect to prior knowledge?"],
+          "children": []
+        },
+        {
+          "title": ["实际可用的场景", "A practical application"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["疑问与来源", "Questions and sources"],
+      "children": [
+        {
+          "title": ["尚不能解释的问题", "Questions you cannot yet explain"],
+          "children": []
+        },
+        {
+          "title": ["资料来源与待核实内容", "Sources and points to verify"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["练习与复习", "Practice and review"],
+      "children": [
+        {
+          "title": ["不看笔记复述关键内容", "Recall the key points without notes"],
+          "children": []
+        },
+        {
+          "title": ["设计一道应用题并作答", "Create and solve an application problem"],
+          "children": []
+        },
+        {
+          "title": ["错因与下次复习日期", "Mistakes and next review date"],
+          "children": []
+        }
+      ],
+      "notes": [
+        "用回忆和应用检查掌握程度，避免只重复阅读。",
+        "Check understanding through recall and application rather than rereading alone."
+      ]
+    }
+  ]
+}

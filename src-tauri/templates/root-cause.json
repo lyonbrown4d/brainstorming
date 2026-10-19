@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "id": "root-cause",
+  "title": ["问题根因分析", "Root cause analysis"],
+  "description": [
+    "从现象和证据出发，检验原因并防止复发",
+    "Start from evidence, test causes and prevent recurrence"
+  ],
+  "group": "analyze",
+  "icon": "search",
+  "layout": "fishbone",
+  "topics": [
+    {
+      "title": ["问题陈述", "Problem statement"],
+      "children": [
+        {
+          "title": ["何时、何处、影响了谁？", "When, where and who was affected?"],
+          "children": []
+        },
+        {
+          "title": ["实际结果与预期差距", "Gap between actual and expected outcomes"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["人员与协作", "People and collaboration"],
+      "children": [
+        {
+          "title": ["职责和交接是否清晰？", "Were responsibilities and handoffs clear?"],
+          "children": []
+        },
+        {
+          "title": ["需要什么信息或支持？", "What information or support was needed?"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["流程与方法", "Process and methods"],
+      "children": [
+        {
+          "title": ["哪一步偏离了预期？", "Which step differed from expectations?"],
+          "children": []
+        },
+        {
+          "title": ["现有检查为何未发现？", "Why did existing checks miss it?"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["工具与环境", "Tools and environment"],
+      "children": [
+        {
+          "title": ["工具、资源或环境变化", "Tool, resource or environment changes"],
+          "children": []
+        },
+        {
+          "title": ["支持或反驳的证据", "Supporting or contradicting evidence"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["追问原因", "Explore why"],
+      "children": [
+        {
+          "title": ["候选原因一", "Candidate cause one"],
+          "children": [
+            {
+              "title": ["为什么会发生？", "Why did it happen?"],
+              "children": []
+            },
+            {
+              "title": ["还需要什么证据？", "What evidence is still needed?"],
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": ["候选原因二及替代解释", "Candidate cause two and alternative explanations"],
+          "children": []
+        }
+      ],
+      "notes": [
+        "追问到可验证、可行动的系统原因。不要把相关性直接当作因果。",
+        "Seek testable, actionable system causes. Correlation alone does not establish causation."
+      ]
+    },
+    {
+      "title": ["应对与验证", "Response and verification"],
+      "children": [
+        {
+          "title": ["先控制影响，再消除原因", "Contain the impact, then address the cause"],
+          "children": []
+        },
+        {
+          "title": ["纠正措施、负责人和日期", "Corrective action, owner and date"],
+          "children": []
+        },
+        {
+          "title": ["复发监测与复查时间", "Recurrence monitoring and review date"],
+          "children": []
+        }
+      ]
+    }
+  ]
+}

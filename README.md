@@ -2,7 +2,9 @@
 
 基于 React、TypeScript 与 Tauri 2 / Rust 的本地优先思维导图应用。使用单个 pnpm package，面向 macOS、Windows、Linux、iOS 和 Android，不提供独立 Web 产品。
 
-支持多文档标签、多 Sheet、15 种图形结构、16 种主题表现、同画布自由绘图、Lexical 中文输入、主题与任务标记、图片和附件、大纲、幻灯片编排与播放、XMind 导入导出。原生 `.brainstorming` 使用 SQLite / SQLCipher，支持自动保存、密码保护、资源分块、文件内版本与恢复。未选择路径的导图只在内存保留，关闭后丢失。AI 与 MCP 由用户主动启用，不包含云端协作、评论或分享链接。
+支持多文档标签、多 Sheet、15 种图形结构、14 种内容模板及空白创建、16 种主题表现、同画布自由绘图、Lexical 中文输入、主题与任务标记、图片和附件、大纲、幻灯片编排与播放、XMind 导入导出，以及可调整路径、标签和端点的关联线。支持 PNG、JPEG、无损 WebP、SVG 和 PDF 导出。原生 `.brainstorming` 使用 SQLite / SQLCipher，支持自动保存、密码保护、资源分块、文件内版本与恢复。未选择路径的导图只在内存保留，关闭后丢失。AI 与 MCP 由用户主动启用，不包含云端协作、评论或分享链接。
+
+同一文档可嵌入各 Sheet 的系统预览 PNG；加密文件不提供系统预览。macOS 扩展已编译并验证 ad-hoc 签名，Finder 尚未验收；Linux deb / rpm 实现待运行验收，AppImage 无宿主注册，Windows Explorer 提供程序未实现。详见 [平台状态](docs/development.md#系统文件预览的平台状态)。
 
 ## 开发
 

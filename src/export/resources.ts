@@ -7,7 +7,9 @@ import { getAssetUrl } from '@renderer/lib/resource'
 export const prepareExportResources = async (
   workbook: MindMapWorkbook,
   original: boolean,
+  signal?: AbortSignal,
 ): Promise<MindMapWorkbook> => {
+  signal?.throwIfAborted()
   const sheets = []
   let total = 0
   for (const sheet of workbook.sheets) {
@@ -30,7 +32,8 @@ export const prepareExportResources = async (
         throw new Error('交换格式导出仅支持单个 8 MiB 以内的资源，请单独另存大资源')
       total += length
       if (total > 24 * 1024 ** 2) throw new Error('交换格式的资源总量不能超过 24 MiB')
-      const response = await fetch(getAssetUrl(asset, useOriginal ? 'original' : 'preview'))
+      const url = getAssetUrl(asset, useOriginal ? 'original' : 'preview')
+      const response = await (signal ? fetch(url, { signal }) : fetch(url))
       if (!response.ok) throw new Error('无法读取导出资源')
       assets[asset.id] = createAsset(
         new Uint8Array(await response.arrayBuffer()),

@@ -1,3 +1,4 @@
+import { fixtureCatalog, fixtureTemplate } from '@tests/fixtures/templates'
 import { describe, expect, it, vi } from 'vitest'
 import { createNativeAPI, type NativeInitialization } from '@renderer/lib/nativeAPI'
 import type { NativeDrop, NativeTransport } from '@renderer/lib/nativeTransport'
@@ -60,6 +61,23 @@ describe('Tauri platform adapter', () => {
       method: 'setNotificationsEnabled',
       args: { enabled: true },
     })
+    dispose()
+  })
+  it('requests bundled templates through an ID-only boundary and validates replies', async () => {
+    const native = fixture()
+    const { api, dispose } = await createNativeAPI(native.transport, initial)
+    native.setResult(fixtureCatalog)
+    await expect(api.listTemplates()).resolves.toEqual(fixtureCatalog)
+    expect(native.calls.at(-1)).toEqual({ method: 'listTemplates', args: {} })
+    native.setResult(fixtureTemplate('brainstorm'))
+    await expect(api.getTemplate('brainstorm')).resolves.toMatchObject({ id: 'brainstorm' })
+    expect(native.calls.at(-1)).toEqual({ method: 'getTemplate', args: { id: 'brainstorm' } })
+    const previousCalls = native.calls.length
+    await expect(api.getTemplate('../secrets')).rejects.toThrow()
+    await expect(api.getTemplate('blank')).rejects.toThrow()
+    expect(native.calls).toHaveLength(previousCalls)
+    native.setResult({ id: 'brainstorm', topics: [] })
+    await expect(api.getTemplate('brainstorm')).rejects.toThrow()
     dispose()
   })
   it('forwards system appearance unchanged and keeps manual modes explicit', async () => {

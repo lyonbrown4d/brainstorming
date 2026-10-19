@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "id": "user-research",
+  "title": ["用户研究计划", "User research plan"],
+  "description": [
+    "连接研究问题、访谈证据和产品决定",
+    "Connect research questions, interview evidence and product decisions"
+  ],
+  "group": "analyze",
+  "icon": "users",
+  "layout": "logic-right",
+  "topics": [
+    {
+      "title": ["研究目标", "Research goal"],
+      "children": [
+        {
+          "title": ["这项研究支持哪个决定？", "Which decision will this research inform?"],
+          "children": []
+        },
+        {
+          "title": ["已有认识与关键假设", "Existing knowledge and key assumptions"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["招募与安排", "Recruitment and logistics"],
+      "children": [
+        {
+          "title": ["目标参与者及筛选条件", "Target participants and screening criteria"],
+          "children": []
+        },
+        {
+          "title": ["样本限制与遗漏群体", "Sampling limitations and missing groups"],
+          "children": []
+        },
+        {
+          "title": ["知情同意与记录方式", "Informed consent and recording method"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["访谈提纲", "Interview guide"],
+      "children": [
+        {
+          "title": ["请讲述最近一次真实经历", "Tell me about the most recent real experience"],
+          "children": [
+            {
+              "title": ["当时想完成什么？", "What were you trying to accomplish?"],
+              "children": []
+            },
+            {
+              "title": ["哪里遇到阻碍？如何处理？", "Where did you get stuck and what did you do?"],
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": ["避免诱导，不提前介绍方案", "Avoid leading questions and pitching solutions"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["观察与归纳", "Observations and synthesis"],
+      "children": [
+        {
+          "title": ["原话、行为和情境", "Quotes, behavior and context"],
+          "children": []
+        },
+        {
+          "title": ["共同模式与反例", "Patterns and counterexamples"],
+          "children": []
+        },
+        {
+          "title": [
+            "区分观察、解释与假设",
+            "Separate observations, interpretations and hypotheses"
+          ],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["决定与后续", "Decisions and follow-up"],
+      "children": [
+        {
+          "title": ["哪些证据改变了认识？", "Which evidence changed our understanding?"],
+          "children": []
+        },
+        {
+          "title": ["建议行动与证据边界", "Recommended action and evidence limitations"],
+          "children": []
+        },
+        {
+          "title": ["仍需验证的问题", "Questions that still need validation"],
+          "children": []
+        }
+      ],
+      "notes": [
+        "不把少量访谈推断为整体人群的比例。保留反例和不确定性。",
+        "Do not infer population percentages from a few interviews. Retain counterexamples and uncertainty."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "id": "meeting",
+  "title": ["会议议程与决议", "Meeting agenda and decisions"],
+  "description": [
+    "会前准备、限时讨论、决策和会后跟进",
+    "Prepare, timebox discussion, decide and follow up"
+  ],
+  "group": "plan",
+  "icon": "messages-square",
+  "layout": "org-down",
+  "topics": [
+    {
+      "title": ["会前准备", "Preparation"],
+      "children": [
+        {
+          "title": ["会议目标：需要形成什么结果？", "Goal: what outcome is needed?"],
+          "children": []
+        },
+        {
+          "title": ["参与人、主持人与记录人", "Participants, facilitator and note taker"],
+          "children": []
+        },
+        {
+          "title": ["预读材料及待补充信息", "Pre-reading and missing information"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["议题一 · 信息同步", "Topic one · Share context"],
+      "children": [
+        {
+          "title": ["事实、进展和阻塞", "Facts, progress and blockers"],
+          "children": []
+        },
+        {
+          "title": ["需要澄清的问题", "Questions to clarify"],
+          "children": []
+        }
+      ],
+      "notes": [
+        "建议 5 分钟。避免逐人流水账，聚焦影响决策的信息。",
+        "Allow 5 minutes. Focus on information that affects the decision."
+      ]
+    },
+    {
+      "title": ["议题二 · 讨论选项", "Topic two · Discuss options"],
+      "children": [
+        {
+          "title": ["方案 A：价值与代价", "Option A: value and cost"],
+          "children": []
+        },
+        {
+          "title": ["方案 B：价值与代价", "Option B: value and cost"],
+          "children": []
+        },
+        {
+          "title": ["仍缺少的证据", "Evidence still missing"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["决议记录", "Decision log"],
+      "children": [
+        {
+          "title": ["决定了什么，依据是什么？", "What was decided and on what basis?"],
+          "children": []
+        },
+        {
+          "title": ["未决问题及决策负责人", "Open questions and decision owner"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["行动与跟进", "Actions and follow-up"],
+      "children": [
+        {
+          "title": ["行动一", "Action one"],
+          "children": [
+            {
+              "title": ["负责人、截止日期、完成标准", "Owner, due date and completion criteria"],
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": ["向谁同步结论？", "Who needs the outcome?"],
+          "children": []
+        },
+        {
+          "title": ["下次检查时间", "Next check-in"],
+          "children": []
+        }
+      ]
+    }
+  ]
+}

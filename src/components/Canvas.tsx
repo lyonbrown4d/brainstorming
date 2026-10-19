@@ -8,7 +8,7 @@ import { useMessages } from '@renderer/i18n/useMessages'
 
 import { useMemo, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import { ReactFlow, useReactFlow } from '@xyflow/react'
+import { ConnectionMode, ReactFlow, useReactFlow } from '@xyflow/react'
 import {
   createFloatingAt,
   interactAnnotationTopic,
@@ -137,7 +137,8 @@ export const Canvas = () => {
         minZoom={0.15}
         maxZoom={2}
         deleteKeyCode={null}
-        nodesConnectable={reconnecting}
+        nodesConnectable={!playing && inkMode === 'select'}
+        connectionMode={ConnectionMode.Loose}
         connectOnClick={false}
         edgesFocusable={false}
         nodesFocusable={false}

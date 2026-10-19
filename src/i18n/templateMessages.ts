@@ -1,0 +1,15 @@
+export const templateMessages = {
+  templateLoading: ['正在加载内容模板…', 'Loading content templates…'],
+  templateLoadFailed: ['内容模板加载失败', 'Could not load content templates'],
+  templateEmpty: ['暂无内容模板', 'No content templates available'],
+  templateRetry: ['重新加载模板', 'Reload templates'],
+  templateSearch: ['搜索内容模板', 'Search content templates'],
+  templateSearchPlaceholder: ['搜索用途、名称或关键词…', 'Search purpose, name or keywords…'],
+  templateClearSearch: ['清除模板搜索', 'Clear template search'],
+  templateNoResults: ['没有匹配的内容模板', 'No matching content templates'],
+  templateIdeate: ['创意发散', 'Ideation'],
+  templatePlan: ['计划与协作', 'Planning & teamwork'],
+  templateAnalyze: ['分析与研究', 'Analysis & research'],
+  templateLearn: ['学习与表达', 'Learning & expression'],
+  templateTopicCount: ['{{value0}} 个主题', '{{value0}} topics'],
+} as const

@@ -1,4 +1,3 @@
-import i18next from 'i18next'
 import type { AppLanguage } from '@shared/language'
 
 const messages = {
@@ -13,31 +12,14 @@ const messages = {
     '界面加载失败，请重试或退出应用。',
     'The interface could not load. Retry or quit the app.',
   ],
+  handoffFailed: [
+    '原生应用启动失败，请重新加载。',
+    'The app could not finish starting. Reload to retry.',
+  ],
   retry: ['重新加载', 'Reload'],
   quit: ['退出 Brainstorming', 'Quit Brainstorming'],
 } as const
 
-// This entry has no document bridge or React tree; keep its translator independent.
-const translation = i18next.createInstance()
-void translation.init({
-  resources: {
-    'zh-CN': {
-      translation: Object.fromEntries(
-        Object.entries(messages).map(([key, pair]) => [key, pair[0]]),
-      ),
-    },
-    en: {
-      translation: Object.fromEntries(
-        Object.entries(messages).map(([key, pair]) => [key, pair[1]]),
-      ),
-    },
-  },
-  lng: 'en',
-  fallbackLng: 'en',
-  supportedLngs: ['zh-CN', 'en'],
-  initAsync: false,
-  interpolation: { escapeValue: false },
-})
-
+// Fixed startup copy stays usable before the application's translation runtime loads.
 export const splashText = (key: keyof typeof messages, language: AppLanguage): string =>
-  translation.t(key, { lng: language })
+  messages[key][language === 'zh-CN' ? 0 : 1]

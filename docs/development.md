@@ -70,7 +70,7 @@ CI 保留 Node 24 / 26 的前端、Storybook 构建与浏览器检查；Ubuntu �
 | `/documents/:tabId/sheets/:sheetId/presentation/play`      | 观众播放视图                   |
 | `/settings`                                                | 保留当前工作区背景的设置对话框 |
 
-创建步骤 `stage` 为 `structure`（选择结构）或 `configuration`（标题与内容模板）；旧的 `/create/document`、`/create/sheet` 会规范化为第一步。浏览器前进、后退和设置往返均保留 Zustand 中的标题、结构与模板草稿；退出引导后再前进也能恢复。创建成功才清空对应文档或画布草稿，失败保留输入。草稿只留本次应用内存，不写入文件和恢复记录。
+创建步骤 `stage` 为 `structure`（选择结构）或 `configuration`（标题与内容模板）；旧的 `/create/document`、`/create/sheet` 会规范化为第一步。浏览器前进、后退和设置往返均保留 Zustand 中的标题、结构与模板草稿；退出引导后再前进也能恢复。创建成功才清空对应文档或画布草稿，失败保留输入。草稿只留本次应用内存，不写入文件和恢复记录。创建页使用一个纵向滚动区，结构预览按内容高度排列，标题、表单与固定底部操作栏共用内容宽度；模板卡片按容器宽度换列。模板对话框继续使用有界的 shadcn ScrollArea。
 
 画布属性的 `section` 为 `structure`、`appearance` 或 `template`，省略时规范化为 `structure`。属性开关、一级分类和画布分组双向同步路由；关闭侧栏回到无 `/style` 后缀的画布。侧栏导航信息随既有文档会话保存，文档模型与撤销历史不变；主题选中、hover 和逐字符编辑不进入 URL。创建步骤使用短距离方向过渡，属性分类使用淡入，均尊重系统减少动态效果偏好，不重挂载整张画布。
 
@@ -112,9 +112,36 @@ Tauri 命令使用服务访问租约。退出先撤销媒体访问、取消 AI/M
 
 ## 自动保存
 
-`useFileLifecycle` 启动按 Tab 管理的自动保存。已有路径的文档通过 RxJS 合并连续编辑并串行写入；后台 Tab 不需要切为当前文档。保存快照投影当前文本草稿，不提交编辑历史、不改变 Lexical 选区或输入法状态。保存完成只更新该 Tab 的对应基线，保存期间的新修改继续保持未保存状态。
+`useFileLifecycle` 启动按 Tab 管理的自动保存。已有路径的文档通过 RxJS 合并连续编辑并串行写入；后台 Tab 不需要切为当前文档。保存快照投影当前文本草稿，不提交编辑历史、不改变 Lexical 选区或输入法状态。保存完成只更新该 Tab 的对应基线，保存期间的新修改继续保持未保存状态。重新打开或拖入文档前，等待已有路径队列中的写入和释放操作结束，避免旧关闭操作撤销新资源会话。删除旧恢复文件时，只有当前资源来源仍指向该旧路径才清理登记；资源扫描隔离单个不可读来源，不阻断其他已授权文档。
 
 手动保存、另存为、密码变更、版本读取和文档释放共用按路径的写入队列。失败保留未保存状态与错误提示，并在服务仍可用时重试。`path === null` 的新建、导入或恢复副本不进入自动保存，也不进入新的工作区恢复快照；关闭或重载后丢失，需通过手动保存选择路径。媒体暂存仍使用原生加密临时资源库，退出时清理。
+
+## 图片导出
+
+导出对话框复用 `src/export/images.ts` 的完整 Sheet SVG 场景，预览和输出包含相同的主题、关联线、标记与嵌入图片。PNG、JPEG、WebP 和 SVG 通过 `exportImage` 交给 Rust；`resvg` 负责原生栅格化，`image` 负责 PNG、JPEG 与无损 WebP 编码。JPEG 默认质量为 92，透明区域填白；SVG 不栅格化，字体使用查看设备的本地字体。PDF 继续使用现有前端栅格图与 jsPDF 单页 A3 流程，不提供可搜索文字。
+
+自动质量从 2× 开始，在分配图片内存前适配单边 16384 px、总计 4000 万像素的上限；手动比例超限会报错。界面显示输出尺寸和自动降倍率提示，并区分准备场景、选择位置、渲染、编码与写入阶段；阶段提示不是精确百分比。原生服务拒绝 SVG 中的脚本和外部资源引用，限制场景与资源大小，串行渲染并在原子写入完成后报告成功。
+
+## 系统文件预览的平台状态
+
+文件内 PNG 的协议、摘要与权限边界见 [单文件协议](file-format.md#文件内系统预览)。`src/lib/documentPreviews.ts` 在成功保存后排队，从同一 SVG 场景生成有界 PNG；图片过大时最多尝试 1600、1024、640 和按每张图片预算计算的较小尺寸。预览仍使用前端 PNG 编码，与导出对话框的原生编码分开。
+
+| 平台 / 分发方式 | 当前实现                                                                 | 验证边界                                                                      |
+| --------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| macOS           | `QLThumbnailProvider` 与 `QLPreviewingController` 扩展；后者可切换 Sheet | Swift 编译、只读数据检查和隔离测试包的 ad-hoc 签名校验通过；Finder 加载未验收 |
+| Linux deb / rpm | 只读 `brainstorming-thumbnailer`、MIME 与 `.thumbnailer` 包装            | 已实现，尚未在 Linux 文件管理器运行验收                                       |
+| Linux AppImage  | 不注册宿主系统的缩略图提供程序                                           | 无宿主桌面集成                                                                |
+| Windows         | 文件内可保存预览 PNG                                                     | Explorer 缩略图和预览处理程序未实现                                           |
+
+`pnpm build:desktop` 在 macOS 先构建扩展，再通过 `bundle.macOS.files` 放入应用的 `Contents/PlugIns`，供后续宿主签名与打包。正式分发需要相应签名和公证。本机没有可用签名身份；隔离 ad-hoc 测试包的扩展添加命令返回成功，但查询未发现提供程序，缩略图请求超时且没有输出。因此不能将编译和签名校验视为 Finder 验收通过，也不能据此确定未加载的唯一原因。
+
+Linux 构建脚本将 helper、MIME 和缩略图描述安装项加入 deb / rpm 包；构建过程不修改开发机的系统注册。AppImage 内的私有文件不能代替宿主桌面注册。Windows 后续需要独立实现并验证 Shell 处理程序及安装器注册。
+
+## 内容模板与关联线
+
+内容模板位于 `src-tauri/templates`：版本化 `manifest.json` 和 14 份静态 JSON 通过 `src-tauri/src/templates.rs` 编译进后端。`listTemplates` 返回目录及每份模板的语义图标名称，前端映射为内置 Lucide 图标，并按需通过 `getTemplate` 请求正文，并使用 TanStack Query 缓存；请求只接受固定模板 ID，不解释为路径。后端校验目录与正文一致性，前端再次校验结构，创建时生成新的主题 ID。新建文档、新增 Sheet 和替换模板复用同一目录；「不使用预设」直接创建中心主题，不请求模板正文。
+
+关联线复用 `src/shared/relation-geometry.ts` 计算直线、曲线与直角折线，画布和 SVG 导出共享路径及标签位置。选中后可拖动曲线控制点、折线路径点与标签，也可将端点重新连接到其他主题；拖动只更新临时预览，完成后一次命令提交，取消不写历史。序列化字段与原生校验见 [单文件协议](file-format.md#主题表现笔迹与演示页面)。
 
 ## 原生缓存
 
@@ -128,7 +155,7 @@ macOS `build:desktop --debug`（未指定证书）或显式 `APPLE_SIGNING_IDENT
 
 ## 数据库迁移
 
-数据访问使用 SQLx / SQLCipher；`libsqlite3-sys` 使用 SQLx 稳定版支持的兼容版本并启用 SQLCipher，不能另外链接普通 SQLite。根目录 `.cargo/config.toml` 在编译 SQLCipher 时固定 `SQLITE_MAX_LENGTH=134217728`，使初次连接读取不可信 schema 前就有长度上限；连接认证仍设置同样的运行时限制。每条连接在读取数据库前完成 key pragma，关闭 SQL 日志，验证 SQLCipher 和数据库可读性。
+数据访问使用 SQLx / SQLCipher；`libsqlite3-sys` 使用 SQLx 稳定版支持的兼容版本并启用 SQLCipher，Rust 应用后端不能另外链接普通 SQLite；独立 Quick Look 扩展使用系统 SQLite3，只读未加密文件的预览表。根目录 `.cargo/config.toml` 在编译 SQLCipher 时固定 `SQLITE_MAX_LENGTH=134217728`，使初次连接读取不可信 schema 前就有长度上限；连接认证仍设置同样的运行时限制。每条连接在读取数据库前完成 key pragma，关闭 SQL 日志，验证 SQLCipher 和数据库可读性。
 
 文档迁移放在 `src-tauri/src/document/migrations`，本机设置迁移放在 `src-tauri/src/storage/migrations`。两组使用独立 Migrator；执行入口是应用内配置好的 Migrator，不对用户文件执行默认 CLI 迁移。履历表均为 `_brainstorming_migrations`，由 SQLx 维护版本与校验和。不要手写履历 INSERT，也不要运行用户文件内的 SQL。
 
@@ -144,9 +171,11 @@ macOS `build:desktop --debug`（未指定证书）或显式 `APPLE_SIGNING_IDENT
 
 ### 原生验收输出与构建存储
 
-原生 E2E 截图、窗口指标和失败页面统一写入 `test-results/native`，可通过 `BRAINSTORMING_E2E_ARTIFACTS` 指定输出目录，适用于 macOS、Windows、Linux。诊断采集失败仍保留原始测试失败。测试复用单实例窗口时，使用现有 `home()` 流程重置 renderer，不假定启动后总处于首页。
+原生 E2E 截图、窗口指标和失败页面统一写入 `test-results/native`，可通过 `BRAINSTORMING_E2E_ARTIFACTS` 指定输出目录，适用于 macOS、Windows、Linux。诊断采集失败仍保留原始测试失败。每次更换测试二进制前，先退出上一次独立 E2E 应用，避免单实例插件将新启动转交给旧进程；不得关闭用户正在使用的正式应用。测试复用同一构建的单实例窗口时，使用现有 `home()` 流程重置 renderer，不假定启动后总处于首页。刷新前先聚焦原生窗口，再等待新的页面和可用工作区。重置前记录并清空未消费的文件选择器 fixture；隔离 E2E 构建遇到缺失或类型不符的 fixture 会明确失败，不回退到真实系统选择器。创建与编辑操作同时等待当前路由和可用控件，保存等待目标路径成为已保存基线。
 
-外部存储发生归档写入或依赖读取停滞时，先检查进程与文件活动；可使用本机 SSD 的 Cargo 目录（`CARGO_TARGET_DIR`），并将 `BRAINSTORMING_E2E_BINARY` 指向该目录生成的当前测试应用。若依赖缓存也在外部卷，使用当前源码的本机临时验收副本和独立 pnpm 缓存；必须按锁文件安装并完整构建，不能混用旧二进制与新 renderer。
+Lexical 内容输入通过 `fillContentEditable` 使用 WebDriver 全选后插入文本；不调用 embedded 驱动的 `clearElement`，该实现会直接清空 `innerHTML`，绕过编辑器状态更新。测试的 `home()` 会清理隔离实例的恢复记录；恢复功能本身仍由专用保存、重载和解锁用例验证。
+
+外部存储发生归档写入或依赖读取停滞时，先检查进程与文件活动；可使用本机 SSD 用户缓存目录保存 Cargo 产物（`CARGO_TARGET_DIR`），避免运行中的验收程序被临时目录清理移除，并将 `BRAINSTORMING_E2E_BINARY` 指向该目录生成的当前测试应用。若依赖缓存也在外部卷，使用当前源码的本机临时验收副本和独立 pnpm 缓存；必须按锁文件安装并完整构建，不能混用旧二进制与新 renderer。
 
 ## React 开发诊断
 
@@ -181,10 +210,16 @@ Rust 的 `search` 模块通过 FluxDI 装配到 AppState。索引复用 SQLx 和
 - `single-instance` 首先注册，后续启动继续将文件交给已有窗口；主窗口隐藏时不抢先显示，由 `startupReady` 完成启动交接。
 - `window-state` 仅管理主窗口。自动恢复尺寸与位置；最大化在 `startupReady` 恢复一次，正常关闭前通过官方接口保存三项状态。不恢复显隐、全屏、窗口装饰，不追踪启动页或远程预览。E2E 关闭窗口状态持久化，避免修改本机窗口偏好。
 - `log` 是唯一日志后端，现有 tracing 调用通过官方 `log` 功能转发一次。默认 Warn 级别，只接受本应用 target，输出 stderr 和系统应用日志目录。单文件上限 1 MiB，保留 3 个归档；生命周期错误使用固定文案，避免把底层异常中的内容、路径、URL 或密钥写入日志。不订阅 WebView console。E2E 不写日志文件。
-- `notification` 由 FluxDI 管理的 NotificationService 调用，只在 `exportFile` 完成原生写入后发送固定的中英文提示。取消、失败和自动保存不发送；发送失败不改变导出结果，后台发送受容量与时限约束。权限仅由设置中的显式启用动作申请，被拒绝或服务不可用时保留可读状态。桌面插件返回 Granted 并不能证明系统实际展示了通知，仍受通知中心设置、免打扰和打包环境影响。
+- `notification` 由 FluxDI 管理的 NotificationService 调用，只在 `exportFile` 或 `exportImage` 完成原生写入后发送固定的中英文提示。取消、失败和自动保存不发送；发送失败不改变导出结果，后台发送受容量与时限约束。权限仅由设置中的显式启用动作申请，被拒绝或服务不可用时保留可读状态。桌面插件返回 Granted 并不能证明系统实际展示了通知，仍受通知中心设置、免打扰和打包环境影响。
 
 通知偏好保存在现有 SQLx 本机库，新增 `002_notifications.sql`，不改变导图文件格式。未额外引入 Store，避免形成第二套原生偏好存储；也未引入 Persisted Scope：该插件恢复的是 Tauri fs/asset scope，不会替代当前 Rust 会话的文档、资源与密码授权。
 
 剪贴板仍用成熟的 clipboard-rs 保留应用自定义 MIME 与纯文本的同次写入；官方剪贴板插件不能单独替代主题树的自定义格式。文件系统插件保持可用，文档事务与分块资源继续由 SQLx、tokio 和现有授权服务管理。
 
 参考：[通知](https://v2.tauri.app/zh-cn/plugin/notification/)、[日志](https://v2.tauri.app/zh-cn/plugin/logging/)、[窗口状态](https://v2.tauri.app/zh-cn/plugin/window-state/)、[持久化作用域](https://v2.tauri.app/zh-cn/plugin/persisted-scope/)、[Store](https://v2.tauri.app/zh-cn/plugin/store/)。
+
+## 内置贴图与插画
+
+素材 IPC 仅提供 `listBuiltinArt` 与固定 ID 的 `getBuiltinArt`，不接受路径或远程 URL。目录内嵌于 `src-tauri/src/builtin_art/catalog.json`；4 张原创 PNG 及生成记录位于 `src-tauri/builtin-art/originals/`，原图逐字节保留，128px 预览由 Rust image 管线生成。54 个精选 Fluent Emoji Flat SVG 来自 Iconify 1.2.6 / Microsoft，MIT 全文编译入目录，并保留在素材目录。
+
+原生 SVG 渲染使用现有 resvg，在 `spawn_blocking` 内分配图片，以 `Semaphore(2)` 限制并发，Moka 按 ID 合并并缓存成功结果（最多 58 项，空闲 1 小时过期）。插入复用 `setTopicImage` 和现有资源保存协议；异步完成前切换文档、Sheet 或删除目标主题会丢弃结果。相关验证为 `tests/renderer/builtin-art.test.ts`、`src-tauri/tests/document_builtin_art.rs` 及 `stories/BuiltinArt.stories.tsx`。

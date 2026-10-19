@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "id": "six-hats",
+  "title": ["六顶思考帽", "Six thinking hats"],
+  "description": [
+    "分开事实、感受、风险与机会，减少讨论混杂",
+    "Separate facts, feelings, risks and opportunities"
+  ],
+  "group": "ideate",
+  "icon": "brain-circuit",
+  "layout": "map",
+  "topics": [
+    {
+      "title": ["蓝帽 · 组织讨论", "Blue · Manage the discussion"],
+      "children": [
+        {
+          "title": ["本次要回答的问题", "Question to answer"],
+          "children": []
+        },
+        {
+          "title": ["讨论顺序与时间盒", "Sequence and timeboxes"],
+          "children": []
+        }
+      ],
+      "notes": [
+        "所有人同时使用同一种视角，最后回到蓝帽形成结论。",
+        "Use the same perspective together, then return to blue to conclude."
+      ]
+    },
+    {
+      "title": ["白帽 · 事实", "White · Facts"],
+      "children": [
+        {
+          "title": ["已知信息及来源", "Known information and sources"],
+          "children": []
+        },
+        {
+          "title": ["缺少什么数据？", "Which data is missing?"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["红帽 · 感受", "Red · Feelings"],
+      "children": [
+        {
+          "title": ["第一直觉是什么？", "What is your first instinct?"],
+          "children": []
+        },
+        {
+          "title": ["担心或期待什么？", "What worries or excites you?"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["黑帽 · 风险", "Black · Risks"],
+      "children": [
+        {
+          "title": ["什么条件下会失败？", "Under what conditions could this fail?"],
+          "children": []
+        },
+        {
+          "title": ["如何提前发现问题？", "How could we detect trouble early?"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["黄帽 · 价值", "Yellow · Benefits"],
+      "children": [
+        {
+          "title": ["谁会受益，为什么？", "Who benefits and why?"],
+          "children": []
+        },
+        {
+          "title": ["最有希望的机会", "Most promising opportunity"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["绿帽 · 创造", "Green · Creativity"],
+      "children": [
+        {
+          "title": ["还有什么替代方案？", "What alternatives exist?"],
+          "children": []
+        },
+        {
+          "title": ["组合、改写或反转想法", "Combine, reframe or reverse ideas"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["蓝帽 · 总结", "Blue · Conclude"],
+      "children": [
+        {
+          "title": ["共识与未解决分歧", "Agreement and unresolved differences"],
+          "children": []
+        },
+        {
+          "title": ["下一步、负责人和复查时间", "Next step, owner and review date"],
+          "children": []
+        }
+      ]
+    }
+  ]
+}

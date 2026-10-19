@@ -1,10 +1,18 @@
+import { hasTaskDetails } from '@shared/taskPriority'
+import { PriorityMarkerAction } from '@renderer/components/metadata/PriorityMarkerAction'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { AudioLines, CheckCircle2, Circle, Link2, Sigma, Tag } from 'lucide-react'
 import type { TopicMetadata } from '@core'
 import { Button } from '@renderer/components/ui/button'
 import { openTopicLink } from '@renderer/components/metadata/LinkPanel'
-export const TopicMetadataBadges = ({ metadata }: { metadata: TopicMetadata | undefined }) => {
+export const TopicMetadataBadges = ({
+  metadata,
+  topicId,
+}: {
+  metadata: TopicMetadata | undefined
+  topicId: string
+}) => {
   const { translate } = useMessages()
 
   if (!metadata) return null
@@ -15,7 +23,8 @@ export const TopicMetadataBadges = ({ metadata }: { metadata: TopicMetadata | un
       className="nodrag nopan flex h-6 max-w-full shrink-0 items-center justify-center gap-1 overflow-hidden px-2 text-[10px] opacity-85"
       aria-label={translate('topicLabelsAndTasks')}
     >
-      {task && (
+      {task?.priority && <PriorityMarkerAction topicId={topicId} priority={task.priority} />}
+      {task && hasTaskDetails(task) && (
         <span
           className="flex shrink-0 items-center gap-0.5"
           title={translate('taskValue0value1value2', {
@@ -30,7 +39,6 @@ export const TopicMetadataBadges = ({ metadata }: { metadata: TopicMetadata | un
             <Circle className="size-3" aria-label={translate('taskIncomplete')} />
           )}
           {task.progress !== undefined && `${task.progress}%`}
-          {task.priority && <span>P{task.priority}</span>}
         </span>
       )}
       {labels.length > 0 && (

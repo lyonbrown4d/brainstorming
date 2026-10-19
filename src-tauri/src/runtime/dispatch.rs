@@ -1,9 +1,9 @@
 use super::{
-    clipboard, content_search, dialogs, documents,
-    input::{self, Result},
-    native_files, recovery,
-    state::AppState,
-    window,
+  clipboard, content_search, dialogs, documents,
+  input::{self, Result},
+  native_files, recovery,
+  state::AppState,
+  window,
 };
 use serde_json::{Value, json};
 use std::path::PathBuf;
@@ -11,13 +11,17 @@ use tauri::{AppHandle, Manager};
 use tauri_plugin_opener::OpenerExt;
 
 pub async fn dispatch(
-    app: &AppHandle,
-    state: &AppState,
-    method: &str,
-    args: Value,
+  app: &AppHandle,
+  state: &AppState,
+  method: &str,
+  args: Value,
 ) -> Result<Value> {
-    match method {
+  match method {
         "initialize" => Ok(json!({"platform":platform(),"resourceOrigin":state.resource_origin.read().map_err(|_| "资源服务不可用")?.clone(),"language":state.language.read().map_err(|_| "语言设置不可用")?.clone(),"windowState":window::state(app)?})),
+        "listBuiltinArt" => Ok(json!(crate::builtin_art::list()?)),
+        "getBuiltinArt" => Ok(json!(&*crate::builtin_art::get(input::text(&args, "id", 80)?).await?)),
+        "listTemplates" => Ok(json!(crate::templates::list()?)),
+        "getTemplate" => Ok(json!(crate::templates::get(input::text(&args, "id", 80)?)?)),
         "getLanguage" => Ok(json!(state.language.read().map_err(|_| "语言设置不可用")?.clone())),
         "setLanguage" => {
             let language = input::text(&args, "language", 10)?;
@@ -26,6 +30,7 @@ pub async fn dispatch(
             *state.language.write().map_err(|_| "语言设置不可用")? = language.into();
             Ok(json!(language))
         }
+        "exportImage" => super::image_exports::export(app, state, args).await,
         "getNotificationSettings" => Ok(json!(state.notifications.settings(&state.metadata).await?)),
         "setNotificationsEnabled" => {
             let input: super::notifications::SetEnabled = serde_json::from_value(args).map_err(|_| "通知设置无效")?;
@@ -46,6 +51,8 @@ pub async fn dispatch(
             documents::open(state, PathBuf::from(path)).await
         }
         "getRecentFiles" => Ok(json!(state.session.lock().await.recent.iter().map(|p| json!({"path":p,"name":std::path::Path::new(p).file_name().unwrap_or_default().to_string_lossy()})).collect::<Vec<_>>())),
+        "getDocumentPreviewRevision" => super::document_previews::revision(state, &args).await,
+        "writeDocumentPreviews" => super::document_previews::write(state, &args).await,
         "saveDocument" => {
             let request = input::required(&args, "request")?;
             #[cfg(target_os = "ios")]
@@ -137,16 +144,7 @@ pub async fn dispatch(
         }
         "startupReady" => {
             state.mcp.stop(app).await;
-            // Close the active splash before the final focus request, so its teardown
-            // cannot send keyboard focus back to a different application.
-            if let Some(main) = app.get_webview_window("main") {
-                crate::platform::restore_window_state(&main);
-                main.show().map_err(|_| "无法显示主窗口")?;
-                if let Some(splash) = app.get_webview_window("splash") { let _ = splash.close(); }
-                #[cfg(target_os = "macos")]
-                app.show().map_err(|_| "无法显示应用")?;
-                main.set_focus().map_err(|_| "无法聚焦主窗口")?;
-            }
+            window::startup_ready(app)?;
             Ok(Value::Null)
         }
         "startupFailed" => { if let Some(splash) = app.get_webview_window("splash") { let _ = splash.show(); } Ok(Value::Null) }
@@ -154,38 +152,37 @@ pub async fn dispatch(
     }
 }
 async fn export(app: &AppHandle, request: &Value) -> Result<Value> {
-    let format = input::text(request, "format", 10)?;
-    if !["png", "svg", "pdf", "xmind", "md", "opml", "txt"].contains(&format) {
-        return Err("导出格式无效".into());
-    }
-    let bytes = input::bytes(input::required(request, "bytes")?, input::MAX_DOCUMENT)?;
-    #[cfg(target_os = "ios")]
-    return super::ios_save::export(
-        app,
-        &bytes,
-        input::text(request, "suggestedName", 4096)?,
-        format,
-    )
-    .await;
-    let Some(path) =
-        dialogs::save(app, input::text(request, "suggestedName", 4096)?, format).await?
-    else {
-        return Ok(Value::Null);
-    };
-    super::atomic::write(&path, &bytes).await?;
-    native_files::commit(app, &path).await?;
-    Ok(json!(path))
+  let format = input::text(request, "format", 10)?;
+  if !["png", "svg", "pdf", "xmind", "md", "opml", "txt"].contains(&format) {
+    return Err("导出格式无效".into());
+  }
+  let bytes = input::bytes(input::required(request, "bytes")?, input::MAX_DOCUMENT)?;
+  #[cfg(target_os = "ios")]
+  return super::ios_save::export(
+    app,
+    &bytes,
+    input::text(request, "suggestedName", 4096)?,
+    format,
+  )
+  .await;
+  let Some(path) = dialogs::save(app, input::text(request, "suggestedName", 4096)?, format).await?
+  else {
+    return Ok(Value::Null);
+  };
+  super::atomic::write(&path, &bytes).await?;
+  native_files::commit(app, &path).await?;
+  Ok(json!(path))
 }
 fn platform() -> &'static str {
-    if cfg!(target_os = "macos") {
-        "macos"
-    } else if cfg!(target_os = "windows") {
-        "windows"
-    } else if cfg!(target_os = "ios") {
-        "ios"
-    } else if cfg!(target_os = "android") {
-        "android"
-    } else {
-        "linux"
-    }
+  if cfg!(target_os = "macos") {
+    "macos"
+  } else if cfg!(target_os = "windows") {
+    "windows"
+  } else if cfg!(target_os = "ios") {
+    "ios"
+  } else if cfg!(target_os = "android") {
+    "android"
+  } else {
+    "linux"
+  }
 }

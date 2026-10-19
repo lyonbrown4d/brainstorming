@@ -1,5 +1,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    brainstorming_native::run();
+  brainstorming_native::run();
 }

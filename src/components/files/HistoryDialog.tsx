@@ -1,3 +1,4 @@
+import { LoadingState } from '@renderer/components/feedback/LoadingState'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { History } from 'lucide-react'
@@ -54,7 +55,7 @@ export const HistoryPanel = () => {
           <DialogDescription>{translate('theLast20SavedSnapshotsAreKept')}</DialogDescription>
         </DialogHeader>
         {loading ? (
-          <p className="text-sm text-muted-foreground">{translate('loadingVersions')}</p>
+          <LoadingState label={translate('loadingVersions')} />
         ) : error ? (
           <p role="alert" className="text-sm text-destructive">
             {error}

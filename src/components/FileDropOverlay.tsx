@@ -1,4 +1,5 @@
-import { FileUp, LoaderCircle, X } from 'lucide-react'
+import { LoadingIndicator } from '@renderer/components/feedback/LoadingIndicator'
+import { FileUp, X } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import { useMessages } from '@renderer/i18n/useMessages'
 
@@ -26,6 +27,7 @@ export const FileDropOverlay = ({
         className={`relative flex max-w-md flex-col items-center gap-3 rounded-xl border border-border bg-popover p-6 text-center text-popover-foreground shadow-xl ${error ? 'pointer-events-auto' : 'pointer-events-none'}`}
         role={error ? 'alert' : 'status'}
         aria-live="polite"
+        aria-busy={loading}
       >
         {error ? (
           <>
@@ -38,7 +40,7 @@ export const FileDropOverlay = ({
         ) : (
           <>
             {loading ? (
-              <LoaderCircle className="size-8 animate-spin text-primary motion-reduce:animate-none" />
+              <LoadingIndicator className="size-8 text-primary" />
             ) : (
               <FileUp className="size-8 text-primary" />
             )}

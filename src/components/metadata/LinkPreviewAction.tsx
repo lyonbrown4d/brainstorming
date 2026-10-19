@@ -1,5 +1,6 @@
+import { LoadingIndicator } from '@renderer/components/feedback/LoadingIndicator'
 import { getAssetUrl } from '@renderer/lib/resource'
-import { Camera, LoaderCircle } from 'lucide-react'
+import { Camera } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import { useMessages } from '@renderer/i18n/useMessages'
 import { isPreviewUrl, useCachedLinkPreview, useLinkPreview } from '@renderer/hooks/useLinkPreview'
@@ -39,7 +40,7 @@ export const LinkPreviewAction = ({ topicId, url }: { topicId: string; url: stri
           onClick={preview.capture}
         >
           {preview.loading ? (
-            <LoaderCircle className="size-3 animate-spin motion-reduce:animate-none" />
+            <LoadingIndicator className="size-3" />
           ) : (
             <Camera className="size-3" />
           )}

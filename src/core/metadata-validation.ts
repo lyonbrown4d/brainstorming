@@ -1,5 +1,6 @@
 import {
   LAYOUT_KINDS,
+  TASK_PRIORITIES,
   type TopicMetadata,
   type DocumentSettings,
   type LayoutKind,
@@ -48,9 +49,9 @@ const validateTask = (value: unknown): void => {
     'assignee',
     'dependencies',
   ])
-  v.boolean(task.done)
+  v.optional(task, 'done', v.boolean)
   v.optional(task, 'priority', (entry) => {
-    v.oneOf(entry, [1, 2, 3])
+    v.oneOf(entry, TASK_PRIORITIES)
   })
   v.optional(task, 'progress', (entry) => {
     v.number(entry, 0, 100)

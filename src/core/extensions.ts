@@ -28,9 +28,11 @@ export type TopicLink =
       readonly topicId: string
       readonly sheetId?: string
     }
+export const TASK_PRIORITIES = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const
+export type TaskPriority = (typeof TASK_PRIORITIES)[number]
 export interface TopicTask {
-  readonly done: boolean
-  readonly priority?: 1 | 2 | 3
+  readonly done?: boolean
+  readonly priority?: TaskPriority
   readonly progress?: number
   readonly start?: string
   readonly due?: string
@@ -68,6 +70,11 @@ export interface DocumentPalette {
   readonly branches: readonly [string, string, string, string, string]
   readonly background: string
 }
+export interface RelationPoint {
+  readonly x: number
+  readonly y: number
+}
+export type RelationAnchor = 'top' | 'right' | 'bottom' | 'left'
 export interface Relation {
   readonly id: string
   readonly from: string
@@ -77,6 +84,13 @@ export interface Relation {
   readonly width?: number
   readonly dashed?: boolean
   readonly arrow?: 'none' | 'end' | 'both'
+  readonly routing?: 'straight' | 'curve' | 'orthogonal'
+  readonly sourceAnchor?: RelationAnchor
+  readonly targetAnchor?: RelationAnchor
+  /** Control and bend coordinates are offsets from the endpoints' midpoint. */
+  readonly controlPoints?: readonly RelationPoint[]
+  readonly waypoints?: readonly RelationPoint[]
+  readonly labelOffset?: RelationPoint
 }
 export interface TopicGroup {
   readonly id: string

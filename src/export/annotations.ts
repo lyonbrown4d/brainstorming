@@ -1,3 +1,4 @@
+import { relationExportAnnotations, drawExportRelations } from '@renderer/export/relations'
 import { translate } from '@renderer/i18n'
 import type { MindMapDocument } from '@core'
 import type { LayoutNode } from '@layout'
@@ -5,10 +6,10 @@ import type { Document, Element } from '@xmldom/xmldom'
 import { xmlText } from '@formats/interchange/xml'
 import { groupBounds, type GroupBounds } from '@renderer/components/annotations/projection'
 
-interface ExportAnnotation extends GroupBounds {
+export interface ExportAnnotation extends GroupBounds {
   title: string
   color: string
-  kind: 'boundary' | 'summary' | 'callout' | 'relation-label'
+  kind: 'boundary' | 'summary' | 'callout' | 'relation-label' | 'relation-path'
   lines: string[]
 }
 const wrap = (text: string, columns = 22): string[] => {
@@ -50,27 +51,10 @@ export const exportAnnotations = (
         ]
       : []
   })
-  const labels: ExportAnnotation[] = (document.relations ?? []).flatMap((relation) => {
-    const from = positions.get(relation.from)
-    const to = positions.get(relation.to)
-    if (!from || !to || !relation.title) return []
-    const lines = wrap(relation.title, 18)
-    return [
-      {
-        x: (from.x + from.width / 2 + to.x + to.width / 2) / 2 + 8,
-        y: (from.y + from.height / 2 + to.y + to.height / 2) / 2 - 24,
-        width: 220,
-        height: lines.length * 18,
-        title: relation.title,
-        color: relation.color ?? '#8b79d9',
-        kind: 'relation-label',
-        lines,
-      },
-    ]
-  })
+
   return [
     ...groups,
-    ...labels,
+    ...relationExportAnnotations(document, nodes),
     ...(document.callouts ?? []).flatMap((callout): ExportAnnotation[] => {
       const node = positions.get(callout.topicId)
       if (!node) return []
@@ -133,8 +117,10 @@ export const drawExportAnnotations = (
       'font-size': 12,
       'font-family': 'system-ui, sans-serif',
     }).appendChild(xml.createTextNode(xmlText(value)))
+  if (layer === 'underlay') drawExportRelations(xml, root, document, nodes)
   for (const annotation of annotations) {
     const { x, y, width, height, color } = annotation
+    if (annotation.kind === 'relation-path') continue
     if (annotation.kind === 'relation-label') {
       if (layer === 'underlay') {
         element('rect', {
@@ -186,40 +172,5 @@ export const drawExportAnnotations = (
         )
       })
     }
-  }
-  if (layer !== 'underlay') return
-  const positions = new Map(nodes.map((node) => [node.id, node]))
-  for (const [index, relation] of (document.relations ?? []).entries()) {
-    const from = positions.get(relation.from)
-    const to = positions.get(relation.to)
-    if (!from || !to) continue
-    const color = relation.color ?? '#8b79d9'
-    const right = to.x + to.width / 2 >= from.x + from.width / 2
-    const x1 = from.x + (right ? from.width : 0)
-    const y1 = from.y + from.height / 2
-    const x2 = to.x + (right ? 0 : to.width)
-    const y2 = to.y + to.height / 2
-    const marker = xml.createElementNS('http://www.w3.org/2000/svg', 'marker')
-    marker.setAttribute('id', `export-arrow-${index}`)
-    marker.setAttribute('viewBox', '0 0 10 10')
-    marker.setAttribute('refX', '9')
-    marker.setAttribute('refY', '5')
-    marker.setAttribute('markerWidth', '6')
-    marker.setAttribute('markerHeight', '6')
-    marker.setAttribute('orient', 'auto-start-reverse')
-    const arrow = xml.createElementNS('http://www.w3.org/2000/svg', 'path')
-    arrow.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z')
-    arrow.setAttribute('fill', color)
-    marker.appendChild(arrow)
-    root.appendChild(marker)
-    element('path', {
-      d: `M ${x1} ${y1} Q ${(x1 + x2) / 2 + 32} ${(y1 + y2) / 2 - 32} ${x2} ${y2}`,
-      fill: 'none',
-      stroke: color,
-      'stroke-width': relation.width ?? 2,
-      ...(relation.dashed ? { 'stroke-dasharray': '6 4' } : {}),
-      ...(relation.arrow === 'both' ? { 'marker-start': `url(#export-arrow-${index})` } : {}),
-      ...(relation.arrow === 'none' ? {} : { 'marker-end': `url(#export-arrow-${index})` }),
-    })
   }
 }

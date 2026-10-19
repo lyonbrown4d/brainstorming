@@ -2,7 +2,12 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { applyCommand, createDocument, validateDocument } from '@core'
 import { documentAppearance, topicAppearance } from '@shared/appearance'
 import { useEditor } from '@renderer/state/editor'
-import { createTemplate, templateOptions } from '@renderer/components/documents/templates'
+import { instantiateTemplate } from '@renderer/components/documents/templates'
+import { fixtureTemplate, fixtureCatalog } from '@tests/fixtures/templates'
+import type { TemplateId } from '@shared/templates'
+
+const templateOptions = fixtureCatalog.templates
+const createTemplate = (id: TemplateId) => instantiateTemplate(fixtureTemplate(id), 'zh-CN')
 import { edgeHandles, projectCanvas } from '@renderer/components/documents/projectCanvas'
 import {
   armFloatingTopic,
@@ -40,12 +45,12 @@ beforeEach(() => {
   stopPresentation()
 })
 describe('文档编辑能力', () => {
-  it('四个模板是真实可编辑主题树且标识互不复用，主题外观与覆盖一致', () => {
+  it('内容模板是真实可编辑主题树且标识互不复用，主题外观与覆盖一致', () => {
     for (const template of templateOptions) {
       const first = createTemplate(template.id),
         second = createTemplate(template.id)
       validateDocument(first)
-      expect(Object.keys(first.topics)).toHaveLength(13)
+      expect(Object.keys(first.topics)).toHaveLength(template.count)
       expect(first.id).not.toBe(second.id)
       expect(
         Object.keys(first.topics)

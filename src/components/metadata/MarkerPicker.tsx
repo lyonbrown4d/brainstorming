@@ -1,3 +1,4 @@
+import { LoadingState } from '@renderer/components/feedback/LoadingState'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { lazy, Suspense, useState } from 'react'
@@ -115,9 +116,7 @@ export const MarkerPicker = ({
       ) : (
         <Suspense
           fallback={
-            <p role="status" className="py-4 text-xs">
-              {translate('loadingOfflineIconLibrary')}
-            </p>
+            <LoadingState className="py-4" label={translate('loadingOfflineIconLibrary')} />
           }
         >
           <Brands key={query} query={query} selected={selected} onToggle={onToggle} />

@@ -1,3 +1,4 @@
+import { LoadingState } from '@renderer/components/feedback/LoadingState'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { BookOpen, File, RefreshCw } from 'lucide-react'
@@ -16,11 +17,7 @@ export const RecentDocuments = ({ busy, onExample }: { busy: boolean; onExample:
       aria-label={translate('recentFiles')}
     >
       <h2 className="mb-3 text-sm font-semibold">{translate('recentlyOpened')}</h2>
-      {recent.isPending && (
-        <p role="status" className="text-xs text-muted-foreground">
-          {translate('loadingRecentFiles')}
-        </p>
-      )}
+      {recent.isPending && <LoadingState label={translate('loadingRecentFiles')} />}
       {recent.isError && (
         <div className="flex flex-col gap-3">
           <p role="alert" className="text-xs text-muted-foreground">

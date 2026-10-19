@@ -53,10 +53,13 @@ export type {
   LayoutKind,
   TopicLink,
   TopicTask,
+  TaskPriority,
   TopicMetadata,
   DocumentSettings,
   SheetVisualStyle,
   Relation,
+  RelationPoint,
+  RelationAnchor,
   TopicGroup,
   TopicCallout,
   FloatingPosition,
@@ -65,7 +68,7 @@ export type {
   DocumentExtensions,
   ExtensionCommand,
 } from '@core/extensions'
-export { LAYOUT_KINDS } from '@core/extensions'
+export { LAYOUT_KINDS, TASK_PRIORITIES } from '@core/extensions'
 export {
   validateTopicMetadata,
   validateDocumentSettings,

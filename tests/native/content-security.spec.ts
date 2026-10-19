@@ -2,6 +2,7 @@ import { browser, expect } from '@wdio/globals'
 import { imageBase64, attachmentBytes } from '@tests/fixtures/content'
 import {
   artifact,
+  fillContentEditable,
   chooseFile,
   closeSaved,
   create,
@@ -31,7 +32,7 @@ describe('native content and password protection', () => {
   it('persists Chinese notes, embedded raster/attachment resources and exports attachment bytes', async () => {
     await create('媒体笔记')
     await ensureProperties()
-    await named('主题备注').setValue('中文备注\n第二行')
+    await fillContentEditable(named('主题备注'), '中文备注\n第二行')
     const imageName = artifact('color-card', 'png')
     const attachmentName = artifact('attachment', 'bin')
     await fixture('write', { name: imageName, base64: imageBase64 })

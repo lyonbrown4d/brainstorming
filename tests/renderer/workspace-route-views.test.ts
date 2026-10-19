@@ -79,19 +79,19 @@ describe('creation steps and property views', () => {
     expect(bridge.navigate).not.toHaveBeenCalled()
   })
 
-  it('retains failed creation drafts, separates document/sheet choices, and clears only a successfully created draft', () => {
+  it('retains failed creation drafts, separates document/sheet choices, and clears only a successfully created draft', async () => {
     openFixture()
     const document = { title: 'Document draft', layout: 'map', template: 'blank' } as const
     const sheet = { title: 'x'.repeat(81), layout: 'timeline', template: 'study' } as const
     updateCreationDraft('document', document)
     updateCreationDraft('sheet', sheet)
     applyWorkspacePath('/create/sheet/configuration')
-    expect(createFromRequest(sheet)).toBe(false)
+    expect(await createFromRequest(sheet)).toBe(false)
     expect(useWorkspace.getState().creationDrafts).toEqual({ document, sheet })
     expect(useWorkspace.getState().creationStep).toBe(2)
     const accepted = { ...sheet, title: 'New sheet' }
     updateCreationDraft('sheet', accepted)
-    expect(createFromRequest(accepted)).toBe(true)
+    expect(await createFromRequest(accepted)).toBe(true)
     expect(useWorkspace.getState().creationDrafts).toEqual({
       document,
       sheet: { title: '', layout: 'map', template: 'blank' },

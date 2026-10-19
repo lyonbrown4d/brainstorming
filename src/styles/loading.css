@@ -1,0 +1,14 @@
+/* Shared by the React workspace and its independent startup entry. */
+:root {
+  --loading-cycle: 1.8s;
+}
+
+@keyframes loading-breathe {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}

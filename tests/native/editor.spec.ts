@@ -4,6 +4,7 @@ import { Key } from 'webdriverio'
 import { validateTopicClipboard } from '@core'
 import {
   artifact,
+  fillContentEditable,
   chooseFile,
   closeSaved,
   create,
@@ -45,7 +46,7 @@ describe('native editor and document workflow', () => {
     await browser.keys(Key.Tab)
     await expect(editor()).toBeDisplayed()
     await expect(editor()).toBeFocused()
-    await editor().setValue('子主题 A')
+    await fillContentEditable(editor(), '子主题 A')
     await browser.keys(Key.Enter)
     const copiedId = await browser
       .$('.react-flow__node:not([data-id="root"])')

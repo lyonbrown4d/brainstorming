@@ -85,6 +85,15 @@ export const parseLegacy = (
       id: source.id,
       title: xmlText(source.title),
       children,
+      ...(source['marker-refs'] !== undefined
+        ? {
+            markers: many(record(source['marker-refs'], 'XML marker-refs')['marker-ref']).map(
+              (entry) => ({
+                markerId: record(entry, 'XML marker-ref')['marker-id'],
+              }),
+            ),
+          }
+        : {}),
       ...(source.notes !== undefined ? { notes: source.notes } : {}),
       ...(source.img !== undefined ? { image: source.img } : {}),
       ...(source.href !== undefined ? { href: source.href } : {}),
@@ -106,6 +115,7 @@ export const parseLegacy = (
         'title',
         'children',
         'notes',
+        'marker-refs',
         'img',
         'href',
         'branch',

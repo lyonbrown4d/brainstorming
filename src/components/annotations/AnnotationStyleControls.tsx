@@ -1,3 +1,5 @@
+import { topicAppearance } from '@shared/appearance'
+import { resetRelationGeometry } from '@shared/relation-geometry'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { useState } from 'react'
@@ -27,7 +29,12 @@ const AnnotationStyleForm = ({
         ? document.groups?.find((entry) => entry.id === id)
         : document.callouts?.find((entry) => entry.id === id)
   const [color, setColor] = useState(
-    item && 'color' in item ? (item.color ?? '#8b79d9') : '#8b79d9',
+    item && 'color' in item
+      ? (item.color ?? topicAppearance(document, document.rootId).stroke)
+      : topicAppearance(document, document.rootId).stroke,
+  )
+  const [routing, setRouting] = useState(
+    item && 'from' in item ? (item.routing ?? 'curve') : 'curve',
   )
   const [arrow, setArrow] = useState(item && 'arrow' in item ? (item.arrow ?? 'end') : 'end')
   const [dashed, setDashed] = useState(item && 'dashed' in item ? (item.dashed ?? false) : false)
@@ -37,7 +44,7 @@ const AnnotationStyleForm = ({
     if ('from' in item)
       runAnnotationCommand({
         type: 'upsertRelation',
-        relation: { ...item, color, arrow, dashed, width: Number(width) },
+        relation: { ...item, color, arrow, dashed, width: Number(width), routing },
       })
     else if ('topicIds' in item)
       runAnnotationCommand({ type: 'upsertGroup', group: { ...item, color } })
@@ -69,6 +76,29 @@ const AnnotationStyleForm = ({
           />
           {kind === 'relation' && (
             <>
+              <FieldSelect
+                label={translate('relationshipRouting')}
+                value={routing}
+                options={[
+                  { value: 'straight', label: translate('relationshipStraight') },
+                  { value: 'curve', label: translate('relationshipCurve') },
+                  { value: 'orthogonal', label: translate('relationshipOrthogonal') },
+                ]}
+                onChange={setRouting}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  if ('from' in item)
+                    runAnnotationCommand({
+                      type: 'upsertRelation',
+                      relation: resetRelationGeometry(item),
+                    })
+                }}
+              >
+                {translate('relationshipResetPath')}
+              </Button>
               <FieldSelect
                 label={translate('relationshipArrows')}
                 value={arrow}

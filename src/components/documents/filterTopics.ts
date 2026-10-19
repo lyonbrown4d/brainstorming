@@ -1,11 +1,12 @@
 import { create } from 'zustand'
-import type { MindMapDocument, Topic } from '@core'
+import { hasTaskDetails } from '@shared/taskPriority'
+import type { MindMapDocument, Topic, TaskPriority } from '@core'
 
 export interface TopicFilters {
   label: string
   marker: string
   task: 'all' | 'open' | 'done' | 'overdue'
-  priority: 'all' | '1' | '2' | '3'
+  priority: 'all' | `${TaskPriority}`
   assignee: string
 }
 export const defaultTopicFilters: TopicFilters = {
@@ -36,7 +37,7 @@ export const filterTopics = (
       !task?.assignee?.toLocaleLowerCase().includes(filters.assignee.toLocaleLowerCase())
     )
       return false
-    if (filters.task === 'open' && (!task || task.done)) return false
+    if (filters.task === 'open' && (!hasTaskDetails(task) || task?.done)) return false
     if (filters.task === 'done' && !task?.done) return false
     if (filters.task === 'overdue' && (!task || task.done || !task.due || task.due >= today))
       return false

@@ -1,3 +1,4 @@
+import { LoadingIndicator } from '@renderer/components/feedback/LoadingIndicator'
 import { getPlatformAPI } from '@renderer/lib/desktop'
 import { useMessages } from '@renderer/i18n/useMessages'
 
@@ -8,7 +9,7 @@ import { AI_LIMITS, type AIAPI, type AIMode } from '@shared/ai'
 import { Button } from '@renderer/components/ui/button'
 import { Checkbox } from '@renderer/components/ui/checkbox'
 import { Label } from '@renderer/components/ui/label'
-import { Textarea } from '@renderer/components/ui/textarea'
+import { PlainTextInput } from '@renderer/components/inputs/PlainTextInput'
 import {
   Dialog,
   DialogContent,
@@ -88,7 +89,8 @@ export const AIAssistant = ({
         ) : (
           <>
             <div className="flex items-center justify-between gap-3">
-              <p className="min-w-0 break-all text-xs text-muted-foreground">
+              <p className="flex min-w-0 items-center gap-2 break-all text-xs text-muted-foreground">
+                {!controller.settings && controller.loading && <LoadingIndicator />}
                 {controller.settings
                   ? `${controller.settings.baseURL} · ${controller.settings.model || translate('noModelConfigured')}`
                   : controller.loading
@@ -157,17 +159,17 @@ export const AIAssistant = ({
               )}
               <Label className="grid gap-2">
                 {translate('yourRequest')}
-                <Textarea
+                <PlainTextInput
                   value={prompt}
-                  rows={4}
+                  label={translate('yourRequest')}
+                  className="min-h-28 max-h-64"
                   maxLength={AI_LIMITS.prompt}
                   disabled={controller.busy}
-                  onChange={(event) => {
-                    setPrompt(event.target.value)
+                  onValueChange={(value) => {
+                    setPrompt(value)
                     controller.setPreview(null)
                   }}
                   placeholder={translate('forExampleCreateAPreparationPlanFor')}
-                  required
                 />
               </Label>
               <Label className="flex items-center gap-2">

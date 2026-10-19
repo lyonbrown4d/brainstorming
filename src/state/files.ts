@@ -1,3 +1,4 @@
+import { queueDocumentPreviews } from '@renderer/lib/documentPreviews'
 import type { OpenedDocument } from '@shared/contracts'
 import { translate } from '@renderer/i18n'
 import { deserializeWorkbook } from '@core'
@@ -18,7 +19,7 @@ import {
   useDocumentTabs,
 } from '@renderer/state/documentTabs'
 import { serializedWorkbook } from '@renderer/state/workbookState'
-import { queueDocumentWrite } from '@renderer/lib/documentWriteQueue'
+import { queueDocumentWrite, waitForDocumentWrites } from '@renderer/lib/documentWriteQueue'
 import { invalidateRecentFiles } from '@renderer/hooks/useRecentFiles'
 import { useWorkspace } from '@renderer/state/workspace'
 import { stopPresentation } from '@renderer/state/presentation'
@@ -39,6 +40,7 @@ const acceptFileSelection = async (select: () => Promise<OpenedDocument | null>)
   let reusedId: string | null = null
   useEditor.setState({ busy: true })
   try {
+    await waitForDocumentWrites()
     const selected = await select()
     if (!selected) return
     const existingPath = findDocumentTab(selected.path)
@@ -124,6 +126,13 @@ export const saveDocument = async (saveAs = false): Promise<void> => {
     )
     if (savedPath && useEditor.getState().workbook.id === workbook.id) {
       useEditor.setState({ baseline: contents, path: savedPath })
+      const tabId = useDocumentTabs.getState().activeId
+      if (tabId)
+        queueDocumentPreviews(
+          { tabId, workbookId: workbook.id, path: savedPath },
+          contents,
+          useEditor.getState().activeSheetId,
+        )
       void invalidateRecentFiles()
     }
   } catch (error) {

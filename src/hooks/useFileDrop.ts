@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query'
 import { AUDIO_MIME_TYPES, type Command, type DocumentAsset } from '@core'
 import { imageDimensions } from '@assets'
 import { requireDesktopAPI } from '@renderer/lib/desktop'
+import { waitForDocumentWrites } from '@renderer/lib/documentWriteQueue'
 import { queryClient } from '@renderer/lib/queryClient'
 import { useEditor } from '@renderer/state/editor'
 import { acceptOpenedDocument } from '@renderer/state/files'
@@ -67,6 +68,7 @@ export const importDroppedFiles = async (
   useEditor.setState({ busy: true, error: null })
   let result
   try {
+    await waitForDocumentWrites()
     const api = requireDesktopAPI()
     result =
       typeof files[0] === 'string'

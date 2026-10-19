@@ -14,6 +14,12 @@ export const validateRelation: (value: unknown) => asserts value is Relation = (
     'width',
     'dashed',
     'arrow',
+    'routing',
+    'sourceAnchor',
+    'targetAnchor',
+    'controlPoints',
+    'waypoints',
+    'labelOffset',
   ])
   assertId(relation.id)
   assertId(relation.from)
@@ -27,6 +33,21 @@ export const validateRelation: (value: unknown) => asserts value is Relation = (
     v.number(entry, 1, 6)
   })
   v.optional(relation, 'dashed', v.boolean)
+  v.optional(relation, 'routing', (entry) => {
+    v.oneOf(entry, ['straight', 'curve', 'orthogonal'])
+  })
+  for (const anchor of ['sourceAnchor', 'targetAnchor'])
+    v.optional(relation, anchor, (entry) => {
+      v.oneOf(entry, ['top', 'right', 'bottom', 'left'])
+    })
+  v.optional(relation, 'controlPoints', (entry) => {
+    const points = v.list(entry, 2, 2)
+    points.forEach(validateFloatingPosition)
+  })
+  v.optional(relation, 'waypoints', (entry) => {
+    v.list(entry, 32, 1).forEach(validateFloatingPosition)
+  })
+  v.optional(relation, 'labelOffset', validateFloatingPosition)
   v.optional(relation, 'arrow', (entry) => {
     v.oneOf(entry, ['none', 'end', 'both'])
   })

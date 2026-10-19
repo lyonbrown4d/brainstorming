@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "id": "swot",
+  "title": ["SWOT 分析", "SWOT analysis"],
+  "description": [
+    "梳理内外部条件，并转成策略与验证行动",
+    "Connect internal and external factors to testable strategies"
+  ],
+  "group": "analyze",
+  "icon": "chart-no-axes-combined",
+  "layout": "matrix",
+  "topics": [
+    {
+      "title": ["优势 Strengths", "Strengths"],
+      "children": [
+        {
+          "title": ["我们擅长什么？", "What do we do well?"],
+          "children": []
+        },
+        {
+          "title": ["独特资源与支持证据", "Distinctive resources and evidence"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["劣势 Weaknesses", "Weaknesses"],
+      "children": [
+        {
+          "title": ["当前能力缺口", "Current capability gaps"],
+          "children": []
+        },
+        {
+          "title": ["用户反馈中的不足", "Weaknesses in user feedback"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["机会 Opportunities", "Opportunities"],
+      "children": [
+        {
+          "title": ["外部需求与趋势变化", "Changes in external demand and trends"],
+          "children": []
+        },
+        {
+          "title": ["可探索的合作与渠道", "Partnerships and channels to explore"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["威胁 Threats", "Threats"],
+      "children": [
+        {
+          "title": ["外部竞争与替代方式", "External competition and substitutes"],
+          "children": []
+        },
+        {
+          "title": ["环境变化及预警信号", "Environmental changes and warning signals"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["策略组合", "Strategic responses"],
+      "children": [
+        {
+          "title": ["用优势把握机会", "Use strengths to pursue opportunities"],
+          "children": [
+            {
+              "title": [
+                "示例：用已有专长试点一个新场景",
+                "Example: pilot a new use case using existing expertise"
+              ],
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": ["补足短板以降低威胁", "Close gaps to reduce threats"],
+          "children": []
+        },
+        {
+          "title": ["优先行动、负责人和验证时间", "Priority action, owner and validation date"],
+          "children": []
+        }
+      ],
+      "notes": [
+        "内部因素写在优势与劣势，外部因素写在机会与威胁。每个判断补充来源。",
+        "Put internal factors under strengths and weaknesses, external factors under opportunities and threats. Add a source for each judgment."
+      ]
+    }
+  ]
+}

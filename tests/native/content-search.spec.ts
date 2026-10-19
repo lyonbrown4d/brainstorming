@@ -4,6 +4,7 @@ import type { ContentSearchResult } from '@shared/contentSearch'
 import { nativeArtifact } from '@tests/native/artifacts'
 import {
   artifact,
+  fillContentEditable,
   create,
   ensureProperties,
   fileAction,
@@ -36,7 +37,7 @@ describe('native command palette and content index', () => {
     await create('原生索引文档')
     await expect(browser.$$('.react-flow__node')).toBeElementsArrayOfSize(1)
     await ensureProperties()
-    await named('主题备注').setValue('待讨论的星轨方案')
+    await fillContentEditable(named('主题备注'), '待讨论的星轨方案')
     await root().click()
     await named('新建画布').click()
     await named('下一步').click()

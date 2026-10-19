@@ -1,3 +1,4 @@
+import { LoadingState } from '@renderer/components/feedback/LoadingState'
 import { getPlatformAPI } from '@renderer/lib/desktop'
 import { useMessages } from '@renderer/i18n/useMessages'
 
@@ -98,7 +99,7 @@ export const MCPDialog = ({
         ) : (
           <div className="grid gap-4">
             {query.isPending ? (
-              <p role="status">{translate('loadingConnectionStatus')}</p>
+              <LoadingState label={translate('loadingConnectionStatus')} />
             ) : connection ? (
               <>
                 <p role="status" className="text-sm">

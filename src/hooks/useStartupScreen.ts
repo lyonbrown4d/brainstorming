@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { dismissStartupScreen } from '@renderer/startupStatus'
+import { dismissStartupScreen } from '@renderer/startupHandoff'
 
 /** Hidden WKWebViews suspend animation frames. Signal after the React commit so
  * the native host can show the prepared window and finish its splash handoff. */

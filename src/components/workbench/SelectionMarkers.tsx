@@ -1,3 +1,5 @@
+import { PriorityPicker } from '@renderer/components/metadata/PriorityPicker'
+import { setTopicPriorities } from '@renderer/components/metadata/priorityCommands'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { ChevronDown, Smile } from 'lucide-react'
@@ -47,6 +49,8 @@ export const SelectionMarkers = ({ ids }: { ids: readonly string[] }) => {
   const document = useEditor((state) => state.history.document)
   const busy = useEditor((state) => state.busy)
   const first = document.topics[ids[0] ?? '']?.metadata?.markers ?? []
+  const priority = document.topics[ids[0] ?? '']?.metadata?.task?.priority
+  const mixedPriority = ids.some((id) => document.topics[id]?.metadata?.task?.priority !== priority)
   const shared = first.filter((marker) =>
     ids.every((id) => document.topics[id]?.metadata?.markers?.includes(marker)),
   )
@@ -56,6 +60,14 @@ export const SelectionMarkers = ({ ids }: { ids: readonly string[] }) => {
       aria-label={translate('topicMarkers')}
     >
       <h3 className="text-sm font-medium">{translate('markers')}</h3>
+      <PriorityPicker
+        value={mixedPriority ? undefined : priority}
+        mixed={mixedPriority}
+        disabled={busy}
+        onChange={(value) => {
+          setTopicPriorities(ids, value)
+        }}
+      />
       <Popover>
         <PopoverTrigger asChild>
           <Button

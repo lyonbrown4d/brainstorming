@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "id": "project",
+  "title": ["项目计划", "Project plan"],
+  "description": [
+    "明确范围、拆分交付、跟踪风险和验收",
+    "Scope work, plan delivery and track risks and acceptance"
+  ],
+  "group": "plan",
+  "icon": "clipboard-list",
+  "layout": "logic-right",
+  "topics": [
+    {
+      "title": ["目标与范围", "Goals and scope"],
+      "children": [
+        {
+          "title": ["要解决的问题及预期成果", "Problem to solve and desired outcome"],
+          "children": []
+        },
+        {
+          "title": ["包含与不包含的工作", "Work in scope and out of scope"],
+          "children": []
+        },
+        {
+          "title": ["验收人和成功标准", "Approver and success criteria"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["交付与里程碑", "Deliverables and milestones"],
+      "children": [
+        {
+          "title": ["阶段一：确认方案", "Phase one: agree on the approach"],
+          "children": [
+            {
+              "title": ["交付物、负责人、日期", "Deliverable, owner and date"],
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": ["阶段二：实现并验证", "Phase two: build and validate"],
+          "children": [
+            {
+              "title": ["检查点与验收证据", "Checkpoint and acceptance evidence"],
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": ["阶段三：交接上线", "Phase three: hand over and launch"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["资源与依赖", "Resources and dependencies"],
+      "children": [
+        {
+          "title": ["人员、预算与可用时间", "People, budget and available time"],
+          "children": []
+        },
+        {
+          "title": [
+            "外部依赖及最迟确认时间",
+            "External dependencies and latest confirmation dates"
+          ],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["风险与应对", "Risks and responses"],
+      "children": [
+        {
+          "title": ["可能阻塞交付的条件", "Conditions that could block delivery"],
+          "children": []
+        },
+        {
+          "title": ["预警信号与备用方案", "Warning signals and fallback plan"],
+          "children": []
+        }
+      ],
+      "notes": [
+        "为每个关键风险指定负责人和检查时间。",
+        "Assign an owner and review date to each key risk."
+      ]
+    },
+    {
+      "title": ["沟通与复盘", "Communication and review"],
+      "children": [
+        {
+          "title": ["进度同步频率与渠道", "Update cadence and channel"],
+          "children": []
+        },
+        {
+          "title": ["变更如何评估和批准？", "How will changes be assessed and approved?"],
+          "children": []
+        },
+        {
+          "title": ["交付结果与改进项", "Delivery outcomes and improvements"],
+          "children": []
+        }
+      ]
+    }
+  ]
+}

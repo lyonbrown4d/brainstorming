@@ -96,7 +96,7 @@ it('projects a live draft without committing history or changing the editor sess
   commit.mockRestore()
 })
 
-it('writes the actual committed contents again after cancelling an autosaved draft', async () => {
+it('restores cancelled autosaved drafts and continues saving later edits', async () => {
   openDocumentTab(createDocument('Original', 'named'), '/named.brainstorming')
   stop = startDocumentAutosave()
   useEditor.getState().startEdit('root')
@@ -107,6 +107,13 @@ it('writes the actual committed contents again after cancelling an autosaved dra
   expect(isDirty()).toBe(true)
   await vi.advanceTimersByTimeAsync(700)
   expect(savedTitle(1)).toBe('Original')
+  expect(isDirty()).toBe(false)
+  useEditor.getState().startEdit('root')
+  useEditor.getState().setDraft('取消后继续编辑')
+  useEditor.getState().commitDraft()
+  await vi.advanceTimersByTimeAsync(700)
+  expect(savedTitle(2)).toBe('取消后继续编辑')
+  expect(useEditor.getState().editingId).toBeNull()
   expect(isDirty()).toBe(false)
 })
 
@@ -136,4 +143,23 @@ it('preserves invalid input and dirty state instead of writing an invalid snapsh
   expect(useEditor.getState().editingId).toBe('root')
   expect(isDirty()).toBe(true)
   expect(useEditor.getState().error).toContain('100000')
+})
+
+it('keeps a successful save clean when its background preview fails', async () => {
+  const preview = vi.fn(() => Promise.reject(new Error('Preview unavailable')))
+  const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+  desktop({ saveDocument: persist, getDocumentPreviewRevision: preview })
+  openDocumentTab(createDocument('Original', 'named'), '/named.brainstorming')
+  stop = startDocumentAutosave()
+  rename('Saved despite preview failure')
+  try {
+    await vi.advanceTimersByTimeAsync(6000)
+    expect(preview).toHaveBeenCalledOnce()
+    expect(persist).toHaveBeenCalledOnce()
+    expect(savedTitle(0)).toBe('Saved despite preview failure')
+    expect(isDirty()).toBe(false)
+    expect(useEditor.getState().error).toBeNull()
+  } finally {
+    warning.mockRestore()
+  }
 })

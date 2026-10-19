@@ -1,5 +1,6 @@
 [package]
 name = "brainstorming-native"
+default-run = "brainstorming-native"
 version = "0.2.0"
 description = "Local-first cross-platform mind mapping"
 edition = "2024"
@@ -10,6 +11,10 @@ license = "UNLICENSED"
 name = "brainstorming-native"
 path = "src/main.rs"
 required-features = ["native-ui"]
+
+[[bin]]
+name = "brainstorming-thumbnailer"
+path = "src/bin/thumbnailer.rs"
 
 [lib]
 name = "brainstorming_native"
@@ -62,6 +67,10 @@ chrono = { version = "0.4.45", features = ["serde"] }
 tracing = { version = "0.1.44", features = ["log"] }
 infer = "0.22.0"
 imagesize = "0.15.0"
+png = "0.18.1"
+# Mature pure-Rust SVG renderer and bounded image codecs for native exports.
+resvg = "0.48.1"
+image = { version = "0.25.10", default-features = false, features = ["png", "jpeg", "webp"] }
 mime_guess = "2.0.5"
 http-range = "0.1.5"
 lol_html = "3.0.1"
@@ -73,6 +82,9 @@ rmcp = { version = "3.5.1", default-features = false, features = ["server", "tra
 tower = { version = "0.5.3", features = ["util"] }
 moka = { version = "0.12.16", default-features = false, features = ["future"] }
 fluxdi = { version = "=2.0.0", optional = true, default-features = false, features = ["thread-safe", "async-factory", "lifecycle", "macros"] }
+
+[target.'cfg(unix)'.dependencies]
+rustix = { version = "1.1.5", features = ["fs"] }
 
 [target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
 tauri-plugin-single-instance = { version = "2.5.4", optional = true }

@@ -73,7 +73,7 @@ export const TopicNodeBody = ({
       {((shape === 'image' && !topic.image) || (showsTopicNotes(shape) && topic.notes)) && (
         <TopicAppearanceContent topic={topic} />
       )}
-      <TopicMetadataBadges metadata={topic.metadata} />
+      <TopicMetadataBadges metadata={topic.metadata} topicId={id} />
       <TopicContentIndicators
         topicId={id}
         hasNotes={Boolean(topic.notes)}

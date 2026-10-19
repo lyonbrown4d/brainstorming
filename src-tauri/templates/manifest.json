@@ -1,0 +1,173 @@
+{
+  "version": 1,
+  "templates": [
+    {
+      "id": "brainstorm",
+      "title": ["头脑风暴工作流", "Guided brainstorming"],
+      "description": [
+        "从问题定义到发散、归类、决策和验证",
+        "Define, diverge, cluster, decide and validate"
+      ],
+      "group": "ideate",
+      "icon": "lightbulb",
+      "layout": "map",
+      "count": 39
+    },
+    {
+      "id": "scamper",
+      "title": ["SCAMPER 创意改造", "SCAMPER ideation"],
+      "description": [
+        "用七种变换方式改进已有产品或流程",
+        "Improve a product or process through seven lenses"
+      ],
+      "group": "ideate",
+      "icon": "wand-sparkles",
+      "layout": "map",
+      "count": 25
+    },
+    {
+      "id": "six-hats",
+      "title": ["六顶思考帽", "Six thinking hats"],
+      "description": [
+        "分开事实、感受、风险与机会，减少讨论混杂",
+        "Separate facts, feelings, risks and opportunities"
+      ],
+      "group": "ideate",
+      "icon": "brain-circuit",
+      "layout": "map",
+      "count": 22
+    },
+    {
+      "id": "project",
+      "title": ["项目计划", "Project plan"],
+      "description": [
+        "明确范围、拆分交付、跟踪风险和验收",
+        "Scope work, plan delivery and track risks and acceptance"
+      ],
+      "group": "plan",
+      "icon": "clipboard-list",
+      "layout": "logic-right",
+      "count": 21
+    },
+    {
+      "id": "meeting",
+      "title": ["会议议程与决议", "Meeting agenda and decisions"],
+      "description": [
+        "会前准备、限时讨论、决策和会后跟进",
+        "Prepare, timebox discussion, decide and follow up"
+      ],
+      "group": "plan",
+      "icon": "messages-square",
+      "layout": "org-down",
+      "count": 20
+    },
+    {
+      "id": "retrospective",
+      "title": ["团队复盘", "Team retrospective"],
+      "description": [
+        "回顾事实、发现原因、选出可执行的改进",
+        "Review facts, understand causes and choose improvements"
+      ],
+      "group": "plan",
+      "icon": "rotate-ccw",
+      "layout": "map",
+      "count": 20
+    },
+    {
+      "id": "decision",
+      "title": ["方案决策", "Decision comparison"],
+      "description": [
+        "对比方案与证据，记录取舍和回看条件",
+        "Compare options and evidence; record tradeoffs and review triggers"
+      ],
+      "group": "plan",
+      "icon": "git-branch",
+      "layout": "matrix",
+      "count": 21
+    },
+    {
+      "id": "swot",
+      "title": ["SWOT 分析", "SWOT analysis"],
+      "description": [
+        "梳理内外部条件，并转成策略与验证行动",
+        "Connect internal and external factors to testable strategies"
+      ],
+      "group": "analyze",
+      "icon": "chart-no-axes-combined",
+      "layout": "matrix",
+      "count": 18
+    },
+    {
+      "id": "root-cause",
+      "title": ["问题根因分析", "Root cause analysis"],
+      "description": [
+        "从现象和证据出发，检验原因并防止复发",
+        "Start from evidence, test causes and prevent recurrence"
+      ],
+      "group": "analyze",
+      "icon": "search",
+      "layout": "fishbone",
+      "count": 22
+    },
+    {
+      "id": "user-research",
+      "title": ["用户研究计划", "User research plan"],
+      "description": [
+        "连接研究问题、访谈证据和产品决定",
+        "Connect research questions, interview evidence and product decisions"
+      ],
+      "group": "analyze",
+      "icon": "users",
+      "layout": "logic-right",
+      "count": 21
+    },
+    {
+      "id": "study",
+      "title": ["学习笔记", "Study notes"],
+      "description": [
+        "理解概念、连接知识，再用练习检验掌握程度",
+        "Understand concepts, connect ideas and test understanding"
+      ],
+      "group": "learn",
+      "icon": "graduation-cap",
+      "layout": "org-down",
+      "count": 19
+    },
+    {
+      "id": "reading",
+      "title": ["阅读拆解", "Reading map"],
+      "description": [
+        "追踪主张、论据、疑问与可应用的收获",
+        "Trace claims, evidence, questions and practical takeaways"
+      ],
+      "group": "learn",
+      "icon": "book-open",
+      "layout": "map",
+      "count": 19
+    },
+    {
+      "id": "writing",
+      "title": ["写作与表达", "Writing outline"],
+      "description": [
+        "围绕读者组织主张、证据、结构和修改",
+        "Organize a message, evidence, structure and revisions for readers"
+      ],
+      "group": "learn",
+      "icon": "pen-line",
+      "layout": "logic-right",
+      "count": 21
+    },
+    {
+      "id": "personal-goals",
+      "title": ["个人目标规划", "Personal goal plan"],
+      "description": [
+        "把期望转成阶段成果、日常行动和复查",
+        "Turn an aspiration into milestones, habits and reviews"
+      ],
+      "group": "learn",
+      "icon": "target",
+      "layout": "timeline",
+      "count": 20
+    }
+  ]
+}

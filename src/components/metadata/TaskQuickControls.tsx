@@ -1,3 +1,5 @@
+import { PriorityPicker } from '@renderer/components/metadata/PriorityPicker'
+import { setTopicPriorities } from '@renderer/components/metadata/priorityCommands'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import type { TopicTask } from '@core'
@@ -21,40 +23,19 @@ export const TaskQuickControls = ({
     }
     setMetadataField(topicId, 'task', { ...current, ...patch })
   }
-  const setPriority = (priority: 1 | 2 | 3): void => {
-    const current = useEditor.getState().history.document.topics[topicId]?.metadata?.task ?? {
-      done: false,
-    }
-    const next = { ...current }
-    if (current.priority === priority) delete next.priority
-    else next.priority = priority
-    setMetadataField(topicId, 'task', next)
-  }
+  const busy = useEditor((state) => state.busy)
   const progress = task?.progress ?? 0
   const steps = [0, 25, 50, 75, 100]
   if (!steps.includes(progress)) steps.push(progress)
   return (
     <section className="space-y-2 border-b pb-3" aria-label={translate('taskMarkers')}>
-      <div className="flex items-center gap-2">
-        <span className="w-12 text-xs">{translate('priority')}</span>
-        <div className="flex gap-1" role="group" aria-label={translate('quickPriority')}>
-          {([1, 2, 3] as const).map((priority) => (
-            <Button
-              key={priority}
-              variant="outline"
-              size="sm"
-              aria-label={translate('priorityValue0Label755', { value0: priority })}
-              aria-pressed={task?.priority === priority}
-              className="h-8 px-2 aria-pressed:border-primary aria-pressed:bg-accent"
-              onClick={() => {
-                setPriority(priority)
-              }}
-            >
-              P{priority}
-            </Button>
-          ))}
-        </div>
-      </div>
+      <PriorityPicker
+        value={task?.priority}
+        disabled={busy}
+        onChange={(priority) => {
+          setTopicPriorities([topicId], priority)
+        }}
+      />
       <div className="flex items-center gap-2">
         <span className="w-12 text-xs">{translate('progressLabel115')}</span>
         <FieldSelect

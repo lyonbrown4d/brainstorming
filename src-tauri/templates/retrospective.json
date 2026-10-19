@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "id": "retrospective",
+  "title": ["团队复盘", "Team retrospective"],
+  "description": [
+    "回顾事实、发现原因、选出可执行的改进",
+    "Review facts, understand causes and choose improvements"
+  ],
+  "group": "plan",
+  "icon": "rotate-ccw",
+  "layout": "map",
+  "topics": [
+    {
+      "title": ["回顾背景", "Set the context"],
+      "children": [
+        {
+          "title": ["时间范围与本期目标", "Time period and goals"],
+          "children": []
+        },
+        {
+          "title": ["关键事件时间线", "Timeline of key events"],
+          "children": []
+        }
+      ],
+      "notes": [
+        "讨论做法和系统条件，避免评价个人。",
+        "Discuss practices and system conditions rather than judging individuals."
+      ]
+    },
+    {
+      "title": ["值得保留", "Keep"],
+      "children": [
+        {
+          "title": ["哪些做法带来了帮助？", "Which practices helped?"],
+          "children": []
+        },
+        {
+          "title": ["具体事例和影响", "Specific examples and impact"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["遇到的困难", "Difficulties"],
+      "children": [
+        {
+          "title": ["原先预期与实际结果", "Expected versus actual outcome"],
+          "children": []
+        },
+        {
+          "title": ["可控因素与外部因素", "Controllable and external factors"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["深入一个问题", "Explore one issue"],
+      "children": [
+        {
+          "title": ["发生了什么？", "What happened?"],
+          "children": [
+            {
+              "title": ["证据与不同视角", "Evidence and different perspectives"],
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": ["背后的原因或假设", "Underlying causes or hypotheses"],
+          "children": []
+        },
+        {
+          "title": ["如何验证原因？", "How can we verify the cause?"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["下一轮改进", "Next improvements"],
+      "children": [
+        {
+          "title": ["只选一到两项", "Choose only one or two"],
+          "children": []
+        },
+        {
+          "title": ["负责人和下次尝试时间", "Owner and next attempt"],
+          "children": []
+        },
+        {
+          "title": ["用什么信号判断有效？", "What signal will show it helped?"],
+          "children": []
+        },
+        {
+          "title": ["检查上次改进的结果", "Review the outcome of the previous improvement"],
+          "children": []
+        }
+      ]
+    }
+  ]
+}

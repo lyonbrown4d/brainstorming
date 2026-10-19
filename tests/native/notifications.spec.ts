@@ -30,13 +30,20 @@ describe('native notification settings', () => {
     await expect(dialog).not.toExist()
   })
 
-  it('keeps SVG export and cancellation usable while system notifications are off', async () => {
+  it('keeps high quality PNG, SVG export and cancellation usable while system notifications are off', async () => {
     await home()
     await native('setNotificationsEnabled', { enabled: false })
     await create('导出通知')
     await dockAction('导出')
     const dialog = browser.$('[role="dialog"]')
     await expect(dialog).toBeDisplayed()
+    const pngName = artifact('native-hd-export', 'png')
+    await chooseFile('save', pngName)
+    await expect(named('导出文件')).toBeEnabled()
+    await named('导出文件').click()
+    await expect(dialog.$('[role="status"]')).toHaveText(expect.stringContaining(pngName))
+    const pngFile = await fixture<{ length: number }>('inspect', { name: pngName })
+    expect(pngFile.length).toBeGreaterThan(100)
     await named('导出格式').click()
     await named('SVG 矢量图').click()
     const name = artifact('notification-export', 'svg')

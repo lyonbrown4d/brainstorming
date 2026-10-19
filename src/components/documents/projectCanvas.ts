@@ -1,3 +1,4 @@
+import { relationAnchors } from '@shared/relation-geometry'
 import { visualPath } from '@shared/sketch'
 import { layoutDocument, type LayoutNode } from '@layout'
 import type { MindMapDocument } from '@core'
@@ -32,6 +33,9 @@ export const edgeHandles = (
 export const projectCanvas = (document: MindMapDocument, surface?: string) => {
   const layout = layoutDocument(document)
   const byId = new Map(layout.nodes.map((node) => [node.id, node]))
+  const relationsById = new Map(
+    (document.relations ?? []).map((relation) => [`relation-${relation.id}`, relation]),
+  )
   const nodes: TopicFlowNode[] = layout.nodes.flatMap((node) => {
     const topic = document.topics[node.id]
     if (!topic) return []
@@ -118,7 +122,14 @@ export const projectCanvas = (document: MindMapDocument, surface?: string) => {
       ...relationEdges(document, new Set(byId.keys())).map((edge) => {
         const source = byId.get(edge.source),
           target = byId.get(edge.target)
-        return source && target ? { ...edge, ...edgeHandles(source, target) } : edge
+        const relation = relationsById.get(edge.id)
+        if (!source || !target || !relation) return edge
+        const anchors = relationAnchors(relation, source, target)
+        return {
+          ...edge,
+          sourceHandle: `source-${anchors.source}`,
+          targetHandle: `target-${anchors.target}`,
+        }
       }),
     ],
     layoutNodes: layout.nodes,

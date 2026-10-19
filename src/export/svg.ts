@@ -1,3 +1,4 @@
+import { drawMetadataBadges } from '@renderer/export/metadata'
 import { visualPath } from '@shared/sketch'
 import { inkExtents, drawExportInk } from '@renderer/export/ink'
 import { measureTopicContent } from '@layout/measure'
@@ -139,6 +140,10 @@ export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = fal
           : style.fill
         : style.stroke,
       source.settings?.visualStyle,
+      isRoot ||
+        branchIndex !== undefined ||
+        Boolean(topic.style?.fill) ||
+        topic.style?.shape === 'sticky',
     )
     const body = element('g', { transform: `translate(${content.x} ${content.y})` }, group)
     const metadata = topic.metadata
@@ -224,40 +229,15 @@ export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = fal
       style.color,
       appearance.fontFamily,
     )
-    const metadataText = [
-      metadata?.task
-        ? `${metadata.task.done ? '✓' : '○'} ${metadata.task.progress ?? 0}%${metadata.task.priority ? ` P${metadata.task.priority}` : ''}`
-        : '',
-      metadata?.labels?.join('、') ?? '',
-      metadata?.link ? translate('link') : '',
-      metadata?.equation ? translate('formula') : '',
-      metadata?.audioAssetId ? translate('audio') : '',
-    ]
-      .filter(Boolean)
-      .join(' · ')
-    const firstBadgeLine = wrappedTitle(metadataText, 10, Math.max(12, content.width - 24))[0] ?? ''
-    const badge =
-      firstBadgeLine === metadataText
-        ? metadataText
-        : `${Array.from(firstBadgeLine).slice(0, -1).join('')}…`
-    const metadataDescription = [metadataText, metadata?.markers?.join(' ')]
-      .filter(Boolean)
-      .join(' · ')
-    if (metadataDescription)
-      element('title', {}, body).appendChild(xml.createTextNode(xmlText(metadataDescription)))
-    if (metadataText)
-      element(
-        'text',
-        {
-          x: content.width / 2,
-          y: bodyHeight + previewHeight + 18,
-          'text-anchor': 'middle',
-          fill: style.color,
-          'font-family': appearance.fontFamily,
-          'font-size': 10,
-        },
-        body,
-      ).appendChild(xml.createTextNode(xmlText(badge)))
+    drawMetadataBadges(
+      xml,
+      body,
+      metadata,
+      content.width,
+      bodyHeight + previewHeight + 18,
+      style.color,
+      appearance.fontFamily,
+    )
     const details = [
       topic.notes ? translate('notes') : '',
       topic.attachments?.length

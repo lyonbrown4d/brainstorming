@@ -3,6 +3,7 @@ import { Key } from 'webdriverio'
 import { nativeArtifact } from '@tests/native/artifacts'
 import {
   artifact,
+  fillContentEditable,
   create,
   editor,
   ensureProperties,
@@ -21,7 +22,10 @@ describe('mind-first native workflow', () => {
     await create('旅行头脑风暴')
     await root().click()
     await browser.keys(Key.Tab)
-    await editor().setValue('海边散步')
+    await expect(editor()).toBeDisplayed()
+    await expect(editor()).toBeFocused()
+    await fillContentEditable(editor(), '海边散步')
+    await expect(editor()).toHaveText('海边散步')
     await browser.keys(Key.Enter)
     await root().click()
     await ensureProperties()
@@ -31,7 +35,7 @@ describe('mind-first native workflow', () => {
 
     await browser.$('button[aria-label="演示编排"]').click()
     await expect(browser.$('[aria-label="演示编排"]')).toBeDisplayed()
-    await browser.$('#presentation-notes').setValue('按时间说明这次出行安排')
+    await fillContentEditable(browser.$('#presentation-notes'), '按时间说明这次出行安排')
     await named('从头播放').click()
     await expect(browser.$('[aria-label="观众画面"]')).toBeDisplayed()
     await browser.keys(Key.Space)

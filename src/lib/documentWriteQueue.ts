@@ -33,3 +33,10 @@ export const queueDocumentWrite = <T>(path: string | null, write: () => Promise<
     })
   })
 }
+
+/** Finish already queued writes/releases before native open registers a new resource session. */
+export const waitForDocumentWrites = async (): Promise<void> => {
+  await Promise.all(
+    [...queues.keys()].map((path) => queueDocumentWrite(path, () => Promise.resolve())),
+  )
+}

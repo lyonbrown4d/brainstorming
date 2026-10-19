@@ -9,22 +9,22 @@ static_module! {
     }
 }
 async fn search() -> Result<Shared<SearchService>, Error> {
-    SearchService::new()
-        .await
-        .map(Shared::new)
-        .map_err(service_error)
+  SearchService::new()
+    .await
+    .map(Shared::new)
+    .map_err(service_error)
 }
 pub(super) struct SearchModule(pub BackendServices);
 impl Module for SearchModule {
-    fn on_start(&self, _: Shared<Injector>) -> ModuleLifecycleFuture {
-        let graph = self.0.clone();
-        Box::pin(async move { graph.search().await.map(|_| ()) })
-    }
-    fn on_stop(&self, _: Shared<Injector>) -> ModuleLifecycleFuture {
-        let graph = self.0.clone();
-        Box::pin(async move {
-            graph.search().await?.shutdown().await;
-            Ok(())
-        })
-    }
+  fn on_start(&self, _: Shared<Injector>) -> ModuleLifecycleFuture {
+    let graph = self.0.clone();
+    Box::pin(async move { graph.search().await.map(|_| ()) })
+  }
+  fn on_stop(&self, _: Shared<Injector>) -> ModuleLifecycleFuture {
+    let graph = self.0.clone();
+    Box::pin(async move {
+      graph.search().await?.shutdown().await;
+      Ok(())
+    })
+  }
 }

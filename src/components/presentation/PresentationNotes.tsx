@@ -1,5 +1,5 @@
 import { MessageSquareText } from 'lucide-react'
-import { Textarea } from '@renderer/components/ui/textarea'
+import { PlainTextInput } from '@renderer/components/inputs/PlainTextInput'
 import { useMessages } from '@renderer/i18n/useMessages'
 import { useEditor } from '@renderer/state/editor'
 import {
@@ -27,9 +27,10 @@ export const PresentationNotes = ({ notes, disabled, target }: PresentationNotes
         <MessageSquareText className="size-4" />
         {translate('presentationNotes')}
       </label>
-      <Textarea
+      <PlainTextInput
         id="presentation-notes"
         className="min-h-20 resize-y border-0 p-0 shadow-none focus-visible:ring-0"
+        label={translate('presentationNotes')}
         value={draft}
         disabled={disabled}
         maxLength={10_000}
@@ -37,12 +38,15 @@ export const PresentationNotes = ({ notes, disabled, target }: PresentationNotes
         onFocus={() => {
           startPresentationNotes(target)
         }}
-        onChange={(event) => {
-          if (startPresentationNotes(target)) useEditor.getState().setDraft(event.target.value)
+        onValueChange={(value) => {
+          if (startPresentationNotes(target)) useEditor.getState().setDraft(value)
         }}
-        onBlur={() => {
+        onBlur={(value) => {
           const state = useEditor.getState()
-          if (isPresentationNoteDraft(state, target)) state.commitDraft()
+          if (isPresentationNoteDraft(state, target)) {
+            state.setDraft(value)
+            state.commitDraft()
+          }
         }}
       />
     </div>

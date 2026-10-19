@@ -42,6 +42,7 @@ describe('XMind import', () => {
       title: '第一条',
       collapsed: true,
       children: ['nested'],
+      metadata: { task: { priority: 1 } },
     })
     expect(document?.topics.second?.title).toBe('Second\nline')
     expect(document?.topics.first?.notes).toBe('暂不支持的备注')
@@ -56,7 +57,7 @@ describe('XMind import', () => {
     expect(result.warnings).toEqual(
       expect.arrayContaining([
         expect.stringContaining('样式'),
-        '未导入 XMind 图标（2 项）',
+        '未导入 XMind 图标（1 项）',
         '未导入 XMind 关联线（1 项）',
         expect.stringContaining('图片不是有效的内嵌资源'),
         '未导入 XMind 概要范围（1 项）',

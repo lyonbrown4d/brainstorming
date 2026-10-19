@@ -21,7 +21,7 @@ import { projectCanvas } from '@renderer/components/documents/projectCanvas'
 import { renderSheetSvg } from '@renderer/export/svg'
 import { encodeXmind } from '@formats/interchange/xmind'
 import { importXmind } from '@formats/xmind'
-import { sketchPath, topicOutlinePath } from '@shared/sketch'
+import { sketchFillPath, sketchPath, topicOutlinePath } from '@shared/sketch'
 import { layoutDecorationPath } from '@shared/layout-geometry'
 
 const fixture = () =>
@@ -89,6 +89,10 @@ describe('Sheet sketch appearance', () => {
     for (let index = 0; index < 1100; index += 1) sketchPath(path, `topic:evict-${index}`)
     expect(sketchPath(path, 'topic:stable')).toBe(expected)
     expect(expected).not.toMatch(/NaN|Infinity|undefined/)
+    const fill = sketchFillPath(path, 'topic:stable')
+    expect(fill).not.toBe(expected)
+    expect(fill).toBe(sketchFillPath(path, 'topic:stable'))
+    expect(fill).not.toMatch(/NaN|Infinity|undefined/)
   })
 
   it('follows live node endpoints during drag without changing the persisted geometry', () => {
@@ -140,10 +144,32 @@ describe('Sheet sketch appearance', () => {
           `topic:${shape}`,
         )
         expect(svg).toContain(`d="${outline}"`)
+        expect(svg).toContain(
+          `d="${sketchFillPath(topicOutlinePath(shape, node.width, node.height), `topic:${shape}`)}"`,
+        )
       }
       expect(renderSheetSvg(deserializeDocument(serializeDocument(document))).svg).toBe(svg)
     },
   )
+
+  it('keeps ordinary leaves clear and shades explicit fills without altering text', () => {
+    const document = setSketch(createExampleDocument())
+    const parse = (svg: string) => new DOMParser().parseFromString(svg, 'image/svg+xml')
+    const fills = (svg: string) =>
+      Array.from(parse(svg).getElementsByTagName('path')).filter(
+        (path) => path.getAttribute('data-sketch') === 'fill',
+      )
+    const before = renderSheetSvg(document).svg
+    const root = document.topics[document.rootId]
+    expect(fills(before)).toHaveLength(1 + (root?.children.length ?? 0))
+    const filled = applyCommand(document, {
+      type: 'setTopicStyle',
+      topicId: 'vision-1',
+      style: { fill: '#f9e9c2' },
+    })
+    expect(fills(renderSheetSvg(filled).svg)).toHaveLength(fills(before).length + 1)
+    expect(renderSheetSvg(filled).svg).toContain('本地优先')
+  })
 
   it.each(LAYOUT_KINDS)('shares %s branch and decoration geometry with SVG export', (layout) => {
     const document = setSketch(

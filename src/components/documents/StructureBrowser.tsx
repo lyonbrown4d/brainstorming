@@ -16,6 +16,7 @@ import { structureAppearance } from '@renderer/components/creation/structureAppe
 import { useMessages } from '@renderer/i18n/useMessages'
 import { isCompositionKey } from '@renderer/state/keyboard'
 import { cn } from '@renderer/lib/utils'
+import { StructureGroupIcon } from '@renderer/components/creation/creationIcons'
 
 export const StructureBrowser = ({
   value,
@@ -98,20 +99,23 @@ export const StructureBrowser = ({
           <TabsList
             aria-label={translate('presetCategories')}
             className={cn(
-              'h-auto w-max justify-start gap-0.5 bg-secondary/60',
+              'h-auto w-max justify-start gap-0.5 bg-secondary/60 group-data-[orientation=horizontal]/tabs:h-auto',
               compact && 'max-w-full flex-wrap',
             )}
           >
-            {[{ id: 'all', label: 'presetAll' as const }, ...structureGroups].map((item) => (
-              <TabsTrigger
-                key={item.id}
-                value={item.id}
-                disabled={disabled}
-                className="h-7 flex-none px-2.5 text-xs transition-colors"
-              >
-                {translate(item.label)}
-              </TabsTrigger>
-            ))}
+            {[{ id: 'all' as const, label: 'presetAll' as const }, ...structureGroups].map(
+              (item) => (
+                <TabsTrigger
+                  key={item.id}
+                  value={item.id}
+                  disabled={disabled}
+                  className="h-7 flex-none px-2.5 text-xs transition-colors"
+                >
+                  <StructureGroupIcon group={item.id} />
+                  {translate(item.label)}
+                </TabsTrigger>
+              ),
+            )}
           </TabsList>
         </div>
         <TabsContent
@@ -123,6 +127,7 @@ export const StructureBrowser = ({
               <section key={item.id} aria-label={item.label} className="space-y-2">
                 {(active === 'all' || searching) && (
                   <h3 className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    <StructureGroupIcon group={item.id} />
                     {item.label}
                     <span className="text-[11px] tabular-nums">{item.options.length}</span>
                   </h3>

@@ -103,6 +103,9 @@ export const encodeXmind = (workbook: MindMapWorkbook): Uint8Array => {
             ? { href: topic.metadata.link.url }
             : {}),
         ...(topic.metadata?.labels ? { labels: topic.metadata.labels } : {}),
+        ...(topic.metadata?.task?.priority
+          ? { markers: [{ markerId: `priority-${topic.metadata.task.priority}` }] }
+          : {}),
         extensions: [
           {
             provider: 'org.brainstorming.interchange',

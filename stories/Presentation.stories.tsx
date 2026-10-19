@@ -78,13 +78,13 @@ export const ArrangeAndPlay: Story = {
     await userEvent.click(canvas.getByRole('button', { name: '列表' }))
     await expect(useEditor.getState().history.document.presentation?.[1]?.layout).toBe('list')
     const notes = canvas.getByRole('textbox', { name: '演讲备注' })
-    await userEvent.clear(notes)
+    const originalNotes = notes.textContent
     await userEvent.type(notes, '先介绍交通。')
     const history = useEditor.getState().history
     await expect(
       deserializeWorkbook(serializedDocumentSnapshot(useEditor.getState())).sheets[0]?.document
         .presentation?.[1]?.notes,
-    ).toBe('先介绍交通。')
+    ).toBe(`${originalNotes}先介绍交通。`)
     await expect(useEditor.getState().history).toBe(history)
     useEditor.getState().commitDraft()
     await expect(canvas.getByRole('textbox', { name: '演讲备注' })).toBe(notes)
@@ -94,7 +94,7 @@ export const ArrangeAndPlay: Story = {
     canvas.getByRole('button', { name: '预览当前页' }).click()
     await expect(await canvas.findByRole('region', { name: '观众画面' })).toBeVisible()
     await expect(useEditor.getState().history.document.presentation?.[1]?.notes).toBe(
-      '先介绍交通。再介绍住宿。',
+      `${originalNotes}先介绍交通。再介绍住宿。`,
     )
     await userEvent.keyboard(' ')
     await waitFor(() => expect(usePresentation.getState().itemIndex).toBe(1))

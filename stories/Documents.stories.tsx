@@ -79,9 +79,11 @@ export const TopicMarkers: Story = {
     const markers = panel.getByRole('button', { name: '图标与任务标记' })
     if (markers.getAttribute('aria-expanded') !== 'true') await userEvent.click(markers)
     await expect(markers).toHaveAttribute('aria-expanded', 'true')
-    await userEvent.click(panel.getByRole('button', { name: '优先级 2' }))
+    await userEvent.click(panel.getByRole('radio', { name: '优先级 2' }))
     await userEvent.click(panel.getByRole('button', { name: '星标' }))
-    await expect(canvas.getByTestId('topic-vision')).toHaveTextContent('P2')
+    await expect(
+      within(canvas.getByTestId('topic-vision')).getByRole('button', { name: '更改优先级 2' }),
+    ).toBeVisible()
     await expect(within(canvas.getByTestId('topic-vision')).getByLabelText('星标')).toBeVisible()
   },
 }

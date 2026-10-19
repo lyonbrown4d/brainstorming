@@ -1,6 +1,7 @@
 import { prepareExportResources } from '@renderer/export/resources'
 import { translate } from '@renderer/i18n'
-import { prepareMarkerIcons } from '@shared/markerIcons'
+import { canvasPng, prepareSheetImage, rasterizeSheet } from '@renderer/export/images'
+import { resolveRasterSize } from '@renderer/export/quality'
 import type { MindMapWorkbook } from '@core'
 import {
   encodeMarkdown,
@@ -9,7 +10,7 @@ import {
   encodeXmind,
   exportSheets,
 } from '@formats/interchange'
-import { checkRasterSize, renderSheetSvg, type SheetSvg } from '@renderer/export/svg'
+import type { SheetSvg } from '@renderer/export/svg'
 
 export type ExportFormat = 'png' | 'svg' | 'pdf' | 'md' | 'opml' | 'txt' | 'xmind'
 export interface ExportRequest {
@@ -34,46 +35,14 @@ export const exportNotice: Record<ExportFormat, string> = {
   xmind:
     '现代 XMind 文件包含所选画布、主题、备注和内嵌资源。每个主题的首个附件使用标准链接；额外附件和扩展元数据写入 Brainstorming 扩展，其他软件可能忽略。仅导出当前画布时会移除指向其他画布的主题链接。',
 }
-const rasterize = async (source: SheetSvg, scale: number): Promise<HTMLCanvasElement> => {
-  if (!Number.isFinite(scale) || scale < 0.25 || scale > 3)
-    throw new Error(translate('imageScaleMustBeBetween025And'))
-  const width = Math.ceil(source.width * scale)
-  const height = Math.ceil(source.height * scale)
-  checkRasterSize(width, height)
-  await document.fonts.ready
-  const url = URL.createObjectURL(new Blob([source.svg], { type: 'image/svg+xml;charset=utf-8' }))
-  try {
-    const image = new Image()
-    image.src = url
-    await image.decode()
-    const canvas = document.createElement('canvas')
-    canvas.width = width
-    canvas.height = height
-    const context = canvas.getContext('2d')
-    if (!context) throw new Error(translate('couldNotCreateAnImageCanvas'))
-    context.drawImage(image, 0, 0, width, height)
-    return canvas
-  } finally {
-    URL.revokeObjectURL(url)
-  }
-}
-const canvasPng = async (canvas: HTMLCanvasElement): Promise<Uint8Array> => {
-  const blob = await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((result) => {
-      if (result) resolve(result)
-      else reject(new Error(translate('pngEncodingFailed')))
-    }, 'image/png')
-  })
-  return new Uint8Array(await blob.arrayBuffer())
-}
 export const createExport = async (
   workbook: MindMapWorkbook,
   options: ExportOptions,
+  preparedImage?: SheetSvg,
 ): Promise<ExportRequest> => {
-  const needsImages = ['png', 'svg', 'pdf'].includes(options.format)
-  if (options.format === 'xmind' || needsImages) {
+  if (options.format === 'xmind') {
     workbook = exportSheets(workbook, options.wholeWorkbook ? undefined : options.sheetId)
-    workbook = await prepareExportResources(workbook, options.format === 'xmind')
+    workbook = await prepareExportResources(workbook, true)
   }
   const sheet = workbook.sheets.find((entry) => entry.id === options.sheetId)
   if (!sheet) throw new Error(translate('sheetToExportDoesNotExist'))
@@ -94,11 +63,12 @@ export const createExport = async (
       bytes = encodeXmind(selected)
       break
     default: {
-      await prepareMarkerIcons(sheet.document)
-      const source = renderSheetSvg(sheet.document, options.includeCollapsed)
+      const source =
+        preparedImage ??
+        (await prepareSheetImage(workbook, options.sheetId, options.includeCollapsed))
       if (options.format === 'svg') bytes = encoder.encode(source.svg)
       else {
-        const canvas = await rasterize(source, options.scale ?? 1)
+        const canvas = await rasterizeSheet(source, resolveRasterSize(source, options.scale).scale)
         try {
           const png = await canvasPng(canvas)
           if (options.format === 'png') bytes = png

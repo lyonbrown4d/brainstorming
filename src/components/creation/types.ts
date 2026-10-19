@@ -7,12 +7,12 @@ export type CreationLayout = LayoutKind | 'none'
 export interface CreationRequest {
   readonly title: string
   readonly layout: CreationLayout
-  readonly template: 'blank' | TemplateId
+  readonly template: TemplateId
 }
 
 export interface CreationGalleryProps {
   readonly mode: 'document' | 'sheet'
-  readonly onCreate: (request: CreationRequest) => boolean
+  readonly onCreate: (request: CreationRequest) => boolean | Promise<boolean>
   readonly onCancel?: () => void
   readonly cancelLabel?: string
   readonly onOpen?: () => void

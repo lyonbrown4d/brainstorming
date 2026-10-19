@@ -1,3 +1,4 @@
+import { Check, Workflow, Settings2 } from 'lucide-react'
 import { useMessages } from '@renderer/i18n/useMessages'
 import {
   Stepper,
@@ -28,7 +29,10 @@ export const CreationSteps = ({ step }: { step: 1 | 2 }) => {
               className="flex-none! gap-1.5 text-muted-foreground data-[state=active]:text-foreground"
             >
               <StepperIndicator className="size-5 border-0 bg-secondary text-[11px]">
-                {index + 1}
+                {(state) => {
+                  const Icon = state === 'completed' ? Check : index === 0 ? Workflow : Settings2
+                  return <Icon aria-hidden="true" className="size-3" strokeWidth={1.75} />
+                }}
               </StepperIndicator>
               <StepperTitle className="text-xs font-normal">{label}</StepperTitle>
               {index === 0 && <StepperSeparator className="ml-1 h-px w-5 flex-none" />}

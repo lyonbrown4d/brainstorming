@@ -1,3 +1,8 @@
+import { priorityMessages } from '@renderer/i18n/priorityMessages'
+import { artMessages } from '@renderer/i18n/artMessages'
+import { exportMessages } from '@renderer/i18n/exportMessages'
+import { relationMessages } from '@renderer/i18n/relationMessages'
+import { templateMessages } from '@renderer/i18n/templateMessages'
 import { notificationMessages } from '@renderer/i18n/notificationMessages'
 import { commandMessages } from '@renderer/i18n/commandMessages'
 import { creationMessages } from '@renderer/i18n/creationMessages'
@@ -24,6 +29,11 @@ import { messages7 } from '@renderer/i18n/messages7'
 import { messages8 } from '@renderer/i18n/messages8'
 
 const messages = {
+  ...priorityMessages,
+  ...artMessages,
+  ...exportMessages,
+  ...relationMessages,
+  ...templateMessages,
   ...notificationMessages,
   ...commandMessages,
   ...creationMessages,

@@ -1,4 +1,5 @@
 import { Expand, ZoomIn, ZoomOut } from 'lucide-react'
+import { LoadingState } from '@renderer/components/feedback/LoadingState'
 import { Button } from '@renderer/components/ui/button'
 import { cn } from '@renderer/lib/utils'
 import { useMessages } from '@renderer/i18n/useMessages'
@@ -33,13 +34,11 @@ export const TiledImageViewer = ({ className, previewUrl, ...source }: TiledImag
         className="absolute inset-0 outline-none focus-within:ring-2 focus-within:ring-ring"
       />
       {status.state === 'loading' && (
-        <div
-          role="status"
-          className="pointer-events-none absolute inset-x-0 top-3 text-center text-sm"
-        >
-          <span className="rounded bg-background/90 px-3 py-1 text-muted-foreground">
-            {translate('loading')}
-          </span>
+        <div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center">
+          <LoadingState
+            className="rounded-md bg-background/90 px-3 py-2"
+            label={translate('loading')}
+          />
         </div>
       )}
       {status.state === 'error' && (

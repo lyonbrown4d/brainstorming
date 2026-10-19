@@ -1,3 +1,4 @@
+import { watchCreationTarget } from '@renderer/state/creationTarget'
 import { translate } from '@renderer/i18n'
 import { applyCommand, createDocument, validateDocument, type MindMapDocument } from '@core'
 import type { CreationRequest } from '@renderer/components/creation/CreationGallery'
@@ -49,14 +50,18 @@ export const showWorkspaceHome = (): boolean => {
   return true
 }
 
-const initialDocument = (request: CreationRequest, sheet: boolean): MindMapDocument => {
+const initialDocument = async (
+  request: CreationRequest,
+  sheet: boolean,
+): Promise<MindMapDocument> => {
+  if (request.title.trim().length > 80) throw new Error(translate('nameCannotExceed80Characters'))
   const base =
     request.layout === 'none' || request.template === 'blank'
       ? createDocument(
           sheet ? translate('newSheetLabel402') : translate('newIdea'),
           crypto.randomUUID(),
         )
-      : createTemplate(request.template)
+      : await createTemplate(request.template)
   const title = request.title.trim() || base.title
   if (title.length > 80) throw new Error(translate('nameCannotExceed80Characters'))
   const named = applyCommand(base, { type: 'renameTopic', topicId: base.rootId, title })
@@ -68,9 +73,10 @@ const initialDocument = (request: CreationRequest, sheet: boolean): MindMapDocum
   return document
 }
 
-export const createFromRequest = (request: CreationRequest): boolean => {
+let creating = false
+export const createFromRequest = async (request: CreationRequest): Promise<boolean> => {
   const workspace = useWorkspace.getState()
-  if (!['create-document', 'create-sheet'].includes(workspace.screen) || !commitReady())
+  if (creating || !['create-document', 'create-sheet'].includes(workspace.screen) || !commitReady())
     return false
   const sheet = workspace.screen === 'create-sheet'
   if (
@@ -80,8 +86,11 @@ export const createFromRequest = (request: CreationRequest): boolean => {
     useEditor.getState().setError(translate('theWorkbookChangedStartCreatingTheSheet'))
     return false
   }
+  creating = true
+  const target = watchCreationTarget()
   try {
-    const document = initialDocument(request, sheet)
+    const document = await initialDocument(request, sheet)
+    if (!target.valid() || !commitReady()) return false
     if (sheet) {
       if (!addDocumentSheet(document)) return false
     } else {
@@ -91,10 +100,14 @@ export const createFromRequest = (request: CreationRequest): boolean => {
     enterWorkspaceEditor()
     return true
   } catch (error) {
+    if (!target.valid()) return false
     useEditor
       .getState()
       .setError(error instanceof Error ? error.message : translate('creationFailedPleaseRetry'))
     return false
+  } finally {
+    target.dispose()
+    creating = false
   }
 }
 

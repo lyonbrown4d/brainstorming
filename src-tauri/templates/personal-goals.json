@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "id": "personal-goals",
+  "title": ["个人目标规划", "Personal goal plan"],
+  "description": [
+    "把期望转成阶段成果、日常行动和复查",
+    "Turn an aspiration into milestones, habits and reviews"
+  ],
+  "group": "learn",
+  "icon": "target",
+  "layout": "timeline",
+  "topics": [
+    {
+      "title": ["我想达成什么", "Desired outcome"],
+      "children": [
+        {
+          "title": ["具体变化与个人意义", "Specific change and personal meaning"],
+          "children": []
+        },
+        {
+          "title": ["判断完成的可观察结果", "Observable evidence of completion"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["当前起点", "Starting point"],
+      "children": [
+        {
+          "title": ["已有能力与资源", "Existing skills and resources"],
+          "children": []
+        },
+        {
+          "title": ["时间限制与潜在障碍", "Time constraints and likely obstacles"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["阶段成果", "Milestones"],
+      "children": [
+        {
+          "title": ["第一阶段：建立基础", "Stage one: build a foundation"],
+          "children": [
+            {
+              "title": [
+                "示例：完成一次小练习并获得反馈",
+                "Example: complete a small exercise and receive feedback"
+              ],
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": [
+            "第二阶段：独立完成一次应用",
+            "Stage two: complete an application independently"
+          ],
+          "children": []
+        },
+        {
+          "title": ["第三阶段：根据反馈改进", "Stage three: improve using feedback"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["本周行动", "This week’s actions"],
+      "children": [
+        {
+          "title": ["下一步：小到可以今天开始", "Next step: small enough to start today"],
+          "children": []
+        },
+        {
+          "title": ["安排时间与触发提醒", "Schedule time and a reminder trigger"],
+          "children": []
+        },
+        {
+          "title": ["遇到障碍时的备用做法", "Fallback when an obstacle appears"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["定期复查", "Regular review"],
+      "children": [
+        {
+          "title": ["做了什么，有什么证据？", "What did I do and what evidence is there?"],
+          "children": []
+        },
+        {
+          "title": ["继续、调整或放下？", "Continue, adjust or let go?"],
+          "children": []
+        },
+        {
+          "title": ["下次复查日期", "Next review date"],
+          "children": []
+        }
+      ],
+      "notes": [
+        "目标和节奏可以调整，复查时依据实际进展更新计划。",
+        "Goals and pace can change. Update the plan using actual progress."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,216 @@
+{
+  "version": 1,
+  "id": "brainstorm",
+  "title": ["头脑风暴工作流", "Guided brainstorming"],
+  "description": [
+    "从问题定义到发散、归类、决策和验证",
+    "Define, diverge, cluster, decide and validate"
+  ],
+  "group": "ideate",
+  "icon": "lightbulb",
+  "layout": "map",
+  "topics": [
+    {
+      "title": ["1 · 定义问题", "1 · Define the problem"],
+      "children": [
+        {
+          "title": ["我们如何帮助谁解决什么问题？", "How might we help whom solve what problem?"],
+          "children": [
+            {
+              "title": [
+                "示例：让新用户在十分钟内完成首次记录",
+                "Example: help new users capture their first note in ten minutes"
+              ],
+              "children": []
+            },
+            {
+              "title": [
+                "写下已有证据与待验证假设",
+                "Separate existing evidence from untested assumptions"
+              ],
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": ["成功标准与约束", "Success criteria and constraints"],
+          "children": [
+            {
+              "title": ["明确可观察的结果", "Define an observable outcome"],
+              "children": []
+            },
+            {
+              "title": [
+                "列出时间、预算与不可改变的条件",
+                "List time, budget and fixed constraints"
+              ],
+              "children": []
+            }
+          ]
+        }
+      ],
+      "notes": [
+        "建议 5 分钟。先统一问题与边界，暂不讨论解决方案。",
+        "Allow 5 minutes. Agree on the problem and boundaries before proposing solutions."
+      ]
+    },
+    {
+      "title": ["2 · 独立发散", "2 · Diverge independently"],
+      "children": [
+        {
+          "title": ["静默写想法：每个主题只写一个", "Write silently: one idea per topic"],
+          "children": []
+        },
+        {
+          "title": ["换个角度", "Change perspective"],
+          "children": [
+            {
+              "title": ["如果没有资源限制？", "What if resources were unlimited?"],
+              "children": []
+            },
+            {
+              "title": ["如果只能做最小的一步？", "What is the smallest possible step?"],
+              "children": []
+            },
+            {
+              "title": ["借用其他行业的做法", "Borrow an approach from another field"],
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": ["轮流分享，先不评价", "Share in turns without judging"],
+          "children": []
+        }
+      ],
+      "notes": [
+        "建议 8 分钟独立思考、5 分钟分享。欢迎不成熟的想法，先追求数量。",
+        "Allow 8 minutes to think and 5 to share. Welcome rough ideas and seek quantity first."
+      ]
+    },
+    {
+      "title": ["3 · 聚类与补充", "3 · Cluster and build"],
+      "children": [
+        {
+          "title": ["把相近想法移到同一分支", "Move related ideas into a shared branch"],
+          "children": []
+        },
+        {
+          "title": ["为每组写一个清晰名称", "Give each cluster a clear name"],
+          "children": []
+        },
+        {
+          "title": ["保留少数意见与离群想法", "Keep minority views and outliers"],
+          "children": []
+        },
+        {
+          "title": ["组合两种想法，补出新方案", "Combine two ideas into a new option"],
+          "children": []
+        }
+      ],
+      "notes": [
+        "建议 8 分钟。按含义归类，不按提出者归类；合并时保留原始信息。",
+        "Allow 8 minutes. Group by meaning rather than author and retain the original intent."
+      ]
+    },
+    {
+      "title": ["4 · 评估与选择", "4 · Evaluate and choose"],
+      "children": [
+        {
+          "title": ["共同确定评价标准", "Agree on evaluation criteria"],
+          "children": [
+            {
+              "title": ["用户收益：1–5 分", "User benefit: score 1–5"],
+              "children": []
+            },
+            {
+              "title": ["可行性：1–5 分", "Feasibility: score 1–5"],
+              "children": []
+            },
+            {
+              "title": ["关键风险与证据强度", "Key risks and strength of evidence"],
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": ["独立投票后讨论分歧", "Vote independently, then discuss differences"],
+          "children": []
+        },
+        {
+          "title": ["记录入选方案及取舍理由", "Record the chosen option and tradeoffs"],
+          "children": []
+        }
+      ],
+      "notes": [
+        "建议 10 分钟。评分是讨论线索，不是事实；高不确定性方案先验证。",
+        "Allow 10 minutes. Scores guide discussion rather than prove facts. Test uncertain options first."
+      ]
+    },
+    {
+      "title": ["5 · 转成行动", "5 · Commit to actions"],
+      "children": [
+        {
+          "title": ["最小实验或原型", "Smallest experiment or prototype"],
+          "children": [
+            {
+              "title": [
+                "示例：制作三屏原型，邀请五人试用",
+                "Example: build a three-screen prototype and invite five people to try it"
+              ],
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": ["负责人：待认领", "Owner: to assign"],
+          "children": []
+        },
+        {
+          "title": ["截止时间与交付物：待确认", "Due date and deliverable: to agree"],
+          "children": []
+        },
+        {
+          "title": ["依赖与需要的支持", "Dependencies and support needed"],
+          "children": []
+        }
+      ],
+      "notes": [
+        "每项行动指定一名负责人，并约定完成的具体含义。",
+        "Assign one owner to each action and agree on what completion means."
+      ]
+    },
+    {
+      "title": ["6 · 验证与复盘", "6 · Validate and review"],
+      "children": [
+        {
+          "title": ["实验假设与判断阈值", "Experiment hypothesis and decision threshold"],
+          "children": []
+        },
+        {
+          "title": [
+            "收集观察，区分事实和解释",
+            "Collect observations; separate facts from interpretations"
+          ],
+          "children": []
+        },
+        {
+          "title": ["决定：继续、调整或停止", "Decide: continue, adapt or stop"],
+          "children": []
+        },
+        {
+          "title": ["复盘日期：待安排", "Review date: to schedule"],
+          "children": []
+        },
+        {
+          "title": ["下次保留什么、改变什么？", "What should we keep or change next time?"],
+          "children": []
+        }
+      ],
+      "notes": [
+        "在实验开始前约定判断标准。复盘时记录结果及下一轮问题。",
+        "Agree on criteria before the experiment. At review, record the outcome and the next question."
+      ]
+    }
+  ]
+}

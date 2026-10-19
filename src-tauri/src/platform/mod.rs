@@ -10,5 +10,5 @@ pub use bootstrap::run;
 pub(crate) use plugins::{restore_window_state, save_window_state};
 
 pub async fn finish_shutdown(app: &tauri::AppHandle) -> Result<(), String> {
-    initialization::shutdown(app).await
+  initialization::shutdown(app).await
 }

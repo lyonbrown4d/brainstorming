@@ -1,3 +1,6 @@
+import { builtinArtCatalogSchema, parseBuiltinArtAsset } from '@shared/builtinArt'
+import { contentTemplateSchema, templateCatalogSchema, templateIdSchema } from '@shared/templates'
+import { imageExportProgressSchema, type ImageExportProgress } from '@shared/exportImages'
 import type { DesktopAPI, DroppedFilesResult, MenuAction } from '@shared/contracts'
 import type { AppLanguage } from '@shared/language'
 import type { DesktopPlatform, WindowState } from '@shared/window'
@@ -51,6 +54,7 @@ export const createNativeAPI = async (
     }
   }
   const events = [
+    'export-progress',
     'open-file',
     'menu-action',
     'system-theme',
@@ -117,6 +121,18 @@ export const createNativeAPI = async (
           closeWindow: () => windowAction('close'),
         }
       : {}),
+    listBuiltinArt: async () => builtinArtCatalogSchema.parse(await request('listBuiltinArt')),
+    getBuiltinArt: async (id) => parseBuiltinArtAsset(await request('getBuiltinArt', { id })),
+    listTemplates: async () => templateCatalogSchema.parse(await request('listTemplates')),
+    getTemplate: async (id) =>
+      contentTemplateSchema.parse(await request('getTemplate', { id: templateIdSchema.parse(id) })),
+    exportImage: (requestValue) => request('exportImage', { request: requestValue }),
+    onExportProgress: (callback) =>
+      on(
+        'export-progress',
+        callback,
+        (value): value is ImageExportProgress => imageExportProgressSchema.safeParse(value).success,
+      ),
     syncContentIndex: (input) => request('syncContentIndex', { input }),
     searchContent: (input) => request('searchContent', { input }),
     platform: initial.platform,
@@ -138,6 +154,9 @@ export const createNativeAPI = async (
     openDocument: () => opened('openDocument'),
     openRecent: (path) => opened('openRecent', { path }),
     getRecentFiles: () => request('getRecentFiles'),
+    getDocumentPreviewRevision: (documentId, contents) =>
+      request('getDocumentPreviewRevision', { documentId, contents }),
+    writeDocumentPreviews: (input) => request('writeDocumentPreviews', { ...input }),
     releaseDocument: (path) => request('releaseDocument', { path }),
     saveDocument: (requestValue) => request('saveDocument', { request: requestValue }),
     selectAsset: (kind) => request('selectAsset', { kind }),

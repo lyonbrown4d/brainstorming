@@ -20,3 +20,6 @@ src-tauri/gen/
 src-tauri/**/*.rs
 src-tauri/Cargo.lock
 dist/
+
+# Local design-skill runtime cache.
+.impeccable/hook.cache.json

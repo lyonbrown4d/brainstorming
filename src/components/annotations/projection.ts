@@ -1,5 +1,6 @@
 import { MarkerType, type Edge } from '@xyflow/react'
 import type { MindMapDocument } from '@core'
+import { topicAppearance } from '@shared/appearance'
 import type { LayoutNode } from '@layout'
 
 export interface GroupBounds {
@@ -30,7 +31,7 @@ export const relationEdges = (
 ): Edge[] => {
   return (document.relations ?? []).flatMap((relation) => {
     if (!visibleIds.has(relation.from) || !visibleIds.has(relation.to)) return []
-    const color = relation.color ?? '#8b79d9'
+    const color = relation.color ?? topicAppearance(document, relation.from).stroke
     const arrow = { type: MarkerType.ArrowClosed, color, width: 16, height: 16 }
     return [
       {

@@ -1,4 +1,4 @@
-import { PenLine, Shapes } from 'lucide-react'
+import { TopicShapeVisual } from '@renderer/components/TopicShapeVisual'
 import type { SheetVisualStyle } from '@core'
 import { useMessages } from '@renderer/i18n/useMessages'
 import { ToggleGroup, ToggleGroupItem } from '@renderer/components/ui/toggle-group'
@@ -29,14 +29,25 @@ export const SheetStyleControl = ({
           if (next === 'normal' || next === 'sketch') onChange(next)
         }}
       >
-        <ToggleGroupItem value="normal" className="flex-1 gap-2 text-xs">
-          <Shapes className="size-3.5" />
-          {translate('sheetStyleNormal')}
-        </ToggleGroupItem>
-        <ToggleGroupItem value="sketch" className="flex-1 gap-2 text-xs">
-          <PenLine className="size-3.5" />
-          {translate('sheetStyleSketch')}
-        </ToggleGroupItem>
+        {(['normal', 'sketch'] as const).map((style) => (
+          <ToggleGroupItem
+            key={style}
+            value={style}
+            className="h-16 flex-1 flex-col gap-1.5 py-2 text-xs"
+          >
+            <TopicShapeVisual
+              shape="rounded"
+              visualStyle={style}
+              seedKey="sheet-style-preview"
+              width={58}
+              height={24}
+              fill="var(--color-muted)"
+              stroke="currentColor"
+              className="h-6 w-14"
+            />
+            {translate(style === 'normal' ? 'sheetStyleNormal' : 'sheetStyleSketch')}
+          </ToggleGroupItem>
+        ))}
       </ToggleGroup>
     </div>
   )

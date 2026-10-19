@@ -12,35 +12,35 @@ const PARAMETERS: &str = "autorot;sequential;fail-on=warning;preview=1600x1600-i
 
 #[derive(Clone, Hash, PartialEq, Eq)]
 struct Key {
-    original_sha256: String,
-    pipeline_version: u32,
-    parameters: &'static str,
+  original_sha256: String,
+  pipeline_version: u32,
+  parameters: &'static str,
 }
 impl Key {
-    fn new(object_id: &str) -> Self {
-        Self {
-            original_sha256: object_id.into(),
-            pipeline_version: PIPELINE_VERSION,
-            parameters: PARAMETERS,
-        }
+  fn new(object_id: &str) -> Self {
+    Self {
+      original_sha256: object_id.into(),
+      pipeline_version: PIPELINE_VERSION,
+      parameters: PARAMETERS,
     }
+  }
 }
 pub(super) struct DerivativeCache(Cache<Key, Value>);
 impl Default for DerivativeCache {
-    fn default() -> Self {
-        Self(
-            Cache::builder()
-                .max_capacity(CAPACITY)
-                .time_to_live(TTL)
-                .build(),
-        )
-    }
+  fn default() -> Self {
+    Self(
+      Cache::builder()
+        .max_capacity(CAPACITY)
+        .time_to_live(TTL)
+        .build(),
+    )
+  }
 }
 impl DerivativeCache {
-    pub async fn get(&self, object_id: &str) -> Option<Value> {
-        self.0.get(&Key::new(object_id)).await
-    }
-    pub async fn insert(&self, object_id: &str, storage: Value) {
-        self.0.insert(Key::new(object_id), storage).await;
-    }
+  pub async fn get(&self, object_id: &str) -> Option<Value> {
+    self.0.get(&Key::new(object_id)).await
+  }
+  pub async fn insert(&self, object_id: &str, storage: Value) {
+    self.0.insert(Key::new(object_id), storage).await;
+  }
 }

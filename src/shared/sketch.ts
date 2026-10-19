@@ -1,5 +1,6 @@
 import rough from 'roughjs'
 import type { SheetVisualStyle, TopicShape } from '@core'
+import type { Options } from 'roughjs/bin/core'
 import { topicShapePath } from '@shared/topic-shapes'
 
 const generator = rough.generator()
@@ -16,7 +17,7 @@ const seedFor = (identity: string): number => {
 }
 
 /** A bounded geometry-only LRU is shared by live SVG and all raster/vector exports. */
-export const sketchPath = (path: string, identity: string): string => {
+const cachedGeometry = (path: string, identity: string, options: Options): string => {
   if (!path) return path
   const key = `${identity}:${path}`
   const cached = outlines.get(key)
@@ -27,9 +28,7 @@ export const sketchPath = (path: string, identity: string): string => {
   }
   const drawable = generator.path(path, {
     seed: seedFor(identity),
-    roughness: 0.8,
-    bowing: 0.6,
-    maxRandomnessOffset: 1.4,
+    ...options,
     preserveVertices: true,
     fixedDecimalPlaceDigits: 2,
   })
@@ -50,6 +49,32 @@ export const sketchPath = (path: string, identity: string): string => {
   }
   return result
 }
+
+/** Branches use one continuous pen stroke; silhouettes keep a light retraced edge. */
+export const sketchPath = (path: string, identity: string): string => {
+  const branch = identity.startsWith('edge:') || identity.startsWith('decoration:')
+  return cachedGeometry(path, identity, {
+    roughness: branch ? 0.65 : 0.85,
+    bowing: branch ? 0.9 : 0.55,
+    maxRandomnessOffset: branch ? 1.1 : 1.5,
+    disableMultiStroke: branch,
+  })
+}
+
+/** Sparse pencil shading stays quiet behind Chinese text and uses the same seed in exports. */
+export const sketchFillPath = (path: string, identity: string): string =>
+  cachedGeometry(path, `fill:${identity}`, {
+    stroke: 'none',
+    fill: '#000',
+    fillStyle: 'hachure',
+    hachureAngle: -38,
+    hachureGap: 6,
+    fillWeight: 0.8,
+    roughness: 0.7,
+    bowing: 0.6,
+    maxRandomnessOffset: 1,
+    disableMultiStrokeFill: true,
+  })
 
 export const visualPath = (
   path: string,

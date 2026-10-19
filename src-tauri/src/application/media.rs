@@ -1,10 +1,11 @@
 use super::{core::CoreServices, platform::RuntimeConfig, service_error, session::SessionService};
 use crate::{
-    document::DocumentStore,
-    media::MediaState,
-    runtime::{AppState, ai::AIService, mcp::MCPService, notifications::NotificationService},
-    search::SearchService,
-    storage::{MetadataStore, ResourceVault},
+  document::DocumentStore,
+  export_image::ImageExportService,
+  media::MediaState,
+  runtime::{AppState, ai::AIService, mcp::MCPService, notifications::NotificationService},
+  search::SearchService,
+  storage::{MetadataStore, ResourceVault},
 };
 use fluxdi::{Error, Injector, Module, Shared, module::ModuleLifecycleFuture, static_module};
 use std::sync::Weak;
@@ -21,6 +22,7 @@ static_module! {
             ai: AIService;
             mcp: MCPService;
             notifications: NotificationService;
+            image_exports: ImageExportService;
         };
         external core_services: Weak<CoreServices>;
         #[scope(root)]
@@ -30,30 +32,30 @@ static_module! {
     }
 }
 async fn media(
-    config: Shared<RuntimeConfig>,
-    state: Shared<AppState>,
+  config: Shared<RuntimeConfig>,
+  state: Shared<AppState>,
 ) -> Result<Shared<MediaState>, Error> {
-    let app = config
-        .app
-        .clone()
-        .ok_or_else(|| service_error("原生窗口尚未创建"))?;
-    MediaState::new(app, state)
-        .await
-        .map(Shared::new)
-        .map_err(service_error)
+  let app = config
+    .app
+    .clone()
+    .ok_or_else(|| service_error("原生窗口尚未创建"))?;
+  MediaState::new(app, state)
+    .await
+    .map(Shared::new)
+    .map_err(service_error)
 }
 
 pub(super) struct MediaModule(pub BackendServices);
 impl Module for MediaModule {
-    fn on_start(&self, _: Shared<Injector>) -> ModuleLifecycleFuture {
-        let graph = self.0.clone();
-        Box::pin(async move { graph.media().await.map(|_| ()) })
-    }
-    fn on_stop(&self, _: Shared<Injector>) -> ModuleLifecycleFuture {
-        let graph = self.0.clone();
-        Box::pin(async move {
-            graph.media().await?.shutdown().await;
-            Ok(())
-        })
-    }
+  fn on_start(&self, _: Shared<Injector>) -> ModuleLifecycleFuture {
+    let graph = self.0.clone();
+    Box::pin(async move { graph.media().await.map(|_| ()) })
+  }
+  fn on_stop(&self, _: Shared<Injector>) -> ModuleLifecycleFuture {
+    let graph = self.0.clone();
+    Box::pin(async move {
+      graph.media().await?.shutdown().await;
+      Ok(())
+    })
+  }
 }

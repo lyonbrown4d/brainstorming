@@ -1,6 +1,6 @@
 import { SettingsNotifications } from '@renderer/components/settings/SettingsNotifications'
 import { useId, useState } from 'react'
-import { LoaderCircle } from 'lucide-react'
+import { LoadingIndicator } from '@renderer/components/feedback/LoadingIndicator'
 import { useTheme } from 'next-themes'
 import { useTranslation } from 'react-i18next'
 import { changeLanguage } from '@renderer/i18n'
@@ -54,12 +54,7 @@ export const SettingsGeneral = () => {
             aria-busy={pending}
             className="w-40 shrink-0 text-xs"
           >
-            {pending && (
-              <LoaderCircle
-                aria-hidden
-                className="size-3.5 animate-spin motion-reduce:animate-none"
-              />
-            )}
+            {pending && <LoadingIndicator className="size-3.5" />}
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

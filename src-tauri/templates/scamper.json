@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "id": "scamper",
+  "title": ["SCAMPER 创意改造", "SCAMPER ideation"],
+  "description": [
+    "用七种变换方式改进已有产品或流程",
+    "Improve a product or process through seven lenses"
+  ],
+  "group": "ideate",
+  "icon": "wand-sparkles",
+  "layout": "map",
+  "topics": [
+    {
+      "title": ["替代 Substitute", "Substitute"],
+      "children": [
+        {
+          "title": [
+            "能替换哪种材料、角色或渠道？",
+            "Which material, role or channel could change?"
+          ],
+          "children": []
+        },
+        {
+          "title": [
+            "示例：用自助引导替代人工讲解",
+            "Example: replace a live explanation with self-guided onboarding"
+          ],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["组合 Combine", "Combine"],
+      "children": [
+        {
+          "title": ["哪些步骤可以一起完成？", "Which steps could happen together?"],
+          "children": []
+        },
+        {
+          "title": ["结合另一个产品的优势", "Combine strengths from another product"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["适应 Adapt", "Adapt"],
+      "children": [
+        {
+          "title": [
+            "其他领域如何解决类似问题？",
+            "How does another field solve a similar problem?"
+          ],
+          "children": []
+        },
+        {
+          "title": ["迁移时需要改变什么？", "What needs to change when adapting it?"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["修改 Modify", "Modify"],
+      "children": [
+        {
+          "title": ["放大最有价值的部分", "Amplify the most valuable part"],
+          "children": []
+        },
+        {
+          "title": ["缩小规模或改变频率", "Reduce scale or change frequency"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["另作他用 Put to another use", "Put to another use"],
+      "children": [
+        {
+          "title": ["谁还可能需要它？", "Who else might need this?"],
+          "children": []
+        },
+        {
+          "title": ["在不同情境下使用", "Use it in a different setting"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["去除 Eliminate", "Eliminate"],
+      "children": [
+        {
+          "title": ["去掉一个步骤会怎样？", "What happens if one step disappears?"],
+          "children": []
+        },
+        {
+          "title": ["哪些内容没有带来价值？", "Which parts add no value?"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["逆转 Rearrange", "Reverse or rearrange"],
+      "children": [
+        {
+          "title": ["把顺序反过来", "Reverse the sequence"],
+          "children": []
+        },
+        {
+          "title": ["交换提供者与使用者的角色", "Swap the provider and user roles"],
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": ["选一个改造做实验", "Test one transformation"],
+      "children": [
+        {
+          "title": ["写下预期改善与代价", "Record the expected improvement and cost"],
+          "children": []
+        },
+        {
+          "title": ["负责人、试验时间与观察结果", "Owner, test date and observations"],
+          "children": []
+        }
+      ],
+      "notes": [
+        "先生成，再筛选。使用原型检验改造是否有效。",
+        "Generate before filtering. Use a prototype to test whether the transformation helps."
+      ]
+    }
+  ]
+}

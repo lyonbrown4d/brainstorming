@@ -1,0 +1,4 @@
+[Thumbnailer Entry]
+TryExec=brainstorming-thumbnailer
+Exec=brainstorming-thumbnailer %i %o
+MimeType=application/vnd.brainstorming;

@@ -1,4 +1,5 @@
 import { FileText } from 'lucide-react'
+import { LoadingState } from '@renderer/components/feedback/LoadingState'
 import { CommandGroup, CommandItem } from '@renderer/components/ui/command'
 import { useMessages } from '@renderer/i18n/useMessages'
 import type { ContentSearchResult } from '@shared/contentSearch'
@@ -26,15 +27,13 @@ export const CommandContentResults = ({
   if (!query.trim() || pending || error) {
     return (
       <CommandGroup heading={translate('commandContentGroup')} forceMount>
-        <p className="px-2 py-3 text-xs leading-relaxed text-muted-foreground" role="status">
-          {translate(
-            !query.trim()
-              ? 'commandContentSearchHint'
-              : pending
-                ? 'commandContentSearching'
-                : 'commandContentError',
-          )}
-        </p>
+        {query.trim() && pending ? (
+          <LoadingState className="px-2 py-3" label={translate('commandContentSearching')} />
+        ) : (
+          <p className="px-2 py-3 text-xs leading-relaxed text-muted-foreground" role="status">
+            {translate(!query.trim() ? 'commandContentSearchHint' : 'commandContentError')}
+          </p>
+        )}
       </CommandGroup>
     )
   }

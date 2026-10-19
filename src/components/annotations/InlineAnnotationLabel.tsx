@@ -1,15 +1,13 @@
 import { useMessages } from '@renderer/i18n/useMessages'
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useEditor } from '@renderer/state/editor'
 import {
   selectAnnotation,
   useAnnotationInteraction,
   type AnnotationKind,
 } from '@renderer/state/annotationInteraction'
-import { isCompositionKey } from '@renderer/state/keyboard'
-import { Input } from '@renderer/components/ui/input'
-import { Textarea } from '@renderer/components/ui/textarea'
+import { AnnotationLabelInput } from '@renderer/components/annotations/AnnotationLabelInput'
 import { runAnnotationCommand } from '@renderer/components/annotations/commands'
 
 export const InlineAnnotationLabel = ({
@@ -40,21 +38,13 @@ export const InlineAnnotationLabel = ({
       state.editing,
   )
   const finished = useRef(false)
-  const input = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
-  const attachInput = useCallback((element: HTMLInputElement | HTMLTextAreaElement | null) => {
-    input.current = element
-    if (element) finished.current = false
-  }, [])
   useEffect(() => {
-    if (editing) {
-      input.current?.focus()
-      input.current?.select()
-    }
+    if (editing) finished.current = false
   }, [editing])
   const start = (): void => {
     selectAnnotation(kind, id, true)
   }
-  const commit = (): void => {
+  const commit = (draft: string): void => {
     const state = useEditor.getState()
     const selection = useAnnotationInteraction.getState()
     if (
@@ -66,7 +56,6 @@ export const InlineAnnotationLabel = ({
     )
       return
     finished.current = true
-    const draft = input.current?.value ?? text
     const document = state.history.document
     let success = false
     if (kind === 'relation') {
@@ -92,39 +81,14 @@ export const InlineAnnotationLabel = ({
     else finished.current = false
   }
   if (editing) {
-    const Control = kind === 'callout' ? Textarea : Input
     return (
-      <Control
-        ref={attachInput}
-        className="nodrag nopan nowheel pointer-events-auto min-h-8 w-48 bg-background text-xs"
-        aria-label={
-          kind === 'relation'
-            ? translate('editRelationshipLabel')
-            : kind === 'group'
-              ? translate('editGroupLabel')
-              : translate('editCalloutText')
-        }
-        defaultValue={text}
-        maxLength={10000}
-        onPointerDown={(event) => {
-          event.stopPropagation()
-        }}
-        onBlur={commit}
-        onKeyDown={(event) => {
-          event.stopPropagation()
-          if (isCompositionKey(event.nativeEvent)) return
-          if (event.key === 'Escape') {
-            event.preventDefault()
-            event.stopPropagation()
-            finished.current = true
-            useAnnotationInteraction.setState({ editing: false })
-            return
-          }
-          if (event.key === 'Enter' && (kind !== 'callout' || event.ctrlKey || event.metaKey)) {
-            event.preventDefault()
-            event.stopPropagation()
-            commit()
-          }
+      <AnnotationLabelInput
+        kind={kind}
+        text={text}
+        onCommit={commit}
+        onCancel={() => {
+          finished.current = true
+          useAnnotationInteraction.setState({ editing: false })
         }}
       />
     )

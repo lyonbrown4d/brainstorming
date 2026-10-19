@@ -1,3 +1,4 @@
+import { TASK_PRIORITIES } from '@core'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { Popover } from 'radix-ui'
@@ -99,9 +100,10 @@ export const TopicFilter = () => {
             value={filters.priority}
             options={[
               { value: 'all', label: translate('allPriorities') },
-              { value: '1', label: translate('highPriority') },
-              { value: '2', label: translate('mediumPriority') },
-              { value: '3', label: translate('lowPriority') },
+              ...TASK_PRIORITIES.map((priority) => ({
+                value: `${priority}` as const,
+                label: translate('priorityValue0Label755', { value0: priority }),
+              })),
             ]}
             onChange={(priority) => {
               useTopicFilters.setState({ priority })

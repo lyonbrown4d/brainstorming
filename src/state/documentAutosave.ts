@@ -1,4 +1,5 @@
 import { timer, type Subscription } from 'rxjs'
+import { queueDocumentPreviews, cancelDocumentPreviews } from '@renderer/lib/documentPreviews'
 import { translate } from '@renderer/i18n'
 import { requireDesktopAPI } from '@renderer/lib/desktop'
 import { createRecoveryWriter } from '@renderer/lib/recoveryWriter'
@@ -26,6 +27,7 @@ export const startDocumentAutosave = (): (() => void) => {
   let alive = true
   const entries = new Map<string, AutosaveEntry>()
   const disposeEntry = (entry: AutosaveEntry): void => {
+    cancelDocumentPreviews(entry.target.workbookId)
     entry.writer.dispose()
     entry.retry?.unsubscribe()
   }
@@ -62,6 +64,7 @@ export const startDocumentAutosave = (): (() => void) => {
               baseline: contents,
               ...(entry.error !== null && current?.error === entry.error ? { error: null } : {}),
             })
+            queueDocumentPreviews(target, contents, state.activeSheetId)
             entry.error = null
           }),
         (error) => {

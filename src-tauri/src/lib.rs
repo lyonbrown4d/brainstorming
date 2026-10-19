@@ -1,6 +1,9 @@
+pub mod builtin_art;
 pub mod document;
+pub mod export_image;
 pub mod search;
 pub mod storage;
+pub mod templates;
 pub mod transport;
 
 #[cfg(feature = "native-ui")]
@@ -15,7 +18,7 @@ mod runtime;
 #[cfg(feature = "native-ui")]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    platform::run();
+  platform::run();
 }
 
 #[cfg(all(test, feature = "native-ui"))]

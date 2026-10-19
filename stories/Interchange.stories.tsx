@@ -12,6 +12,7 @@ const meta = {
     workbook,
     currentSheetId: workbook.sheets[0]?.id ?? '',
     onExport: (request): Promise<string | null> => Promise.resolve(request.suggestedName),
+    onExportImage: (request): Promise<string | null> => Promise.resolve(request.suggestedName),
   },
   parameters: { layout: 'centered' },
 } satisfies Meta<typeof ExportDialog>
@@ -25,5 +26,6 @@ export const SaveFailure: Story = {
   args: {
     defaultOpen: true,
     onExport: () => Promise.reject(new Error('测试：无法写入目标文件，请选择其他位置')),
+    onExportImage: () => Promise.reject(new Error('测试：无法写入目标文件，请选择其他位置')),
   },
 }
