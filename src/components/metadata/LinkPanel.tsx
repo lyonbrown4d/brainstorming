@@ -1,3 +1,4 @@
+import { useTopicPropertyFocusTarget } from '@renderer/hooks/useTopicPropertyFocus'
 import { LinkPreviewAction } from '@renderer/components/metadata/LinkPreviewAction'
 import { useMessages } from '@renderer/i18n/useMessages'
 import { translate } from '@renderer/i18n'
@@ -47,6 +48,7 @@ export const openTopicLink = (link: TopicLink): void => {
   current.select(link.topicId)
 }
 export const LinkPanel = ({ topicId, metadata }: { topicId: string; metadata: TopicMetadata }) => {
+  const focusRef = useTopicPropertyFocusTarget(topicId, 'link')
   const { translate } = useMessages()
 
   const workbook = useEditor((state) => state.workbook)
@@ -63,7 +65,7 @@ export const LinkPanel = ({ topicId, metadata }: { topicId: string; metadata: To
     workbook.sheets.find((sheet) => sheet.id === sheetId)?.document.topics ?? {},
   ).map((topic) => ({ value: topic.id, label: topic.title || translate('untitledTopic') }))
   return (
-    <section className="space-y-3 border-t border-border py-4">
+    <section ref={focusRef} className="space-y-3 border-t border-border py-4">
       <h3 className="flex items-center gap-2 text-sm font-medium">
         <Link2 className="size-4" />
         {translate('hyperlink')}

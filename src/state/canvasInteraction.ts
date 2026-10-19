@@ -38,7 +38,9 @@ export const updateCanvasDrag = (token: symbol, drop: CanvasDrop | undefined): v
     previous?.targetId === drop?.targetId &&
     previous?.parentId === drop?.parentId &&
     previous?.index === drop?.index &&
-    previous?.side === drop?.side
+    previous?.side === drop?.side &&
+    previous?.indicator?.axis === drop?.indicator?.axis &&
+    previous?.indicator?.edge === drop?.indicator?.edge
   )
     return
   useCanvasInteraction.setState({ drag: { ...drag, drop: drop ?? null } })
@@ -49,21 +51,24 @@ export const clearCanvasDrag = (token: symbol): void => {
     useCanvasInteraction.setState({ drag: null })
 }
 
-export const canvasDragMessage = (drag: CanvasDragInteraction): string => {
+export const canvasDragMessage = (
+  drag: CanvasDragInteraction,
+  t: typeof translate = translate,
+): string => {
   const { document, roots, drop, drawingCount } = drag
-  if (!drop && drawingCount)
-    return translate('inkMoveSelection', { count: roots.length + drawingCount })
+  if (!drop && drawingCount) return t('inkMoveSelection', { count: roots.length + drawingCount })
   if (!drop)
     return roots.every((id) => document.floatingIds?.includes(id))
-      ? translate('moveValue0FloatingTopics', { value0: roots.length })
-      : translate('dragToATopicToMoveEsc')
+      ? t('moveValue0FloatingTopics', { value0: roots.length })
+      : t('dragToATopicToMoveEsc')
   const title = document.topics[drop.targetId]?.title ?? ''
-  if (drop.index === undefined) return translate('moveIntoValue0', { value0: title })
+  if (drop.index === undefined) return t('moveIntoValue0', { value0: title })
   // CanvasDrop indexes the remaining children after all dragged roots are removed.
   const remaining = document.topics[drop.parentId]?.children.filter((id) => !roots.includes(id))
   const targetIndex = remaining?.indexOf(drop.targetId) ?? -1
-  return translate('insertValue1Value0', {
+  return t('insertValue1Value0', {
     value0: title,
-    value1: drop.index > targetIndex ? translate('after') : translate('before'),
+    value1: drop.index > targetIndex ? t('after') : t('before'),
+    parent: document.topics[drop.parentId]?.title ?? '',
   })
 }

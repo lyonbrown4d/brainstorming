@@ -1,3 +1,4 @@
+import { indentOutlineTopic } from '@renderer/state/structuralEditing'
 import { useEffect, useRef } from 'react'
 import {
   $createParagraphNode,
@@ -18,7 +19,7 @@ import { usePresentation } from '@renderer/state/presentation'
 import { useEditor } from '@renderer/state/editor'
 import type { EditingSurface } from '@renderer/state/editorTypes'
 import { handleTopicNavigation, handleTopicShortcut } from '@renderer/state/editingShortcuts'
-import { isCompositionKey } from '@renderer/state/keyboard'
+import { isCompositionKey, isPrimaryModifier } from '@renderer/state/keyboard'
 
 export const TopicEditorPlugin = ({
   id,
@@ -127,13 +128,30 @@ export const TopicEditorPlugin = ({
             }
           }
           const state = useEditor.getState()
-          const modifier = event.metaKey || event.ctrlKey
+          const modifier = isPrimaryModifier(event)
           const key = event.key.toLowerCase()
-          if (modifier && ['s', 'o', 'n'].includes(key)) {
+          if (
+            modifier &&
+            !event.altKey &&
+            ['s', 'o', 'n'].includes(key) &&
+            (key === 's' || !event.shiftKey)
+          ) {
             commit()
             return false
           }
-          if (modifier && key === 'f') {
+          if (modifier && !event.shiftKey && !event.altKey && key === 'f') {
+            commit()
+            if (!useEditor.getState().editingId) return handleTopicShortcut(event)
+            event.preventDefault()
+            return true
+          }
+          const mapSurface = surface === 'canvas' || surface === 'outline'
+          if (
+            mapSurface &&
+            modifier &&
+            !event.altKey &&
+            (key === 'k' || (event.shiftKey && ['n', 'r', 'b', 'i'].includes(key)))
+          ) {
             commit()
             if (!useEditor.getState().editingId) return handleTopicShortcut(event)
             event.preventDefault()
@@ -142,10 +160,25 @@ export const TopicEditorPlugin = ({
           if (event.key === 'Escape') {
             event.preventDefault()
             if (ownsDraft()) state.cancelEdit()
+            else if (mapSurface) handleTopicNavigation(event, id)
             return true
           }
           if (surface === 'notes') return false
-          const mapSurface = surface === 'canvas' || surface === 'outline'
+          if (
+            surface === 'outline' &&
+            event.key === 'Tab' &&
+            !event.metaKey &&
+            !event.ctrlKey &&
+            !event.altKey
+          ) {
+            event.preventDefault()
+            commit()
+            if (!useEditor.getState().editingId) {
+              indentOutlineTopic(event.shiftKey ? -1 : 1)
+              state.startEdit(id, undefined, 'outline')
+            }
+            return true
+          }
           if (
             mapSurface &&
             (!ownsDraft() ||
@@ -153,24 +186,32 @@ export const TopicEditorPlugin = ({
           ) {
             if (handleTopicShortcut(event)) return true
             if (!ownsDraft() && handleTopicNavigation(event, id)) return true
-            if (!ownsDraft() && modifier && key === 'z') {
+            if (
+              !ownsDraft() &&
+              modifier &&
+              !event.altKey &&
+              (key === 'z' || (key === 'y' && !event.shiftKey))
+            ) {
               event.preventDefault()
-              if (event.shiftKey) state.redo()
+              if (event.shiftKey || key === 'y') state.redo()
               else state.undo()
               return true
             }
           }
+          // Unhandled modifier chords belong to the app/browser, never to topic creation.
+          if (event.metaKey || event.ctrlKey || event.altKey) return false
+          if (event.key === 'Tab' && event.shiftKey) return false
           if (event.key === 'Enter' && event.shiftKey) return false
           if (event.key === 'Enter' || event.key === 'Tab') {
             if (surface === 'inspector' && event.key === 'Tab') return false
             event.preventDefault()
             commit()
-            if (event.key === 'Enter') {
-              // Finish editing first. A subsequent Return creates a sibling.
-              if (surface !== 'canvas') editor.getRootElement()?.blur()
+            if (useEditor.getState().editingId) return true
+            if (!mapSurface && event.key === 'Enter') {
+              editor.getRootElement()?.blur()
               return true
             }
-            state.add('child')
+            state.add(event.key === 'Tab' ? 'child' : 'sibling')
             if (surface === 'outline') {
               const next = useEditor.getState().editingId
               if (next) state.startEdit(next, undefined, 'outline')

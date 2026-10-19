@@ -19,6 +19,7 @@ export interface CanvasDrop {
   readonly parentId: string
   readonly index?: number
   readonly side: Side
+  readonly indicator?: { readonly axis: 'x' | 'y'; readonly edge: 'before' | 'after' }
 }
 export const nodeCenter = (
   node: Pick<TopicFlowNode, 'position' | 'style' | 'width' | 'height'>,
@@ -70,7 +71,7 @@ export const findTopicDrop = (
     const center = centerOf(node)
     const dx = Math.abs(point.x - center.x)
     const dy = Math.abs(point.y - center.y)
-    if (dx > node.width / 2 + 32 || dy > node.height / 2 + 32) continue
+    if (dx > node.width / 2 + 12 || dy > node.height / 2 + 12) continue
     const next = Math.hypot(dx, dy)
     if (next < distance) {
       closest = node
@@ -103,6 +104,7 @@ export const findTopicDrop = (
         parentId,
         index: remaining.indexOf(closest.id) + (offset > 0 ? 1 : 0),
         side,
+        indicator: { axis: horizontal ? 'x' : 'y', edge: offset > 0 ? 'after' : 'before' },
       }
     }
   }
@@ -121,15 +123,26 @@ export const canvasDropCommand = (
   delta: Point,
   drop: CanvasDrop | undefined,
 ): Command | undefined => {
-  if (drop)
-    return {
+  if (drop) {
+    const resetOffsets: Command[] = roots.flatMap((topicId) => {
+      const style = document.topics[topicId]?.style
+      if (!style?.offsetX && !style?.offsetY) return []
+      const appearance = { ...style }
+      delete appearance.offsetX
+      delete appearance.offsetY
+      return [{ type: 'setTopicStyle', topicId, style: appearance }]
+    })
+    const move: Command = {
       type: 'moveTopics',
       topicIds: roots,
       parentId: drop.parentId,
       side: drop.side,
       ...(drop.index === undefined ? {} : { index: drop.index }),
     }
-  const commands: Command[] = roots.flatMap((topicId) => {
+    return resetOffsets.length ? { type: 'batch', commands: [move, ...resetOffsets] } : move
+  }
+  if (!delta.x && !delta.y) return undefined
+  const commands: Command[] = roots.flatMap<Command>((topicId) => {
     const position = origins.get(topicId)
     return document.floatingIds?.includes(topicId) && position
       ? [
@@ -144,7 +157,19 @@ export const canvasDropCommand = (
                 position.y - (document.topics[topicId]?.style?.offsetY ?? 0)) + delta.y,
           },
         ]
-      : []
+      : position
+        ? [
+            {
+              type: 'setTopicStyle' as const,
+              topicId,
+              style: {
+                ...document.topics[topicId]?.style,
+                offsetX: (document.topics[topicId]?.style?.offsetX ?? 0) + delta.x,
+                offsetY: (document.topics[topicId]?.style?.offsetY ?? 0) + delta.y,
+              },
+            },
+          ]
+        : []
   })
   return commands.length ? { type: 'batch', commands } : undefined
 }

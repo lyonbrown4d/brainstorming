@@ -1,6 +1,6 @@
 import { useEventListener } from 'ahooks'
 import { useLocation } from 'react-router'
-import { isCompositionKey } from '@renderer/state/keyboard'
+import { isCompositionKey, isPrimaryModifier } from '@renderer/state/keyboard'
 import {
   closeCommandPalette,
   openCommandPalette,
@@ -18,9 +18,9 @@ export const useCommandPalette = (): void => {
         isCompositionKey(event) ||
         event.repeat ||
         event.altKey ||
-        event.shiftKey ||
-        !(event.metaKey || event.ctrlKey) ||
-        event.key.toLowerCase() !== 'k'
+        !event.shiftKey ||
+        !isPrimaryModifier(event) ||
+        event.key.toLowerCase() !== 'p'
       )
         return
       if (useCommandPaletteState.getState().open) {

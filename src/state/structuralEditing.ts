@@ -59,3 +59,26 @@ export const reorderSelectedTopic = (direction: -1 | 1): void => {
     index: parent.children.indexOf(neighbor),
   })
 }
+
+/** Outliner Tab changes hierarchy; canvas Tab creates a new child topic. */
+export const indentOutlineTopic = (direction: 1 | -1): void => {
+  const selection = structuralSelection()
+  if (!selection) return
+  const { state, document, topic, parent } = selection
+  const index = parent.children.indexOf(topic.id)
+  if (direction === 1) {
+    const previous = parent.children[index - 1]
+    if (previous && !document.floatingIds?.includes(previous))
+      state.command({ type: 'moveTopics', topicIds: [topic.id], parentId: previous })
+    return
+  }
+  const grandparentId = getParentId(document, parent.id)
+  const grandparent = grandparentId ? document.topics[grandparentId] : undefined
+  if (grandparent)
+    state.command({
+      type: 'moveTopics',
+      topicIds: [topic.id],
+      parentId: grandparent.id,
+      index: grandparent.children.indexOf(parent.id) + 1,
+    })
+}

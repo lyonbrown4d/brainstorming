@@ -9,14 +9,14 @@ import { commandPaletteCompositionActive, openCommandPalette } from '@renderer/s
 const PaletteButton = ({ pathname = '' }: { pathname?: string }) => {
   const { translate } = useMessages()
   const busy = useEditor((state) => state.busy)
-  const shortcut = requireDesktopAPI().platform === 'macos' ? '⌘K' : 'Ctrl+K'
+  const shortcut = requireDesktopAPI().platform === 'macos' ? '⇧⌘P' : 'Ctrl+Shift+P'
   return (
     <Button
       variant="ghost"
       className="h-8 shrink-0 gap-2 rounded-md px-2 text-xs text-muted-foreground"
       aria-label={translate('commandPaletteTitle')}
       title={`${translate('commandPaletteTitle')} (${shortcut})`}
-      aria-keyshortcuts="Meta+K Control+K"
+      aria-keyshortcuts="Meta+Shift+P Control+Shift+P"
       data-command-trigger
       disabled={busy || pathname === '/settings'}
       onPointerDown={(event) => {

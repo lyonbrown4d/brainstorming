@@ -110,7 +110,7 @@ export const SearchAndKeyboard: Story = {
     await userEvent.keyboard('{Enter}')
     await waitFor(() => expect(useEditor.getState().outlineOpen).toBe(true))
     await expect(page.queryByRole('dialog')).not.toBeInTheDocument()
-    await userEvent.keyboard('{Control>}k{/Control}')
+    await userEvent.keyboard('{Meta>}{Shift>}p{/Shift}{/Meta}')
     await expect(await page.findByRole('dialog', { name: '命令面板' })).toBeVisible()
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(page.queryByRole('dialog')).not.toBeInTheDocument())
@@ -130,7 +130,13 @@ export const CompositionAndInputHistory: Story = {
     await expect(editor).toHaveFocus()
     editor.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: '' }))
     window.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'k', metaKey: true, isComposing: true, bubbles: true }),
+      new KeyboardEvent('keydown', {
+        key: 'p',
+        metaKey: true,
+        shiftKey: true,
+        isComposing: true,
+        bubbles: true,
+      }),
     )
     await expect(page.queryByRole('dialog')).not.toBeInTheDocument()
     await userEvent.click(page.getByRole('button', { name: '命令面板' }))
@@ -173,11 +179,11 @@ export const AvailabilityAndModalGuard: Story = {
     await userEvent.keyboard('{Escape}')
     useEditor.setState({ busy: false })
     usePasswordPrompt.setState({ request: { id: 1, title: '密码' } })
-    await userEvent.keyboard('{Control>}k{/Control}')
+    await userEvent.keyboard('{Meta>}{Shift>}p{/Shift}{/Meta}')
     await expect(page.queryByRole('dialog')).not.toBeInTheDocument()
     usePasswordPrompt.setState({ request: null })
     usePresentation.setState({ playing: true })
-    await userEvent.keyboard('{Control>}k{/Control}')
+    await userEvent.keyboard('{Meta>}{Shift>}p{/Shift}{/Meta}')
     await expect(page.queryByRole('dialog')).not.toBeInTheDocument()
     usePresentation.setState({ playing: false })
   },
@@ -193,7 +199,7 @@ export const SettingsNavigation: Story = {
     await expect(
       await page.findByRole('dialog', { name: '应用设置' }, { timeout: 15_000 }),
     ).toBeVisible()
-    await userEvent.keyboard('{Control>}k{/Control}')
+    await userEvent.keyboard('{Meta>}{Shift>}p{/Shift}{/Meta}')
     await expect(page.getAllByRole('dialog')).toHaveLength(1)
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(page.queryByRole('dialog')).not.toBeInTheDocument())
@@ -242,7 +248,7 @@ export const DraftShortcutFromEditor: Story = {
     await userEvent.clear(editor)
     await userEvent.type(editor, '尚未结束的主题草稿')
     await waitFor(() => expect(useEditor.getState().draft).toBe('尚未结束的主题草稿'))
-    await userEvent.keyboard('{Control>}k{/Control}')
+    await userEvent.keyboard('{Meta>}{Shift>}p{/Shift}{/Meta}')
     await expect(await page.findByRole('dialog', { name: '命令面板' })).toBeVisible()
     await expect(useEditor.getState().history.document.title).toBe('尚未结束的主题草稿')
     await expect(useEditor.getState().editingId).toBeNull()

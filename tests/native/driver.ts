@@ -155,7 +155,7 @@ export const renameRoot = async (title: string): Promise<void> => {
   await expect(editor()).toBeDisplayed()
   await expect(editor()).toBeFocused()
   await fillContentEditable(editor(), title)
-  await browser.keys(Key.Enter)
+  await named('适应画布').click()
   await rootHasText(title)
 }
 export const readDocument = async (name: string, password?: string): Promise<MindMapWorkbook> =>

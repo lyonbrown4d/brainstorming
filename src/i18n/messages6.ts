@@ -95,7 +95,10 @@ export const messages6 = {
   colorSchemeName: ['配色名称', 'Color scheme name'],
   canvasBackground: ['画布背景', 'Canvas background'],
   applyColors: ['应用配色', 'Apply colors'],
-  dragToATopicToMoveEsc: ['拖到主题以移动 · Esc 取消', 'Drag to a topic to move · Esc to cancel'],
+  dragToATopicToMoveEsc: [
+    '松开保留位置 · 移到主题上可调整归属 · Esc 取消',
+    'Release to keep position · Drop on a topic to reparent · Esc to cancel',
+  ],
   after: ['之后', 'After'],
   before: ['之前', 'Before'],
   thisMapHasUnsavedChangesDiscardThemLabel672: [

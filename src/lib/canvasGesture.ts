@@ -45,21 +45,6 @@ export const canvasMoveCommand = (
   const commands: Command[] = []
   const topics = roots.length ? canvasDropCommand(document, roots, origins, delta, drop) : undefined
   if (topics) commands.push(topics)
-  if (!drop && (drawings.length || roots.includes(document.rootId))) {
-    for (const topicId of roots) {
-      if (document.floatingIds?.includes(topicId)) continue
-      const style = document.topics[topicId]?.style
-      commands.push({
-        type: 'setTopicStyle',
-        topicId,
-        style: {
-          ...style,
-          offsetX: (style?.offsetX ?? 0) + delta.x,
-          offsetY: (style?.offsetY ?? 0) + delta.y,
-        },
-      })
-    }
-  }
   for (const stroke of document.drawings ?? []) {
     if (!drawings.includes(stroke.id)) continue
     const bounds = inkGeometry(stroke).bounds

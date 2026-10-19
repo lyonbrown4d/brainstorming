@@ -11,19 +11,27 @@ export const PropertySection = ({
   title,
   children,
   defaultOpen = false,
+  revealKey,
 }: {
   readonly title: string
   readonly children: ReactNode
   readonly defaultOpen?: boolean
+  readonly revealKey?: number | undefined
 }) => {
-  const [open, setOpen] = useState(defaultOpen)
+  const [disclosure, setDisclosure] = useState({
+    open: defaultOpen || Boolean(revealKey),
+    revealKey,
+  })
+  const reveal = Boolean(revealKey && revealKey !== disclosure.revealKey)
+  if (reveal) setDisclosure({ open: true, revealKey })
+  const open = reveal || disclosure.open
   return (
     <Accordion
       type="single"
       collapsible
       value={open ? 'section' : ''}
       onValueChange={(value) => {
-        setOpen(value === 'section')
+        setDisclosure({ open: value === 'section', revealKey })
       }}
       className="border-t border-border/60"
     >

@@ -1,4 +1,28 @@
 export const messages4 = {
+  shortcutCloseMap: ['关闭当前导图', 'Close current map'],
+  shortcutOutlineIndent: ['大纲：缩进 / 减少缩进', 'Outliner: indent / outdent'],
+  shortcutSearch: ['搜索快捷键', 'Search shortcuts'],
+  shortcutNoMatches: ['没有匹配的快捷键', 'No matching shortcuts'],
+  shortcutShiftEnter: [
+    '编辑时换行；选中时在前方新增同级主题',
+    'New line while editing; insert sibling before while selected',
+  ],
+  shortcutEscape: [
+    '取消文字编辑；选中时取消选择',
+    'Cancel text editing; clear the current selection',
+  ],
+  shortcutFold: ['折叠 / 展开选中分支', 'Fold / unfold selected branches'],
+  shortcutFoldAll: ['折叠 / 展开选中分支及所有后代', 'Fold / unfold all sub-branches'],
+  shortcutClipboard: [
+    '复制 / 剪切 / 粘贴（选中态为主题，编辑态为文字）',
+    'Copy / cut / paste (topics when selected, text while editing)',
+  ],
+  shortcutSelectAll: [
+    '全选主题；编辑时全选文字',
+    'Select all topics; select all text while editing',
+  ],
+  shortcutSelectSiblings: ['选择同级主题', 'Select sibling topics'],
+  shortcutSelectChildren: ['选择直接子主题', 'Select immediate child topics'],
   discardResults: ['丢弃结果', 'Discard results'],
   confirmAddition: ['确认添加', 'Confirm addition'],
   newSheetLabel402: ['新画布', 'New sheet'],
@@ -17,8 +41,8 @@ export const messages4 = {
   ],
   targetTopicNoLongerExists: ['生成目标主题已不存在', 'Target topic no longer exists'],
   addChildSiblingEnterConfirmsWhileEditing: [
-    '添加子主题 / 同级主题（编辑中 Enter 确认）',
-    'Add child / sibling (Enter confirms while editing)',
+    '添加子主题 / 同级主题（编辑时先保存文字再新增）',
+    'Add child / sibling (save current text, then add while editing)',
   ],
   spaceDoubleclick: ['Space / 双击', 'Space / double-click'],
   editSelectPlaceholderTextOrContinueExisting: [

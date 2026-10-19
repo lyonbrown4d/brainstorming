@@ -34,7 +34,12 @@ pub fn install_with_language(app: &AppHandle, language: &str) -> tauri::Result<(
       &[&new, &open, &save, &save_as, &separator, &close],
     )?;
     let undo = action("undo", text("撤销", "Undo"), "CmdOrCtrl+Z")?;
-    let redo = action("redo", text("重做", "Redo"), "CmdOrCtrl+Shift+Z")?;
+    let redo_key = if cfg!(target_os = "macos") {
+      "Cmd+Shift+Z"
+    } else {
+      "Ctrl+Y"
+    };
+    let redo = action("redo", text("重做", "Redo"), redo_key)?;
     let cut = PredefinedMenuItem::cut(app, Some(text("剪切", "Cut")))?;
     let copy = PredefinedMenuItem::copy(app, Some(text("复制", "Copy")))?;
     let paste = PredefinedMenuItem::paste(app, Some(text("粘贴", "Paste")))?;
@@ -45,14 +50,19 @@ pub fn install_with_language(app: &AppHandle, language: &str) -> tauri::Result<(
       true,
       &[&undo, &redo, &separator, &cut, &copy, &paste, &select_all],
     )?;
-    let center = action("centerRoot", text("居中", "Center"), "CmdOrCtrl+0")?;
+    let center = action(
+      "centerRoot",
+      text("前往中心主题", "Go to Central Topic"),
+      "CmdOrCtrl+R",
+    )?;
+    let actual = action("actualSize", text("实际大小", "Actual Size"), "CmdOrCtrl+0")?;
     let zoom_in = action("zoomIn", text("放大", "Zoom In"), "CmdOrCtrl+Plus")?;
     let zoom_out = action("zoomOut", text("缩小", "Zoom Out"), "CmdOrCtrl+Minus")?;
     let view = Submenu::with_items(
       app,
       text("视图", "View"),
       true,
-      &[&center, &zoom_in, &zoom_out],
+      &[&center, &actual, &zoom_in, &zoom_out],
     )?;
     #[cfg(target_os = "macos")]
     let menu = {
@@ -93,6 +103,7 @@ pub fn register(app: &AppHandle) {
       "undo",
       "redo",
       "centerRoot",
+      "actualSize",
       "zoomIn",
       "zoomOut",
     ]

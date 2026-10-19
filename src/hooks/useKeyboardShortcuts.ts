@@ -1,9 +1,11 @@
+import { useLocation, useNavigate } from 'react-router'
+import { commitWorkspaceNavigation } from '@renderer/routing/workspaceNavigation'
 import { useEffect } from 'react'
 import { useCommandPaletteState } from '@renderer/state/commandPalette'
 import { usePresentation } from '@renderer/state/presentation'
 import { useEditor } from '@renderer/state/editor'
 import { newDocument, openDocument, saveDocument } from '@renderer/state/files'
-import { isCompositionKey } from '@renderer/state/keyboard'
+import { isCompositionKey, isPrimaryModifier } from '@renderer/state/keyboard'
 import { handleTopicNavigation, handleTopicShortcut } from '@renderer/state/editingShortcuts'
 import { useWorkspace } from '@renderer/state/workspace'
 import { handleAnnotationKey } from '@renderer/state/annotationInteraction'
@@ -11,6 +13,8 @@ import { cancelCreation } from '@renderer/state/creation'
 import { closeActiveDocument, nextDocumentTab } from '@renderer/state/documentTabs'
 
 export const useKeyboardShortcuts = (): void => {
+  const location = useLocation()
+  const navigate = useNavigate()
   useEffect(() => {
     const handler = (event: KeyboardEvent): void => {
       if (
@@ -26,19 +30,30 @@ export const useKeyboardShortcuts = (): void => {
         return
       if (usePresentation.getState().playing) return
       const state = useEditor.getState()
-      const modifier = event.metaKey || event.ctrlKey
+      const modifier = isPrimaryModifier(event)
       const key = event.key.toLowerCase()
-      if (event.ctrlKey && event.key === 'Tab') {
+      if (event.ctrlKey && !event.metaKey && !event.altKey && event.key === 'Tab') {
         event.preventDefault()
         nextDocumentTab(event.shiftKey ? -1 : 1)
         return
       }
-      if (modifier && key === 'w' && !event.shiftKey) {
+      if (modifier && key === ',' && !event.shiftKey && !event.altKey) {
+        event.preventDefault()
+        if (location.pathname !== '/settings' && commitWorkspaceNavigation())
+          void navigate('/settings', { state: { settingsReturnTo: location.pathname } })
+        return
+      }
+      if (modifier && key === 'w' && !event.shiftKey && !event.altKey) {
         event.preventDefault()
         closeActiveDocument()
         return
       }
-      if (modifier && ['s', 'o', 'n'].includes(key)) {
+      if (
+        modifier &&
+        !event.altKey &&
+        ['s', 'o', 'n'].includes(key) &&
+        (key === 's' || !event.shiftKey)
+      ) {
         event.preventDefault()
         if (key === 's') void saveDocument(event.shiftKey)
         else if (key === 'o') void openDocument()
@@ -49,7 +64,7 @@ export const useKeyboardShortcuts = (): void => {
         if (event.key === 'Escape') cancelCreation()
         return
       }
-      if (modifier && key === 'f') {
+      if (modifier && !event.altKey && !event.shiftKey && key === 'f') {
         state.commitDraft()
         if (!useEditor.getState().editingId) handleTopicShortcut(event)
         else event.preventDefault()
@@ -63,9 +78,9 @@ export const useKeyboardShortcuts = (): void => {
         return
       if (handleAnnotationKey(event)) return
       if (handleTopicShortcut(event)) return
-      if (modifier && key === 'z') {
+      if (modifier && !event.altKey && (key === 'z' || (key === 'y' && !event.shiftKey))) {
         event.preventDefault()
-        if (event.shiftKey) state.redo()
+        if (event.shiftKey || key === 'y') state.redo()
         else state.undo()
         return
       }
@@ -76,5 +91,5 @@ export const useKeyboardShortcuts = (): void => {
     return () => {
       window.removeEventListener('keydown', handler)
     }
-  }, [])
+  }, [location.pathname, navigate])
 }

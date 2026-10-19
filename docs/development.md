@@ -193,7 +193,7 @@ DevTools CLI 自身使用 Electron，仅作为开发依赖，产品运行时仍�
 
 ## 全局命令与内容索引
 
-命令面板组合官方 shadcn Command / Dialog 和 cmdk，使用 ⌘/Ctrl+K 打开；编辑快捷键在面板打开时暂停。操作复用既有文件、历史与视口命令。异步内容查询由 TanStack Query 管理，输入经 ahooks 防抖，关闭面板取消过期结果。结果以普通文本呈现，不执行备注中的 HTML。
+命令面板组合官方 shadcn Command / Dialog 和 cmdk，使用 ⌘/Ctrl+Shift+P 打开；编辑快捷键在面板打开时暂停。操作复用既有文件、历史与视口命令。异步内容查询由 TanStack Query 管理，输入经 ahooks 防抖，关闭面板取消过期结果。结果以普通文本呈现，不执行备注中的 HTML。
 
 `state/contentIndexSync.ts` 监听文档会话与已提交工作簿，复用 lodash 防抖，并通过串行队列同步发生变化的文档；查询前等待同步完成。选区、编辑草稿与拖动预览不建立索引。定位只接受仍存在于当前打开会话的文档、Sheet 和主题，复用现有查找定位与视口入口。
 

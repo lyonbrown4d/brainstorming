@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { applyCommand, createDocument } from '@core'
 import { useEditor } from '@renderer/state/editor'
 import {
+  indentOutlineTopic,
   insertParentTopic,
   removeTopicOnly,
   reorderSelectedTopic,
@@ -110,6 +111,31 @@ describe('structural editing actions', () => {
     reorderSelectedTopic(1)
     expect(useEditor.getState().history).toBe(history)
     expect(useEditor.getState().editingId).toBeNull()
+  })
+
+  it('indents and outdents existing outline topics without adding nodes, and stops at the root', () => {
+    useEditor.getState().select('b')
+    const count = Object.keys(useEditor.getState().history.document.topics).length
+    indentOutlineTopic(1)
+    expect(useEditor.getState().history.document.topics.a?.children).toEqual(['child', 'b'])
+    expect(useEditor.getState().history.document.topics.root?.children).toEqual([
+      'a',
+      'c',
+      'floating',
+    ])
+    indentOutlineTopic(-1)
+    expect(useEditor.getState().history.document.topics.root?.children).toEqual([
+      'a',
+      'b',
+      'c',
+      'floating',
+    ])
+    const history = useEditor.getState().history
+    indentOutlineTopic(-1)
+    expect(useEditor.getState().history).toBe(history)
+    expect(Object.keys(history.document.topics)).toHaveLength(count)
+    useEditor.getState().undo()
+    expect(useEditor.getState().history.document.topics.a?.children).toContain('b')
   })
 
   it('retains an invalid active draft and blocks structural edits', () => {

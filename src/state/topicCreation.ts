@@ -3,7 +3,7 @@ import { getParentId, type Command } from '@core'
 import { useEditor } from '@renderer/state/editor'
 
 /** Reveal a folded parent and create its child as a single undoable operation. */
-export const addTopic = (kind: 'child' | 'sibling'): void => {
+export const addTopic = (kind: 'child' | 'sibling', before = false): void => {
   useEditor.getState().commitDraft()
   if (useEditor.getState().editingId) return
   const {
@@ -23,7 +23,7 @@ export const addTopic = (kind: 'child' | 'sibling'): void => {
       : (current?.side ?? 'right')
   const index =
     kind === 'sibling' && selectedId !== document.rootId
-      ? parent.children.indexOf(selectedId) + 1
+      ? parent.children.indexOf(selectedId) + (before ? 0 : 1)
       : parent.children.length
   const add: Command = { type: 'addTopic', parentId, id, title: translate('newTopic'), side, index }
   const command: Command = parent.collapsed

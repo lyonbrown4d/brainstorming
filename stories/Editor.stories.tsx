@@ -88,7 +88,7 @@ export const KeyboardHelpDialog: Story = {
     await userEvent.click(trigger)
     const dialog = await page.findByRole('dialog', { name: '键盘快捷键' })
     await expect(dialog).toBeVisible()
-    await expect(within(dialog).getByText(/Windows \/ Linux 使用 Ctrl 代替 ⌘/)).toBeVisible()
+    await expect(within(dialog).getByRole('textbox', { name: '搜索快捷键' })).toHaveFocus()
     await userEvent.tab()
     await expect(within(dialog).getByRole('button', { name: '关闭快捷键' })).toHaveFocus()
     await userEvent.keyboard('{Escape}')

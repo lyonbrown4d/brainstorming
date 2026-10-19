@@ -1,3 +1,4 @@
+import { useTopicPropertyFocus } from '@renderer/state/topicShortcutActions'
 import { PropertySection } from '@renderer/components/workbench/PropertySection'
 import { useMessages } from '@renderer/i18n/useMessages'
 
@@ -20,6 +21,13 @@ export const TopicProperties = () => {
   const document = useEditor((state) => state.history.document)
   const selectedId = useEditor((state) => state.selectedId)
   const selection = useSelectedIds()
+  const focus = useTopicPropertyFocus((state) => state.request)
+  const focusHere =
+    focus?.topicId === selectedId &&
+    focus.documentId === document.id &&
+    focus.sheetId === useEditor.getState().activeSheetId
+      ? focus
+      : null
   const selectedIds = [...new Set(selection.length ? selection : [selectedId])].filter(
     (id) => document.topics[id],
   )
@@ -90,10 +98,17 @@ export const TopicProperties = () => {
       )}
       {!multiple && (
         <>
-          <PropertySection title={translate('topicContent')} defaultOpen>
+          <PropertySection
+            title={translate('topicContent')}
+            defaultOpen
+            revealKey={focusHere?.section === 'notes' ? focusHere.sequence : undefined}
+          >
             <TopicContentPanel key={selectedId} topicId={selectedId} />
           </PropertySection>
-          <PropertySection title={translate('topicMetadata')}>
+          <PropertySection
+            title={translate('topicMetadata')}
+            revealKey={focusHere?.section === 'link' ? focusHere.sequence : undefined}
+          >
             <TopicMetadataPanel key={`metadata:${selectedId}`} topicId={selectedId} />
           </PropertySection>
         </>

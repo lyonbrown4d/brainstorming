@@ -19,6 +19,7 @@ import { canvasFitPadding } from '@renderer/hooks/useWorkbenchInsets'
 import { CanvasOverlay } from '@renderer/components/workbench/CanvasOverlay'
 import { useCanvasViewport } from '@renderer/hooks/useCanvasViewport'
 import { useCanvasDrag } from '@renderer/hooks/useCanvasDrag'
+import { CanvasDropPreview } from '@renderer/components/workbench/CanvasDropPreview'
 import { DragFeedback } from '@renderer/components/workbench/DragFeedback'
 import { CanvasMinimap } from '@renderer/components/CanvasMinimap'
 import { RelationEdge } from '@renderer/components/annotations/RelationEdge'
@@ -107,11 +108,8 @@ export const Canvas = () => {
           if (createFloatingAt(point.x, point.y)) return
           useAnnotationInteraction.setState({ selected: null, editing: false, fromId: null })
           useEditor.getState().commitDraft()
-          const id = useEditor.getState().selectedId
-          useEditor.getState().select(id)
-          window.document
-            .querySelector<HTMLElement>(`.topic-input[data-topic-id="${CSS.escape(id)}"]`)
-            ?.focus({ preventScroll: true })
+          if (!useEditor.getState().editingId) setCanvasSelection([], [])
+          window.document.getElementById('sheet-panel')?.focus({ preventScroll: true })
         }}
         onDoubleClick={(event) => {
           if (playing) return
@@ -157,6 +155,7 @@ export const Canvas = () => {
         <StructureGeometry document={document} decorations={projection.decorations} />
         <CanvasAnnotations document={document} nodes={projection.layoutNodes} />
         <SelectionVisibility />
+        {!playing && <CanvasDropPreview />}
         {!playing && <CanvasInk />}
         {!playing && <CanvasMinimap />}
       </ReactFlow>

@@ -163,8 +163,11 @@ export const messages7 = {
   sheetMenuValue0: ['画布菜单 {{value0}}', 'Sheet menu {{value0}}'],
   sheetActionsValue0: ['画布操作 {{value0}}', 'Sheet actions {{value0}}'],
   moveValue0FloatingTopics: ['移动 {{value0}} 个游离主题', 'Move {{value0}} floating topics'],
-  moveIntoValue0: ['移入「{{value0}}」', 'Move into “{{value0}}”'],
-  insertValue1Value0: ['插入到「{{value0}}」{{value1}}', 'Insert {{value1}} “{{value0}}”'],
+  moveIntoValue0: ['成为「{{value0}}」的子主题', 'Make a child of “{{value0}}”'],
+  insertValue1Value0: [
+    '「{{parent}}」下 · 插入到「{{value0}}」{{value1}}',
+    'Under “{{parent}}” · Insert {{value1}} “{{value0}}”',
+  ],
   sheetValue0: ['画布 {{value0}}', 'Sheet {{value0}}'],
   topicsPastedRemovedValue0CrosssheetLinksMissing: [
     '已粘贴主题；目标文档中不存在的跨画布链接已移除（{{value0}} 项）',

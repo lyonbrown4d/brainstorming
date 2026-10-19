@@ -1,3 +1,5 @@
+import { requireDesktopAPI } from '@renderer/lib/desktop'
+import type { DesktopPlatform } from '@shared/window'
 import type { MindMapDocument } from '@core'
 import { layoutDocument, type LayoutDirection, type LayoutNode } from '@layout'
 
@@ -117,3 +119,12 @@ export const getNavigationTarget = (
   }
   return nearest(node, layout.nodes.values(), direction)
 }
+
+/** Keep macOS Control text shortcuts distinct from Command application actions. */
+export const isPrimaryModifier = (
+  event: Pick<KeyboardEvent, 'metaKey' | 'ctrlKey'>,
+  platform: DesktopPlatform = requireDesktopAPI().platform,
+): boolean =>
+  platform === 'macos' || platform === 'ios'
+    ? event.metaKey && !event.ctrlKey
+    : event.ctrlKey && !event.metaKey
