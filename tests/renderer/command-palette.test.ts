@@ -12,6 +12,7 @@ import {
 } from '@renderer/state/commandPalette'
 import { paletteCommands, runPaletteCommand } from '@renderer/components/commands/paletteCommands'
 import { useViewportRequest } from '@renderer/state/viewport'
+import { useShortcutPreferences } from '@renderer/state/shortcutPreferences'
 import { desktop } from '@tests/fixtures/desktop'
 
 beforeEach(() => {
@@ -21,6 +22,7 @@ beforeEach(() => {
   usePresentation.setState({ playing: false, workspaceMode: null })
   usePasswordPrompt.setState({ request: null })
   useCommandPaletteState.setState({ open: false, returnFocus: null })
+  useShortcutPreferences.getState().resetAll()
 })
 afterEach(() => vi.unstubAllGlobals())
 const command = (id: string) => {
@@ -55,6 +57,17 @@ describe('global command palette guards and existing actions', () => {
     expect(openCommandPalette()).toBe(false)
     expect(useEditor.getState().draft).toBe('保留草稿')
     expect(useEditor.getState().history.document.title).toBe('现有导图')
+  })
+
+  it('shows effective file and view shortcuts and hides cleared hints', () => {
+    expect(command('save').shortcut).toBe('⌘S')
+    expect(command('search').shortcut).toBe('⌘F')
+    expect(useShortcutPreferences.getState().setChord('save', 'Mod+Shift+KeyG')).toBeNull()
+    expect(command('save').shortcut).toBe('⌘⇧G')
+    expect(useShortcutPreferences.getState().setChord('search', null)).toBeNull()
+    expect(command('search').shortcut).toBeNull()
+    useShortcutPreferences.getState().resetAll()
+    expect(command('save').shortcut).toBe('⌘S')
   })
 
   it('keeps document and canvas commands disabled at home and rechecks busy state', () => {

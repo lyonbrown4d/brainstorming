@@ -28,14 +28,19 @@ const key = (value: string, options: Partial<KeyboardEvent> = {}): KeyboardEvent
     ...options,
   }) as KeyboardEvent
 const modifier = (value: DesktopPlatform) =>
-  value === 'macos' ? { metaKey: true } : { ctrlKey: true }
+  value === 'macos' || value === 'ios' ? { metaKey: true } : { ctrlKey: true }
 
 beforeEach(() => {
   platform('macos')
   useEditor.getState().replace(createExampleDocument())
   useEditor.setState({ busy: false })
   useTopicPropertyFocus.setState({ request: null })
-  useAnnotationInteraction.setState({ selected: null, fromId: null, editing: false })
+  useAnnotationInteraction.setState({
+    selected: null,
+    fromId: null,
+    relationMode: false,
+    editing: false,
+  })
 })
 afterEach(() => {
   restore?.()
@@ -67,6 +72,27 @@ describe('Xmind-style topic shortcut states', () => {
     expect(handleTopicNavigation(key('Tab'))).toBe(false)
     expect(useEditor.getState().history).toBe(before)
   })
+
+  it.each(['macos', 'ios', 'windows', 'linux'] as const)(
+    '%s deletes only the selected topic with its documented modifier chord',
+    (value) => {
+      platform(value)
+      useEditor.getState().select('vision')
+      const before = useEditor.getState().history.document
+      const mod = modifier(value)
+      const mac = value === 'macos' || value === 'ios'
+      const wrongKey = mac ? 'Delete' : 'Backspace'
+      const rightKey = mac ? 'Backspace' : 'Delete'
+      expect(handleTopicShortcut(key(wrongKey, mod))).toBe(false)
+      expect(handleTopicNavigation(key(rightKey, { shiftKey: true }))).toBe(false)
+      expect(useEditor.getState().history.document).toBe(before)
+      expect(handleTopicShortcut(key(rightKey, mod))).toBe(true)
+      const document = useEditor.getState().history.document
+      expect(document.topics.vision).toBeUndefined()
+      expect(getParentId(document, 'vision-0')).toBe('root')
+      expect(getParentId(document, 'vision-1')).toBe('root')
+    },
+  )
 
   it.each(['macos', 'windows', 'linux'] as const)(
     '%s separates links, notes, relationships and viewport shortcuts',

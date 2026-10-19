@@ -26,6 +26,8 @@ import {
 import { requestViewport } from '@renderer/state/viewport'
 import { useSearch } from '@renderer/state/search'
 import { getNavigationTarget, isCompositionKey, isPrimaryModifier } from '@renderer/state/keyboard'
+import { shortcutIdForEvent } from '@renderer/state/shortcutLookup'
+import type { ShortcutId } from '@renderer/state/shortcutRegistry'
 
 /** Topic controls share the same structural keyboard actions. */
 export const handleTopicNavigation = (event: KeyboardEvent, topicId?: string): boolean => {
@@ -46,8 +48,9 @@ export const handleTopicNavigation = (event: KeyboardEvent, topicId?: string): b
     return true
   }
   if (event.metaKey || event.ctrlKey || event.altKey) return false
+  if (event.shiftKey && ['Delete', 'Backspace'].includes(event.key)) return false
   if (
-    !['Tab', 'Enter', 'Delete', 'Backspace', 'F2', 'F5', ' ', 'Escape'].includes(event.key) &&
+    !['Tab', 'Enter', 'Delete', 'Backspace', 'F2', ' ', 'Escape'].includes(event.key) &&
     !event.key.startsWith('Arrow')
   )
     return false
@@ -66,8 +69,7 @@ export const handleTopicNavigation = (event: KeyboardEvent, topicId?: string): b
     if (event.key === 'Tab' && event.shiftKey) return false
     if (event.key === 'Enter' && event.shiftKey) addTopic('sibling', true)
     else state.add(event.key === 'Tab' ? 'child' : 'sibling')
-  } else if (event.key === 'F5') showPresentationStep(0)
-  else if (event.key === 'Escape') setCanvasSelection([], [])
+  } else if (event.key === 'Escape') setCanvasSelection([], [])
   else if (event.key === 'Delete' || event.key === 'Backspace') state.remove()
   else if (event.key === 'F2' || event.key === ' ') {
     const title = state.history.document.topics[state.selectedId]?.title
@@ -86,24 +88,32 @@ export const handleTopicNavigation = (event: KeyboardEvent, topicId?: string): b
 
 /** Called only outside native text editing and after the composition guard. */
 export const handleTopicShortcut = (event: KeyboardEvent): boolean => {
-  if (isCompositionKey(event) || !isPrimaryModifier(event) || useEditor.getState().busy)
-    return false
-  const key = event.code === 'Slash' ? '/' : event.key.toLowerCase()
-  const mac = requireDesktopAPI().platform === 'macos'
-  if (
-    key === '/' &&
-    ((mac && event.shiftKey && !event.altKey) || (!mac && event.altKey && !event.shiftKey))
-  ) {
+  if (isCompositionKey(event) || useEditor.getState().busy) return false
+  const action = shortcutIdForEvent(event, 'map')
+  if (action) {
     event.preventDefault()
-    toggleSelectedBranches(true)
+    if (!event.repeat) executeMapShortcut(action)
     return true
   }
+  if (!isPrimaryModifier(event)) return false
+  const key = event.code === 'Slash' ? '/' : event.key.toLowerCase()
+  const mac = ['macos', 'ios'].includes(requireDesktopAPI().platform)
+  // These actions are customizable. An old default must not fire after reassignment.
+  if (
+    key === '/' ||
+    (!event.shiftKey &&
+      !event.altKey &&
+      ['d', 'f', 'i', 'r', 'z', 'y', '0', '=', '+', '-'].includes(key))
+  )
+    return false
   if (key === 'a' && event.altKey && !event.shiftKey) {
     event.preventDefault()
     selectRelatedTopics('children')
     return true
   }
   if (event.altKey) return false
+  if ((key === 'backspace' || key === 'delete') && (mac ? key !== 'backspace' : key !== 'delete'))
+    return false
   if (event.shiftKey && ['n', 'r', 'i', 'b', 'a'].includes(key)) {
     event.preventDefault()
     if (key === 'n') focusTopicProperty('notes')
@@ -113,53 +123,39 @@ export const handleTopicShortcut = (event: KeyboardEvent): boolean => {
     else selectRelatedTopics('siblings')
     return true
   }
-  if (event.shiftKey && key !== '+') return false
-  if (
-    ![
-      'a',
-      'b',
-      'c',
-      'x',
-      'v',
-      'd',
-      'f',
-      'i',
-      'k',
-      'enter',
-      'backspace',
-      'delete',
-      '/',
-      'r',
-      '=',
-      '+',
-      '-',
-      '0',
-    ].includes(key)
-  )
-    return false
+  if (event.shiftKey) return false
+  if (!['a', 'b', 'c', 'x', 'v', 'k', 'enter', 'backspace', 'delete'].includes(key)) return false
   if (key === 'b' && mac) return false
   event.preventDefault()
   const state = useEditor.getState()
   if (key === 'enter') insertParentTopic()
   else if (key === 'delete' || key === 'backspace') removeTopicOnly()
-  else if (key === '/') toggleSelectedBranches()
   else if (key === 'k') focusTopicProperty('link')
-  else if (key === 'i') toggleInspector()
   else if (key === 'b') addSelectionGroup('boundary')
-  else if (key === 'r') {
-    state.select(state.history.document.rootId)
-    requestViewport('centerRoot')
-  } else if (key === '=' || key === '+') requestViewport('zoomIn')
-  else if (key === '-') requestViewport('zoomOut')
-  else if (key === '0') requestViewport('actualSize')
   else if (key === 'a')
     setCanvasSelection(
       getVisibleTopicIds(state.history.document),
       state.history.document.drawings?.map((stroke) => stroke.id) ?? [],
     )
-  else if (key === 'f') useSearch.setState({ open: true })
   else if (key === 'c' || key === 'x') void copySelectedTopics(key === 'x')
-  else if (key === 'v') void pasteSelectedTopics()
-  else duplicateSelectedTopics()
+  else void pasteSelectedTopics()
   return true
+}
+
+const executeMapShortcut = (action: ShortcutId): void => {
+  const state = useEditor.getState()
+  if (action === 'undo') state.undo()
+  else if (action === 'redo') state.redo()
+  else if (action === 'search') useSearch.setState({ open: true })
+  else if (action === 'root') {
+    state.select(state.history.document.rootId)
+    requestViewport('centerRoot')
+  } else if (action === 'zoomIn') requestViewport('zoomIn')
+  else if (action === 'zoomOut') requestViewport('zoomOut')
+  else if (action === 'actualSize') requestViewport('actualSize')
+  else if (action === 'inspector') toggleInspector()
+  else if (action === 'presentation') showPresentationStep(0)
+  else if (action === 'fold') toggleSelectedBranches()
+  else if (action === 'foldAll') toggleSelectedBranches(true)
+  else if (action === 'duplicate') duplicateSelectedTopics()
 }

@@ -61,6 +61,7 @@ export const messages4 = {
   ],
   reorderSiblingTopics: ['调整同级主题顺序', 'Reorder sibling topics'],
   collapseExpandChildren: ['折叠 / 展开子主题', 'Collapse / expand children'],
+  actualSize: ['实际大小', 'Actual size'],
   goToCentralTopic: ['前往中心主题', 'Go to central topic'],
   zoomInOutActualSize: ['放大 / 缩小 / 实际大小', 'Zoom in / out / actual size'],
   navigateBetweenTopics: ['在主题之间导航', 'Navigate between topics'],

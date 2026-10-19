@@ -37,6 +37,8 @@ export interface TopicStyle {
   readonly fill?: string
   readonly color?: string
   readonly fontSize?: number
+  /** Explicit outer topic width in canvas pixels; absent means fit content. */
+  readonly width?: number
   readonly bold?: boolean
   readonly italic?: boolean
   readonly shape?: TopicShape

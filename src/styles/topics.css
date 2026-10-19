@@ -11,24 +11,6 @@
 .react-flow__node-topic {
   cursor: pointer;
 }
-.topic-input {
-  display: block;
-  background: transparent;
-  border: 0;
-  outline: none !important;
-  width: 100%;
-  padding: 0;
-  color: inherit;
-  text-align: center;
-  font-size: inherit;
-  line-height: 1.5;
-  min-height: 1.5em;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-.topic-input p {
-  margin: 0;
-}
 .topic:not(.is-editing) .topic-input ::selection {
   background: transparent;
 }

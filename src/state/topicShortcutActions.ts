@@ -49,7 +49,12 @@ export const focusTopicProperty = (section: PropertyFocus['section']): void => {
   const state = useEditor.getState()
   if (state.editingId || state.busy || !selectedTopicIds(state).length) return
   setCanvasSelection([state.selectedId], [])
-  useAnnotationInteraction.setState({ selected: null, editing: false, fromId: null })
+  useAnnotationInteraction.setState({
+    selected: null,
+    editing: false,
+    fromId: null,
+    relationMode: false,
+  })
   selectInspectorMode('topic')
   useTopicPropertyFocus.setState((previous) => ({
     sequence: previous.sequence + 1,

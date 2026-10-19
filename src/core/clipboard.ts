@@ -68,10 +68,20 @@ export const createTopicClipboard = (
   topicIds: readonly string[],
 ): TopicClipboard => {
   validateDocument(document)
-  const roots = normalizeTopicSelection(document, topicIds)
-  if (roots.length === 0) throw new Error('请选择要复制的主题')
+  const selectedRoots = normalizeTopicSelection(document, topicIds)
+  if (selectedRoots.length === 0) throw new Error('请选择要复制的主题')
   const topics: Record<string, Topic> = {}
-  for (const rootId of roots)
+  for (const rootId of selectedRoots)
+    for (const id of getSubtreeIds(document, rootId)) topics[id] = requireTopic(document, id)
+  const linkedRoots = (document.groups ?? []).flatMap((group) =>
+    group.summaryTopicId !== undefined &&
+    !Object.hasOwn(topics, group.summaryTopicId) &&
+    group.topicIds.every((id) => Object.hasOwn(topics, id))
+      ? [group.summaryTopicId]
+      : [],
+  )
+  const roots = [...selectedRoots, ...linkedRoots]
+  for (const rootId of linkedRoots)
     for (const id of getSubtreeIds(document, rootId)) topics[id] = requireTopic(document, id)
   const retained = new Set(Object.keys(topics))
   for (const topic of Object.values(topics))

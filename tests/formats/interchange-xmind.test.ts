@@ -63,6 +63,26 @@ describe('XMind Brainstorming extension interchange', () => {
     expect(current.sheets[0]?.document.topics.root?.metadata?.link).toBeUndefined()
     expect(linked.topics.root?.metadata?.link).toBeDefined()
   })
+  it('preserves manual width and linked summary descendants through the native extension', () => {
+    const document = applyCommand(createDocument('概要与宽度'), {
+      type: 'batch',
+      commands: [
+        { type: 'addTopic', id: 'source', parentId: 'root', title: '范围主题', side: 'right' },
+        { type: 'addTopic', id: 'summary', parentId: 'root', title: '概要主题', side: 'right' },
+        { type: 'addTopic', id: 'detail', parentId: 'summary', title: '概要子主题' },
+        { type: 'setTopicStyle', topicId: 'summary', style: { width: 240 } },
+        {
+          type: 'upsertGroup',
+          group: { id: 'range', kind: 'summary', topicIds: ['source'], summaryTopicId: 'summary' },
+        },
+      ],
+    })
+    const result = importXmind(encodeXmind(createWorkbook(document))).workbook.sheets[0]?.document
+    expect(result?.groups).toEqual(document.groups)
+    expect(result?.topics.summary?.style?.width).toBe(240)
+    expect(result?.topics.summary?.children).toEqual(['detail'])
+    expect(result?.topics.detail?.title).toBe('概要子主题')
+  })
   it('preserves embedded audio bytes, MIME and the topic audio reference', () => {
     const audio = {
       ...createAsset(

@@ -38,15 +38,20 @@ export const exportAnnotations = (
           {
             ...bounds,
             title:
-              group.title ??
+              (group.summaryTopicId === undefined
+                ? group.title
+                : document.topics[group.summaryTopicId]?.title) ??
               (group.kind === 'boundary' ? translate('boundary') : translate('summary')),
             color: group.color ?? '#8b79d9',
             kind: group.kind,
-            lines: wrap(
-              group.title ??
-                (group.kind === 'boundary' ? translate('boundary') : translate('summary')),
-              20,
-            ),
+            lines:
+              group.summaryTopicId === undefined
+                ? wrap(
+                    group.title ??
+                      (group.kind === 'boundary' ? translate('boundary') : translate('summary')),
+                    20,
+                  )
+                : [],
           },
         ]
       : []
@@ -78,7 +83,9 @@ export const annotationExtents = (annotations: readonly ExportAnnotation[]): Gro
   return annotations.map((annotation) => {
     const captionHeight =
       annotation.kind === 'boundary' || annotation.kind === 'summary'
-        ? annotation.lines.length * 18 + 8
+        ? annotation.lines.length > 0
+          ? annotation.lines.length * 18 + 8
+          : 0
         : 0
     return {
       ...annotation,
@@ -86,7 +93,7 @@ export const annotationExtents = (annotations: readonly ExportAnnotation[]): Gro
       y: annotation.y - captionHeight,
       width:
         annotation.width +
-        (annotation.kind === 'summary'
+        (annotation.kind === 'summary' && annotation.lines.length > 0
           ? Math.min(240, Array.from(annotation.title).length * 12) + 24
           : annotation.kind === 'boundary'
             ? Math.max(0, 240 - annotation.width)

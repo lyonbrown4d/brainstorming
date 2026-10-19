@@ -97,6 +97,8 @@ export interface TopicGroup {
   readonly topicIds: readonly string[]
   readonly title?: string
   readonly kind: 'boundary' | 'summary'
+  /** Real, editable topic whose independent subtree is anchored to this summary. */
+  readonly summaryTopicId?: string
   readonly color?: string
 }
 export interface TopicCallout {

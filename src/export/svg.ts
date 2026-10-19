@@ -177,7 +177,11 @@ export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = fal
     const lines = wrappedTitle(
       topic.title,
       style.fontSize,
-      topic.id === source.rootId ? 280 - 56 : 240 - 44,
+      topic.style?.width === undefined
+        ? isRoot
+          ? 280 - 56
+          : 240 - 44
+        : Math.max(style.fontSize, markerLayout.contentWidth - (isRoot ? 56 : 44)),
     )
     const lineHeight = Math.ceil(style.fontSize * 1.5)
     let contentY =

@@ -1,0 +1,30 @@
+export const shortcutCustomizationMessages = {
+  shortcutRecord: ['录制快捷键', 'Record shortcut'],
+  shortcutRecording: ['请按新的组合键…', 'Press a new key combination…'],
+  shortcutStopRecording: ['取消录制', 'Cancel recording'],
+  shortcutClear: ['清除快捷键', 'Clear shortcut'],
+  shortcutRestore: ['恢复默认快捷键', 'Restore default shortcut'],
+  shortcutResetAll: ['全部恢复默认', 'Reset all'],
+  shortcutFixed: ['固定', 'Fixed'],
+  shortcutCustom: ['自定义', 'Custom'],
+  shortcutChangeInvalid: [
+    '请使用功能键，或包含主修饰键的组合键。',
+    'Use a function key or a combination with the primary modifier.',
+  ],
+  shortcutChangeReserved: [
+    '此组合键已被系统、文本编辑或固定操作使用。',
+    'This combination is reserved by the system, text editing, or a fixed action.',
+  ],
+  shortcutChangeConflict: [
+    '此组合键已分配给其他操作。',
+    'This combination is already assigned to another action.',
+  ],
+  shortcutNewMap: ['新建导图', 'New map'],
+  shortcutOpenMap: ['打开导图', 'Open map'],
+  shortcutSaveMap: ['保存导图', 'Save map'],
+  shortcutSaveAsMap: ['另存为', 'Save as'],
+  shortcutZoomIn: ['放大', 'Zoom in'],
+  shortcutZoomOut: ['缩小', 'Zoom out'],
+  shortcutActualSize: ['实际大小', 'Actual size'],
+  shortcutDuplicate: ['复制主题', 'Duplicate topic'],
+} as const

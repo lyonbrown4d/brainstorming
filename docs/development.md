@@ -223,3 +223,7 @@ Rust 的 `search` 模块通过 FluxDI 装配到 AppState。索引复用 SQLx 和
 素材 IPC 仅提供 `listBuiltinArt` 与固定 ID 的 `getBuiltinArt`，不接受路径或远程 URL。目录内嵌于 `src-tauri/src/builtin_art/catalog.json`；4 张原创 PNG 及生成记录位于 `src-tauri/builtin-art/originals/`，原图逐字节保留，128px 预览由 Rust image 管线生成。54 个精选 Fluent Emoji Flat SVG 来自 Iconify 1.2.6 / Microsoft，MIT 全文编译入目录，并保留在素材目录。
 
 原生 SVG 渲染使用现有 resvg，在 `spawn_blocking` 内分配图片，以 `Semaphore(2)` 限制并发，Moka 按 ID 合并并缓存成功结果（最多 58 项，空闲 1 小时过期）。插入复用 `setTopicImage` 和现有资源保存协议；异步完成前切换文档、Sheet 或删除目标主题会丢弃结果。相关验证为 `tests/renderer/builtin-art.test.ts`、`src-tauri/tests/document_builtin_art.rs` 及 `stories/BuiltinArt.stories.tsx`。
+
+画布右键菜单复用官方 shadcn Context Menu（`shadcn@4.22.0` CLI 下载），操作通过业务组合接入既有命令和历史；下载源码不维护业务补丁。
+
+快捷键通过类型化注册表统一定义可配置操作，Zustand persist 保存本机覆盖值；`null` 表示禁用，删除覆盖值表示恢复默认。加载时过滤损坏、冲突与保留绑定；Lexical 与全局监听共用实际绑定，编辑和 IME 优先。主题宽度使用 React Flow `NodeResizeControl`，中间预览不写历史；概要主题使用原有主题命令，范围手柄仅衔接成员选择与单次命令。文件字段约束见 [文件协议](file-format.md#主题表现笔迹与演示页面)。

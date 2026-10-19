@@ -31,6 +31,7 @@ import { useWorkspace } from '@renderer/state/workspace'
 import { usePresentation } from '@renderer/state/presentation'
 import { usePasswordPrompt } from '@renderer/state/password'
 import { isCompositionKey } from '@renderer/state/keyboard'
+import { useShortcutPreferences } from '@renderer/state/shortcutPreferences'
 import { commitWorkspaceNavigation } from '@renderer/routing/workspaceNavigation'
 
 export const CommandPalette = () => {
@@ -40,6 +41,7 @@ export const CommandPalette = () => {
   const navigate = useNavigate()
   const open = useCommandPaletteState((state) => state.open)
   const [query, setQuery] = useState('')
+  const shortcutOverrides = useShortcutPreferences((state) => state.overrides)
   const pendingAction = useRef<(() => void) | null>(null)
   // Subscribe only to availability inputs, never to topic content or editor drafts.
   const [busy] = useEditor(
@@ -66,10 +68,14 @@ export const CommandPalette = () => {
       closeCommandPalette()
     }
   }, [blocked])
-  const commands = paletteCommands(requireDesktopAPI().platform === 'macos' ? '⌘' : 'Ctrl+', () => {
-    if (commitWorkspaceNavigation())
-      void navigate('/settings', { state: { settingsReturnTo: pathname } })
-  })
+  const commands = paletteCommands(
+    requireDesktopAPI().platform === 'macos' ? '⌘' : 'Ctrl+',
+    () => {
+      if (commitWorkspaceNavigation())
+        void navigate('/settings', { state: { settingsReturnTo: pathname } })
+    },
+    shortcutOverrides,
+  )
   const groups = [...new Set(commands.map((command) => command.group))]
   const select = (operation: () => void): void => {
     pendingAction.current = operation

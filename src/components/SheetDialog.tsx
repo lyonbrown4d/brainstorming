@@ -53,7 +53,7 @@ export const SheetDialog = ({
           </DialogDescription>
         </DialogHeader>
         <form
-          className="sheet-dialog-form"
+          className="grid gap-2.5"
           onSubmit={(event) => {
             event.preventDefault()
             if (busy || submitting.current || composing.current || (rename && !name.trim())) return
@@ -64,7 +64,7 @@ export const SheetDialog = ({
           }}
         >
           {rename && (
-            <Label className="sheet-name-label items-stretch" htmlFor={nameId}>
+            <Label className="grid items-stretch gap-2.5 text-[13px]" htmlFor={nameId}>
               {translate('sheetName')}
               <Input
                 id={nameId}
@@ -87,7 +87,7 @@ export const SheetDialog = ({
               />
             </Label>
           )}
-          <div className="sheet-dialog-actions">
+          <div className="mt-2 flex justify-end gap-2">
             <DialogClose asChild>
               <Button type="button" variant="ghost">
                 {translate('cancel')}

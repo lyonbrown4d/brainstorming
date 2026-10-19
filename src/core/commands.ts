@@ -18,6 +18,7 @@ import {
 import { pasteTopics } from '@core/clipboard'
 import { replaceTopicText } from '@core/search'
 import { insertParentTopic, removeTopicOnly } from '@core/structural-commands'
+import { sanitizeSummaryLinks } from '@core/summary'
 
 const add = (
   document: MindMapDocument,
@@ -131,6 +132,7 @@ export const applyCommand = (document: MindMapDocument, command: Command): MindM
       }
     } else result = applySingleCommand(result, next.command)
   }
+  result = sanitizeSummaryLinks(result)
   validateDocument(result)
   return result
 }

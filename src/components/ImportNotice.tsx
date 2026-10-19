@@ -19,9 +19,12 @@ export const ImportNotice = () => {
   const path = useEditor((state) => state.path)
   if (!report) return null
   return (
-    <div className="import-banner" role="status">
+    <div
+      className="import-banner z-[9] flex items-center gap-[15px] border-b border-border bg-accent px-6 py-2.5 text-[13px] text-accent-foreground"
+      role="status"
+    >
       <FileCheck2 size={17} aria-hidden="true" />
-      <span>
+      <span className="flex-1">
         {translate('imported')}
         {report.sourceName}，
         {path
@@ -44,7 +47,7 @@ export const ImportNotice = () => {
                 {translate('convertedToAnEditableBrainstormingDocumentThe')}
               </DialogDescription>
             </DialogHeader>
-            <ul className="import-warning-list">
+            <ul className="max-h-[50vh] list-disc overflow-y-auto pl-5 text-[13px] leading-[1.8]">
               {report.warnings.map((warning, index) => (
                 <li key={index}>{warning}</li>
               ))}

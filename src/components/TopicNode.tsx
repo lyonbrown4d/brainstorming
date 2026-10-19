@@ -1,6 +1,7 @@
 import { topicShapeInsets } from '@shared/topic-shapes'
 import { TopicShapeVisual } from '@renderer/components/TopicShapeVisual'
 import { TopicNodeBody } from '@renderer/components/TopicNodeBody'
+import { TopicWidthHandles } from '@renderer/components/TopicWidthHandles'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { cn } from '@renderer/lib/utils'
@@ -69,126 +70,129 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
   const fill =
     data.fill ?? style?.fill ?? (root ? 'var(--color-primary)' : 'var(--color-background)')
   return (
-    <div
-      className={cn(
-        'topic group/topic nopan relative flex h-full w-full flex-col items-center rounded-lg border-[1.5px] transition-[box-shadow,border-color] duration-150 select-none',
-        root
-          ? 'topic-root rounded-xl bg-primary text-primary-foreground'
-          : branch
-            ? 'topic-branch'
-            : 'topic-leaf',
-        selected
-          ? 'is-selected border-primary ring-2 ring-primary/15'
-          : root || branch
-            ? 'border-transparent'
-            : 'border-[color-mix(in_srgb,var(--branch-color)_28%,transparent)]',
-        editingHere && 'is-editing',
-        dropTarget && 'drop-target border-dashed border-drop-target ring-4 ring-drop-target/15',
-        `side-${side}`,
-        hasContent && 'has-content',
-      )}
-      style={
-        {
-          '--branch-color': color,
-          '--topic-fill': fill,
-          background: 'transparent',
-          borderColor: 'transparent',
-          color: data.textColor ?? style?.color,
-          fontFamily: data.fontFamily,
-          borderRadius:
-            shape === 'capsule'
-              ? '9999px'
-              : shape === 'ellipse' || shape === 'circle'
-                ? '50%'
-                : shape === 'rectangle' || shape === 'sticky'
-                  ? 0
-                  : undefined,
-        } as React.CSSProperties
-      }
-      data-appearance={shape}
-      data-testid={`topic-${id}`}
-    >
-      <TopicShapeVisual
-        shape={shape}
-        visualStyle={data.visualStyle}
-        sketchFill={root || branch || Boolean(style?.fill) || shape === 'sticky'}
-        seedKey={id}
-        width={width ?? 100}
-        height={height ?? 100}
-        stroke={root ? (data.visualStyle === 'sketch' ? (data.textColor ?? color) : fill) : color}
-        className="pointer-events-none absolute inset-0 h-full w-full"
-      />
-      <span
-        aria-hidden
-        className={cn(
-          'pointer-events-none absolute inset-0 rounded-[inherit] bg-current/5 outline-1 -outline-offset-1 outline-current/55 transition-opacity duration-150 ease-out motion-reduce:transition-none',
-          editingHere ? 'opacity-100' : 'opacity-0',
-        )}
-      />
-      {[Position.Top, Position.Right, Position.Bottom, Position.Left].map((position) => (
-        <Handle
-          key={`target-${position}`}
-          id={`target-${position}`}
-          type="target"
-          position={position}
-        />
-      ))}
-      {[Position.Top, Position.Right, Position.Bottom, Position.Left].map((position) => (
-        <Handle
-          key={`source-${position}`}
-          id={`source-${position}`}
-          type="source"
-          className="!size-3 !border-2 !border-primary !bg-background hover:!opacity-100 group-hover/topic:!pointer-events-auto group-hover/topic:!opacity-100 group-focus-within/topic:!pointer-events-auto group-focus-within/topic:!opacity-100"
-          position={position}
-        />
-      ))}
+    <>
+      <TopicWidthHandles id={id} topic={topic} selected={selected} />
       <div
-        className="absolute flex min-h-0 flex-col items-center"
-        style={{
-          top: `${insets.y * 100}%`,
-          bottom: `${insets.y * 100}%`,
-          left: `${insets.x * 100}%`,
-          right: `${insets.x * 100}%`,
-        }}
-      >
-        {simplified ? (
-          <div
-            className="flex h-full w-full items-center justify-center px-4 py-2.5 text-center leading-normal"
-            style={{
-              fontSize: style?.fontSize ?? (root ? 24 : 16),
-              fontWeight: (style?.bold ?? (root || branch)) ? 600 : 400,
-              fontStyle: style?.italic ? 'italic' : 'normal',
-            }}
-          >
-            <span className="line-clamp-3 break-words whitespace-pre-wrap">{topic.title}</span>
-          </div>
-        ) : (
-          <TopicNodeBody
-            topic={topic}
-            root={root}
-            branch={branch}
-            primary={primary}
-            editing={editing}
-          />
+        className={cn(
+          'topic group/topic nopan relative flex h-full w-full flex-col items-center rounded-lg border-[1.5px] transition-[box-shadow,border-color] duration-150 select-none',
+          root
+            ? 'topic-root rounded-xl bg-primary text-primary-foreground'
+            : branch
+              ? 'topic-branch'
+              : 'topic-leaf',
+          selected
+            ? 'is-selected border-primary ring-2 ring-primary/15'
+            : root || branch
+              ? 'border-transparent'
+              : 'border-[color-mix(in_srgb,var(--branch-color)_28%,transparent)]',
+          editingHere && 'is-editing',
+          dropTarget && 'drop-target border-dashed border-drop-target ring-4 ring-drop-target/15',
+          `side-${side}`,
+          hasContent && 'has-content',
         )}
-      </div>
-      {!simplified && topic.children.length > 0 && (
-        <Button
-          variant="ghost"
-          size="icon"
-          type="button"
-          className={`fold-button nodrag absolute z-[2] size-[18px] rounded-full border border-border bg-background p-0 text-[9px] ${root ? 'text-primary' : 'text-[var(--branch-color)]'} ${foldPosition}`}
-          aria-label={`${topic.collapsed ? translate('expand') : translate('collapse')} ${topic.title}`}
-          onClick={(event) => {
-            event.stopPropagation()
-            useEditor.getState().commitDraft()
-            useEditor.getState().command({ type: 'toggleCollapse', topicId: id })
+        style={
+          {
+            '--branch-color': color,
+            '--topic-fill': fill,
+            background: 'transparent',
+            borderColor: 'transparent',
+            color: data.textColor ?? style?.color,
+            fontFamily: data.fontFamily,
+            borderRadius:
+              shape === 'capsule'
+                ? '9999px'
+                : shape === 'ellipse' || shape === 'circle'
+                  ? '50%'
+                  : shape === 'rectangle' || shape === 'sticky'
+                    ? 0
+                    : undefined,
+          } as React.CSSProperties
+        }
+        data-appearance={shape}
+        data-testid={`topic-${id}`}
+      >
+        <TopicShapeVisual
+          shape={shape}
+          visualStyle={data.visualStyle}
+          sketchFill={root || branch || Boolean(style?.fill) || shape === 'sticky'}
+          seedKey={id}
+          width={width ?? 100}
+          height={height ?? 100}
+          stroke={root ? (data.visualStyle === 'sketch' ? (data.textColor ?? color) : fill) : color}
+          className="pointer-events-none absolute inset-0 h-full w-full"
+        />
+        <span
+          aria-hidden
+          className={cn(
+            'pointer-events-none absolute inset-0 rounded-[inherit] bg-current/5 outline-1 -outline-offset-1 outline-current/55 transition-opacity duration-150 ease-out motion-reduce:transition-none',
+            editingHere ? 'opacity-100' : 'opacity-0',
+          )}
+        />
+        {[Position.Top, Position.Right, Position.Bottom, Position.Left].map((position) => (
+          <Handle
+            key={`target-${position}`}
+            id={`target-${position}`}
+            type="target"
+            position={position}
+          />
+        ))}
+        {[Position.Top, Position.Right, Position.Bottom, Position.Left].map((position) => (
+          <Handle
+            key={`source-${position}`}
+            id={`source-${position}`}
+            type="source"
+            className="!size-3 !border-2 !border-primary !bg-background hover:!opacity-100 group-hover/topic:!pointer-events-auto group-hover/topic:!opacity-100 group-focus-within/topic:!pointer-events-auto group-focus-within/topic:!opacity-100"
+            position={position}
+          />
+        ))}
+        <div
+          className="absolute flex min-h-0 flex-col items-center"
+          style={{
+            top: `${insets.y * 100}%`,
+            bottom: `${insets.y * 100}%`,
+            left: `${insets.x * 100}%`,
+            right: `${insets.x * 100}%`,
           }}
         >
-          {topic.collapsed ? topic.children.length : <FoldIcon size={10} className="size-2.5" />}
-        </Button>
-      )}
-    </div>
+          {simplified ? (
+            <div
+              className="flex h-full w-full items-center justify-center px-4 py-2.5 text-center leading-normal"
+              style={{
+                fontSize: style?.fontSize ?? (root ? 24 : 16),
+                fontWeight: (style?.bold ?? (root || branch)) ? 600 : 400,
+                fontStyle: style?.italic ? 'italic' : 'normal',
+              }}
+            >
+              <span className="line-clamp-3 break-words whitespace-pre-wrap">{topic.title}</span>
+            </div>
+          ) : (
+            <TopicNodeBody
+              topic={topic}
+              root={root}
+              branch={branch}
+              primary={primary}
+              editing={editing}
+            />
+          )}
+        </div>
+        {!simplified && topic.children.length > 0 && (
+          <Button
+            variant="ghost"
+            size="icon"
+            type="button"
+            className={`fold-button nodrag absolute z-[2] size-[18px] rounded-full border border-border bg-background p-0 text-[9px] ${root ? 'text-primary' : 'text-[var(--branch-color)]'} ${foldPosition}`}
+            aria-label={`${topic.collapsed ? translate('expand') : translate('collapse')} ${topic.title}`}
+            onClick={(event) => {
+              event.stopPropagation()
+              useEditor.getState().commitDraft()
+              useEditor.getState().command({ type: 'toggleCollapse', topicId: id })
+            }}
+          >
+            {topic.collapsed ? topic.children.length : <FoldIcon size={10} className="size-2.5" />}
+          </Button>
+        )}
+      </div>
+    </>
   )
 }
 

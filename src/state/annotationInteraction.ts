@@ -5,6 +5,8 @@ import { useEditor } from '@renderer/state/editor'
 import { selectedTopicIds } from '@renderer/state/selection'
 import { runAnnotationCommand } from '@renderer/components/annotations/commands'
 import { isCompositionKey } from '@renderer/state/keyboard'
+import { summarySelectionRanges, topicParents } from '@core/summary'
+import type { Command } from '@core'
 
 export type AnnotationKind = 'relation' | 'group' | 'callout'
 export interface AnnotationSelection {
@@ -14,11 +16,19 @@ export interface AnnotationSelection {
 }
 export const useAnnotationInteraction = create<{
   floating: boolean
+  relationMode: boolean
   fromId: string | null
   sheetId: string | null
   selected: AnnotationSelection | null
   editing: boolean
-}>(() => ({ floating: false, fromId: null, sheetId: null, selected: null, editing: false }))
+}>(() => ({
+  floating: false,
+  relationMode: false,
+  fromId: null,
+  sheetId: null,
+  selected: null,
+  editing: false,
+}))
 
 export const selectAnnotation = (kind: AnnotationKind, id: string, editing = false): void => {
   if (usePresentation.getState().playing) return
@@ -33,6 +43,7 @@ export const selectAnnotation = (kind: AnnotationKind, id: string, editing = fal
     selected: { kind, id, sheetId: useEditor.getState().activeSheetId },
     editing,
     fromId: null,
+    relationMode: false,
     floating: false,
   })
 }
@@ -48,13 +59,14 @@ export const handleAnnotationKey = (event: KeyboardEvent): boolean => {
   const interaction = useAnnotationInteraction.getState()
   if (
     event.key === 'Escape' &&
-    (interaction.selected || interaction.fromId || interaction.floating)
+    (interaction.selected || interaction.relationMode || interaction.floating)
   ) {
     event.preventDefault()
     useAnnotationInteraction.setState({
       selected: null,
       editing: false,
       fromId: null,
+      relationMode: false,
       sheetId: null,
       floating: false,
     })
@@ -82,18 +94,26 @@ export const handleAnnotationKey = (event: KeyboardEvent): boolean => {
 }
 export const toggleRelationMode = (): void => {
   const current = useAnnotationInteraction.getState()
-  if (current.fromId) {
-    useAnnotationInteraction.setState({ fromId: null, sheetId: null })
+  if (current.relationMode) {
+    useAnnotationInteraction.setState({ relationMode: false, fromId: null, sheetId: null })
     return
   }
   const state = useEditor.getState()
   state.commitDraft()
   if (useEditor.getState().editingId) return
+  const topicIds = selectedTopicIds(useEditor.getState())
+  const [first, second] = topicIds
+  if (topicIds.length === 2 && first && second) {
+    connectAnnotation(first, second)
+    return
+  }
   useAnnotationInteraction.setState({
-    fromId: state.selectedId,
+    relationMode: true,
+    fromId: topicIds.length === 1 ? (first ?? null) : null,
     sheetId: state.activeSheetId,
     selected: null,
     editing: false,
+    floating: false,
   })
 }
 export const connectAnnotation = (from: string, to: string): boolean => {
@@ -106,25 +126,109 @@ export const connectAnnotation = (from: string, to: string): boolean => {
     })
   )
     return false
-  useAnnotationInteraction.setState({ fromId: null, sheetId: null })
+  useAnnotationInteraction.setState({ relationMode: false, fromId: null, sheetId: null })
   selectAnnotation('relation', id, true)
   return true
 }
 /** Only topic pointer selection participates; keyboard navigation and search remain independent. */
 export const interactAnnotationTopic = (id: string): boolean => {
   const interaction = useAnnotationInteraction.getState()
-  if (!interaction.fromId) return false
+  if (!interaction.relationMode) return false
   if (interaction.sheetId !== useEditor.getState().activeSheetId) {
-    useAnnotationInteraction.setState({ fromId: null, sheetId: null })
+    useAnnotationInteraction.setState({ relationMode: false, fromId: null, sheetId: null })
     return false
   }
-  connectAnnotation(interaction.fromId, id)
-  return true
+  if (!interaction.fromId) {
+    useAnnotationInteraction.setState({ fromId: id })
+    return true
+  }
+  if (interaction.fromId === id) return true
+  return connectAnnotation(interaction.fromId, id)
+}
+export const createRelationFloatingAt = (x: number, y: number): boolean => {
+  const interaction = useAnnotationInteraction.getState()
+  if (!interaction.relationMode) return false
+  const state = useEditor.getState()
+  if (interaction.sheetId !== state.activeSheetId) {
+    useAnnotationInteraction.setState({ relationMode: false, fromId: null, sheetId: null })
+    return false
+  }
+  const id = crypto.randomUUID()
+  const floating = {
+    type: 'addFloatingTopic' as const,
+    id,
+    title: translate('floatingTopic'),
+    x,
+    y,
+  }
+  if (!interaction.fromId) {
+    const created = runAnnotationCommand(floating)
+    if (created) useAnnotationInteraction.setState({ fromId: id })
+    return created
+  }
+  const relationId = crypto.randomUUID()
+  const created = runAnnotationCommand({
+    type: 'batch',
+    commands: [
+      floating,
+      {
+        type: 'upsertRelation',
+        relation: {
+          id: relationId,
+          from: interaction.fromId,
+          to: id,
+          title: translate('relationship'),
+          arrow: 'end',
+        },
+      },
+    ],
+  })
+  if (created) selectAnnotation('relation', relationId, true)
+  return created
 }
 export const addSelectionGroup = (kind: 'boundary' | 'summary'): void => {
   const state = useEditor.getState(),
     topicIds = selectedTopicIds(state)
   if (!topicIds.length) return
+  if (kind === 'summary') {
+    const document = state.history.document
+    const ranges = summarySelectionRanges(document, topicIds)
+    if (ranges.length === 0) return
+    const parents = topicParents(document)
+    const commands: Command[] = []
+    let firstSummaryTopicId: string | undefined
+    for (const range of ranges) {
+      const first = range[0]
+      if (first === undefined) continue
+      const parentId = parents.get(first)
+      const sourceTopic = document.topics[first]
+      if (parentId === undefined || sourceTopic === undefined) continue
+      const summaryTopicId = crypto.randomUUID()
+      firstSummaryTopicId ??= summaryTopicId
+      commands.push(
+        {
+          type: 'addTopic',
+          parentId,
+          id: summaryTopicId,
+          title: translate('summary'),
+          side: sourceTopic.side,
+        },
+        {
+          type: 'upsertGroup',
+          group: {
+            id: crypto.randomUUID(),
+            topicIds: range,
+            kind: 'summary',
+            summaryTopicId,
+          },
+        },
+      )
+    }
+    if (commands.length > 0 && runAnnotationCommand({ type: 'batch', commands })) {
+      if (firstSummaryTopicId !== undefined) useEditor.getState().startEdit(firstSummaryTopicId)
+    }
+    return
+  }
   const id = crypto.randomUUID()
   if (
     runAnnotationCommand({
@@ -133,7 +237,7 @@ export const addSelectionGroup = (kind: 'boundary' | 'summary'): void => {
         id,
         topicIds,
         kind,
-        title: kind === 'boundary' ? translate('boundary') : translate('summary'),
+        title: translate('boundary'),
       },
     })
   )
@@ -158,6 +262,7 @@ export const armFloatingTopic = (): void => {
     floating: !useAnnotationInteraction.getState().floating,
     sheetId: state.activeSheetId,
     fromId: null,
+    relationMode: false,
     selected: null,
     editing: false,
   })

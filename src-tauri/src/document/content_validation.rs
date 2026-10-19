@@ -161,6 +161,23 @@ pub(crate) fn extensions(doc: &Value) -> Result<()> {
     Ok(())
   };
   let mut annotation_ids = HashSet::new();
+  let mut summary_ids = HashSet::new();
+  let mut parents = HashMap::new();
+  for (parent_id, topic) in topics {
+    for child in list(&topic["children"], 20_000)? {
+      parents.insert(id(child)?, parent_id.as_str());
+    }
+  }
+  let ancestor_of = |ancestor: &str, descendant: &str| -> bool {
+    let mut current = parents.get(descendant).copied();
+    while let Some(parent) = current {
+      if parent == ancestor {
+        return true;
+      }
+      current = parents.get(parent).copied();
+    }
+    false
+  };
   for kind in ["relations", "groups", "callouts", "presentation"] {
     if let Some(items) = doc.get(kind) {
       for item in list(items, if kind == "presentation" { 1000 } else { 5000 })? {
@@ -184,6 +201,24 @@ pub(crate) fn extensions(doc: &Value) -> Result<()> {
               require(topic)?;
               if !unique.insert(id(topic)?) {
                 return Err(invalid("主题分组包含重复成员"));
+              }
+            }
+            if let Some(summary_topic_id) = item.get("summaryTopicId") {
+              if item["kind"] != "summary" {
+                return Err(invalid("只有概要可以关联概要主题"));
+              }
+              require(summary_topic_id)?;
+              let summary_id = id(summary_topic_id)?;
+              if summary_id == id(&doc["rootId"])? || !summary_ids.insert(summary_id) {
+                return Err(invalid("概要主题标识无效或重复"));
+              }
+              for member in &unique {
+                if *member == summary_id
+                  || ancestor_of(summary_id, member)
+                  || ancestor_of(member, summary_id)
+                {
+                  return Err(invalid("概要主题层级无效"));
+                }
               }
             }
           }

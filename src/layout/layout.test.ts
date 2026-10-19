@@ -66,6 +66,28 @@ describe('deterministic bilateral tree layout', () => {
     }
   })
 
+  it('uses manual outer width for wrapping, preserves fit, and keeps circles square', () => {
+    const title = '宽度变化后的中文标题'.repeat(8)
+    const fitted = measureTopic(title)
+    const narrow = measureTopic(title, false, undefined, { style: { width: 80 } })
+    const wide = measureTopic(title, false, undefined, { style: { width: 480 } })
+    expect(narrow.width).toBe(80)
+    expect(narrow.height).toBeGreaterThan(fitted.height)
+    expect(wide.width).toBe(480)
+    expect(wide.height).toBeLessThan(fitted.height)
+    const diamond = measureTopic(title, false, undefined, {
+      style: { width: 320, shape: 'diamond' },
+    })
+    expect(diamond.width).toBe(320)
+    expect(diamond.height).toBeGreaterThan(wide.height)
+    const circle = measureTopic(title, false, undefined, {
+      style: { width: 80, shape: 'circle' },
+    })
+    expect(circle.width).toBe(circle.height)
+    expect(circle.width).toBeGreaterThan(80)
+    expect(Number.isFinite(circle.width)).toBe(true)
+  })
+
   it.each([100, 1_000, 5_000])(
     'lays out a fixed %i-topic fixture deterministically without overlap',
     (count) => {

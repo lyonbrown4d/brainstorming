@@ -15,7 +15,7 @@ import { DockAction } from '@renderer/components/DockAction'
 export const AnnotationActions = () => {
   const { translate } = useMessages()
 
-  const fromId = useAnnotationInteraction((state) => state.fromId)
+  const relationMode = useAnnotationInteraction((state) => state.relationMode)
   const sheetId = useEditor((state) => state.activeSheetId)
   useEffect(() => {
     if (
@@ -24,6 +24,7 @@ export const AnnotationActions = () => {
     )
       useAnnotationInteraction.setState({
         fromId: null,
+        relationMode: false,
         sheetId: null,
         selected: null,
         editing: false,
@@ -35,13 +36,18 @@ export const AnnotationActions = () => {
       if (
         event.key !== 'Escape' ||
         isCompositionKey(event) ||
-        (!useAnnotationInteraction.getState().fromId &&
+        (!useAnnotationInteraction.getState().relationMode &&
           !useAnnotationInteraction.getState().floating)
       )
         return
       event.preventDefault()
       event.stopPropagation()
-      useAnnotationInteraction.setState({ fromId: null, sheetId: null, floating: false })
+      useAnnotationInteraction.setState({
+        relationMode: false,
+        fromId: null,
+        sheetId: null,
+        floating: false,
+      })
     }
     window.addEventListener('keydown', cancel, true)
     return () => {
@@ -54,7 +60,7 @@ export const AnnotationActions = () => {
         caption={translate('relation')}
         aria-label={translate('relationship')}
         title={translate('relationshipSelectAStartTopicThenClick')}
-        aria-pressed={Boolean(fromId)}
+        aria-pressed={relationMode}
         className="aria-pressed:bg-accent"
         onClick={toggleRelationMode}
       >
@@ -96,8 +102,9 @@ export const AnnotationModeHint = () => {
   const { translate } = useMessages()
 
   const fromId = useAnnotationInteraction((state) => state.fromId)
+  const relationMode = useAnnotationInteraction((state) => state.relationMode)
   const floating = useAnnotationInteraction((state) => state.floating)
-  if (!fromId && !floating) return null
+  if (!relationMode && !floating) return null
   return (
     <span
       className="block rounded-xl border bg-background/95 px-3 py-2 text-center text-xs shadow-sm"
@@ -105,7 +112,9 @@ export const AnnotationModeHint = () => {
     >
       {floating
         ? translate('clickEmptyCanvasToAddAFloating')
-        : translate('clickATargetTopicToConnectEsc')}
+        : fromId
+          ? translate('clickATargetTopicToConnectEsc')
+          : translate('relationshipSelectAStartTopicThenClick')}
     </span>
   )
 }

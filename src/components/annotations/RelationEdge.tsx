@@ -1,5 +1,5 @@
 import type { MouseEvent } from 'react'
-import { BaseEdge, EdgeLabelRenderer, useReactFlow, type EdgeProps } from '@xyflow/react'
+import { BaseEdge, EdgeLabelRenderer, type EdgeProps } from '@xyflow/react'
 import { useMessages } from '@renderer/i18n/useMessages'
 import { useEditor } from '@renderer/state/editor'
 import { usePresentation } from '@renderer/state/presentation'
@@ -7,12 +7,10 @@ import { selectAnnotation, useAnnotationInteraction } from '@renderer/state/anno
 import { InlineAnnotationLabel } from '@renderer/components/annotations/InlineAnnotationLabel'
 import { useRelationDrag } from '@renderer/hooks/useRelationDrag'
 import { relationGeometry } from '@shared/relation-geometry'
-import { runAnnotationCommand } from '@renderer/components/annotations/commands'
 import { Button } from '@renderer/components/ui/button'
 
 export const RelationEdge = (props: EdgeProps) => {
   const { translate } = useMessages()
-  const flow = useReactFlow()
   const playing = usePresentation((state) => state.playing)
   const selected = useAnnotationInteraction(
     (state) =>
@@ -50,13 +48,7 @@ export const RelationEdge = (props: EdgeProps) => {
   const edit = (event: MouseEvent<SVGPathElement>) => {
     event.stopPropagation()
     if (playing) return
-    if (relation.routing === 'orthogonal' && geometry.waypoints.length < 32) {
-      const next = [
-        ...geometry.waypoints.map(geometry.relative),
-        geometry.relative(flow.screenToFlowPosition({ x: event.clientX, y: event.clientY })),
-      ]
-      runAnnotationCommand({ type: 'upsertRelation', relation: { ...relation, waypoints: next } })
-    } else selectAnnotation('relation', relation.id, true)
+    selectAnnotation('relation', relation.id, true)
   }
   return (
     <>

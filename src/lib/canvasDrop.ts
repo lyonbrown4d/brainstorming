@@ -66,6 +66,7 @@ export const findTopicDrop = (
   })
   let closest: DropNode | undefined
   let distance = Infinity
+  let bodyHit = false
   for (const node of nodes) {
     if (excluded.has(node.id) || !document.topics[node.id]) continue
     const center = centerOf(node)
@@ -73,9 +74,11 @@ export const findTopicDrop = (
     const dy = Math.abs(point.y - center.y)
     if (dx > node.width / 2 + 12 || dy > node.height / 2 + 12) continue
     const next = Math.hypot(dx, dy)
-    if (next < distance) {
+    const inside = dx <= node.width / 2 && dy <= node.height / 2
+    if ((inside && !bodyHit) || (inside === bodyHit && next < distance)) {
       closest = node
       distance = next
+      bodyHit = inside
     }
   }
   if (!closest) return undefined

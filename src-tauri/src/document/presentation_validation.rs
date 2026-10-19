@@ -80,6 +80,7 @@ pub(crate) fn topic(topic: &Value) -> Result<()> {
         "fill",
         "color",
         "fontSize",
+        "width",
         "bold",
         "italic",
         "shape",
@@ -97,6 +98,7 @@ pub(crate) fn topic(topic: &Value) -> Result<()> {
       optional(style, key, |v| number(v, -1_000_000., 1_000_000.))?;
     }
     optional(style, "fontSize", |v| number(v, 12., 32.))?;
+    optional(style, "width", |v| number(v, 80., 1200.))?;
     optional(style, "lineWidth", |v| number(v, 1., 6.))?;
     optional(style, "shape", |v| {
       choice(v, super::topic_shapes::TOPIC_SHAPES)
@@ -136,6 +138,10 @@ pub(crate) fn topic(topic: &Value) -> Result<()> {
   }
   Ok(())
 }
+
+#[cfg(test)]
+#[path = "topic_width_tests.rs"]
+mod topic_width_tests;
 
 pub(crate) fn settings(doc: &Value) -> Result<()> {
   optional(doc, "settings", |settings| {
@@ -200,7 +206,16 @@ pub(crate) fn annotation(kind: &str, item: &Value) -> Result<()> {
   match kind {
     "relations" => relation_validation::validate(item)?,
     "groups" => {
-      keys(item, &["id", "topicIds", "title", "kind", "color"])?;
+      keys(
+        item,
+        &["id", "topicIds", "title", "kind", "color", "summaryTopicId"],
+      )?;
+      optional(item, "summaryTopicId", |value| {
+        if item["kind"] != "summary" {
+          return Err(invalid("只有概要可以关联概要主题"));
+        }
+        id(value).map(|_| ())
+      })?;
       if list(&item["topicIds"], 512)?.is_empty() {
         return Err(invalid("分组至少需要一个主题"));
       }

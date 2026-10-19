@@ -90,7 +90,7 @@ export const KeyboardHelpDialog: Story = {
     await expect(dialog).toBeVisible()
     await expect(within(dialog).getByRole('textbox', { name: '搜索快捷键' })).toHaveFocus()
     await userEvent.tab()
-    await expect(within(dialog).getByRole('button', { name: '关闭快捷键' })).toHaveFocus()
+    await expect(within(dialog).getByRole('button', { name: '全部恢复默认' })).toHaveFocus()
     await userEvent.keyboard('{Escape}')
     await expect(page.queryByRole('dialog')).not.toBeInTheDocument()
     await expect(trigger).toHaveFocus()

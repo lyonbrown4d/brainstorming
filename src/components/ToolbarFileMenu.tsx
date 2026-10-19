@@ -6,6 +6,9 @@ import { ChevronDown, Download, FilePlus2, FolderOpen, History, Save } from 'luc
 import { useState } from 'react'
 import { useRecentFiles } from '@renderer/hooks/useRecentFiles'
 import { useEditor } from '@renderer/state/editor'
+import { formatShortcutChord } from '@renderer/state/shortcutMatching'
+import { getShortcutChord, useShortcutPreferences } from '@renderer/state/shortcutPreferences'
+import type { ShortcutId } from '@renderer/state/shortcutRegistry'
 import { newDocument, openDocument, saveDocument } from '@renderer/state/files'
 import { Button } from '@renderer/components/ui/button'
 import {
@@ -80,7 +83,14 @@ const RecentFilesMenu = () => {
 }
 
 export const ToolbarFileMenu = () => {
-  const mac = requireDesktopAPI().platform === 'macos'
+  const platform = requireDesktopAPI().platform
+  const shortcutOverrides = useShortcutPreferences((state) => state.overrides)
+  const shortcutHint = (id: ShortcutId) => {
+    const chord = getShortcutChord(id, platform, shortcutOverrides)
+    return chord ? (
+      <DropdownMenuShortcut>{formatShortcutChord(chord, platform)}</DropdownMenuShortcut>
+    ) : null
+  }
   const { translate } = useMessages()
 
   const title = useEditor((state) => state.workbook.title)
@@ -111,7 +121,7 @@ export const ToolbarFileMenu = () => {
           <DropdownMenuItem disabled={busy} aria-label={translate('newMap')} onSelect={newDocument}>
             <FilePlus2 />
             {translate('newMap')}
-            <DropdownMenuShortcut>{mac ? '⌘N' : 'Ctrl+N'}</DropdownMenuShortcut>
+            {shortcutHint('new')}
           </DropdownMenuItem>
           <DropdownMenuItem
             disabled={busy}
@@ -120,7 +130,7 @@ export const ToolbarFileMenu = () => {
           >
             <FolderOpen />
             {translate('openMap')}
-            <DropdownMenuShortcut>{mac ? '⌘O' : 'Ctrl+O'}</DropdownMenuShortcut>
+            {shortcutHint('open')}
           </DropdownMenuItem>
           <RecentFilesMenu />
         </DropdownMenuGroup>
@@ -133,7 +143,7 @@ export const ToolbarFileMenu = () => {
           >
             <Save />
             {translate('saveMap')}
-            <DropdownMenuShortcut>{mac ? '⌘S' : 'Ctrl+S'}</DropdownMenuShortcut>
+            {shortcutHint('save')}
           </DropdownMenuItem>
           <DropdownMenuItem
             disabled={busy}
@@ -142,7 +152,7 @@ export const ToolbarFileMenu = () => {
           >
             <Download />
             {translate('saveAs')}
-            <DropdownMenuShortcut>{mac ? '⇧⌘S' : 'Ctrl+Shift+S'}</DropdownMenuShortcut>
+            {shortcutHint('saveAs')}
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>

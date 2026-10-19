@@ -17,6 +17,28 @@ const fixture = () =>
   })
 
 describe('topic appearances across layout and file formats', () => {
+  it('preserves manual width through XMind and wraps SVG text to the chosen width', () => {
+    const title = '手动调整主题宽度'.repeat(8)
+    const original = createDocument(title, 'width-export')
+    const narrow = applyCommand(original, {
+      type: 'setTopicStyle',
+      topicId: 'root',
+      style: { width: 100 },
+    })
+    const wide = applyCommand(original, {
+      type: 'setTopicStyle',
+      topicId: 'root',
+      style: { width: 600 },
+    })
+    const imported = importXmind(encodeXmind(createWorkbook(narrow)))
+    expect(imported.workbook.sheets[0]?.document.topics.root?.style?.width).toBe(100)
+    const lineCount = (document: typeof narrow): number =>
+      new DOMParser()
+        .parseFromString(renderSheetSvg(document).svg, 'image/svg+xml')
+        .getElementsByTagName('tspan').length
+    expect(lineCount(narrow)).toBeGreaterThan(lineCount(wide))
+  })
+
   it.each(TOPIC_SHAPES)(
     'preserves %s, title and notes through XMind and vector export',
     (shape) => {

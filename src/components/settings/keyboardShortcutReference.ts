@@ -6,7 +6,7 @@ interface ShortcutGroup {
   readonly entries: readonly (readonly [string, MessageKey])[]
 }
 
-/** Current Xmind guide defaults for supported actions; platform differences stay explicit. */
+/** Structural and text-editing bindings stay fixed to preserve native editor behavior. */
 export const keyboardShortcutReference = (platform: DesktopPlatform): readonly ShortcutGroup[] => {
   const mac = platform === 'macos' || platform === 'ios'
   const mod = mac ? '⌘' : 'Ctrl'
@@ -25,8 +25,6 @@ export const keyboardShortcutReference = (platform: DesktopPlatform): readonly S
         [`${mod} + Enter`, 'insertParentAboveCurrentTopic'],
         [mac ? '⌘ + Backspace' : 'Ctrl + Delete', 'deleteCurrentTopicKeepingChildren'],
         [`${alt} + ↑ / ↓`, 'reorderSiblingTopics'],
-        [`${mod} + /`, 'shortcutFold'],
-        [mac ? 'Shift + ⌘ + /' : 'Ctrl + Alt + /', 'shortcutFoldAll'],
         ['Delete / Backspace', 'deleteSelectedBranchesOrAnnotations'],
         [`${mod} + K`, 'hyperlink'],
         [`Shift + ${mod} + N`, 'notes'],
@@ -43,24 +41,14 @@ export const keyboardShortcutReference = (platform: DesktopPlatform): readonly S
       label: 'settingsShortcutNavigation',
       entries: [
         ['↑ ↓ ← →', 'navigateBetweenTopics'],
-        [`${mod} + R`, 'goToCentralTopic'],
-        [`${mod} + + / − / 0`, 'zoomInOutActualSize'],
-        [`${mod} + F`, 'findAndReplace'],
-        [`${mod} + I / ${alt} + Enter`, 'commandToggleProperties'],
-        ['F5', 'presentationPlayFromStart'],
+        [`${alt} + Enter`, 'commandToggleProperties'],
         ['拖动画布空白', 'panCanvasShiftdragToSelectTopics'],
       ],
     },
     {
       label: 'settingsShortcutFiles',
       entries: [
-        [`${mod} + Z`, 'undo'],
-        [mac ? 'Shift + ⌘ + Z' : 'Ctrl + Y / Shift + Ctrl + Z', 'redo'],
-        [`${mod} + S / O / N`, 'saveOpenNew'],
-        [`Shift + ${mod} + S`, 'saveAs'],
         ['Ctrl + Tab / Shift + Ctrl + Tab', 'mapTabShortcuts'],
-        [`${mod} + W`, 'shortcutCloseMap'],
-        [`${mod} + ,`, 'applicationSettings'],
         [`Shift + ${mod} + P`, 'commandPaletteTitle'],
       ],
     },

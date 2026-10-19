@@ -18,6 +18,7 @@ import {
 import { useEditor } from '@renderer/state/editor'
 import { isCompositionKey } from '@renderer/state/keyboard'
 import { handleTopicShortcut } from '@renderer/state/editingShortcuts'
+import { shortcutIdForEvent } from '@renderer/state/shortcutLookup'
 import { richTransformers } from '@renderer/components/metadata/richTransformers'
 
 export const RichDraftPlugin = ({
@@ -104,11 +105,12 @@ export const RichDraftPlugin = ({
               event.preventDefault()
             return false
           }
-          const key = event.key.toLowerCase()
-          const modifier = event.ctrlKey || event.metaKey
-          if (modifier && ['s', 'o', 'n', 'f'].includes(key)) {
+          const globalAction = shortcutIdForEvent(event, 'global')
+          const mapAction = shortcutIdForEvent(event, 'map')
+          if (globalAction || mapAction === 'search') {
             commit()
-            if (key === 'f' && !useEditor.getState().editingId) return handleTopicShortcut(event)
+            if (mapAction === 'search' && !useEditor.getState().editingId)
+              return handleTopicShortcut(event)
             return false
           }
           if (event.key === 'Escape') {

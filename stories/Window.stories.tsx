@@ -11,7 +11,6 @@ import { Toolbar } from '@renderer/components/Toolbar'
 import { TooltipProvider } from '@renderer/components/ui/tooltip'
 import '@renderer/styles/ui.css'
 import '@renderer/styles/base.css'
-import '@renderer/styles/chrome.css'
 import '@renderer/styles/window.css'
 
 const installRecentBridge = (getRecentFiles: DesktopAPI['getRecentFiles']) => {

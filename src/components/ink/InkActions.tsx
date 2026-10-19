@@ -24,6 +24,7 @@ export const InkActions = () => {
     if (useEditor.getState().editingId) return
     useAnnotationInteraction.setState({
       fromId: null,
+      relationMode: false,
       floating: false,
       editing: false,
       selected: null,

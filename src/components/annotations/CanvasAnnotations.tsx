@@ -5,6 +5,7 @@ import type { MindMapDocument } from '@core'
 import type { LayoutNode } from '@layout'
 import { InlineAnnotationLabel } from '@renderer/components/annotations/InlineAnnotationLabel'
 import { groupBounds } from '@renderer/components/annotations/projection'
+import { SummaryBracket } from '@renderer/components/annotations/SummaryBracket'
 
 export const CanvasAnnotations = ({
   document,
@@ -23,6 +24,8 @@ export const CanvasAnnotations = ({
         aria-label={translate('canvasAnnotations')}
       >
         {(document.groups ?? []).map((group) => {
+          if (group.kind === 'summary')
+            return <SummaryBracket key={group.id} document={document} group={group} nodes={nodes} />
           const bounds = groupBounds(
             group.topicIds.flatMap((id) => {
               const node = byId.get(id)
@@ -33,34 +36,21 @@ export const CanvasAnnotations = ({
           return (
             <div
               key={group.id}
-              className={
-                group.kind === 'boundary'
-                  ? 'absolute rounded-xl border-2 border-dashed'
-                  : 'absolute border-r-2'
-              }
+              className="absolute rounded-xl border-2 border-dashed"
               style={{
                 left: bounds.x,
                 top: bounds.y,
                 width: bounds.width,
                 height: bounds.height,
                 borderColor: group.color ?? '#8b79d9',
-                backgroundColor:
-                  group.kind === 'boundary' ? `${group.color ?? '#8b79d9'}0a` : undefined,
+                backgroundColor: `${group.color ?? '#8b79d9'}0a`,
               }}
             >
-              <div
-                className={`absolute -top-5 ${group.kind === 'summary' ? 'left-full ml-1' : 'left-2'}`}
-              >
+              <div className="absolute -top-5 left-2">
                 <InlineAnnotationLabel
                   kind="group"
                   id={group.id}
-                  text={
-                    group.title?.trim()
-                      ? group.title
-                      : group.kind === 'boundary'
-                        ? translate('boundary')
-                        : translate('summary')
-                  }
+                  text={group.title?.trim() ? group.title : translate('boundary')}
                   color={group.color}
                 />
               </div>

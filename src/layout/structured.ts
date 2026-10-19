@@ -16,7 +16,16 @@ import {
 
 const components = (document: MindMapDocument): { plans: LayoutComponent[]; roots: string[] } => {
   const floating = new Set(document.floatingIds ?? [])
-  const roots = [document.rootId, ...(document.floatingIds ?? [])]
+  const summary = new Set(
+    (document.groups ?? []).flatMap((group) =>
+      group.kind === 'summary' &&
+      group.summaryTopicId !== undefined &&
+      group.topicIds.some((id) => document.topics[id] !== undefined)
+        ? [group.summaryTopicId]
+        : [],
+    ),
+  )
+  const roots = [document.rootId, ...(document.floatingIds ?? []), ...summary]
   const plans: LayoutComponent[] = []
   const make = (rootId: string, kind: LayoutKind): LayoutComponent => {
     const plan: LayoutComponent = {
@@ -42,7 +51,9 @@ const components = (document: MindMapDocument): { plans: LayoutComponent[]; root
       current.plan.ids.push(node.id)
       const children = node.collapsed
         ? []
-        : node.children.filter((id) => node.id !== document.rootId || !floating.has(id))
+        : node.children.filter(
+            (id) => !summary.has(id) && (node.id !== document.rootId || !floating.has(id)),
+          )
       current.plan.children.set(node.id, children)
       for (let index = children.length - 1; index >= 0; index -= 1) {
         const id = children[index]

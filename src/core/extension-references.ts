@@ -3,6 +3,7 @@ import { validateDrawings } from '@core/ink'
 import type { DocumentExtensions, TopicMetadata } from '@core/extensions'
 import * as v from '@core/extension-validation'
 import { validateDocumentSettings } from '@core/metadata-validation'
+import { summaryLinkIsSafe } from '@core/summary'
 import {
   validateFloatingPosition,
   validatePresentationStep,
@@ -22,6 +23,10 @@ export const validateDocumentExtensions = (
   v.optional(value, 'settings', validateDocumentSettings)
   v.optional(value, 'drawings', validateDrawings)
   const annotationIds = new Set<string>()
+  const linkedSummaryIds = new Set<string>()
+  const parents = new Map<string, string>()
+  for (const topic of Object.values(topics))
+    for (const id of topic.children) parents.set(id, topic.id)
   const annotationId = (id: string): void => {
     if (annotationIds.has(id)) throw new Error('批注 ID 重复')
     annotationIds.add(id)
@@ -39,6 +44,12 @@ export const validateDocumentExtensions = (
       validateTopicGroup(group)
       annotationId(group.id)
       for (const id of group.topicIds) require(id)
+      if (group.summaryTopicId !== undefined) {
+        require(group.summaryTopicId)
+        if (!summaryLinkIsSafe(group, parents, rootId)) throw new Error('概要主题层级无效')
+        if (linkedSummaryIds.has(group.summaryTopicId)) throw new Error('概要主题重复关联')
+        linkedSummaryIds.add(group.summaryTopicId)
+      }
     }
   })
   v.optional(value, 'callouts', (entry) => {
@@ -114,8 +125,29 @@ export const pruneTopicMetadata = (
 }
 
 export const pruneDocumentReferences = (document: MindMapDocument): MindMapDocument => {
-  const retained = new Set(Object.keys(document.topics))
   const topics: Record<string, Topic> = { ...document.topics }
+  const obsoleteSummaryRoots = (document.groups ?? [])
+    .filter(
+      (group) =>
+        group.summaryTopicId !== undefined &&
+        !group.topicIds.some((id) => Object.hasOwn(topics, id)),
+    )
+    .flatMap((group) => (group.summaryTopicId === undefined ? [] : [group.summaryTopicId]))
+  const removed = new Set<string>()
+  const pending = [...obsoleteSummaryRoots]
+  while (pending.length > 0) {
+    const id = pending.pop()
+    if (id === undefined || removed.has(id)) continue
+    removed.add(id)
+    pending.push(...(topics[id]?.children ?? []))
+    Reflect.deleteProperty(topics, id)
+  }
+  if (removed.size > 0)
+    for (const topic of Object.values(topics)) {
+      const children = topic.children.filter((id) => !removed.has(id))
+      if (children.length !== topic.children.length) topics[topic.id] = { ...topic, children }
+    }
+  const retained = new Set(Object.keys(topics))
   for (const topic of Object.values(topics)) {
     if (!topic.metadata) continue
     const metadata = pruneTopicMetadata(topic.metadata, retained)
@@ -140,7 +172,11 @@ export const pruneDocumentReferences = (document: MindMapDocument): MindMapDocum
               ...group,
               topicIds: group.topicIds.filter((id) => retained.has(id)),
             }))
-            .filter((group) => group.topicIds.length > 0),
+            .filter(
+              (group) =>
+                group.topicIds.length > 0 &&
+                (group.summaryTopicId === undefined || retained.has(group.summaryTopicId)),
+            ),
         }),
     ...(document.callouts === undefined
       ? {}

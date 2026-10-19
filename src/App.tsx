@@ -46,7 +46,6 @@ import { CreationWorkspace, WorkspaceHeader } from '@renderer/components/creatio
 import '@xyflow/react/dist/style.css'
 import '@renderer/styles/ui.css'
 import '@renderer/styles/base.css'
-import '@renderer/styles/chrome.css'
 import '@renderer/styles/window.css'
 import '@renderer/styles/topics.css'
 import '@renderer/styles/motion.css'
@@ -96,8 +95,11 @@ const AppWorkspace = () => {
             <div className="app-body relative flex min-h-0 flex-1">
               <main className="workspace-main relative flex min-h-0 min-w-0 flex-1 flex-col">
                 {recovery.length > 0 && (
-                  <div className="recovery-banner" role="status">
-                    <span>{translate('workspaceRecoveryFound')}</span>
+                  <div
+                    className="recovery-banner z-[9] flex items-center gap-[15px] border-b border-border bg-accent px-6 py-2.5 text-[13px] text-accent-foreground [&>button]:text-xs"
+                    role="status"
+                  >
+                    <span className="flex-1">{translate('workspaceRecoveryFound')}</span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -115,8 +117,11 @@ const AppWorkspace = () => {
                   </div>
                 )}
                 {error && screen === 'editor' && (
-                  <div className="error-banner" role="alert">
-                    <span>{error}</span>
+                  <div
+                    className="error-banner z-[9] flex items-center gap-[15px] bg-background px-6 py-2.5 text-[13px] text-destructive"
+                    role="alert"
+                  >
+                    <span className="flex-1">{error}</span>
                     <Button
                       variant="ghost"
                       size="icon"

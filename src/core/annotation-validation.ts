@@ -55,10 +55,13 @@ export const validateRelation: (value: unknown) => asserts value is Relation = (
 export const validateTopicGroup: (value: unknown) => asserts value is TopicGroup = (
   value: unknown,
 ): asserts value is TopicGroup => {
-  const group = v.record(value, ['id', 'topicIds', 'title', 'kind', 'color'])
+  const group = v.record(value, ['id', 'topicIds', 'title', 'kind', 'color', 'summaryTopicId'])
   assertId(group.id)
   v.ids(group.topicIds, 512, 1)
   v.oneOf(group.kind, ['boundary', 'summary'])
+  v.optional(group, 'summaryTopicId', assertId)
+  if (group.summaryTopicId !== undefined && group.kind !== 'summary')
+    throw new Error('只有概要可以关联概要主题')
   v.optional(group, 'title', (entry) => {
     v.text(entry, 1000, true)
   })

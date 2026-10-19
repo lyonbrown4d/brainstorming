@@ -10,7 +10,6 @@ import { useEditor } from '@renderer/state/editor'
 import { SheetTabItem } from '@renderer/components/SheetTabItem'
 import { SheetDialog, type SheetDialogAction } from '@renderer/components/SheetDialog'
 import { Button } from '@renderer/components/ui/button'
-import '@renderer/styles/sheets.css'
 import { beginCreation } from '@renderer/state/creation'
 
 export const SheetTabs = () => {

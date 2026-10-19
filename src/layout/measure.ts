@@ -28,7 +28,16 @@ export const measureTopicContent = (
   // Include the renderer's padding, borders, and a small font-metric tolerance.
   const padding = isRoot ? 56 : 44
   const maxWidth = isRoot ? 280 : 240
-  const maxTextWidth = maxWidth - padding
+  const metadata = content?.metadata
+  const markers = measureTopicMarkers(metadata)
+  const verticalPadding = markers.extraHeight ? 12 : 0
+  const shape = content?.style?.shape
+  const fixedWidth = content?.style?.width
+  const insets = topicShapeInsets(shape)
+  const maxTextWidth =
+    fixedWidth === undefined
+      ? maxWidth - padding
+      : Math.max(fontSize, fixedWidth * (1 - insets.x * 2) - padding - markers.extraWidth)
   let lineWidth = 0
   let longestLine = 0
   let lines = 1
@@ -49,9 +58,6 @@ export const measureTopicContent = (
   }
   longestLine = Math.max(longestLine, lineWidth)
   const image = content?.image ? measureTopicImage(content.image) : undefined
-  const metadata = content?.metadata
-  const markers = measureTopicMarkers(metadata)
-  const verticalPadding = markers.extraHeight ? 12 : 0
   const badgesHeight =
     metadata &&
     (metadata.labels?.length ||
@@ -62,15 +68,19 @@ export const measureTopicContent = (
       ? 28
       : 0
   const detailsHeight = content?.notes || content?.attachments?.length ? 28 : 0
-  const shape = content?.style?.shape
   const size = {
     width:
-      Math.max(
-        (isRoot ? 180 : 112) + verticalPadding,
-        Math.min(maxWidth + verticalPadding, Math.ceil(longestLine + padding + verticalPadding)),
-        image ? image.width + padding + verticalPadding : 0,
-        markers.extraHeight ? markers.width + 24 : 0,
-      ) + markers.extraWidth,
+      fixedWidth === undefined
+        ? Math.max(
+            (isRoot ? 180 : 112) + verticalPadding,
+            Math.min(
+              maxWidth + verticalPadding,
+              Math.ceil(longestLine + padding + verticalPadding),
+            ),
+            image ? image.width + padding + verticalPadding : 0,
+            markers.extraHeight ? markers.width + 24 : 0,
+          ) + markers.extraWidth
+        : fixedWidth * (1 - insets.x * 2),
     height:
       Math.max(
         Math.max(isRoot ? 64 : 44, lines * Math.ceil(fontSize * 1.5) + (isRoot ? 28 : 20)) +
@@ -95,7 +105,7 @@ export const measureTopic = (
   const size = measureTopicContent(title, isRoot, customFontSize, content)
   const shape = content?.style?.shape
   const insets = topicShapeInsets(shape)
-  const width = Math.ceil(size.width / (1 - insets.x * 2))
+  const width = content?.style?.width ?? Math.ceil(size.width / (1 - insets.x * 2))
   const height = Math.ceil(size.height / (1 - insets.y * 2))
   return shape === 'circle'
     ? { width: Math.max(width, height), height: Math.max(width, height) }

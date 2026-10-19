@@ -19,7 +19,11 @@ export const clipboardAnnotations = (
       ? {}
       : {
           groups: structuredClone(
-            document.groups.filter(({ topicIds }) => topicIds.every((id) => retained.has(id))),
+            document.groups.filter(
+              ({ topicIds, summaryTopicId }) =>
+                topicIds.every((id) => retained.has(id)) &&
+                (summaryTopicId === undefined || retained.has(summaryTopicId)),
+            ),
           ),
         }),
     ...(document.callouts === undefined
@@ -116,6 +120,9 @@ export const pasteAnnotations = (
               ...structuredClone(item),
               id: mapped(mapping, item.id),
               topicIds: item.topicIds.map((id) => mapped(topicIds, id)),
+              ...(item.summaryTopicId === undefined
+                ? {}
+                : { summaryTopicId: mapped(topicIds, item.summaryTopicId) }),
             })),
           ],
         }),

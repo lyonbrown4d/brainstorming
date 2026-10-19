@@ -96,6 +96,8 @@ export const InlineAnnotationLabel = ({
   return (
     <button
       type="button"
+      data-annotation-kind={kind}
+      data-annotation-id={id}
       className={`nodrag nopan pointer-events-auto block max-w-60 rounded border bg-background/95 px-2 py-1 text-left text-xs whitespace-pre-wrap shadow-sm ${selected ? 'border-primary ring-1 ring-primary' : 'border-transparent'}`}
       style={{ color }}
       aria-label={`${kind === 'relation' ? translate('relationship') : kind === 'group' ? translate('group') : translate('callout')}：${text || translate('untitled')}`}

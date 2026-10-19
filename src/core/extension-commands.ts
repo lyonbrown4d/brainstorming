@@ -17,8 +17,9 @@ import {
   validateTopicGroup,
 } from '@core/annotation-validation'
 import { clearFloatingRoots } from '@core/extension-references'
-import { moveTopics } from '@core/selection-commands'
+import { deleteTopics, moveTopics } from '@core/selection-commands'
 import { validateAudioAsset } from '@core/topic-content'
+import { assertSummaryRange, topicParents } from '@core/summary'
 
 const extensionTypes = new Set([
   'upsertDrawing',
@@ -113,13 +114,44 @@ export const applyExtensionCommand = (
     }
     case 'upsertGroup': {
       validateTopicGroup(command.group)
+      const prior = document.groups?.find(({ id }) => id === command.group.id)
+      if (
+        command.group.kind === 'summary' &&
+        command.group.summaryTopicId !== undefined &&
+        (!prior || !same(prior.topicIds, command.group.topicIds))
+      )
+        assertSummaryRange(document, command.group)
+      if (command.group.summaryTopicId !== undefined) {
+        const parents = topicParents(document)
+        const sourceParent = parents.get(command.group.topicIds[0] ?? '')
+        if (
+          sourceParent === undefined ||
+          parents.get(command.group.summaryTopicId) !== sourceParent
+        )
+          throw new Error('概要主题须与范围主题属于同一父主题')
+        if (
+          document.groups?.some(
+            (group) =>
+              group.id !== command.group.id &&
+              group.summaryTopicId === command.group.summaryTopicId,
+          )
+        )
+          throw new Error('概要主题已被使用')
+      }
       const groups = upsert(document.groups, command.group)
       return same(groups, document.groups) ? document : { ...document, groups }
     }
     case 'removeGroup': {
       assertId(command.groupId)
-      if (!document.groups?.some(({ id }) => id === command.groupId)) return document
-      return { ...document, groups: document.groups.filter(({ id }) => id !== command.groupId) }
+      const group = document.groups?.find(({ id }) => id === command.groupId)
+      if (!group) return document
+      const withoutGroup = {
+        ...document,
+        groups: (document.groups ?? []).filter(({ id }) => id !== command.groupId),
+      }
+      return group.summaryTopicId === undefined
+        ? withoutGroup
+        : deleteTopics(withoutGroup, [group.summaryTopicId])
     }
     case 'upsertCallout': {
       validateTopicCallout(command.callout)

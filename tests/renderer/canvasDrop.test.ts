@@ -11,7 +11,12 @@ import {
   deserializeDocument,
 } from '@core'
 import { getSubtreeIds } from '@core/tree'
-import { canvasDropCommand, findCanvasDrop, nodeCenter } from '@renderer/lib/canvasDrop'
+import {
+  canvasDropCommand,
+  findCanvasDrop,
+  findTopicDrop,
+  nodeCenter,
+} from '@renderer/lib/canvasDrop'
 import { canvasDragPointer } from '@renderer/lib/canvasDragPointer'
 import { projectCanvas } from '@renderer/components/documents/projectCanvas'
 
@@ -180,6 +185,24 @@ describe('canvas group drop commands', () => {
         y: center.y,
       }),
     ).toBeUndefined()
+  })
+
+  it('prefers a topic body over a nearby sibling insertion halo', () => {
+    const { document } = fixture()
+    const drop = findTopicDrop(
+      document,
+      [
+        { id: 'vision', position: { x: 0, y: 0 }, width: 300, height: 40, direction: 'right' },
+        { id: 'users', position: { x: 290, y: 0 }, width: 40, height: 40, direction: 'right' },
+      ],
+      new Set(),
+      { x: 285, y: 20 },
+    )
+    expect(drop).toMatchObject({
+      targetId: 'vision',
+      parentId: 'root',
+      indicator: { axis: 'x', edge: 'after' },
+    })
   })
 })
 

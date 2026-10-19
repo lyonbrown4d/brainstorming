@@ -3,7 +3,6 @@ import { expect, userEvent, within } from 'storybook/test'
 import { ImportNotice } from '@renderer/components/ImportNotice'
 import { useEditor } from '@renderer/state/editor'
 import '@renderer/styles/ui.css'
-import '@renderer/styles/chrome.css'
 
 const meta = {
   title: 'Brainstorming/XMind 导入',

@@ -16,7 +16,7 @@ const hasOpenPanel = (): boolean => {
 const isInteractionPinned = (): boolean => {
   const state = useAnnotationInteraction.getState()
   return (
-    Boolean(state.fromId) ||
+    state.relationMode ||
     state.floating ||
     state.editing ||
     useCanvasInk.getState().mode !== 'select' ||
@@ -32,7 +32,7 @@ export const useDockToolbar = ({ pinInteraction = true }: { pinInteraction?: boo
   const keyboard = useRef(false)
   const restoringFocus = useRef(false)
   const pinned = useAnnotationInteraction(
-    (state) => Boolean(state.fromId) || state.floating || state.editing,
+    (state) => state.relationMode || state.floating || state.editing,
   )
   const editing = useEditor((state) => state.editingId !== null)
   const inking = useCanvasInk((state) => state.mode !== 'select')

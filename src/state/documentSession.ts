@@ -36,6 +36,7 @@ export const restoreDocumentSession = (session: DocumentSession): void => {
   useTopicFilters.setState(session.filters)
   useAnnotationInteraction.setState({
     fromId: null,
+    relationMode: false,
     sheetId: null,
     selected: null,
     editing: false,

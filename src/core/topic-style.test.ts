@@ -15,7 +15,7 @@ import type { TopicStyle } from '@core'
 describe('topic presentation commands', () => {
   it('replaces approved style fields atomically, isolates caller data and supports undo/redo', () => {
     const original = createHistory(createDocument('中心', 'styled'))
-    const style = { fill: '#aabbcc', fontSize: 24, bold: true }
+    const style = { fill: '#aabbcc', fontSize: 24, bold: true, width: 360 }
     const styled = executeCommand(original, { type: 'setTopicStyle', topicId: 'root', style })
     expect(styled.past).toEqual([original.document])
     expect(styled.document.topics.root?.style).toEqual(style)
@@ -27,7 +27,7 @@ describe('topic presentation commands', () => {
       executeCommand(styled, {
         type: 'setTopicStyle',
         topicId: 'root',
-        style: { bold: true, fontSize: 24, fill: '#aabbcc' },
+        style: { bold: true, fontSize: 24, fill: '#aabbcc', width: 360 },
       }),
     ).toBe(styled)
     const cleared = applyCommand(styled.document, {
@@ -45,6 +45,7 @@ describe('topic presentation commands', () => {
       fill: '#123ABC',
       color: '#ffffff',
       fontSize: 32,
+      width: 1200,
       bold: false,
       italic: true,
       shape: 'ellipse',
@@ -60,6 +61,22 @@ describe('topic presentation commands', () => {
       }),
     )
     expect(parsed.topics.root?.style).toEqual(style)
+  })
+
+  it('removes only manual width when fitting and restores it with undo', () => {
+    const original = createHistory(createDocument('中心', 'width-fit'))
+    const resized = executeCommand(original, {
+      type: 'setTopicStyle',
+      topicId: 'root',
+      style: { fill: '#abcdef', width: 320 },
+    })
+    const fitted = executeCommand(resized, {
+      type: 'setTopicStyle',
+      topicId: 'root',
+      style: { fill: '#abcdef' },
+    })
+    expect(fitted.document.topics.root?.style).toEqual({ fill: '#abcdef' })
+    expect(undo(fitted).document.topics.root?.style).toEqual({ fill: '#abcdef', width: 320 })
   })
 
   it.each(TOPIC_SHAPES)(
@@ -122,6 +139,11 @@ describe('topic presentation commands', () => {
     { fontSize: 11 },
     { fontSize: 33 },
     { fontSize: Number.NaN },
+    { width: 79 },
+    { width: 1201 },
+    { width: Number.NaN },
+    { width: Number.POSITIVE_INFINITY },
+    { width: '200' },
     { lineWidth: 0 },
     { lineWidth: 7 },
     { bold: 1 },

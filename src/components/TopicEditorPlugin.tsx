@@ -20,6 +20,7 @@ import { useEditor } from '@renderer/state/editor'
 import type { EditingSurface } from '@renderer/state/editorTypes'
 import { handleTopicNavigation, handleTopicShortcut } from '@renderer/state/editingShortcuts'
 import { isCompositionKey, isPrimaryModifier } from '@renderer/state/keyboard'
+import { shortcutIdForEvent } from '@renderer/state/shortcutLookup'
 
 export const TopicEditorPlugin = ({
   id,
@@ -135,22 +136,25 @@ export const TopicEditorPlugin = ({
           const state = useEditor.getState()
           const modifier = isPrimaryModifier(event)
           const key = event.key.toLowerCase()
-          if (
-            modifier &&
-            !event.altKey &&
-            ['s', 'o', 'n'].includes(key) &&
-            (key === 's' || !event.shiftKey)
-          ) {
+          if (shortcutIdForEvent(event, 'global')) {
             commit()
             return false
           }
-          if (modifier && !event.shiftKey && !event.altKey && key === 'f') {
+          const mapSurface = surface === 'canvas' || surface === 'outline'
+          const mapAction = shortcutIdForEvent(event, 'map')
+          if (
+            mapSurface &&
+            mapAction &&
+            (!ownsDraft() ||
+              ['search', 'root', 'zoomIn', 'zoomOut', 'actualSize', 'inspector'].includes(
+                mapAction,
+              ))
+          ) {
             commit()
             if (!useEditor.getState().editingId) return handleTopicShortcut(event)
             event.preventDefault()
             return true
           }
-          const mapSurface = surface === 'canvas' || surface === 'outline'
           if (
             mapSurface &&
             modifier &&
@@ -184,24 +188,9 @@ export const TopicEditorPlugin = ({
             }
             return true
           }
-          if (
-            mapSurface &&
-            (!ownsDraft() ||
-              (modifier && (key === 'enter' || ['=', '+', '-', '0', 'r'].includes(key))))
-          ) {
+          if (mapSurface && (!ownsDraft() || (modifier && key === 'enter'))) {
             if (handleTopicShortcut(event)) return true
             if (!ownsDraft() && handleTopicNavigation(event, id)) return true
-            if (
-              !ownsDraft() &&
-              modifier &&
-              !event.altKey &&
-              (key === 'z' || (key === 'y' && !event.shiftKey))
-            ) {
-              event.preventDefault()
-              if (event.shiftKey || key === 'y') state.redo()
-              else state.undo()
-              return true
-            }
           }
           // Unhandled modifier chords belong to the app/browser, never to topic creation.
           if (event.metaKey || event.ctrlKey || event.altKey) return false

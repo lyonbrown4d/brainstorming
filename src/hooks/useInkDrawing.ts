@@ -47,7 +47,7 @@ export const useInkDrawing = () => {
         cancel()
     })
     const unsubscribeAnnotation = useAnnotationInteraction.subscribe((state) => {
-      if (state.fromId || state.floating || state.editing) {
+      if (state.relationMode || state.floating || state.editing) {
         cancel()
         setInkMode('select')
       }

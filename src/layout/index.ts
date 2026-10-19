@@ -1,5 +1,6 @@
 import { validateDocument, type MindMapDocument } from '@core'
 import { applyManualOffsets } from '@layout/manual-offsets'
+import { positionSummaryTopics } from '@layout/summary-layout'
 import { layoutMapDocument } from '@layout/map'
 import { layoutStructuredDocument } from '@layout/structured'
 import type { MindMapLayout } from '@layout/types'
@@ -19,11 +20,15 @@ export const layoutDocument = (document: MindMapDocument): MindMapLayout => {
   const defaultMap =
     (document.settings?.layout ?? 'map') === 'map' &&
     !document.floatingIds?.length &&
+    !document.groups?.some((group) => group.summaryTopicId !== undefined) &&
     !Object.values(document.topics).some(
       (topic) => topic.structure !== undefined && topic.structure !== 'map',
     )
-  return applyManualOffsets(
+  return positionSummaryTopics(
     document,
-    defaultMap ? layoutMapDocument(document) : layoutStructuredDocument(document),
+    applyManualOffsets(
+      document,
+      defaultMap ? layoutMapDocument(document) : layoutStructuredDocument(document),
+    ),
   )
 }

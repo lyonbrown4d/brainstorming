@@ -1,3 +1,6 @@
+import { topicWidthMessages } from '@renderer/i18n/topicWidthMessages'
+import { shortcutCustomizationMessages } from '@renderer/i18n/shortcutCustomizationMessages'
+import { summaryMessages } from '@renderer/i18n/summaryMessages'
 import { priorityMessages } from '@renderer/i18n/priorityMessages'
 import { artMessages } from '@renderer/i18n/artMessages'
 import { exportMessages } from '@renderer/i18n/exportMessages'
@@ -29,6 +32,9 @@ import { messages7 } from '@renderer/i18n/messages7'
 import { messages8 } from '@renderer/i18n/messages8'
 
 const messages = {
+  ...topicWidthMessages,
+  ...shortcutCustomizationMessages,
+  ...summaryMessages,
   ...priorityMessages,
   ...artMessages,
   ...exportMessages,
