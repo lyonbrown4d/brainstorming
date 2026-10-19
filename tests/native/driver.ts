@@ -41,7 +41,18 @@ export const chooseFile = async (
 ): Promise<void> => {
   await fixture('dialog', { kind, name, cancel })
 }
+/** Embedded clicks do not activate an inactive native app before keyboard input. */
+export const focusNativeWindow = async (): Promise<void> => {
+  const focused = async (): Promise<boolean> =>
+    (await native<{ focused: boolean }>('getWindowState')).focused &&
+    (await browser.execute(() => document.visibilityState === 'visible' && document.hasFocus()))
+  if (!(await focused())) await native('startupReady')
+  await browser.waitUntil(focused, {
+    timeoutMsg: 'The native main window must be visible and focused before UI input',
+  })
+}
 export const shortcut = async (key: string): Promise<void> => {
+  await focusNativeWindow()
   await browser.keys([process.platform === 'darwin' ? Key.Command : Key.Control, key])
   // WebdriverIO keys() releases actions; the embedded driver treats Key.NULL as text.
 }
@@ -63,12 +74,7 @@ export const reloadNativePage = async (): Promise<void> => {
   await expect(browser.$('#startup-screen')).not.toExist()
   await browser.tauri.switchWindow('main')
   await native('startupReady')
-  await browser.waitUntil(
-    async () =>
-      (await native<{ focused: boolean }>('getWindowState')).focused &&
-      (await browser.execute(() => document.visibilityState === 'visible' && document.hasFocus())),
-    { timeoutMsg: 'The native editor did not become visible and focused after reload' },
-  )
+  await focusNativeWindow()
 }
 export const home = async (): Promise<void> => {
   await browser.tauri.switchWindow('main')
@@ -93,6 +99,8 @@ export const home = async (): Promise<void> => {
   }
 }
 export const create = async (title: string): Promise<void> => {
+  await focusNativeWindow()
+  await expect(named('下一步')).toBeEnabled()
   await named('下一步').click()
   await expect(named('文档名称')).toBeDisplayed()
   await named('文档名称').setValue(title)
@@ -102,17 +110,25 @@ export const create = async (title: string): Promise<void> => {
   await browser.waitUntil(async () => (await browser.getUrl()).includes('#/documents/'))
 }
 export const fileAction = async (action: string): Promise<void> => {
+  await focusNativeWindow()
+  await expect(named('文件菜单')).toBeEnabled()
   await named('文件菜单').click()
   await browser.keys(Key.ArrowDown)
+  await expect(browser.$('[role="menu"]')).toBeDisplayed()
+  await expect(named(action)).toBeEnabled()
   await named(action).click()
+  await expect(browser.$('[role="menu"]')).not.toBeDisplayed()
 }
 export const dockAction = async (action: string): Promise<void> => {
   await named('展开浮动工具栏').click()
   await named(action).click()
 }
 export const renameRoot = async (title: string): Promise<void> => {
+  await focusNativeWindow()
   await root().click()
   await browser.keys(Key.F2)
+  await expect(editor()).toBeDisplayed()
+  await expect(editor()).toBeFocused()
   await editor().setValue(title)
   await browser.keys(Key.Enter)
   await rootHasText(title)

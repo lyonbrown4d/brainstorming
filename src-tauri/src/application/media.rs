@@ -2,7 +2,7 @@ use super::{core::CoreServices, platform::RuntimeConfig, service_error, session:
 use crate::{
     document::DocumentStore,
     media::MediaState,
-    runtime::{AppState, ai::AIService, mcp::MCPService},
+    runtime::{AppState, ai::AIService, mcp::MCPService, notifications::NotificationService},
     search::SearchService,
     storage::{MetadataStore, ResourceVault},
 };
@@ -20,6 +20,7 @@ static_module! {
             async search: SearchService;
             ai: AIService;
             mcp: MCPService;
+            notifications: NotificationService;
         };
         external core_services: Weak<CoreServices>;
         #[scope(root)]

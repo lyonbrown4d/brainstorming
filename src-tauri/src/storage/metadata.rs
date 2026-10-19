@@ -17,7 +17,7 @@ static MIGRATOR: LazyLock<Migrator> = LazyLock::new(|| {
 
 #[derive(Clone)]
 pub struct MetadataStore {
-    pool: SqlitePool,
+    pub(super) pool: SqlitePool,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]

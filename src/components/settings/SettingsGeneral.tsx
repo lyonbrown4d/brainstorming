@@ -1,3 +1,4 @@
+import { SettingsNotifications } from '@renderer/components/settings/SettingsNotifications'
 import { useId, useState } from 'react'
 import { LoaderCircle } from 'lucide-react'
 import { useTheme } from 'next-themes'
@@ -102,6 +103,7 @@ export const SettingsGeneral = () => {
           </SelectContent>
         </Select>
       </div>
+      <SettingsNotifications />
     </div>
   )
 }

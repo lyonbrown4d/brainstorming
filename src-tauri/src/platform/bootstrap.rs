@@ -6,13 +6,8 @@ use std::{path::PathBuf, sync::Arc};
 use tauri::{Manager, RunEvent};
 
 pub fn run() {
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "warn".into()),
-        )
-        .init();
-    let builder = tauri::Builder::default()
-        .on_permission_request(|webview, kind| {
+    let builder = super::plugins::register(tauri::Builder::default()).on_permission_request(
+        |webview, kind| {
             use tauri::webview::{PermissionKind, PermissionResponse};
             if webview.label() != "main"
                 || !webview
@@ -25,39 +20,8 @@ pub fn run() {
                 PermissionKind::Microphone => PermissionResponse::Default,
                 _ => PermissionResponse::Deny,
             }
-        })
-        .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_fs::init())
-        .plugin(tauri_plugin_clipboard_manager::init())
-        .plugin(tauri_plugin_deep_link::init())
-        .plugin(tauri_plugin_os::init())
-        .plugin(tauri_plugin_brainstorming_native::init());
-    #[cfg(target_os = "macos")]
-    let builder = builder.plugin(tauri_plugin_macos_fps::init());
-    #[cfg(desktop)]
-    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, _| {
-        let app = app.clone();
-        tauri::async_runtime::spawn(async move {
-            if super::initialization::ready(&app).await.is_err() {
-                return;
-            }
-            for argument in args.into_iter().skip(1).take(32) {
-                let path = PathBuf::from(argument);
-                if path.is_absolute() {
-                    runtime::enqueue_open(&app, path).await;
-                }
-            }
-            if let Some(main) = app.get_webview_window("main") {
-                let _ = main.show();
-                let _ = main.set_focus();
-            }
-        });
-    }));
-    #[cfg(feature = "e2e")]
-    let builder = builder
-        .plugin(tauri_plugin_wdio::init())
-        .plugin(tauri_plugin_wdio_webdriver::init());
+        },
+    );
     #[cfg(not(feature = "e2e"))]
     let builder = builder.invoke_handler(tauri::generate_handler![super::request::native_request]);
     #[cfg(feature = "e2e")]
@@ -67,7 +31,6 @@ pub fn run() {
     ]);
     let app = builder
         .setup(|app| {
-            app.manage(super::initialization::Initialization::default());
             super::menu::register(app.handle());
             #[cfg(desktop)]
             tauri::WebviewWindowBuilder::new(
@@ -84,8 +47,8 @@ pub fn run() {
             .build()?;
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
-                if let Err(error) = super::initialization::ready(&handle).await {
-                    tracing::error!("Native initialization failed: {error}");
+                if super::initialization::ready(&handle).await.is_err() {
+                    tracing::error!("Native initialization failed");
                     super::initialization::set_phase(&handle, "failed");
                 }
             });

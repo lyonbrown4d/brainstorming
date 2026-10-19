@@ -87,7 +87,7 @@ export const ToolbarFileMenu = () => {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="document-menu-trigger min-w-0 shrink gap-1 px-1 sm:gap-2"
+          className="document-menu-trigger h-8 min-w-0 shrink gap-1 px-1 sm:gap-2"
           aria-label={translate('fileMenu')}
           disabled={busy}
           title={filename}

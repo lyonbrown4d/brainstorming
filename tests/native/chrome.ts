@@ -39,7 +39,7 @@ export const checkMacChrome = async (): Promise<void> => {
   expect(native.window).toEqual(
     expect.objectContaining({ titled: true, fullSizeContentView: true, titleHidden: true }),
   )
-  expect(header.height).toBe(56)
+  expect(header.height).toBe(44)
   for (const button of Object.values(native.buttons)) {
     expect(button.visible).toBe(true)
     expect(button.enabled).toBe(true)

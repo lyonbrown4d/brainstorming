@@ -233,7 +233,7 @@ async fn metadata_current_baseline_registration_preserves_preferences_recent_and
         .unwrap();
     store.shutdown().await.unwrap();
     let mut db = open_db(&path).await;
-    sqlx::query("DROP TABLE _brainstorming_migrations")
+    sqlx::raw_sql("DROP TABLE notification_preferences; DROP TABLE _brainstorming_migrations")
         .execute(&mut db)
         .await
         .unwrap();
@@ -270,7 +270,7 @@ async fn metadata_current_baseline_validation_rejects_corrupt_data_without_ledge
         .unwrap();
     store.shutdown().await.unwrap();
     let mut db = open_db(&path).await;
-    sqlx::raw_sql("DROP TABLE _brainstorming_migrations; INSERT INTO recent_files VALUES (1,'')")
+    sqlx::raw_sql("DROP TABLE notification_preferences; DROP TABLE _brainstorming_migrations; INSERT INTO recent_files VALUES (1,'')")
         .execute(&mut db)
         .await
         .unwrap();

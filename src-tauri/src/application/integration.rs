@@ -1,5 +1,5 @@
 use super::{media::BackendServices, platform::RuntimeConfig};
-use crate::runtime::{ai::AIService, mcp::MCPService};
+use crate::runtime::{ai::AIService, mcp::MCPService, notifications::NotificationService};
 use fluxdi::{Error, Injector, Module, Shared, module::ModuleLifecycleFuture, static_module};
 
 static_module! {
@@ -9,10 +9,15 @@ static_module! {
         ai: AIService = ai(config);
         #[scope(root)]
         mcp: MCPService = mcp();
+        #[scope(root)]
+        notifications: NotificationService = notifications(config);
     }
 }
 fn ai(config: Shared<RuntimeConfig>) -> Result<Shared<AIService>, Error> {
     Ok(Shared::new(AIService::new(config.directory.clone())))
+}
+fn notifications(config: Shared<RuntimeConfig>) -> Result<Shared<NotificationService>, Error> {
+    Ok(Shared::new(NotificationService::new(config.app.clone())))
 }
 fn mcp() -> Result<Shared<MCPService>, Error> {
     Ok(Shared::new(MCPService::default()))
@@ -25,12 +30,14 @@ impl Module for IntegrationModule {
         Box::pin(async move {
             graph.ai()?;
             graph.mcp()?;
+            graph.notifications()?;
             Ok(())
         })
     }
     fn on_stop(&self, _: Shared<Injector>) -> ModuleLifecycleFuture {
         let graph = self.0.clone();
         Box::pin(async move {
+            graph.notifications()?.shutdown();
             let mcp = graph.mcp()?;
             if let Some(app) = &graph.config()?.app {
                 mcp.stop(app).await;

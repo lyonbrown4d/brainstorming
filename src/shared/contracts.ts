@@ -1,3 +1,4 @@
+import type { NotificationAPI } from '@shared/notifications'
 import type { LanguageAPI } from '@shared/language'
 import type { AppearanceMode } from '@shared/appAppearance'
 import type { DesktopPlatform, WindowState } from '@shared/window'
@@ -45,7 +46,8 @@ export interface SaveRequest {
   readonly openDocumentIds?: readonly string[]
   password?: string | null
 }
-export interface DesktopAPI extends FileSecurityAPI, AIAPI, MCPAPI, LanguageAPI, ContentSearchAPI {
+export interface DesktopAPI
+  extends FileSecurityAPI, AIAPI, MCPAPI, LanguageAPI, ContentSearchAPI, NotificationAPI {
   minimizeWindow?(): Promise<void>
   toggleFullScreen?(): Promise<void>
   toggleMaximizeWindow?(): Promise<void>

@@ -26,6 +26,11 @@ pub async fn dispatch(
             *state.language.write().map_err(|_| "语言设置不可用")? = language.into();
             Ok(json!(language))
         }
+        "getNotificationSettings" => Ok(json!(state.notifications.settings(&state.metadata).await?)),
+        "setNotificationsEnabled" => {
+            let input: super::notifications::SetEnabled = serde_json::from_value(args).map_err(|_| "通知设置无效")?;
+            Ok(json!(state.notifications.set_enabled(&state.metadata, input.enabled).await?))
+        }
         "getWindowState" => window::state(app),
         "setAppearance" => { window::appearance(app, input::text(&args, "theme", 10)?).await?; Ok(Value::Null) }
         "minimizeWindow" | "maximizeWindow" | "closeWindow" | "startWindowDrag" | "toggleFullScreen" => window::command(app, method),
@@ -117,7 +122,11 @@ pub async fn dispatch(
         "replyMCPRequest" => { state.mcp.reply(input::required(&args, "reply")?).await?; Ok(Value::Null) }
         "writeTopicClipboard" => { clipboard::write(app, &args).await?; Ok(Value::Null) }
         "readTopicClipboard" => Ok(json!(clipboard::read(app).await?)),
-        "exportFile" => export(app, input::required(&args, "request")?).await,
+        "exportFile" => {
+            let result = export(app, input::required(&args, "request")?).await;
+            let english = state.language.read().map(|value| value.as_str() == "en").unwrap_or(false);
+            state.notifications.finish_export(&state.metadata, english, result).await
+        }
         "openExternal" => {
             let url = input::external_url(input::text(&args, "url", 4096)?)?;
             let handle = app.clone();
@@ -131,6 +140,7 @@ pub async fn dispatch(
             // Close the active splash before the final focus request, so its teardown
             // cannot send keyboard focus back to a different application.
             if let Some(main) = app.get_webview_window("main") {
+                crate::platform::restore_window_state(&main);
                 main.show().map_err(|_| "无法显示主窗口")?;
                 if let Some(splash) = app.get_webview_window("splash") { let _ = splash.close(); }
                 #[cfg(target_os = "macos")]

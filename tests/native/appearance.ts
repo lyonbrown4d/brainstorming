@@ -1,17 +1,30 @@
 import { nativeArtifact } from '@tests/native/artifacts'
 import { browser, expect } from '@wdio/globals'
 import { Key } from 'webdriverio'
-import { named, reloadNativePage } from '@tests/native/driver'
+import { focusNativeWindow, named, reloadNativePage } from '@tests/native/driver'
 
-export const chooseAppearance = async (label: string): Promise<void> => {
+const openAppearanceOptions = async (): Promise<void> => {
+  await focusNativeWindow()
+  await expect(named('应用设置')).toBeEnabled()
   await named('应用设置').click()
   await expect(browser.$('[role="dialog"]')).toBeDisplayed()
-  await browser.$('[role="combobox"][aria-label="应用外观"]').click()
+  await focusNativeWindow()
+  const trigger = browser.$('[role="combobox"][aria-label="应用外观"]')
+  await expect(trigger).toBeEnabled()
+  await trigger.click()
   // The embedded driver sends click without pointerdown; Radix opens via keyboard.
   await browser.keys(Key.ArrowDown)
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true')
+  await expect(browser.$('[role="listbox"]')).toBeDisplayed()
+}
+
+export const chooseAppearance = async (label: string): Promise<void> => {
+  await openAppearanceOptions()
   const choice = browser.$('[role="listbox"]').$(`aria/${label}`)
   await expect(choice).toBeDisplayed()
   await choice.click()
+  await expect(browser.$('[role="listbox"]')).not.toBeDisplayed()
+  await focusNativeWindow()
   await browser.keys(Key.Escape)
   await expect(browser.$('[role="dialog"]')).not.toBeDisplayed()
 }
@@ -64,9 +77,7 @@ export const checkBrandAppearance = async (): Promise<void> => {
   )
   await expect(browser.$('html')).toHaveAttribute('data-theme', systemTheme)
   expect(await loadedLogo()).toBe(systemTheme === 'dark' ? darkLogo : lightLogo)
-  await named('应用设置').click()
-  await browser.$('[role="combobox"][aria-label="应用外观"]').click()
-  await browser.keys(Key.ArrowDown)
+  await openAppearanceOptions()
   await browser.waitUntil(
     async () =>
       browser.execute(

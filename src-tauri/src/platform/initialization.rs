@@ -128,8 +128,8 @@ pub fn exit(app: &AppHandle, code: i32) {
     }
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
-        if let Err(error) = shutdown(&app).await {
-            tracing::error!("Native shutdown failed: {error}");
+        if shutdown(&app).await.is_err() {
+            tracing::error!("Native shutdown failed");
         }
         app.state::<Initialization>()
             .exit_ready

@@ -33,3 +33,5 @@ Tabs 由官方 CLI `shadcn@4.22.0` 获取，`ui/tabs.tsx` 保持上游实现。�
 全局命令面板组合 shadcn Command、Dialog 和 cmdk `1.1.1`（MIT），内容查询与命令执行放在业务层。新增 `ui/command.tsx` 来自 [shadcn 官方源码](https://github.com/shadcn-ui/ui/blob/main/apps/v4/registry/new-york-v4/ui/command.tsx)：固定版本 CLI `shadcn@4.22.1` 的注册表请求返回 403 后，改从同一官方上游获取，仅调整仓库导入别名。业务使用公开 props 扩展布局、键盘提示、错误状态和主题，不修改下载组件。
 
 创建引导及属性栏结构选择复用 `StructureBrowser`，默认按思维与逻辑、层级结构、分析归纳、时间线、表格矩阵分组，搜索覆盖全部中英文预设。创建引导提供“不使用预设”，创建一份仅有中心主题的普通思维导图。设置采用四项横向 Tabs、对齐的紧凑设置行及可滚动内容；画布侧栏与视口控件沿用统一暖白、石墨语义颜色。
+
+标题栏统一为 44px，高频按钮保留 32px，Windows/Linux 窗口按钮为 40×44px。macOS 原生交通灯中心调整为 y=22，与内容行对齐；全屏时取消交通灯预留空间。系统通知入口组合现有 Button 与 TanStack Query，在通用设置中显示启用、关闭、读取失败和权限状态，不新增应用内 Toast 组件。

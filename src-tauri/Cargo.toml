@@ -17,7 +17,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [features]
 default = ["native-ui"]
-native-ui = ["dep:fluxdi", "dep:tauri", "dep:tauri-plugin-dialog", "dep:tauri-plugin-opener", "dep:tauri-plugin-clipboard-manager", "dep:tauri-plugin-fs", "dep:tauri-plugin-deep-link", "dep:tauri-plugin-os", "dep:tauri-plugin-brainstorming-native", "dep:tauri-plugin-single-instance", "dep:tauri-plugin-macos-fps"]
+native-ui = ["dep:fluxdi", "dep:tauri", "dep:tauri-plugin-dialog", "dep:tauri-plugin-opener", "dep:tauri-plugin-clipboard-manager", "dep:tauri-plugin-fs", "dep:tauri-plugin-deep-link", "dep:tauri-plugin-os", "dep:tauri-plugin-log", "dep:tauri-plugin-window-state", "dep:tauri-plugin-notification", "dep:tauri-plugin-brainstorming-native", "dep:tauri-plugin-single-instance", "dep:tauri-plugin-macos-fps"]
 e2e = ["native-ui", "dep:tauri-plugin-wdio", "dep:tauri-plugin-wdio-webdriver", "tauri-plugin-brainstorming-native/e2e"]
 
 [build-dependencies]
@@ -33,6 +33,8 @@ tauri-plugin-clipboard-manager = { version = "2.5.0", optional = true }
 tauri-plugin-fs = { version = "2.7.1", optional = true }
 tauri-plugin-deep-link = { version = "2.6.2", optional = true }
 tauri-plugin-os = { version = "2.4.0", optional = true }
+tauri-plugin-log = { version = "2.10.1", optional = true }
+tauri-plugin-notification = { version = "2.7.0", optional = true }
 tauri-plugin-brainstorming-native = { path = "plugins/brainstorming-native", optional = true }
 tauri-plugin-wdio = { version = "1.5.0", optional = true }
 tauri-plugin-wdio-webdriver = { version = "1.5.0", optional = true }
@@ -56,8 +58,8 @@ axum = "0.8.9"
 subtle = "2.6.1"
 tempfile = "3.27.0"
 chrono = { version = "0.4.45", features = ["serde"] }
-tracing = "0.1.44"
-tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+# Keep Rust tracing events on the official log backend without a second subscriber.
+tracing = { version = "0.1.44", features = ["log"] }
 infer = "0.22.0"
 imagesize = "0.15.0"
 mime_guess = "2.0.5"
@@ -74,6 +76,7 @@ fluxdi = { version = "=2.0.0", optional = true, default-features = false, featur
 
 [target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
 tauri-plugin-single-instance = { version = "2.5.4", optional = true }
+tauri-plugin-window-state = { version = "2.5.0", optional = true }
 clipboard-rs = "0.3.5"
 keyring = { version = "4.2.0", features = ["v1"] }
 

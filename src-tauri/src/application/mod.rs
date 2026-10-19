@@ -140,8 +140,8 @@ impl Drop for Backend {
                 self.media.clone(),
             );
             runtime.spawn(async move {
-                if let Err(error) = work.await {
-                    tracing::error!("Native service cleanup failed: {error}");
+                if work.await.is_err() {
+                    tracing::error!("Native service cleanup failed");
                 }
             });
         }

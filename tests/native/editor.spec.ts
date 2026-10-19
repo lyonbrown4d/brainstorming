@@ -10,6 +10,7 @@ import {
   dockAction,
   editor,
   fileAction,
+  focusNativeWindow,
   home,
   named,
   native,
@@ -39,8 +40,11 @@ describe('native editor and document workflow', () => {
     await dockAction('重做')
     await rootHasText('中文原生保存')
     await browser.saveScreenshot(await nativeArtifact('brainstorming-native-2d.png'))
+    await focusNativeWindow()
     await root().click()
     await browser.keys(Key.Tab)
+    await expect(editor()).toBeDisplayed()
+    await expect(editor()).toBeFocused()
     await editor().setValue('子主题 A')
     await browser.keys(Key.Enter)
     const copiedId = await browser

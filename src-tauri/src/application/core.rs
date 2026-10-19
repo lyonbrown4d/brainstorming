@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
     document::DocumentStore,
-    runtime::{AppState, ai::AIService, mcp::MCPService},
+    runtime::{AppState, ai::AIService, mcp::MCPService, notifications::NotificationService},
     search::SearchService,
     storage::{MetadataStore, ResourceVault},
 };
@@ -26,6 +26,7 @@ static_module! {
         import integrations: IntegrationServices {
             ai: AIService;
             mcp: MCPService;
+            notifications: NotificationService;
         };
     }
 }
@@ -52,6 +53,7 @@ impl AppState {
             language: session.language.clone(),
             ai: services.ai()?,
             mcp: services.mcp()?,
+            notifications: services.notifications()?,
             search: services.search().await?,
             resource_origin: RwLock::new("http://brainstorming.localhost".into()),
         }))

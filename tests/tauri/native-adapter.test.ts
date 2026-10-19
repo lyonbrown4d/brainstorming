@@ -45,6 +45,23 @@ const fixture = () => {
 }
 
 describe('Tauri platform adapter', () => {
+  it('exposes settings-only notification operations without requesting on initialization', async () => {
+    const native = fixture()
+    const { api, dispose } = await createNativeAPI(native.transport, initial)
+    expect(native.calls).toEqual([])
+    native.setResult({ enabled: false, permission: 'denied' })
+    await expect(api.getNotificationSettings()).resolves.toEqual({
+      enabled: false,
+      permission: 'denied',
+    })
+    expect(native.calls.at(-1)).toEqual({ method: 'getNotificationSettings', args: {} })
+    await api.setNotificationsEnabled(true)
+    expect(native.calls.at(-1)).toEqual({
+      method: 'setNotificationsEnabled',
+      args: { enabled: true },
+    })
+    dispose()
+  })
   it('forwards system appearance unchanged and keeps manual modes explicit', async () => {
     const native = fixture()
     const { api, dispose } = await createNativeAPI(native.transport, initial)

@@ -21,6 +21,7 @@ pub struct AppState {
     pub recovery: Arc<Mutex<()>>,
     pub ai: Arc<AIService>,
     pub mcp: Arc<MCPService>,
+    pub(crate) notifications: Arc<super::notifications::NotificationService>,
     pub search: Arc<SearchService>,
     pub language: Arc<RwLock<String>>,
     pub resource_origin: RwLock<String>,

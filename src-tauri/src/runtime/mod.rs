@@ -15,6 +15,7 @@ mod mcp_tools;
 mod mcp_transport;
 mod mcp_validation;
 pub mod native_files;
+pub(crate) mod notifications;
 mod recovery;
 mod secrets;
 pub mod session;
@@ -31,8 +32,8 @@ mod tests;
 pub async fn renderer_started(app: &tauri::AppHandle) {
     use tauri::Manager;
     if let Some(state) = app.try_state::<std::sync::Arc<AppState>>() {
-        if let Err(error) = state.search.clear().await {
-            tracing::error!("Content search reset failed: {error}");
+        if state.search.clear().await.is_err() {
+            tracing::error!("Content search reset failed");
         }
         state.mcp.stop(app).await;
         state.ai.cancel_all().await;

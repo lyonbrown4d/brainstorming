@@ -1,3 +1,4 @@
+import { notificationMessages } from '@renderer/i18n/notificationMessages'
 import { commandMessages } from '@renderer/i18n/commandMessages'
 import { creationMessages } from '@renderer/i18n/creationMessages'
 import { sketchMessages } from '@renderer/i18n/sketchMessages'
@@ -23,6 +24,7 @@ import { messages7 } from '@renderer/i18n/messages7'
 import { messages8 } from '@renderer/i18n/messages8'
 
 const messages = {
+  ...notificationMessages,
   ...commandMessages,
   ...creationMessages,
   ...sketchMessages,

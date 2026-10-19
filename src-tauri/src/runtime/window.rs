@@ -101,10 +101,13 @@ async fn close(app: &AppHandle) {
         {
             let _guard = state.recovery.lock().await;
         }
-        if let Err(error) = crate::platform::finish_shutdown(app).await {
+        if let Some(window) = app.get_webview_window("main") {
+            crate::platform::save_window_state(&window).await;
+        }
+        if crate::platform::finish_shutdown(app).await.is_err() {
             // Teardown is terminal: all modules have already been attempted.
             // Keep the confirmed exit instead of leaving a closed backend in the UI.
-            tracing::error!("Native service shutdown failed: {error}");
+            tracing::error!("Native service shutdown failed");
         }
         Ok::<bool, String>(true)
     }
@@ -138,7 +141,9 @@ pub async fn enqueue_open(app: &AppHandle, path: std::path::PathBuf) -> bool {
     let accepted = state.session.lock().await.enqueue(path);
     if accepted {
         let _ = app.emit_to("main", "native:open-file", ());
-        if let Some(window) = app.get_webview_window("main") {
+        if let Some(window) = app.get_webview_window("main")
+            && window.is_visible().unwrap_or(false)
+        {
             let _ = window.unminimize();
             let _ = window.set_focus();
         }

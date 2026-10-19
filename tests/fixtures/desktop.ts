@@ -14,6 +14,8 @@ export const desktop = (overrides: Partial<DesktopAPI> = {}): DesktopAPI => {
     syncContentIndex: () => Promise.resolve(),
     searchContent: () => Promise.resolve([]),
     platform: 'macos',
+    getNotificationSettings: () => Promise.resolve({ enabled: false, permission: 'granted' }),
+    setNotificationsEnabled: (enabled) => Promise.resolve({ enabled, permission: 'granted' }),
     getLanguage: () => Promise.resolve('zh-CN'),
     setLanguage: (language) => Promise.resolve(language),
     ...inactiveMCP,

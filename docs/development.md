@@ -138,7 +138,7 @@ macOS `build:desktop --debug`（未指定证书）或显式 `APPLE_SIGNING_IDENT
 
 主操作和选中态采用石墨 / 暖白反色，默认导图中心为石墨色，界面不使用紫色选中底色；紫色仍可作为用户的导图配色。界面沿用浅色、深色与跟随系统，使用 `src/styles/ui.css` 的语义变量统一标题栏、Dock、属性栏、启动页和演示页。默认导图的画布与派生节点底色跟随界面外观；其他导图预设、自定义背景和显式节点颜色保持文档设置。外观投影不写入工作簿、撤销记录或导出颜色。
 
-三个桌面平台共用 56px 标题栏；macOS 保留原生交通灯，Windows、Linux 使用右侧窗口操作区。大纲和属性栏宽度由 `src/shared/workbench.ts` 统一维护。
+三个桌面平台共用 44px 标题栏，常用操作按钮保持 32px 高度；macOS 保留原生交通灯，Windows、Linux 使用右侧窗口操作区。大纲和属性栏宽度由 `src/shared/workbench.ts` 统一维护。
 
 属性折叠复用官方 shadcn Accordion，由固定版本 `shadcn@4.22.0` CLI 下载；上层 `PropertySection` 组合样式并保留折叠内容的编辑器 DOM，不修改下载源码。
 
@@ -173,3 +173,18 @@ Rust 的 `search` 模块通过 FluxDI 装配到 AppState。索引复用 SQLx 和
 索引只存已打开且解锁文档的标题、Sheet 名、主题标题与备注；不含资源二进制、文件路径或密码，不创建明文磁盘索引。单进程最多保留 32 份文档、100000 个主题、128 MiB 原始文本，单工作簿最多 20000 个主题；超过限制返回可见错误。重载或关闭会话清除索引，应用退出关闭连接池。此索引无需文件格式迁移。
 
 `tests/native/content-search.spec.ts` 使用真实 Rust IPC 和 SQLite 索引验收跨文档、跨 Sheet 定位、未保存内容更新和关闭清理；前端同步竞态与取消由 renderer 测试覆盖。
+
+## 桌面插件
+
+插件统一由 `src-tauri/src/platform/plugins.rs` 注册。已接入官方 clipboard-manager、fs、single-instance，本轮补充 log `2.10.1`、notification `2.7.0`、window-state `2.5.0`；版本以 Cargo.lock 为准。所有插件从 Rust 侧使用，renderer 继续调用类型明确的 `native_request`，不增加通用文件读写、任意通知或前端日志权限。
+
+- `single-instance` 首先注册，后续启动继续将文件交给已有窗口；主窗口隐藏时不抢先显示，由 `startupReady` 完成启动交接。
+- `window-state` 仅管理主窗口。自动恢复尺寸与位置；最大化在 `startupReady` 恢复一次，正常关闭前通过官方接口保存三项状态。不恢复显隐、全屏、窗口装饰，不追踪启动页或远程预览。E2E 关闭窗口状态持久化，避免修改本机窗口偏好。
+- `log` 是唯一日志后端，现有 tracing 调用通过官方 `log` 功能转发一次。默认 Warn 级别，只接受本应用 target，输出 stderr 和系统应用日志目录。单文件上限 1 MiB，保留 3 个归档；生命周期错误使用固定文案，避免把底层异常中的内容、路径、URL 或密钥写入日志。不订阅 WebView console。E2E 不写日志文件。
+- `notification` 由 FluxDI 管理的 NotificationService 调用，只在 `exportFile` 完成原生写入后发送固定的中英文提示。取消、失败和自动保存不发送；发送失败不改变导出结果，后台发送受容量与时限约束。权限仅由设置中的显式启用动作申请，被拒绝或服务不可用时保留可读状态。桌面插件返回 Granted 并不能证明系统实际展示了通知，仍受通知中心设置、免打扰和打包环境影响。
+
+通知偏好保存在现有 SQLx 本机库，新增 `002_notifications.sql`，不改变导图文件格式。未额外引入 Store，避免形成第二套原生偏好存储；也未引入 Persisted Scope：该插件恢复的是 Tauri fs/asset scope，不会替代当前 Rust 会话的文档、资源与密码授权。
+
+剪贴板仍用成熟的 clipboard-rs 保留应用自定义 MIME 与纯文本的同次写入；官方剪贴板插件不能单独替代主题树的自定义格式。文件系统插件保持可用，文档事务与分块资源继续由 SQLx、tokio 和现有授权服务管理。
+
+参考：[通知](https://v2.tauri.app/zh-cn/plugin/notification/)、[日志](https://v2.tauri.app/zh-cn/plugin/logging/)、[窗口状态](https://v2.tauri.app/zh-cn/plugin/window-state/)、[持久化作用域](https://v2.tauri.app/zh-cn/plugin/persisted-scope/)、[Store](https://v2.tauri.app/zh-cn/plugin/store/)。

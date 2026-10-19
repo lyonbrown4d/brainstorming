@@ -121,6 +121,8 @@ export const createNativeAPI = async (
     searchContent: (input) => request('searchContent', { input }),
     platform: initial.platform,
     resourceOrigin: initial.resourceOrigin.replace(/\/$/, ''),
+    getNotificationSettings: () => request('getNotificationSettings'),
+    setNotificationsEnabled: (enabled) => request('setNotificationsEnabled', { enabled }),
     getLanguage: () => request('getLanguage'),
     setLanguage: (language) => request('setLanguage', { language }),
     getWindowState: () => request('getWindowState'),
