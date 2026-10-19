@@ -9,7 +9,7 @@ import {
   createFromRequest,
   exploreExample,
 } from '@renderer/state/creation'
-import { enterWorkspaceEditor, useWorkspace } from '@renderer/state/workspace'
+import { enterWorkspaceEditor, updateCreationDraft, useWorkspace } from '@renderer/state/workspace'
 import { Button } from '@renderer/components/ui/button'
 import { CreationGallery } from '@renderer/components/creation/CreationGallery'
 import { CreationHeader } from '@renderer/components/creation/CreationHeader'
@@ -49,6 +49,8 @@ export const CreationWorkspace = () => {
   const error = useEditor((state) => state.error)
   const lockedRecovery = useFileSecurityState((state) => state.lockedRecovery)
   const home = screen === 'home'
+  const mode = screen === 'create-sheet' ? 'sheet' : 'document'
+  const draft = useWorkspace((state) => state.creationDrafts[mode])
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {lockedRecovery && (
@@ -60,11 +62,16 @@ export const CreationWorkspace = () => {
       )}
       <CreationGallery
         key={screen === 'create-sheet' ? 'sheet' : 'document'}
-        mode={screen === 'create-sheet' ? 'sheet' : 'document'}
+        mode={mode}
+        draft={draft}
+        onDraftChange={(draft) => {
+          updateCreationDraft(mode, draft)
+        }}
         busy={busy}
         error={error}
         step={step}
         onStepChange={(next) => {
+          if (home && !beginCreation('document')) return
           useWorkspace.setState({ creationStep: next })
         }}
         showHeader={false}

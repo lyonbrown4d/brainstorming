@@ -1,8 +1,12 @@
 import type { Command, HistoryState, MindMapDocument, MindMapWorkbook } from '@core'
 
+export type InspectorMode = 'topic' | 'canvas'
+export type CanvasPropertySection = 'structure' | 'appearance' | 'template'
+
 export type EditSelection = 'all' | 'end'
 
-export type EditingSurface = 'canvas' | 'spatial' | 'inspector' | 'notes' | 'rich-title' | 'outline'
+export type EditingSurface =
+  'canvas' | 'inspector' | 'notes' | 'rich-title' | 'outline' | 'presentation-notes'
 
 export interface SheetSession {
   history: HistoryState
@@ -31,6 +35,7 @@ export interface EditorData extends StructureSnapshot {
   dropTargetId: string | null
   editingId: string | null
   editingSurface: EditingSurface | null
+  editingPageIndex: number | null
   draft: string
   editSelection: EditSelection
   richDraft: string | null
@@ -42,6 +47,8 @@ export interface EditorData extends StructureSnapshot {
   importReport: { sourceName: string; warnings: readonly string[] } | null
   outlineOpen: boolean
   inspectorOpen: boolean
+  inspectorMode: InspectorMode
+  canvasSection: CanvasPropertySection
   views: Readonly<Record<string, SheetView>>
   clock: number
   structurePast: readonly StructureEdit[]

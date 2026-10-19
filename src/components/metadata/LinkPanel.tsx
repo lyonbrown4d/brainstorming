@@ -6,7 +6,6 @@ import { ExternalLink, Link2 } from 'lucide-react'
 import type { TopicMetadata, TopicLink } from '@core'
 import { getParentId } from '@core'
 import { useEditor } from '@renderer/state/editor'
-import { useSpatialView } from '@renderer/state/spatial'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import { FieldSelect } from '@renderer/components/FieldSelect'
@@ -46,7 +45,6 @@ export const openTopicLink = (link: TopicLink): void => {
   }
   if (commands.length && !current.command({ type: 'batch', commands })) return
   current.select(link.topicId)
-  useSpatialView.getState().setFocus(sheetId, null)
 }
 export const LinkPanel = ({ topicId, metadata }: { topicId: string; metadata: TopicMetadata }) => {
   const { translate } = useMessages()

@@ -1,7 +1,6 @@
 import { translate } from '@renderer/i18n'
 import { getParentId, searchWorkbook, type SearchMatch, type SearchOptions } from '@core'
 import { useEditor } from '@renderer/state/editor'
-import { useSpatialView } from '@renderer/state/spatial'
 import { useSearch } from '@renderer/state/searchState'
 export { useSearch } from '@renderer/state/searchState'
 export const searchOptions = (): SearchOptions => {
@@ -33,8 +32,7 @@ export const revealSearchMatch = (match: SearchMatch): void => {
   }
   if (commands.length && !current.command({ type: 'batch', commands })) return
   current.select(match.topicId)
-  useSpatialView.getState().setFocus(match.sheetId, null)
-  if (match.field === 'notes') useEditor.setState({ inspectorOpen: true })
+  if (match.field === 'notes') useEditor.setState({ inspectorOpen: true, inspectorMode: 'topic' })
 }
 export const replaceSearchResults = (match?: SearchMatch): void => {
   const editor = useEditor.getState()

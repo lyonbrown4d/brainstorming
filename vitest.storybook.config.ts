@@ -11,12 +11,12 @@ const rendererOptimizeDeps = rendererOptions.optimizeDeps
 
 export default defineConfig({
   cacheDir: resolve('node_modules/.vite/brainstorming-storybook-test'),
-  resolve: { tsconfigPaths: true, dedupe: ['three'] },
+  resolve: { tsconfigPaths: true },
   optimizeDeps: rendererOptimizeDeps,
   plugins: [storybookTest({ configDir: resolve('.storybook') })],
   test: {
     name: 'storybook',
-    // Serialize WebGL stories to avoid competing GPU contexts on developer machines and CI.
+    // Keep browser story execution deterministic on developer machines and CI.
     fileParallelism: false,
     browser: {
       enabled: true,

@@ -1,3 +1,4 @@
+import { SheetStyleControl } from '@renderer/components/documents/SheetStyleControl'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { Label } from '@renderer/components/ui/label'
@@ -50,6 +51,13 @@ export const DocumentSettingsPanel = ({ inline = false }: { inline?: boolean }) 
   }
   const content = (
     <>
+      <SheetStyleControl
+        value={settings.visualStyle ?? 'normal'}
+        disabled={busy}
+        onChange={(visualStyle) => {
+          update({ visualStyle })
+        }}
+      />
       <div className={inline ? 'mb-3 grid gap-3' : 'mb-3 flex items-center justify-between gap-2'}>
         <h2 className="text-sm font-semibold">{translate('mapColors')}</h2>
         <ToggleGroup

@@ -1,10 +1,6 @@
 export const messages8 = {
   applyValue0: ['应用{{value0}}', 'Apply {{value0}}'],
   filterResultValue0: ['筛选结果：{{value0}}', 'Filter result: {{value0}}'],
-  addSelectedTopics3dViewAlsoRecords: [
-    '添加所选主题；三维视图会记录当前视角。未添加时按可见主题自动演示。方向键或空格切换，Esc 退出。',
-    'Add selected topics; 3D view also records the camera. Without saved steps, visible topics play automatically. Navigate with arrow keys or Space; Esc exits.',
-  ],
   theLast20SavedSnapshotsAreKept: [
     '成功保存后会保留本机最近 20 份快照。恢复版本会先替换当前内容，直到下次保存才更新文件。已加密的历史版本保留保存时的密码。',
     'The last 20 saved snapshots are kept locally. Restoring replaces current content; the file updates on your next save. Encrypted snapshots retain their original password.',

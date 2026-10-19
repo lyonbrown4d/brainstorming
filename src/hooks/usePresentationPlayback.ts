@@ -1,29 +1,51 @@
-import { useEffect, useRef, useState } from 'react'
-import { useReactFlow } from '@xyflow/react'
-import { useReducedMotion } from 'motion/react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { getPlatformAPI } from '@renderer/lib/desktop'
 import { useEditor } from '@renderer/state/editor'
 import { isCompositionKey } from '@renderer/state/keyboard'
 import {
-  capturePresentationViewport,
+  advancePresentation,
   showPresentationStep,
   stopPresentation,
   usePresentation,
 } from '@renderer/state/presentation'
-import { useSpatialView } from '@renderer/state/spatial'
 
-/** Synchronize transient playback with viewport, focus, keyboard and browser fullscreen. */
+const reportError = (error: unknown): void => {
+  useEditor.getState().setError(error instanceof Error ? error.message : String(error))
+}
+
+/** Playback owns only its independent slide surface, keyboard focus and fullscreen. */
 export const usePresentationPlayback = () => {
-  const flow = useReactFlow()
-  const pendingFit = useRef<Promise<boolean> | null>(null)
   const presentation = usePresentation()
-  const sheetId = useEditor((state) => state.activeSheetId)
-  const spatial = useSpatialView((state) => state.sheets[sheetId]?.mode === '3d')
-  const reducedMotion = useReducedMotion()
+  const api = getPlatformAPI()
+  const ownsNativeFullscreen = useRef(false)
+  const fullscreenPending = useRef(false)
   const [fullscreen, setFullscreen] = useState(false)
-
+  useEffect(() => {
+    if (!api?.toggleFullScreen) return
+    let alive = true
+    let changed = false
+    void api
+      .getWindowState()
+      .then((state) => {
+        if (alive && !changed) setFullscreen(state.fullScreen)
+      })
+      .catch(reportError)
+    const unsubscribe = api.onWindowStateChanged((state) => {
+      changed = true
+      setFullscreen(state.fullScreen)
+      if (!state.fullScreen && ownsNativeFullscreen.current) {
+        ownsNativeFullscreen.current = false
+        stopPresentation()
+      }
+    })
+    return () => {
+      alive = false
+      unsubscribe()
+    }
+  }, [api])
   useEffect(() => {
     const changed = (): void => {
-      setFullscreen(Boolean(document.fullscreenElement))
+      if (!api?.toggleFullScreen) setFullscreen(Boolean(document.fullscreenElement))
       if (
         !document.fullscreenElement &&
         document.documentElement.hasAttribute('data-presentation-fullscreen')
@@ -36,118 +58,123 @@ export const usePresentationPlayback = () => {
     return () => {
       document.removeEventListener('fullscreenchange', changed)
     }
-  }, [])
+  }, [api])
   useEffect(() => {
     if (!presentation.playing) return
     const previous = document.activeElement
-    const controls = document.querySelector<HTMLElement>('[data-presentation-controls]')
-    controls?.focus({ preventScroll: true })
-    return () => {
-      requestAnimationFrame(() => {
-        if (previous instanceof HTMLElement && previous.isConnected)
-          previous.focus({ preventScroll: true })
-        else document.getElementById('sheet-panel')?.focus({ preventScroll: true })
-      })
-    }
-  }, [presentation.playing])
-  useEffect(() => {
-    if (!presentation.playing || spatial) return
-    capturePresentationViewport(flow.getViewport())
-    const step = presentation.steps[presentation.index]
-    if (!step) return
-    const frame = requestAnimationFrame(() => {
-      pendingFit.current = flow.fitView({
-        nodes: [{ id: step.topicId }],
-        padding: 0.5,
-        minZoom: 0.4,
-        maxZoom: 1.2,
-        duration: reducedMotion ? 0 : 250,
-      })
-    })
-    return () => {
-      cancelAnimationFrame(frame)
-    }
-  }, [flow, presentation.index, presentation.playing, presentation.steps, reducedMotion, spatial])
-  useEffect(() => {
-    const request = presentation.viewportRequest
-    if (request?.sheetId !== sheetId || spatial) return
-    let current = true
-    // React Flow queues fitting until the current node measurements are ready.
-    // Restore after that request settles so a late presentation fit cannot overwrite it.
-    void Promise.resolve(pendingFit.current).then(() => {
-      if (current && usePresentation.getState().viewportRequest === request)
-        void flow.setViewport(request.view, { duration: 0 })
-    })
-    return () => {
-      current = false
-    }
-  }, [flow, presentation.viewportRequest, sheetId, spatial])
-  useEffect(() => {
-    if (!presentation.playing) return
+    document
+      .querySelector<HTMLElement>('[data-presentation-surface]')
+      ?.focus({ preventScroll: true })
     const handler = (event: KeyboardEvent): void => {
-      if (isCompositionKey(event)) return
-      if (event.key === 'Tab') {
-        event.preventDefault()
-        event.stopImmediatePropagation()
-        const buttons = [
-          ...document.querySelectorAll<HTMLButtonElement>(
-            '[data-presentation-controls] button:not(:disabled)',
-          ),
-        ]
-        const current = buttons.findIndex((item) => item === document.activeElement)
-        buttons[(current + (event.shiftKey ? -1 : 1) + buttons.length) % buttons.length]?.focus()
-        return
-      }
-      const button =
+      if (isCompositionKey(event) || event.ctrlKey || event.metaKey || event.altKey) return
+      if (
         event.target instanceof Element &&
-        event.target.closest('[data-presentation-controls] button')
+        event.target.closest('input, textarea, select, [contenteditable="true"]')
+      )
+        return
+      if (event.key === 'Tab') return
+      const button = event.target instanceof Element && event.target.closest('button')
       if (button && (event.key === 'Enter' || event.key === ' ')) return
+      if (
+        ![
+          'Escape',
+          'ArrowLeft',
+          'ArrowUp',
+          'ArrowRight',
+          'ArrowDown',
+          'PageUp',
+          'PageDown',
+          ' ',
+          'Home',
+          'End',
+        ].includes(event.key)
+      )
+        return
       event.preventDefault()
       event.stopImmediatePropagation()
-      if (event.key === 'Escape') {
-        stopPresentation()
-        return
-      }
-      if (event.ctrlKey || event.metaKey || event.altKey) return
-      const { index, steps } = usePresentation.getState()
-      if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(event.key))
-        showPresentationStep(Math.max(0, index - 1))
+      if (event.key === 'Escape') stopPresentation()
+      else if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(event.key)) advancePresentation(-1)
       else if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(event.key))
-        showPresentationStep(Math.min(steps.length - 1, index + 1))
+        advancePresentation(1)
       else if (event.key === 'Home') showPresentationStep(0)
-      else if (event.key === 'End') showPresentationStep(steps.length - 1)
+      else if (event.key === 'End')
+        showPresentationStep(usePresentation.getState().steps.length - 1)
     }
     window.addEventListener('keydown', handler, true)
     return () => {
       window.removeEventListener('keydown', handler, true)
+      if (previous instanceof HTMLElement && previous.isConnected)
+        previous.focus({ preventScroll: true })
+      else
+        document
+          .querySelector<HTMLElement>('[data-presentation-composer] button')
+          ?.focus({ preventScroll: true })
     }
-  }, [presentation.playing])
-  useEffect(() => {
-    if (
-      presentation.playing ||
-      !document.fullscreenElement?.hasAttribute('data-presentation-fullscreen')
-    )
-      return
-    document.fullscreenElement.removeAttribute('data-presentation-fullscreen')
-    void document.exitFullscreen().catch(() => undefined)
-  }, [presentation.playing])
-
-  const toggleFullscreen = (): void => {
-    if (document.fullscreenElement) {
+  }, [presentation.playing, presentation.workspaceMode])
+  const exitOwnedFullscreen = useCallback((): void => {
+    if (ownsNativeFullscreen.current && api?.toggleFullScreen) {
+      ownsNativeFullscreen.current = false
+      void api
+        .getWindowState()
+        .then((state) => (state.fullScreen ? api.toggleFullScreen?.() : undefined))
+        .catch(reportError)
+    }
+    if (document.fullscreenElement?.hasAttribute('data-presentation-fullscreen')) {
       document.fullscreenElement.removeAttribute('data-presentation-fullscreen')
-      void document.exitFullscreen().catch(() => undefined)
-    } else {
+      void document.exitFullscreen().catch(reportError)
+    }
+  }, [api])
+  useEffect(() => {
+    if (!presentation.playing) exitOwnedFullscreen()
+  }, [presentation.playing, exitOwnedFullscreen])
+  useEffect(
+    () => () => {
+      exitOwnedFullscreen()
+    },
+    [exitOwnedFullscreen],
+  )
+  const toggleFullscreen = (): void => {
+    if (api?.toggleFullScreen) {
+      if (fullscreenPending.current) return
+      fullscreenPending.current = true
+      void api
+        .getWindowState()
+        .then(async (state) => {
+          if (!usePresentation.getState().playing) return
+          ownsNativeFullscreen.current = !state.fullScreen
+          await api.toggleFullScreen?.()
+          if (!usePresentation.getState().playing) {
+            exitOwnedFullscreen()
+            return
+          }
+          setFullscreen(!state.fullScreen)
+        })
+        .catch((error: unknown) => {
+          ownsNativeFullscreen.current = false
+          reportError(error)
+        })
+        .finally(() => {
+          fullscreenPending.current = false
+        })
+    } else if (document.fullscreenElement) {
+      document.fullscreenElement.removeAttribute('data-presentation-fullscreen')
+      void document.exitFullscreen().catch(reportError)
+    } else if (document.fullscreenEnabled) {
       const element = document.documentElement
-      if (!document.fullscreenEnabled) return
       void element
         .requestFullscreen()
         .then(() => {
           if (usePresentation.getState().playing)
             element.setAttribute('data-presentation-fullscreen', '')
-          else void document.exitFullscreen().catch(() => undefined)
+          else void document.exitFullscreen().catch(reportError)
         })
-        .catch(() => undefined)
+        .catch(reportError)
     }
   }
-  return { presentation, fullscreen, toggleFullscreen }
+  return {
+    presentation,
+    fullscreen,
+    toggleFullscreen,
+    fullscreenAvailable: api?.toggleFullScreen !== undefined || document.fullscreenEnabled,
+  }
 }

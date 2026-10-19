@@ -46,6 +46,7 @@ export interface SaveRequest {
 }
 export interface DesktopAPI extends FileSecurityAPI, AIAPI, MCPAPI, LanguageAPI {
   minimizeWindow?(): Promise<void>
+  toggleFullScreen?(): Promise<void>
   toggleMaximizeWindow?(): Promise<void>
   closeWindow?(): Promise<void>
   readonly resourceOrigin: string

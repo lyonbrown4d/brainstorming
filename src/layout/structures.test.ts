@@ -9,7 +9,6 @@ import {
   type Topic,
 } from '@core'
 import { layoutDocument, measureTopic, type LayoutNode } from '@layout'
-import { layoutSpatialDocument } from '@layout/spatial'
 const assertNoOverlap = (nodes: readonly LayoutNode[]): void => {
   const ordered = [...nodes].sort((a, b) => a.x - b.x)
   for (const [index, a] of ordered.entries()) {
@@ -169,7 +168,7 @@ describe('document and mixed subtree structures', () => {
     ).toBe(before.height + 68)
   })
 })
-describe('independent floating roots and spatial projection', () => {
+describe('independent floating roots', () => {
   it('uses saved top-left floating positions, omits virtual root edges and keeps floating roots visible when the center collapses', () => {
     const source = createExampleDocument()
     const document = applyCommand(source, {
@@ -188,11 +187,6 @@ describe('independent floating roots and spatial projection', () => {
     )
     for (const node of result.nodes.filter(({ id }) => original.has(id)))
       expect([node.x, node.y]).toEqual(original.get(node.id))
-    const spatialBefore = new Map(
-      layoutSpatialDocument(source).nodes.map(({ id, position }) => [id, position]),
-    )
-    for (const { id, position } of layoutSpatialDocument(document).nodes)
-      if (spatialBefore.has(id)) expect(position).toEqual(spatialBefore.get(id))
     const collapsed = applyCommand(document, { type: 'toggleCollapse', topicId: 'root' })
     expect(layoutDocument(collapsed).nodes.map(({ id }) => id)).toEqual([
       'root',
@@ -200,31 +194,5 @@ describe('independent floating roots and spatial projection', () => {
       'floating-child',
     ])
     expect(getVisibleTopicIds(collapsed)).toEqual(['root', 'floating', 'floating-child'])
-    expect(layoutSpatialDocument(collapsed).nodes.map(({ id }) => id)).toEqual([
-      'root',
-      'floating',
-      'floating-child',
-    ])
   })
-  it.each(LAYOUT_KINDS)(
-    'projects %s and independently positioned floating branches to finite spatial bounds',
-    (layout) => {
-      const document = applyCommand(createExampleDocument(), {
-        type: 'batch',
-        commands: [
-          { type: 'setDocumentSettings', settings: { layout } },
-          { type: 'addFloatingTopic', id: 'floating', title: 'Floating', x: 3000, y: -400 },
-        ],
-      })
-      const spatial = layoutSpatialDocument(document)
-      expect(spatial.nodes).toHaveLength(14)
-      expect(spatial.edges).toHaveLength(12)
-      expect(
-        spatial.nodes.every(({ position, width, height }) =>
-          [...position, width, height].every(Number.isFinite),
-        ),
-      ).toBe(true)
-      expect([...spatial.bounds.min, ...spatial.bounds.max].every(Number.isFinite)).toBe(true)
-    },
-  )
 })

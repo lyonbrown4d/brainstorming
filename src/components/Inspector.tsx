@@ -1,12 +1,10 @@
+import { motion, useReducedMotion } from 'motion/react'
 import { useMessages } from '@renderer/i18n/useMessages'
 
-import { useState } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { useEditor } from '@renderer/state/editor'
-import {
-  useAnnotationInteraction,
-  type AnnotationSelection,
-} from '@renderer/state/annotationInteraction'
+import { useAnnotationInteraction } from '@renderer/state/annotationInteraction'
+import { closeInspector, selectInspectorMode } from '@renderer/state/inspectorNavigation'
 import { TopicProperties } from '@renderer/components/TopicProperties'
 import { CanvasProperties } from '@renderer/components/documents/CanvasProperties'
 import { AnnotationStyleControls } from '@renderer/components/annotations/AnnotationStyleControls'
@@ -15,24 +13,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@renderer/components/u
 
 export const Inspector = () => {
   const { translate } = useMessages()
+  const reducedMotion = useReducedMotion()
 
   const sheetId = useEditor((state) => state.activeSheetId)
   const selection = useAnnotationInteraction((state) => state.selected)
   const annotation = selection?.sheetId === sheetId ? selection : null
-  const editingId = useEditor((state) => state.editingId)
-  const editingSurface = useEditor((state) => state.editingSurface)
-  const [choice, setChoice] = useState<{
-    mode: 'topic' | 'canvas'
-    annotation: AnnotationSelection | null
-  }>({
-    mode: 'topic',
-    annotation: null,
-  })
-  const mode =
-    (editingId && editingSurface === 'inspector') ||
-    (annotation && choice.annotation !== annotation)
-      ? 'topic'
-      : choice.mode
+  const mode = useEditor((state) => state.inspectorMode)
   return (
     <aside
       className="flex min-h-0 w-[272px] shrink-0 basis-[272px] flex-col border-l border-border bg-background text-sm"
@@ -41,7 +27,7 @@ export const Inspector = () => {
       <Tabs
         value={mode}
         onValueChange={(value) => {
-          if (value === 'topic' || value === 'canvas') setChoice({ mode: value, annotation })
+          if (value === 'topic' || value === 'canvas') selectInspectorMode(value)
         }}
         className="min-h-0 flex-1 gap-0 overflow-hidden"
       >
@@ -71,7 +57,7 @@ export const Inspector = () => {
             className="size-7 text-muted-foreground"
             aria-label={translate('closePropertiesPanel')}
             onClick={() => {
-              useEditor.setState({ inspectorOpen: false })
+              closeInspector()
             }}
           >
             <ChevronRight className="size-4" />
@@ -79,23 +65,33 @@ export const Inspector = () => {
         </div>
         <TabsContent
           value="topic"
-          forceMount
           hidden={mode !== 'topic'}
           tabIndex={mode === 'topic' ? 0 : -1}
           aria-label={translate('topicProperties')}
           className="min-h-0 overflow-y-auto px-4 pb-5"
         >
-          {annotation ? <AnnotationStyleControls inline /> : <TopicProperties />}
+          <motion.div
+            initial={reducedMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.12 }}
+          >
+            {annotation ? <AnnotationStyleControls inline /> : <TopicProperties />}
+          </motion.div>
         </TabsContent>
         <TabsContent
           value="canvas"
-          forceMount
           hidden={mode !== 'canvas'}
           tabIndex={mode === 'canvas' ? 0 : -1}
           aria-label={translate('sheetProperties')}
           className="min-h-0 overflow-y-auto px-4 pb-5"
         >
-          <CanvasProperties />
+          <motion.div
+            initial={reducedMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.12 }}
+          >
+            <CanvasProperties />
+          </motion.div>
         </TabsContent>
       </Tabs>
     </aside>

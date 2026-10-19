@@ -86,7 +86,7 @@ describe('文档编辑能力', () => {
       projectCanvas(state.history.document).nodes.find((node) => node.id === id)?.position,
     ).toEqual({ x: 420, y: -30 })
   })
-  it('演示仅显式记录步骤，播放临时展开分支且不修改历史，新增画布一次撤销', () => {
+  it('演示仅显式记录页面，播放保留原画布折叠和历史，新增画布一次撤销', () => {
     const state = useEditor.getState()
     state.command({ type: 'toggleCollapse', topicId: 'root' })
     state.command({ type: 'setPresentation', steps: [{ topicId: 'a' }] })
@@ -94,7 +94,7 @@ describe('文档编辑能力', () => {
     showPresentationStep(0)
     expect(usePresentation.getState().playing).toBe(true)
     expect(useEditor.getState().history).toBe(before)
-    expect(presentationDocument(before.document, 'a').topics.root?.collapsed).toBe(false)
+    expect(presentationDocument(before.document, 'a')).toBe(before.document)
     expect(before.document.topics.root?.collapsed).toBe(true)
     stopPresentation()
     expect(state.addDocumentSheet(createTemplate('study'))).toBe(true)

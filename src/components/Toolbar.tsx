@@ -1,10 +1,10 @@
+import { closeInspector, toggleInspector } from '@renderer/state/inspectorNavigation'
 import { BrandLogo } from '@renderer/components/BrandLogo'
 import { WindowTitlebar } from '@renderer/components/WindowTitlebar'
 import { WindowControls } from '@renderer/components/WindowControls'
 import { useMessages } from '@renderer/i18n/useMessages'
 
-import { LanguageMenu } from '@renderer/components/LanguageMenu'
-import { AppAppearance } from '@renderer/components/appearance/AppAppearance'
+import { SettingsButton } from '@renderer/components/settings/SettingsButton'
 import { PresentationLauncher } from '@renderer/components/documents/PresentationLauncher'
 import { Check, ListTree, SlidersHorizontal } from 'lucide-react'
 import { useEditor, editorIsDirty } from '@renderer/state/editor'
@@ -12,7 +12,6 @@ import { showWorkspaceHome } from '@renderer/state/creation'
 import { Button } from '@renderer/components/ui/button'
 import { Separator } from '@renderer/components/ui/separator'
 import { ToolbarFileMenu } from '@renderer/components/ToolbarFileMenu'
-import { ViewModeSwitch } from '@renderer/components/ViewModeSwitch'
 
 export const Toolbar = () => {
   const { translate } = useMessages()
@@ -23,7 +22,7 @@ export const Toolbar = () => {
   const inspector = useEditor((state) => state.inspectorOpen)
   const dirty = useEditor(editorIsDirty)
   return (
-    <WindowTitlebar className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-4">
+    <WindowTitlebar className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:gap-4">
       <div className="flex min-w-0 items-center gap-2 xl:gap-3">
         <Button
           variant="ghost"
@@ -58,11 +57,9 @@ export const Toolbar = () => {
                 : translate('localDraft')}
         </span>
       </div>
-      <ViewModeSwitch />
-      <div className="toolbar-actions col-span-2 flex min-w-0 shrink-0 items-center justify-end gap-1 overflow-x-auto sm:col-span-1">
+      <div className="toolbar-actions flex min-w-0 shrink-0 items-center justify-end gap-1 overflow-x-auto sm:col-span-1">
         <PresentationLauncher />
-        <LanguageMenu />
-        <AppAppearance />
+        <SettingsButton />
         <Button
           variant="ghost"
           className="h-8 gap-1.5 rounded-md px-2 text-xs text-muted-foreground aria-pressed:bg-accent aria-pressed:text-accent-foreground"
@@ -70,12 +67,11 @@ export const Toolbar = () => {
           aria-pressed={outline}
           title={translate('documentOutline')}
           onClick={() => {
-            useEditor.setState({
-              outlineOpen: !outline,
-              ...(window.matchMedia('(max-width: 767px)').matches && !outline
-                ? { inspectorOpen: false }
-                : {}),
-            })
+            if (window.matchMedia('(max-width: 767px)').matches && !outline && inspector) {
+              closeInspector()
+              if (useEditor.getState().inspectorOpen) return
+            }
+            useEditor.setState({ outlineOpen: !outline })
           }}
         >
           <ListTree data-icon="inline-start" />
@@ -91,14 +87,7 @@ export const Toolbar = () => {
           aria-label={translate('propertiesPanel')}
           aria-pressed={inspector}
           title={translate('propertiesPanel')}
-          onClick={() => {
-            useEditor.setState({
-              inspectorOpen: !inspector,
-              ...(window.matchMedia('(max-width: 767px)').matches && !inspector
-                ? { outlineOpen: false }
-                : {}),
-            })
-          }}
+          onClick={toggleInspector}
         >
           <SlidersHorizontal data-icon="inline-start" />
           <span className="hidden min-[720px]:inline">{translate('properties')}</span>

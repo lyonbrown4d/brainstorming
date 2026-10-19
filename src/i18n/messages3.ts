@@ -65,7 +65,6 @@ export const messages3 = {
   showMinimap: ['显示缩略图', 'Show minimap'],
   canvasDimension: ['画布维度', 'Canvas dimension'],
   '2dView': ['二维视图', '2D view'],
-  '3dView': ['三维视图', '3D view'],
   selectedTopicActions: ['多选主题操作', 'Selected topic actions'],
   selectedLabel344: ['已选择', 'Selected'],
   topics: ['个主题', 'topics'],

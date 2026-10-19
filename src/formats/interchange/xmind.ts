@@ -14,7 +14,24 @@ const jsonEntry = (value: unknown): Uint8Array => {
 }
 
 const properties = (style: TopicStyle = {}): Record<string, string | number> => {
-  const shapes = { rounded: 'roundedRect', rectangle: 'rect', ellipse: 'ellipse' }
+  const shapes: Readonly<Record<NonNullable<TopicStyle['shape']>, string>> = {
+    rounded: 'roundedRect',
+    rectangle: 'rect',
+    ellipse: 'ellipse',
+    text: 'noShape',
+    capsule: 'roundedRect',
+    circle: 'ellipse',
+    diamond: 'diamond',
+    hexagon: 'hexagon',
+    cloud: 'cloud',
+    speech: 'callout',
+    flag: 'rect',
+    bookmark: 'rect',
+    tag: 'hexagon',
+    sticky: 'rect',
+    card: 'roundedRect',
+    image: 'roundedRect',
+  }
   return {
     ...(style.fill ? { 'svg:fill': style.fill } : {}),
     ...(style.color ? { 'fo:color': style.color } : {}),

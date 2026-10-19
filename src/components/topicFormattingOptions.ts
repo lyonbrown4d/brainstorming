@@ -16,20 +16,6 @@ export const lineWidths = [1, 2, 3, 4, 5, 6].map((width) => ({
 }))
 
 export const getTopicFormattingOptions = (translate: MessageTranslator) => ({
-  shapeOptions: [
-    {
-      value: 'rounded',
-      label: translate('roundedRectangle'),
-    },
-    {
-      value: 'rectangle',
-      label: translate('rectangle'),
-    },
-    {
-      value: 'ellipse',
-      label: translate('ellipse'),
-    },
-  ] as const,
   lineOptions: [
     {
       value: 'curve',

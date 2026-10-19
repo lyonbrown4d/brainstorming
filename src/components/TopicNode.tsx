@@ -1,25 +1,28 @@
+import { topicShapeInsets } from '@shared/topic-shapes'
+import { TopicShapeVisual } from '@renderer/components/TopicShapeVisual'
+import { TopicNodeBody } from '@renderer/components/TopicNodeBody'
 import { useMessages } from '@renderer/i18n/useMessages'
 
-import { TopicMarkerLayout } from '@renderer/components/metadata/TopicMarkerLayout'
 import { cn } from '@renderer/lib/utils'
 import { memo } from 'react'
 import { shallow } from 'zustand/shallow'
-import { Handle, Position, type Node, type NodeProps } from '@xyflow/react'
+import {
+  Handle,
+  Position,
+  useStore as useFlowStore,
+  type Node,
+  type NodeProps,
+} from '@xyflow/react'
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react'
-import type { Topic } from '@core'
+import type { SheetVisualStyle, Topic } from '@core'
 import type { LayoutDirection } from '@layout'
-import { usePresentation } from '@renderer/state/presentation'
 import { useEditor } from '@renderer/state/editor'
 import { useTopicSelected } from '@renderer/state/selection'
-import { CanvasTopicTitle } from '@renderer/components/metadata/CanvasTopicTitle'
-import { TopicTitleDisplay } from '@renderer/components/metadata/TopicTitleDisplay'
-import { TopicMetadataBadges } from '@renderer/components/metadata/TopicMetadataBadges'
-import { TopicImage } from '@renderer/components/TopicImage'
-import { TopicContentIndicators } from '@renderer/components/TopicContentIndicators'
 import { Button } from '@renderer/components/ui/button'
 export type TopicFlowNode = Node<
   {
     topic: Topic
+    visualStyle?: SheetVisualStyle
     root: boolean
     branch?: boolean
     fill?: string | undefined
@@ -30,9 +33,11 @@ export type TopicFlowNode = Node<
   },
   'topic'
 >
-const TopicNodeContent = ({ data, id }: NodeProps<TopicFlowNode>) => {
+const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>) => {
   const { translate } = useMessages()
 
+  // Pan and zoom frames only notify this node when the detail threshold changes.
+  const lowZoom = useFlowStore((state) => state.transform[2] < 0.35)
   const primary = useEditor((state) => state.selectedId === id)
   const selected = useTopicSelected(id)
   const dropTarget = useEditor((state) => state.dropTargetId === id)
@@ -40,6 +45,7 @@ const TopicNodeContent = ({ data, id }: NodeProps<TopicFlowNode>) => {
   const editingHere = useEditor(
     (state) => state.editingId === id && state.editingSurface === 'canvas',
   )
+  const simplified = lowZoom && !selected && !primary && !editing
   const { topic, root, branch = false, color } = data
   const direction = data.direction ?? topic.side
   const side = direction === 'left' || direction === 'right' ? direction : topic.side
@@ -58,6 +64,10 @@ const TopicNodeContent = ({ data, id }: NodeProps<TopicFlowNode>) => {
     Boolean(topic.attachments?.length) ||
     Boolean(topic.metadata)
   const style = topic.style
+  const shape = style?.shape ?? 'rounded'
+  const insets = topicShapeInsets(shape)
+  const fill =
+    data.fill ?? style?.fill ?? (root ? 'var(--color-primary)' : 'var(--color-background)')
   return (
     <div
       className={cn(
@@ -80,16 +90,33 @@ const TopicNodeContent = ({ data, id }: NodeProps<TopicFlowNode>) => {
       style={
         {
           '--branch-color': color,
-          '--topic-fill': data.fill,
-          background: data.fill,
+          '--topic-fill': fill,
+          background: 'transparent',
+          borderColor: 'transparent',
           color: data.textColor ?? style?.color,
           fontFamily: data.fontFamily,
           borderRadius:
-            style?.shape === 'ellipse' ? '50%' : style?.shape === 'rectangle' ? 0 : undefined,
+            shape === 'capsule'
+              ? '9999px'
+              : shape === 'ellipse' || shape === 'circle'
+                ? '50%'
+                : shape === 'rectangle' || shape === 'sticky'
+                  ? 0
+                  : undefined,
         } as React.CSSProperties
       }
+      data-appearance={shape}
       data-testid={`topic-${id}`}
     >
+      <TopicShapeVisual
+        shape={shape}
+        visualStyle={data.visualStyle}
+        seedKey={id}
+        width={width ?? 100}
+        height={height ?? 100}
+        stroke={root ? (data.visualStyle === 'sketch' ? (data.textColor ?? color) : fill) : color}
+        className="pointer-events-none absolute inset-0 h-full w-full"
+      />
       {[Position.Top, Position.Right, Position.Bottom, Position.Left].map((position) => (
         <Handle
           key={`target-${position}`}
@@ -106,48 +133,37 @@ const TopicNodeContent = ({ data, id }: NodeProps<TopicFlowNode>) => {
           position={position}
         />
       ))}
-      <TopicMarkerLayout topicId={topic.id} metadata={topic.metadata}>
-        {topic.image && (
-          <TopicImage
-            image={topic.image}
-            className="topic-embedded-image mx-auto mt-3 block shrink-0 rounded-[5px] object-contain"
+      <div
+        className="absolute flex min-h-0 flex-col items-center"
+        style={{
+          top: `${insets.y * 100}%`,
+          bottom: `${insets.y * 100}%`,
+          left: `${insets.x * 100}%`,
+          right: `${insets.x * 100}%`,
+        }}
+      >
+        {simplified ? (
+          <div
+            className="flex h-full w-full items-center justify-center px-4 py-2.5 text-center leading-normal"
+            style={{
+              fontSize: style?.fontSize ?? (root ? 24 : 16),
+              fontWeight: (style?.bold ?? (root || branch)) ? 600 : 400,
+              fontStyle: style?.italic ? 'italic' : 'normal',
+            }}
+          >
+            <span className="line-clamp-3 break-words whitespace-pre-wrap">{topic.title}</span>
+          </div>
+        ) : (
+          <TopicNodeBody
+            topic={topic}
+            root={root}
+            branch={branch}
+            primary={primary}
+            editing={editing}
           />
         )}
-        <div
-          className={`topic-title flex items-center justify-center px-[17px] py-2.5 text-center leading-normal [&>span]:break-words [&>span]:whitespace-pre-wrap ${hasContent ? 'h-auto w-full min-h-0 flex-1' : 'h-full'}`}
-          style={{
-            fontSize: style?.fontSize ?? (root ? 24 : 16),
-            fontWeight: (style?.bold ?? (root || branch)) ? 600 : 400,
-            fontStyle: style?.italic ? 'italic' : 'normal',
-          }}
-          onDoubleClick={() => {
-            if (usePresentation.getState().playing) return
-            useEditor
-              .getState()
-              .startEdit(
-                id,
-                undefined,
-                'canvas',
-                topic.title === translate('newTopic') || topic.title === translate('floatingTopic')
-                  ? 'all'
-                  : 'end',
-              )
-          }}
-        >
-          {primary || editing ? (
-            <CanvasTopicTitle topic={topic} />
-          ) : (
-            <TopicTitleDisplay topic={topic} />
-          )}
-        </div>
-      </TopicMarkerLayout>
-      <TopicMetadataBadges metadata={topic.metadata} />
-      <TopicContentIndicators
-        topicId={id}
-        hasNotes={Boolean(topic.notes)}
-        attachmentCount={topic.attachments?.length ?? 0}
-      />
-      {topic.children.length > 0 && (
+      </div>
+      {!simplified && topic.children.length > 0 && (
         <Button
           variant="ghost"
           size="icon"
@@ -170,7 +186,11 @@ const TopicNodeContent = ({ data, id }: NodeProps<TopicFlowNode>) => {
 // React Flow owns positioning; this content only consumes identity and node data.
 export const TopicNode = memo(
   TopicNodeContent,
-  (previous, next) => previous.id === next.id && shallow(previous.data, next.data),
+  (previous, next) =>
+    previous.id === next.id &&
+    previous.width === next.width &&
+    previous.height === next.height &&
+    shallow(previous.data, next.data),
 )
 
 TopicNode.displayName = 'TopicNode'

@@ -1,6 +1,6 @@
 # 开发
 
-项目使用单个 pnpm package、Vite、Moon 和 Tauri 2。前端为 React / TypeScript，原生服务为 Rust，移动端平台适配为 Swift / Kotlin。Node.js 要求 24 或更新版本。
+项目使用单个 pnpm package、Vite、Moon 和 Tauri 2。前端为 React / TypeScript，原生服务为 Rust，移动端平台适配为 Swift / Kotlin。Node.js 要求 24 或更新版本；依赖工具支持 Node 24 LTS 或 26 及更新版本，避免使用已停止支持的奇数版本。pnpm 固定为 packageManager 声明的 12.x。
 
 ## 本机准备
 
@@ -36,6 +36,8 @@ pnpm dev
 
 macOS 桌面验证先安装 `brew install pkgconf vips`。`desktop-test`、`desktop-check` 和 `build:e2e` 使用本机开发库；`package` 使用构建脚本准备并打包固定版本的 macOS 图片库，不依赖目标机器上的 Homebrew。直接运行 `pnpm test:e2e` 不会编译应用；通常使用 Moon 的 `e2e` 任务，或先运行 `pnpm build:e2e`。
 
+`pnpm build-storybook && pnpm test:canvas` 使用现有 Playwright 在隔离的 Storybook 组件预览中执行真实鼠标操作，覆盖画笔命中层级、连续绘制、Esc 取消、擦除与撤销。Moon 的 `canvas-test` 任务会先构建 Storybook。当前 embedded WDIO 1.5 的 pointer actions 实际派发 `MouseEvent`，不能用它验证依赖 `PointerEvent` 与指针捕获的绘画；这部分使用 Playwright 的真实输入，文件持久化继续由 Rust SQLite 集成测试验收，不伪造驱动事件。
+
 原生 E2E 遵循 [Tauri 官方 WebDriver 指南](https://v2.tauri.app/develop/tests/webdriver/)，使用 WebdriverIO 与 `@wdio/tauri-service` 的 embedded 驱动，覆盖 macOS、Windows 和 Linux。插件只在独立 E2E 构建启用；生产应用不启用测试驱动。直接使用 `tauri-driver` 的外部驱动仅支持 Windows、Linux，本项目不为 macOS 维护另一套驱动实现。验收使用当前源码生成的完整测试二进制，不将旧二进制与新的开发 renderer 混用；构建超时或失败时记录阻塞，不能用组件测试结果代替原生 E2E 通过。
 
 CI 保留 Node 24 / 26 的前端、Storybook 构建与浏览器检查；Ubuntu 单独运行无 UI 的 Rust 测试，macOS 运行 Clippy、完整桌面 Rust 测试、真实 WDIO E2E 和 app bundle 构建。预览包使用 Tauri 的 [ad-hoc 签名](https://v2.tauri.app/distribute/sign/macos/#ad-hoc-signing)，经 `codesign` 校验后用 `ditto` 打包，保留 app 的执行权限；此步骤不代表完成公证或正式发布。本轮 CI 不构建、不测试 iOS / Android。
@@ -50,6 +52,35 @@ CI 保留 Node 24 / 26 的前端、Storybook 构建与浏览器检查；Ubuntu �
 保留 React Compiler 和开发环境 React Scan。内部模块通过 `tsconfig.json` 的 `@core`、`@layout`、`@formats`、`@assets`、`@renderer`、`@shared`、`@tests`、`@project` 等别名导入。禁止相对模块路径，资源 URL 和系统文件路径不受此限制。
 
 手写源文件、测试和 TypeScript 配置不超过 300 行；不压缩代码规避限制。使用箭头函数、严格类型、局部 Zustand 订阅与 TanStack Query。UI 优先组合现成 shadcn 组件，通过 props、className 和集中主题调整，不能直接修改下载组件；样式优先使用 Tailwind utilities。
+
+## 工作区路由与设置
+
+原生入口在 `mountApp.tsx` 使用 React Router 的 `HashRouter`，路径写入 URL 的 `#` 部分，适用于 Tauri 的本地资源协议。没有 Router 上下文的 `App` 预览使用 `MemoryRouter`，不修改 Storybook 页面自身的 hash。
+
+| 路径                                                       | 工作区                         |
+| ---------------------------------------------------------- | ------------------------------ |
+| `/home`                                                    | 首页                           |
+| `/create/document/:stage`                                  | 新建导图                       |
+| `/create/sheet/:stage`                                     | 在当前导图中新建画布           |
+| `/documents/:tabId/sheets/:sheetId`                        | 指定导图与画布                 |
+| `/documents/:tabId/sheets/:sheetId/style/topic`            | 主题属性侧栏                   |
+| `/documents/:tabId/sheets/:sheetId/style/canvas/:section?` | 画布属性侧栏                   |
+| `/documents/:tabId/sheets/:sheetId/presentation`           | 演示编排                       |
+| `/documents/:tabId/sheets/:sheetId/presentation/presenter` | 演讲者视图                     |
+| `/documents/:tabId/sheets/:sheetId/presentation/play`      | 观众播放视图                   |
+| `/settings`                                                | 保留当前工作区背景的设置对话框 |
+
+创建步骤 `stage` 为 `structure`（选择结构）或 `configuration`（标题与内容模板）；旧的 `/create/document`、`/create/sheet` 会规范化为第一步。浏览器前进、后退和设置往返均保留 Zustand 中的标题、结构与模板草稿；退出引导后再前进也能恢复。创建成功才清空对应文档或画布草稿，失败保留输入。草稿只留本次应用内存，不写入文件和恢复记录。
+
+画布属性的 `section` 为 `structure`、`appearance` 或 `template`，省略时规范化为 `structure`。属性开关、一级分类和画布分组双向同步路由；关闭侧栏回到无 `/style` 后缀的画布。侧栏导航信息随既有文档会话保存，文档模型与撤销历史不变；主题选中、hover 和逐字符编辑不进入 URL。创建步骤使用短距离方向过渡，属性分类使用淡入，均尊重系统减少动态效果偏好，不重挂载整张画布。
+
+`useWorkspaceRoutes` 是 URL 与既有 Zustand 会话之间的同步入口。URL 导航复用文档 Tab、Sheet、创建和演示命令的提交守卫；忙碌或草稿校验失败时，保留当前文档和草稿，并将 URL 替换为实际工作区路径。用户操作引起的导航字段变更合并为一次微任务更新，应用 URL 期间不反向新增历史。文本草稿、选区和播放页码变化不触发导航。
+
+Tab 和 Sheet 标识只定位当前应用中已打开的会话；URL 不包含文件路径、文档内容或恢复数据。已关闭或无效的标识会替换为仍合法的工作区路径，不重新打开文件。设置对话框关闭或按 Esc 时返回来源路径；直接打开 `/settings` 或来源已失效时，返回当前合法工作区。
+
+标题栏统一通过设置按钮进入通用、画布、快捷键和关于四个横向分组。语言复用原生设置 API，浅色、深色与跟随系统复用 `next-themes`，缩略图复用已有画布偏好。修改即时保存，关闭对话框不撤销已保存的偏好；语言保存失败会显示错误并保持原语言。设置内容按需加载，打开设置或演示编排时不重建背景画布。
+
+路由状态专项为 `tests/renderer/workspace-routing.test.ts` 和 `tests/renderer/workspace-route-views.test.ts`；浏览器交互见 `stories/Settings.stories.tsx` 和 `stories/WorkspaceRoutes.stories.tsx`。后者检查真实 App 的 Canvas DOM 身份、演示往返、文档切换和历史返回。运行 Storybook 浏览器检查时避免多个进程共用同一测试缓存。
 
 ## macOS 高刷新率
 
@@ -105,9 +136,9 @@ macOS `build:desktop --debug`（未指定证书）或显式 `APPLE_SIGNING_IDENT
 
 ### 暖白与石墨界面
 
-主操作和选中态采用石墨 / 暖白反色，默认导图中心为石墨色，界面不使用紫色选中底色；紫色仍可作为用户的导图配色。界面沿用浅色、深色与跟随系统，使用 `src/styles/ui.css` 的语义变量统一标题栏、Dock、属性栏、启动页和 Three.js 控件。默认导图的画布与派生节点底色跟随界面外观；其他导图预设、自定义背景和显式节点颜色保持文档设置。外观投影不写入工作簿、撤销记录或导出颜色。
+主操作和选中态采用石墨 / 暖白反色，默认导图中心为石墨色，界面不使用紫色选中底色；紫色仍可作为用户的导图配色。界面沿用浅色、深色与跟随系统，使用 `src/styles/ui.css` 的语义变量统一标题栏、Dock、属性栏、启动页和演示页。默认导图的画布与派生节点底色跟随界面外观；其他导图预设、自定义背景和显式节点颜色保持文档设置。外观投影不写入工作簿、撤销记录或导出颜色。
 
-三个桌面平台共用 56px 标题栏；macOS 保留原生交通灯，Windows、Linux 使用右侧窗口操作区。大纲和属性栏宽度由 `src/shared/workbench.ts` 统一供二维、三维取景使用。
+三个桌面平台共用 56px 标题栏；macOS 保留原生交通灯，Windows、Linux 使用右侧窗口操作区。大纲和属性栏宽度由 `src/shared/workbench.ts` 统一维护。
 
 属性折叠复用官方 shadcn Accordion，由固定版本 `shadcn@4.22.0` CLI 下载；上层 `PropertySection` 组合样式并保留折叠内容的编辑器 DOM，不修改下载源码。
 
@@ -117,4 +148,16 @@ macOS `build:desktop --debug`（未指定证书）或显式 `APPLE_SIGNING_IDENT
 
 外部存储发生归档写入或依赖读取停滞时，先检查进程与文件活动；可使用本机 SSD 的 Cargo 目录（`CARGO_TARGET_DIR`），并将 `BRAINSTORMING_E2E_BINARY` 指向该目录生成的当前测试应用。若依赖缓存也在外部卷，使用当前源码的本机临时验收副本和独立 pnpm 缓存；必须按锁文件安装并完整构建，不能混用旧二进制与新 renderer。
 
-macOS WebDriver 的 WKWebView snapshot 可能遗漏三维 CSS3D 文字层。三维视觉验收需补充系统窗口截图，并核对实际文字及交互；不要仅凭 DOM 可见性或驱动截图认定视觉结果，也不要为截图修改产品渲染。
+## React 开发诊断
+
+React Scan 默认在开发模式启用，显示重渲染和 FPS；可设置 `VITE_REACT_SCAN=false` 关闭。需要组件树或 Profiler 时，先运行 `pnpm devtools`，再在另一个终端运行 `VITE_REACT_DEVTOOLS=true pnpm dev`。官方 React DevTools standalone 监听 `127.0.0.1:8097`，后端 hook 先于 React 与 Scan 初始化。工具未连接不阻止编辑器启动。
+
+DevTools CLI 自身使用 Electron，仅作为开发依赖，产品运行时仍为 Tauri。只有开发 CSP 允许该本机 WebSocket，生产 CSP 与发布入口不加载诊断代码。默认不启用远程诊断；不要把本机调试端口转发到外部网络。React DevTools 上游仅发布 Flow API，`src/dev/react-devtools-core.d.ts` 声明项目实际使用的最小接口。
+
+依赖升级以最新稳定且上游兼容的组合为准。本轮 WDIO 仍使用 9.x：最新 Tauri service 1.5.0 仍调用 `executeAsync`，WDIO 10 已移除此 API；SQLite 底层库受 SQLx 0.9 的 `<0.38` 约束，保持 0.37.0。其余 npm 和 Cargo 版本由锁文件固定。
+
+## React Flow 交互参考
+
+画板工具参考 [官方白板指南](https://reactflow.dev/learn/advanced-use/whiteboard)，沿用 React Flow 坐标转换和视口，笔迹复用 perfect-freehand。画笔输入层高于 React Flow renderer；擦除模式让已绘笔迹直接接收输入，并禁用节点拖动和画布拖动。选择模式恢复正常导图操作。
+
+演示参考 [官方幻灯片教程](https://reactflow.dev/learn/tutorials/slide-shows-with-react-flow) 的内容与导航状态分离、键盘导航和有限目标聚焦思路。当前产品保留已确认的页面编排、观众与演讲者视图；播放不改变底层导图布局，也不为每页复制整张导图。

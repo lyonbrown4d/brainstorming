@@ -30,13 +30,24 @@ pub async fn e2e_fixture(
     }
     if action == "windowState" {
         let main = app.get_webview_window("main").ok_or("主窗口不存在")?;
-        return Ok(
-            json!({"visible":main.is_visible().map_err(|e|e.to_string())?,
+        let snapshot = json!({"visible":main.is_visible().map_err(|e|e.to_string())?,
             "focused":main.is_focused().map_err(|e|e.to_string())?,
             "fullScreen":main.is_fullscreen().map_err(|e|e.to_string())?,
             "maximized":main.is_maximized().map_err(|e|e.to_string())?,
-            "labels":app.webview_windows().keys().cloned().collect::<Vec<_>>()}),
-        );
+            "labels":app.webview_windows().keys().cloned().collect::<Vec<_>>()});
+        #[cfg(target_os = "macos")]
+        let snapshot = if args["diagnostics"].as_bool() == Some(true) {
+            use tauri_plugin_brainstorming_native::NativeBridgeExt;
+            let mut snapshot = snapshot;
+            snapshot["macChrome"] = app
+                .native_bridge()
+                .call("getWindowChromeMetrics", json!({}))
+                .await?;
+            snapshot
+        } else {
+            snapshot
+        };
+        return Ok(snapshot);
     }
     let directory = state.directory.join("e2e-artifacts");
     tokio::fs::create_dir_all(&directory)

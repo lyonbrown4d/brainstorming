@@ -56,7 +56,7 @@ export const alignedTreeLayout = (
   return result
 }
 
-/** Braces group direct siblings; logical parent edges remain available to spatial consumers. */
+/** Braces group direct siblings while preserving logical parent edges. */
 export const braceLayout = (
   component: LayoutComponent,
   units: ReadonlyMap<string, LayoutUnit>,

@@ -12,7 +12,7 @@ const renderer = JSON.parse(
 
 export default defineConfig({
   base: './',
-  resolve: { tsconfigPaths: true, dedupe: ['three'] },
+  resolve: { tsconfigPaths: true },
   optimizeDeps: renderer.optimizeDeps,
   plugins: [react(), babel({ presets: [reactCompilerPreset()] }), tailwindcss()],
   clearScreen: false,

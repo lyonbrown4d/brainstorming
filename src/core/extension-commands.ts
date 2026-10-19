@@ -1,4 +1,5 @@
 import type { Command, MindMapDocument, Topic } from '@core/types'
+import { applyDrawingCommand } from '@core/ink'
 import type { ExtensionCommand } from '@core/extensions'
 import { assertId } from '@core/validation'
 import { requireTopic } from '@core/tree'
@@ -20,6 +21,8 @@ import { moveTopics } from '@core/selection-commands'
 import { validateAudioAsset } from '@core/topic-content'
 
 const extensionTypes = new Set([
+  'upsertDrawing',
+  'removeDrawing',
   'setTopicMetadata',
   'setTopicStructure',
   'setTopicAudio',
@@ -60,6 +63,8 @@ export const applyExtensionCommand = (
   document: MindMapDocument,
   command: ExtensionCommand,
 ): MindMapDocument => {
+  if (command.type === 'upsertDrawing' || command.type === 'removeDrawing')
+    return applyDrawingCommand(document, command)
   switch (command.type) {
     case 'setTopicMetadata': {
       validateTopicMetadata(command.metadata)

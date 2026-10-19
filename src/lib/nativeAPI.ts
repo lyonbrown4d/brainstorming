@@ -122,6 +122,7 @@ export const createNativeAPI = async (
     getLanguage: () => request('getLanguage'),
     setLanguage: (language) => request('setLanguage', { language }),
     getWindowState: () => request('getWindowState'),
+    toggleFullScreen: () => request('toggleFullScreen'),
     setAppearance: (theme) => request('setAppearance', { theme }),
     onSystemThemeChanged: (callback) =>
       on('system-theme', callback, (value): value is unknown => value !== undefined),

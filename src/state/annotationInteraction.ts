@@ -28,6 +28,7 @@ export const selectAnnotation = (kind: AnnotationKind, id: string, editing = fal
     const active = window.document.activeElement
     if (active instanceof HTMLElement && active.closest('.topic-input')) active.blur()
   }
+  if (useEditor.getState().inspectorOpen) useEditor.setState({ inspectorMode: 'topic' })
   useAnnotationInteraction.setState({
     selected: { kind, id, sheetId: useEditor.getState().activeSheetId },
     editing,

@@ -3,6 +3,7 @@ import { useDebounceFn, useEventListener, useMutationObserver } from 'ahooks'
 import { useEditor } from '@renderer/state/editor'
 import { useAnnotationInteraction } from '@renderer/state/annotationInteraction'
 import { isCompositionKey } from '@renderer/state/keyboard'
+import { useCanvasInk } from '@renderer/state/canvasInk'
 
 const hasOpenPanel = (): boolean => {
   return Boolean(
@@ -18,6 +19,7 @@ const isInteractionPinned = (): boolean => {
     Boolean(state.fromId) ||
     state.floating ||
     state.editing ||
+    useCanvasInk.getState().mode !== 'select' ||
     useEditor.getState().editingId !== null
   )
 }
@@ -33,6 +35,7 @@ export const useDockToolbar = ({ pinInteraction = true }: { pinInteraction?: boo
     (state) => Boolean(state.fromId) || state.floating || state.editing,
   )
   const editing = useEditor((state) => state.editingId !== null)
+  const inking = useCanvasInk((state) => state.mode !== 'select')
   const { run: schedule, cancel } = useDebounceFn(
     (): void => {
       if (
@@ -52,9 +55,9 @@ export const useDockToolbar = ({ pinInteraction = true }: { pinInteraction?: boo
     setOpen(true)
   }, [cancel])
   useEffect(() => {
-    if (pinInteraction && (pinned || editing)) expand()
+    if (pinInteraction && (pinned || editing || inking)) expand()
     else if (!inside.current) schedule()
-  }, [pinInteraction, pinned, editing, expand, schedule])
+  }, [pinInteraction, pinned, editing, inking, expand, schedule])
   const changed = (): void => {
     if (!inside.current) schedule()
   }

@@ -1,3 +1,4 @@
+import { closeInspector } from '@renderer/state/inspectorNavigation'
 import type { ReactNode } from 'react'
 import { AnimatedPanel } from '@renderer/components/AnimatedPanel'
 import {
@@ -25,11 +26,13 @@ export const WorkbenchPanel = ({
     <Dialog
       open
       onOpenChange={(open) => {
-        if (!open)
-          useEditor.setState(side === 'left' ? { outlineOpen: false } : { inspectorOpen: false })
+        if (!open) {
+          if (side === 'left') useEditor.setState({ outlineOpen: false })
+          else closeInspector()
+        }
       }}
     >
-      <DialogContent className="top-auto bottom-0 left-0 flex max-h-[calc(var(--app-height,100dvh)*0.85)] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-b-none rounded-t-2xl p-0 pb-[env(safe-area-inset-bottom)] sm:max-w-none [&>aside]:max-h-[calc(var(--app-height,100dvh)*0.75)] [&>aside]:w-full [&>aside]:overflow-y-auto">
+      <DialogContent className="top-auto bottom-0 left-0 flex max-h-[calc(var(--app-height,100dvh)*0.85)] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-b-none rounded-t-2xl p-0 pb-[env(safe-area-inset-bottom)] duration-200 data-[state=closed]:slide-out-to-bottom-3 data-[state=closed]:zoom-out-100 data-[state=open]:slide-in-from-bottom-3 data-[state=open]:zoom-in-100 motion-reduce:animate-none sm:max-w-none [&>aside]:max-h-[calc(var(--app-height,100dvh)*0.75)] [&>aside]:w-full [&>aside]:overflow-y-auto">
         <DialogTitle className="sr-only">
           {translate(side === 'left' ? 'documentOutline' : 'propertiesPanel')}
         </DialogTitle>

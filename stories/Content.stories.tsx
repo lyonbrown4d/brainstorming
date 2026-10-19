@@ -120,9 +120,9 @@ export const FormattingControls: Story = {
     await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
     const page = within(canvasElement.ownerDocument.body)
     const panel = await openTopicProperties(canvasElement)
-    await userEvent.click(panel.getByRole('combobox', { name: '主题形状' }))
-    await userEvent.click(await page.findByRole('option', { name: '椭圆' }))
-    await expect(panel.getByRole('combobox', { name: '主题形状' })).toHaveTextContent('椭圆')
+    await userEvent.click(panel.getByRole('button', { name: '表现形态' }))
+    await userEvent.click(await page.findByRole('button', { name: '椭圆' }))
+    await expect(panel.getByRole('button', { name: '表现形态' })).toHaveTextContent('椭圆')
     await userEvent.click(panel.getByRole('combobox', { name: '字号' }))
     await userEvent.click(await page.findByRole('option', { name: '20' }))
     await expect(panel.getByRole('combobox', { name: '字号' })).toHaveTextContent('20')
@@ -130,5 +130,61 @@ export const FormattingControls: Story = {
     await userEvent.click(await page.findByRole('option', { name: '直线' }))
     await expect(panel.getByRole('combobox', { name: '分支线型' })).toHaveTextContent('直线')
     await expect(canvas.getByTestId('topic-root')).toHaveStyle({ borderRadius: '50%' })
+  },
+}
+
+export const SearchAppearances: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const panel = await openTopicProperties(canvasElement)
+    const page = within(canvasElement.ownerDocument.body)
+    const original = useEditor.getState().history.document
+    const pastLength = useEditor.getState().history.past.length
+    await userEvent.click(panel.getByRole('button', { name: '表现形态' }))
+    const search = await page.findByRole('textbox', { name: '搜索表现形态' })
+    await userEvent.type(search, '不存在的形态')
+    await expect(page.getByText('没有匹配的形态')).toBeVisible()
+    await userEvent.clear(search)
+    await userEvent.type(search, '便签')
+    await userEvent.click(page.getByRole('button', { name: /^便签$/ }))
+    await waitFor(() =>
+      expect(canvas.getByTestId('topic-root')).toHaveAttribute('data-appearance', 'sticky'),
+    )
+    await expect(canvas.getByTestId('topic-root')).toHaveTextContent('先记录想法，再整理结构。')
+    await expect(useEditor.getState().history.document.topics.root).toEqual({
+      ...original.topics.root,
+      style: { shape: 'sticky' },
+    })
+    await expect(useEditor.getState().history.past).toHaveLength(pastLength + 1)
+    useEditor.getState().undo()
+    await waitFor(() => expect(useEditor.getState().history.document).toBe(original))
+    await userEvent.click(panel.getByRole('button', { name: '表现形态' }))
+    await expect(page.getByRole('textbox', { name: '搜索表现形态' })).toHaveValue('')
+    await userEvent.keyboard('{Escape}')
+  },
+}
+
+export const ImageAppearanceEmpty: Story = {
+  beforeEach: () => {
+    const state = useEditor.getState()
+    state.command({
+      type: 'batch',
+      commands: [
+        { type: 'removeTopicImage', topicId: 'root' },
+        { type: 'setTopicStyle', topicId: 'root', style: { shape: 'image' } },
+      ],
+    })
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const root = within(canvas.getByTestId('topic-root'))
+    await expect(root.getByRole('button', { name: '添加图片' })).toBeVisible()
+    await expect(root.queryByRole('img')).not.toBeInTheDocument()
+    await expect(useEditor.getState().history.document.topics.root?.notes).toContain(
+      '备注保留换行。',
+    )
+    await expect(useEditor.getState().history.document.topics.root?.attachments).toEqual([
+      'sample-file',
+    ])
   },
 }

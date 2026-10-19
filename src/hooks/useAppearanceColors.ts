@@ -11,7 +11,7 @@ const defaults = {
   dropTarget: '#4b866b',
 }
 
-/** DOM overlays and Three.js share the concrete values of the CSS semantic tokens. */
+/** Canvas overlays use the concrete values of the CSS semantic tokens. */
 export const useAppearanceColors = () => {
   const { resolvedTheme } = useTheme()
   const [colors, setColors] = useState(defaults)

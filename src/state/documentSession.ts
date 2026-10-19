@@ -1,6 +1,5 @@
 import type { EditorState } from '@renderer/state/editorTypes'
 import { useEditor } from '@renderer/state/editor'
-import { useSpatialView } from '@renderer/state/spatial'
 import { useSelection } from '@renderer/state/selection'
 import { useFileSecurityState } from '@renderer/state/password'
 import { useAnnotationInteraction } from '@renderer/state/annotationInteraction'
@@ -9,7 +8,6 @@ import { useTopicFilters } from '@renderer/components/documents/filterTopics'
 
 export interface DocumentSession {
   readonly editor: EditorState
-  readonly spatial: ReturnType<typeof useSpatialView.getState>['sheets']
   readonly selection: ReturnType<typeof useSelection.getState>['sheets']
   readonly security: ReturnType<typeof useFileSecurityState.getState>
   readonly filters: ReturnType<typeof useTopicFilters.getState>
@@ -18,7 +16,6 @@ export interface DocumentSession {
 /** Session references never enter the file protocol or persisted recovery records. */
 export const captureDocumentSession = (): DocumentSession => ({
   editor: useEditor.getState(),
-  spatial: useSpatialView.getState().sheets,
   selection: useSelection.getState().sheets,
   security:
     useFileSecurityState.getState().documentId === useEditor.getState().workbook.id
@@ -32,7 +29,6 @@ export const captureDocumentSession = (): DocumentSession => ({
 })
 
 export const restoreDocumentSession = (session: DocumentSession): void => {
-  useSpatialView.setState({ sheets: session.spatial })
   useSelection.setState({ sheets: session.selection })
   useFileSecurityState.setState(session.security)
   useTopicFilters.setState(session.filters)

@@ -9,13 +9,34 @@ import type {
 
 export type Side = 'left' | 'right'
 
+export const TOPIC_SHAPES = [
+  'rounded',
+  'rectangle',
+  'ellipse',
+  'text',
+  'capsule',
+  'circle',
+  'diamond',
+  'hexagon',
+  'cloud',
+  'speech',
+  'flag',
+  'bookmark',
+  'tag',
+  'sticky',
+  'card',
+  'image',
+] as const
+
+export type TopicShape = (typeof TOPIC_SHAPES)[number]
+
 export interface TopicStyle {
   readonly fill?: string
   readonly color?: string
   readonly fontSize?: number
   readonly bold?: boolean
   readonly italic?: boolean
-  readonly shape?: 'rounded' | 'rectangle' | 'ellipse'
+  readonly shape?: TopicShape
   readonly lineStyle?: 'curve' | 'straight'
   readonly lineWidth?: number
 }

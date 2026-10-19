@@ -1,0 +1,18 @@
+# Package-manager settings only; this repository contains one root package.
+engineStrict: true
+strictPeerDependencies: false
+allowBuilds:
+  esbuild: true
+  '@moonrepo/cli': true
+  'electron@23.3.13': true
+  # Funding notices and generic browser-driver downloads are unnecessary for embedded Tauri.
+  'core-js@3.50.0': false
+  'edgedriver@6.3.1': false
+  'geckodriver@6.1.1': false
+# Validation must use the explicit, reproducible installation step.
+verifyDepsBeforeRun: error
+minimumReleaseAgeExclude:
+  - '@tanstack/query-core@5.104.4'
+  - '@tanstack/react-query@5.104.4'
+  - i18next@26.5.2
+  - react-i18next@17.1.0

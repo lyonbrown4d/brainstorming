@@ -73,7 +73,17 @@ export const reloadNativePage = async (): Promise<void> => {
 export const home = async (): Promise<void> => {
   await browser.tauri.switchWindow('main')
   await native('setLanguage', { language: 'zh-CN' })
+  // Reload now preserves the HashRouter view, including an open Settings route.
+  // Reset through the real router before starting a new workflow fixture.
+  await browser.execute(() => {
+    window.location.hash = '/home'
+  })
   await reloadNativePage()
+  // Initial route normalization can finish during refresh; navigate the ready app again.
+  await browser.execute(() => {
+    window.location.hash = '/home'
+  })
+  await browser.waitUntil(async () => (await browser.getUrl()).endsWith('#/home'))
   await expect(named('探索示例')).toBeDisplayed()
   await expect(named('下一步')).toBeEnabled()
   if ((await recovery()).length > 0) {
@@ -84,10 +94,12 @@ export const home = async (): Promise<void> => {
 }
 export const create = async (title: string): Promise<void> => {
   await named('下一步').click()
+  await expect(named('文档名称')).toBeDisplayed()
   await named('文档名称').setValue(title)
   await named('创建文档').click()
   await rootHasText(title)
   await expect(root()).toBeDisplayed()
+  await browser.waitUntil(async () => (await browser.getUrl()).includes('#/documents/'))
 }
 export const fileAction = async (action: string): Promise<void> => {
   await named('文件菜单').click()

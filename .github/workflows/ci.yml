@@ -27,6 +27,7 @@ jobs:
       - run: pnpm ci-gate
       - run: pnpm build-storybook
       - run: pnpm test:storybook
+      - run: pnpm test:canvas
   rust-headless:
     name: Rust (headless)
     runs-on: ubuntu-latest

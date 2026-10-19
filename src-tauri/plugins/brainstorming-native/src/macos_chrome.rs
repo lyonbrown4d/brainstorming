@@ -37,7 +37,7 @@ fn read(window: &NSWindow) -> Result<Value> {
     let frame = window.frame();
     let style = window.styleMask();
     let layout = content.convertRect_fromView(window.contentLayoutRect(), None);
-    Ok(json!({
+    let metrics = json!({
         "coordinateSystem": "content-top-left-points",
         "window": {
             "width": frame.size.width,
@@ -62,7 +62,43 @@ fn read(window: &NSWindow) -> Result<Value> {
             "minimize": button(window, &content, NSWindowButton::MiniaturizeButton),
             "zoom": button(window, &content, NSWindowButton::ZoomButton)
         }
-    }))
+    });
+    #[cfg(feature = "e2e")]
+    let metrics = {
+        let mut metrics = metrics;
+        metrics["focusDiagnostics"] = focus_diagnostics(window);
+        metrics
+    };
+    Ok(metrics)
+}
+
+/// Read only after `metrics` has dispatched to AppKit's main thread.
+#[cfg(feature = "e2e")]
+fn focus_diagnostics(window: &NSWindow) -> Value {
+    use objc2_app_kit::NSApplication;
+    use objc2_foundation::MainThreadMarker;
+    let marker = MainThreadMarker::new().expect("window metrics require the AppKit main thread");
+    let app = NSApplication::sharedApplication(marker);
+    json!({
+        "application": {
+            "active": app.isActive(),
+            "hidden": app.isHidden(),
+            "activationPolicy": app.activationPolicy().0,
+            "keyWindowNumber": app.keyWindow().map(|value| value.windowNumber()),
+            "mainWindowNumber": app.mainWindow().map(|value| value.windowNumber())
+        },
+        "main": {
+            "windowNumber": window.windowNumber(),
+            "key": window.isKeyWindow(),
+            "main": window.isMainWindow(),
+            "canBecomeKey": window.canBecomeKeyWindow(),
+            "canBecomeMain": window.canBecomeMainWindow(),
+            "visible": window.isVisible(),
+            "miniaturized": window.isMiniaturized(),
+            "occlusionState": window.occlusionState().bits(),
+            "onActiveSpace": window.isOnActiveSpace()
+        }
+    })
 }
 
 fn button(window: &NSWindow, content: &NSView, kind: NSWindowButton) -> Value {

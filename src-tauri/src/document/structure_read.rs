@@ -58,6 +58,7 @@ pub(crate) async fn read(db: &mut SqliteConnection) -> Result<Value> {
             "groups",
             "callouts",
             "presentation",
+            "drawings",
         ] {
             if map.contains_key(key) {
                 return Err(invalid("画布元数据包含保留字段"));
@@ -70,11 +71,18 @@ pub(crate) async fn read(db: &mut SqliteConnection) -> Result<Value> {
             .clone(),
         );
         doc["topics"] = read_topics(db, &sid, &root).await?;
-        for kind in ["relations", "groups", "callouts", "presentation"] {
+        for kind in [
+            "relations",
+            "groups",
+            "callouts",
+            "presentation",
+            "drawings",
+        ] {
             let items = read_annotations(db, &sid, kind).await?;
             match arrays[kind].as_bool() {
                 Some(true) => doc[kind] = Value::Array(items),
                 Some(false) if items.is_empty() => (),
+                None if kind == "drawings" && items.is_empty() => (),
                 _ => return Err(invalid("批注存在性标记无效")),
             }
         }
@@ -103,7 +111,7 @@ pub(crate) async fn read(db: &mut SqliteConnection) -> Result<Value> {
             return Err(invalid("原生文档包含孤立画布数据"));
         }
     }
-    let broken: i64 = sqlx::query_scalar("SELECT (SELECT count(*) FROM annotations WHERE kind NOT IN ('relations','groups','callouts','presentation'))+(SELECT count(*) FROM group_members m WHERE NOT EXISTS (SELECT 1 FROM annotations a WHERE a.sheet_id=m.sheet_id AND a.kind='groups' AND a.id=m.group_id))+(SELECT count(*) FROM resource_variants v WHERE NOT EXISTS (SELECT 1 FROM resource_objects o WHERE o.id=v.object_id) OR NOT EXISTS (SELECT 1 FROM resource_objects o WHERE o.id=v.variant_object_id))+(SELECT count(*) FROM image_tiles t WHERE NOT EXISTS (SELECT 1 FROM resource_objects o WHERE o.id=t.object_id) OR NOT EXISTS (SELECT 1 FROM resource_objects o WHERE o.id=t.tile_object_id))")
+    let broken: i64 = sqlx::query_scalar("SELECT (SELECT count(*) FROM annotations WHERE kind NOT IN ('relations','groups','callouts','presentation','drawings'))+(SELECT count(*) FROM group_members m WHERE NOT EXISTS (SELECT 1 FROM annotations a WHERE a.sheet_id=m.sheet_id AND a.kind='groups' AND a.id=m.group_id))+(SELECT count(*) FROM resource_variants v WHERE NOT EXISTS (SELECT 1 FROM resource_objects o WHERE o.id=v.object_id) OR NOT EXISTS (SELECT 1 FROM resource_objects o WHERE o.id=v.variant_object_id))+(SELECT count(*) FROM image_tiles t WHERE NOT EXISTS (SELECT 1 FROM resource_objects o WHERE o.id=t.object_id) OR NOT EXISTS (SELECT 1 FROM resource_objects o WHERE o.id=t.tile_object_id))")
         .fetch_one(&mut *db)
         .await?;
     if broken != 0 {

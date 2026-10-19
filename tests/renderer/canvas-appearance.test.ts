@@ -73,4 +73,34 @@ describe('canvas appearance is a view projection', () => {
         color: '#112233',
       })
   })
+  it('keeps transparent text readable and sticky notes recognizable while respecting explicit colors', () => {
+    for (const surface of ['#f7f7f2', '#1c1e22']) {
+      const text = applyCommand(original, {
+        type: 'setTopicStyle',
+        topicId: 'root',
+        style: { shape: 'text' },
+      })
+      expect(topicAppearance(text, 'root', surface).fill).toBe(surface)
+      expect(
+        wcagContrast(surface, topicAppearance(text, 'root', surface).color),
+      ).toBeGreaterThanOrEqual(4.5)
+      const sticky = applyCommand(original, {
+        type: 'setTopicStyle',
+        topicId: 'root',
+        style: { shape: 'sticky' },
+      })
+      const style = topicAppearance(sticky, 'root', surface)
+      expect(style.fill).toBe('#fff1a8')
+      expect(wcagContrast(style.fill, style.color)).toBeGreaterThanOrEqual(4.5)
+      const custom = applyCommand(sticky, {
+        type: 'setTopicStyle',
+        topicId: 'root',
+        style: { shape: 'sticky', fill: '#112233', color: '#ffffff' },
+      })
+      expect(topicAppearance(custom, 'root', surface)).toMatchObject({
+        fill: '#112233',
+        color: '#ffffff',
+      })
+    }
+  })
 })

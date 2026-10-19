@@ -5,7 +5,7 @@ import { serializedWorkbook } from '@renderer/state/workbookState'
 
 const snapshots = new WeakMap<EditorData, string>()
 
-/** Project the current Lexical draft without committing history, selection or composition. */
+/** Project the active editor draft without committing history, selection or composition. */
 export const serializedDocumentSnapshot = (state: EditorData): string => {
   const cached = snapshots.get(state)
   if (cached !== undefined) return cached

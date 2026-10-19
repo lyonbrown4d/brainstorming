@@ -101,6 +101,7 @@ export const restoreStructure = (
     selectedId: active.selectedId,
     editingId: null,
     editingSurface: null,
+    editingPageIndex: null,
     draft: '',
     dropTargetId: null,
   }

@@ -77,24 +77,20 @@ export const topicAppearance = (
       if (!topic || values.has(item.id)) continue
       const root = item.id === document.rootId
       const index = item.index % palette.branches.length
-      values.set(item.id, {
-        fill:
-          topic.style?.fill ??
-          (root
-            ? palette.root
-            : item.depth === 1
-              ? (palette.fills[index] ?? palette.background)
-              : palette.background),
-        color:
-          topic.style?.color ??
-          readableText(
-            topic.style?.fill ??
-              (root
+      const fill =
+        topic.style?.shape === 'text'
+          ? palette.background
+          : (topic.style?.fill ??
+            (topic.style?.shape === 'sticky'
+              ? '#fff1a8'
+              : root
                 ? palette.root
                 : item.depth === 1
                   ? (palette.fills[index] ?? palette.background)
-                  : palette.background),
-          ),
+                  : palette.background))
+      values.set(item.id, {
+        fill,
+        color: topic.style?.color ?? readableText(fill),
         stroke: palette.branches[index] ?? palette.root,
         fontFamily: palette.fontFamily,
         lineWidth: topic.style?.lineWidth ?? palette.lineWidth ?? (item.depth === 1 ? 3 : 2),

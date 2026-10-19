@@ -1,6 +1,14 @@
 if (import.meta.env.VITE_NATIVE_E2E === '1') {
   await import('@wdio/tauri-plugin')
 }
+// Official standalone DevTools is optional and development-only.
+if (import.meta.env.DEV && import.meta.env.VITE_REACT_DEVTOOLS === 'true') {
+  try {
+    await import('@renderer/dev/reactDevtools')
+  } catch (error) {
+    console.warn('React DevTools 初始化失败，编辑器将继续启动。', error)
+  }
+}
 // Install React Scan's DevTools hook before importing React and the application.
 // Vite replaces DEV at build time, removing the scanner from production chunks.
 if (import.meta.env.DEV && import.meta.env.VITE_REACT_SCAN !== 'false') {

@@ -8,6 +8,7 @@ import {
   redo,
   serializeDocument,
   undo,
+  TOPIC_SHAPES,
 } from '@core'
 import type { TopicStyle } from '@core'
 
@@ -60,6 +61,58 @@ describe('topic presentation commands', () => {
     )
     expect(parsed.topics.root?.style).toEqual(style)
   })
+
+  it.each(TOPIC_SHAPES)(
+    'switches to %s in one undo step without changing content or descendants',
+    (shape) => {
+      let document = applyCommand(createDocument('原有标题', 'appearance'), {
+        type: 'addTopic',
+        parentId: 'root',
+        id: 'child',
+        title: '保留子主题',
+      })
+      document = applyCommand(document, {
+        type: 'setTopicNotes',
+        topicId: 'root',
+        notes: '完整备注\n第二行',
+      })
+      document = applyCommand(document, {
+        type: 'addTopicAttachment',
+        topicId: 'root',
+        asset: {
+          id: 'file',
+          name: 'notes.txt',
+          mimeType: 'text/plain',
+          data: 'dGVzdA==',
+        },
+      })
+      document = applyCommand(document, {
+        type: 'setTopicImage',
+        topicId: 'root',
+        width: 60,
+        height: 40,
+        asset: {
+          id: 'image',
+          name: 'image.png',
+          mimeType: 'image/png',
+          data: 'AA==',
+        },
+      })
+      const original = createHistory(document)
+      const next = executeCommand(original, {
+        type: 'setTopicStyle',
+        topicId: 'root',
+        style: { shape },
+      })
+      expect(next.past).toEqual([document])
+      expect(next.document.topics.root).toEqual({ ...document.topics.root, style: { shape } })
+      expect(next.document.topics.child).toBe(document.topics.child)
+      expect(next.document.assets).toEqual(document.assets)
+      expect(deserializeDocument(serializeDocument(next.document))).toEqual(next.document)
+      expect(undo(next).document).toBe(document)
+      expect(redo(undo(next)).document).toBe(next.document)
+    },
+  )
 
   it.each([
     null,

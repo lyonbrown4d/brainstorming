@@ -1,32 +1,32 @@
 import { create } from 'zustand'
-import {
-  getParentId,
-  getVisibleTopicIds,
-  type HistoryState,
-  type MindMapDocument,
-  type PresentationStep,
-} from '@core'
+import { type HistoryState, type MindMapDocument, type PresentationStep } from '@core'
 import { useEditor } from '@renderer/state/editor'
 import type { SheetView } from '@renderer/state/editorTypes'
-import { useSelection } from '@renderer/state/selection'
-import { useSpatialView, type SpatialSheetView } from '@renderer/state/spatial'
 import { useWorkspace } from '@renderer/state/workspace'
+import { useSelection } from '@renderer/state/selection'
+import { presentationPlan } from '@core/presentation-plan'
 
+export type PresentationMode = 'composer' | 'audience' | 'presenter'
 interface PresentationSnapshot {
   history: HistoryState
+  view: SheetView | undefined
   selectedId: string
   selection: readonly string[] | undefined
-  view: SheetView | undefined
-  spatial: SpatialSheetView | undefined
+  returnToComposer: boolean
 }
 interface PresentationState {
+  workspaceMode: PresentationMode | null
   sheetId: string | null
   workbookId: string | null
   index: number
+  composerIndex: number
+  itemIndex: number
+  startedAt: number | null
   playing: boolean
   steps: readonly PresentationStep[]
   generated: boolean
   snapshot: PresentationSnapshot | null
+  /** Compatibility for canvas subscribers; slide playback never requests a camera. */
   cameraRequest: {
     id: string
     sheetId: string
@@ -35,9 +35,13 @@ interface PresentationState {
   viewportRequest: { id: string; sheetId: string; view: SheetView } | null
 }
 export const usePresentation = create<PresentationState>(() => ({
+  workspaceMode: null,
   sheetId: null,
   workbookId: null,
   index: 0,
+  composerIndex: 0,
+  itemIndex: 0,
+  startedAt: null,
   playing: false,
   steps: [],
   generated: false,
@@ -47,11 +51,33 @@ export const usePresentation = create<PresentationState>(() => ({
 }))
 let unsubscribe: (() => void) | undefined
 
-/** Automatic routes are session state; only explicit step-builder commands save a route. */
-export const presentationSteps = (document: MindMapDocument): readonly PresentationStep[] => {
-  return document.presentation?.length
-    ? document.presentation
-    : getVisibleTopicIds(document).map((topicId) => ({ topicId }))
+/** The root overview and first-level branches form slides; generation itself is transient. */
+export const presentationSteps = presentationPlan
+
+export const openPresentationComposer = (): void => {
+  const editor = useEditor.getState()
+  editor.commitDraft()
+  if (useEditor.getState().editingId || editor.busy) return
+  const current = usePresentation.getState()
+  usePresentation.setState({
+    workspaceMode: 'composer',
+    sheetId: editor.activeSheetId,
+    workbookId: editor.workbook.id,
+    composerIndex:
+      current.sheetId === editor.activeSheetId && current.workbookId === editor.workbook.id
+        ? current.composerIndex
+        : 0,
+  })
+}
+
+export const selectPresentationPage = (composerIndex: number): void => {
+  useEditor.getState().commitDraft()
+  if (useEditor.getState().editingId) return
+  if (
+    Number.isInteger(composerIndex) &&
+    presentationSteps(useEditor.getState().history.document)[composerIndex]
+  )
+    usePresentation.setState({ composerIndex })
 }
 
 export const capturePresentationViewport = (view: SheetView): void => {
@@ -66,23 +92,26 @@ export const showPresentationStep = (index: number): void => {
     useEditor.getState().commitDraft()
     const editor = useEditor.getState()
     if (editor.editingId || editor.busy) return
-    const steps = presentationSteps(editor.history.document)
+    const steps = presentationSteps(editor.history.document).filter((step) => !step.hidden)
     if (!steps[index]) return
     const sheetId = editor.activeSheetId
     usePresentation.setState({
       playing: true,
+      workspaceMode: 'audience',
       sheetId,
       workbookId: editor.workbook.id,
       steps,
       generated: !editor.history.document.presentation?.length,
+      startedAt: Date.now(),
       snapshot: {
         history: editor.history,
+        view: editor.views[sheetId],
         selectedId: editor.selectedId,
         selection: useSelection.getState().sheets[sheetId],
-        view: editor.views[sheetId],
-        spatial: useSpatialView.getState().sheets[sheetId],
+        returnToComposer: state.workspaceMode === 'composer',
       },
       viewportRequest: null,
+      cameraRequest: null,
     })
     const editorCleanup = useEditor.subscribe((next) => {
       const playing = usePresentation.getState()
@@ -93,7 +122,7 @@ export const showPresentationStep = (index: number): void => {
         stopPresentation()
     })
     const workspaceCleanup = useWorkspace.subscribe((next) => {
-      if (next.screen !== 'editor') stopPresentation()
+      if (next.screen !== 'editor') closePresentationWorkspace()
     })
     unsubscribe = () => {
       editorCleanup()
@@ -101,95 +130,89 @@ export const showPresentationStep = (index: number): void => {
     }
     state = usePresentation.getState()
   }
-  const editor = useEditor.getState()
+  if (!state.steps[index]) return
   const step = state.steps[index]
-  if (!step || !editor.history.document.topics[step.topicId]) return
-  usePresentation.setState({
-    index,
-    cameraRequest: step.camera
-      ? { id: crypto.randomUUID(), sheetId: editor.activeSheetId, camera: step.camera }
-      : null,
-  })
-  editor.select(step.topicId)
-  if (step.camera) useSpatialView.getState().setMode(editor.activeSheetId, '3d')
-  useSpatialView
-    .getState()
-    .setFocus(
-      editor.activeSheetId,
-      step.camera || step.topicId === editor.history.document.rootId ? null : step.topicId,
-    )
+  const count = presentationItemCount(useEditor.getState().history.document, step)
+  usePresentation.setState({ index, itemIndex: step.reveal !== 'items' && count > 6 ? 6 : 0 })
+}
+
+export const presentationItemCount = (document: MindMapDocument, step: PresentationStep): number =>
+  document.topics[step.topicId]?.children.filter(
+    (id) => step.topicId !== document.rootId || !document.floatingIds?.includes(id),
+  ).length ?? 0
+
+export const advancePresentation = (direction: 1 | -1): void => {
+  const state = usePresentation.getState()
+  const step = state.steps[state.index]
+  if (!state.playing || !step) return
+  const total = presentationItemCount(useEditor.getState().history.document, step)
+  const count = step.reveal === 'items' || total > 6 ? total : 0
+  const increment = step.reveal === 'items' ? 1 : 6
+  const minimum = step.reveal !== 'items' && total > 6 ? 6 : 0
+  if (direction === 1 && state.itemIndex < count)
+    usePresentation.setState({ itemIndex: Math.min(count, state.itemIndex + increment) })
+  else if (direction === -1 && state.itemIndex > minimum)
+    usePresentation.setState({ itemIndex: Math.max(minimum, state.itemIndex - increment) })
+  else {
+    const next = state.index + direction
+    if (next >= 0 && next < state.steps.length) showPresentationStep(next)
+  }
+}
+
+export const setPresentationMode = (workspaceMode: 'audience' | 'presenter'): void => {
+  if (usePresentation.getState().playing) usePresentation.setState({ workspaceMode })
 }
 
 export const stopPresentation = (): void => {
   const state = usePresentation.getState()
   unsubscribe?.()
   unsubscribe = undefined
-  if (!state.playing || !state.snapshot || !state.sheetId) return
-  const { snapshot, sheetId } = state
   const editor = useEditor.getState()
   const belongs =
     editor.workbook.id === state.workbookId &&
-    (editor.activeSheetId === sheetId ? editor.history : editor.sessions[sheetId]?.history) ===
-      snapshot.history
+    editor.activeSheetId === state.sheetId &&
+    editor.history === state.snapshot?.history
+  if (belongs && state.snapshot && state.sheetId) {
+    const snapshot = state.snapshot
+    const sheetId = state.sheetId
+    if (editor.selectedId !== snapshot.selectedId || editor.views[sheetId] !== snapshot.view) {
+      const views = Object.fromEntries(
+        Object.entries(editor.views).filter(([id]) => id !== sheetId),
+      )
+      if (snapshot.view) views[sheetId] = snapshot.view
+      useEditor.setState({ selectedId: snapshot.selectedId, views })
+    }
+    if (useSelection.getState().sheets[sheetId] !== snapshot.selection) {
+      const sheets = Object.fromEntries(
+        Object.entries(useSelection.getState().sheets).filter(([id]) => id !== sheetId),
+      )
+      if (snapshot.selection) sheets[sheetId] = snapshot.selection
+      useSelection.setState({ sheets })
+    }
+  }
   usePresentation.setState({
     playing: false,
+    workspaceMode: belongs && state.snapshot?.returnToComposer ? 'composer' : null,
     snapshot: null,
+    startedAt: null,
     cameraRequest: null,
-    viewportRequest: null,
+    viewportRequest:
+      belongs && state.snapshot?.view && state.sheetId
+        ? { id: crypto.randomUUID(), sheetId: state.sheetId, view: state.snapshot.view }
+        : null,
   })
-  if (!belongs) return
-  useEditor.setState((current) => {
-    const views = Object.fromEntries(Object.entries(current.views).filter(([id]) => id !== sheetId))
-    if (snapshot.view) views[sheetId] = snapshot.view
-    const session = current.sessions[sheetId]
-    return {
-      views,
-      ...(current.activeSheetId === sheetId ? { selectedId: snapshot.selectedId } : {}),
-      ...(session
-        ? {
-            sessions: {
-              ...current.sessions,
-              [sheetId]: { ...session, selectedId: snapshot.selectedId },
-            },
-          }
-        : {}),
-    }
-  })
-  useSelection.setState((current) => {
-    const sheets = Object.fromEntries(
-      Object.entries(current.sheets).filter(([id]) => id !== sheetId),
-    )
-    if (snapshot.selection) sheets[sheetId] = snapshot.selection
-    return { sheets }
-  })
-  useSpatialView.setState((current) => {
-    const sheets = Object.fromEntries(
-      Object.entries(current.sheets).filter(([id]) => id !== sheetId),
-    )
-    if (snapshot.spatial) sheets[sheetId] = snapshot.spatial
-    return { sheets }
-  })
-  usePresentation.setState({
-    cameraRequest: snapshot.spatial?.camera
-      ? { id: crypto.randomUUID(), sheetId, camera: snapshot.spatial.camera }
-      : null,
-    viewportRequest: snapshot.view
-      ? { id: crypto.randomUUID(), sheetId, view: snapshot.view }
-      : null,
-  })
+  // Navigation never writes canvas/history; a native selection/view change still restores safely.
 }
 
-export const presentationDocument = (
+export const closePresentationWorkspace = (): void => {
+  useEditor.getState().commitDraft()
+  if (useEditor.getState().editingId) return
+  stopPresentation()
+  usePresentation.setState({ workspaceMode: null })
+}
+
+/** Compatibility for canvas renderers: slides are independent from the source canvas. */
+export const presentationDocument: (
   document: MindMapDocument,
   topicId: string | undefined,
-): MindMapDocument => {
-  if (!topicId || !document.topics[topicId]) return document
-  let parent = getParentId(document, topicId)
-  let topics = document.topics
-  while (parent) {
-    const topic = topics[parent]
-    if (topic?.collapsed) topics = { ...topics, [parent]: { ...topic, collapsed: false } }
-    parent = getParentId(document, parent)
-  }
-  return topics === document.topics ? document : { ...document, topics }
-}
+) => MindMapDocument = (document) => document

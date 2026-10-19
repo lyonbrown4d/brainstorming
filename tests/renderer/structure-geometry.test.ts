@@ -44,13 +44,22 @@ describe('structure canvas and export geometry', () => {
     }
     const visible = layout.edges.filter((edge) => edge.routing !== 'hidden')
     expect(projection.edges).toHaveLength(visible.length)
-    expect(parsed.getElementsByTagName('path').length).toBe(
+    const structurePaths = Array.from(parsed.getElementsByTagName('path')).filter(
+      (path) => path.parentNode === parsed.documentElement,
+    )
+    expect(structurePaths.length).toBe(
       visible.length + (layout.decorations ?? []).filter((item) => item.kind !== 'cell').length,
     )
     for (const decoration of projection.decorations) {
       expect(svg).toContain(`data-structure-kind="${decoration.kind}"`)
       if (decoration.kind !== 'cell')
-        expect(svg).toContain(`d="${layoutDecorationPath(decoration)}"`)
+        expect(
+          structurePaths.some(
+            (path) =>
+              path.getAttribute('data-structure-kind') === decoration.kind &&
+              path.getAttribute('d') === layoutDecorationPath(decoration),
+          ),
+        ).toBe(true)
     }
     for (const topic of Object.values(document.topics)) expect(svg).toContain(topic.title)
   })

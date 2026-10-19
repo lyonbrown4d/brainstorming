@@ -40,7 +40,7 @@ describe('repository coding standards', () => {
           "export type { Topic } from '@core/types'",
           "export { resolve } from 'node:path'",
           "export { create } from 'zustand'",
-          "export const load = () => import('@renderer/components/spatial/SpatialCanvas')",
+          "export const load = () => import('@renderer/components/Canvas')",
           "export const resource = new URL('./asset.png', import.meta.url)",
         ].join('\n'),
       ),

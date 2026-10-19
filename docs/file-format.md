@@ -6,27 +6,27 @@
 
 一份文件对应一份多 Sheet 工作簿。每个 Sheet 保留独立的主题树、结构、样式、资源引用和演示内容；资源二进制可以共享。TypeScript 编辑器的工作簿 JSON 版本为 2、单页模型版本为 1，与 SQLite 文件协议分别演进。
 
-| 表                   | 内容                                     |
-| -------------------- | ---------------------------------------- |
-| `document`           | 工作簿 ID、名称、协议及必需功能          |
-| `sheets`             | 画布 ID、顺序、名称、根节点和画布设置    |
-| `topics`             | 主题、父级、有序位置、标题和可选元数据   |
-| `annotations`        | 关联线、外框、概要、标注和演示等有序结构 |
-| `group_members`      | 外框 / 概要的有序主题成员                |
-| `resources`          | 各画布的资源身份、名称、类型及对象引用   |
-| `topic_resources`    | 主题的图片、音频、附件等有序引用         |
-| `resource_objects`   | SHA-256 寻址的不可变对象及长度           |
-| `resource_chunks`    | 对象的 256 KiB 分块和逐块摘要            |
-| `resource_variants`  | 原始对象的预览派生物                     |
-| `image_tiles`        | 各分辨率与坐标的瓦片对象                 |
-| `document_revisions` | 最近 20 次写入的结构快照                 |
-| `revision_resources` | 历史版本引用的不可变资源对象             |
+| 表                   | 内容                                           |
+| -------------------- | ---------------------------------------------- |
+| `document`           | 工作簿 ID、名称、协议及必需功能                |
+| `sheets`             | 画布 ID、顺序、名称、根节点和画布设置          |
+| `topics`             | 主题、父级、有序位置、标题和可选元数据         |
+| `annotations`        | 关联线、外框、概要、标注、笔迹和演示等有序结构 |
+| `group_members`      | 外框 / 概要的有序主题成员                      |
+| `resources`          | 各画布的资源身份、名称、类型及对象引用         |
+| `topic_resources`    | 主题的图片、音频、附件等有序引用               |
+| `resource_objects`   | SHA-256 寻址的不可变对象及长度                 |
+| `resource_chunks`    | 对象的 256 KiB 分块和逐块摘要                  |
+| `resource_variants`  | 原始对象的预览派生物                           |
+| `image_tiles`        | 各分辨率与坐标的瓦片对象                       |
+| `document_revisions` | 最近 20 次写入的结构快照                       |
+| `revision_resources` | 历史版本引用的不可变资源对象                   |
 
 表结构由 SQLx Migrator 管理，显式 SQL 位于 `src-tauri/src/document/migrations`，通过 `migrate!` 编译进应用。履历表固定为 `_brainstorming_migrations`，保存版本、校验和与执行状态；初始迁移编号为 1，与 `user_version=2` 的文件协议标识分开。只执行应用内迁移，不执行文件携带的脚本；已发布迁移不修改，新变更追加文件。应用标识、协议、必需功能、迁移履历或校验和无效时拒绝打开。
 
 此前由当前 Tauri 协议生成、尚无迁移履历的文件，必须通过初始表结构和工作簿数据校验，才能在事务内由 SQLx 登记为基线；不重建或丢弃正文。此登记不适用于旧 Electron/Kysely 格式。
 
-主题维持稳定 ID、唯一父级和有序子主题。Swift / Kotlin、React Flow、Lexical 与 Three.js 的运行时对象不进入文件。活动画布、选区、文本草稿、视口、相机、面板状态和撤销栈只留在会话。
+主题维持稳定 ID、唯一父级和有序子主题。Swift / Kotlin、React Flow 与 Lexical 的运行时对象不进入文件。活动画布、选区、文本草稿、视口、面板状态和撤销栈只留在会话。
 
 ## 图片、视频与附件
 
@@ -57,3 +57,11 @@ iOS / Android 系统文件可能是安全范围 URL 或内容提供者 URI。平
 XMind 不是本机存储格式。导入器识别 ZIP 内现代 `content.json` 与旧版 `content.xml`，经校验转换为工作簿并返回报告。导入文档没有正式保存路径，首次保存生成 `.brainstorming`，不能覆盖源 `.xmind`。
 
 支持现代 XMind 导出，以及 Markdown、OPML、纯文本大纲和 SVG / PNG / PDF 图形导出。第三方格式的完整语义和视觉不能保证无损，导入报告列出不支持内容；Brainstorming 扩展字段用于自身导出后再导入。ZIP 解压、XML 和 Markdown 解析复用维护中的第三方库。
+
+## 主题表现、笔迹与演示页面
+
+主题形态存于 `style.shape`，与主题层级和资源引用分开；支持的 16 个值以 `src/core/types.ts` 的 `TOPIC_SHAPES` 白名单为准。切换形态不移除原有内容。画布节点和导出轮廓由这些持久化值投影，React Flow 对象不写入文件。
+
+每个 Sheet 的 `drawings` 存入 `annotations` 的 `drawings` 类别；每笔保存 ID、颜色、粗细和坐标 / 压力点。读取与写入均校验最多 2,000 笔、每笔 8,192 点和合计 262,144 点，坐标为 ±1,000,000 内有限数，压力为 0–1，宽度为 1–24。游离想法仍使用主题树及 `floatingPositions`，不转成笔迹。此扩展复用已有有序注解表，不修改已发布迁移。
+
+演示的 `presentation` 有序数组保存主题 ID 与可选的 `layout`、`hidden`、`notes`、`reveal`；未保存编排时临时生成页面。播放页索引、逐项进度、计时、全屏和演讲者状态只留会话。旧 `camera` 字段可被读取，但不再执行空间相机动作。

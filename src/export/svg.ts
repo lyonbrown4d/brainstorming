@@ -1,3 +1,9 @@
+import { visualPath } from '@shared/sketch'
+import { inkExtents, drawExportInk } from '@renderer/export/ink'
+import { measureTopicContent } from '@layout/measure'
+import { showsTopicNotes } from '@shared/topic-shapes'
+import { wrappedTitle } from '@renderer/export/text'
+import { drawTopicShape, drawTopicAppearanceContent } from '@renderer/export/topic-shapes'
 import { translate } from '@renderer/i18n'
 import { DOMImplementation, XMLSerializer, type Element } from '@xmldom/xmldom'
 import type { MindMapDocument, Topic } from '@core'
@@ -35,22 +41,6 @@ export const checkRasterSize = (width: number, height: number): void => {
   )
     throw new Error(translate('mapIsTooLargeMaximum16384Pixels'))
 }
-const wrappedTitle = (title: string, fontSize: number, maxWidth: number): string[] => {
-  const lines = ['']
-  let width = 0
-  for (const character of title) {
-    const size = (character.codePointAt(0) ?? 0) > 255 ? fontSize : fontSize * 0.62
-    if (character === '\n' || (width + size > maxWidth && width > 0)) {
-      lines.push('')
-      width = 0
-    }
-    if (character !== '\n') {
-      lines[lines.length - 1] = (lines.at(-1) ?? '') + character
-      width += size
-    }
-  }
-  return lines
-}
 /** Render the complete pure layout, including topics outside the viewport. */
 export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = false): SheetSvg => {
   const source = includeCollapsed
@@ -64,7 +54,12 @@ export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = fal
   const layout = layoutDocument(source)
   const appearance = documentAppearance(source)
   const annotations = exportAnnotations(source, layout.nodes)
-  const bounds = [...layout.nodes, ...annotationExtents(annotations), ...structureExtents(layout)]
+  const bounds = [
+    ...layout.nodes,
+    ...annotationExtents(annotations),
+    ...structureExtents(layout),
+    ...inkExtents(source),
+  ]
   const margin = 48
   const minX = Math.min(...bounds.map((node) => node.x)) - margin
   const minY = Math.min(...bounds.map((node) => node.y)) - margin
@@ -96,6 +91,7 @@ export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = fal
     height,
     fill: appearance.background,
   })
+  drawExportInk(xml, root, source)
   drawExportAnnotations(xml, root, source, layout.nodes, annotations, 'underlay')
   drawStructureGeometry(xml, root, source, layout)
   const positions = new Map(layout.nodes.map((node) => [node.id, node]))
@@ -108,7 +104,11 @@ export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = fal
     const topic = source.topics[edge.target]
     if (!a || !b || !topic || edge.routing === 'hidden') continue
     element('path', {
-      d: layoutEdgePath(edge, a, b, topic.style?.lineStyle === 'straight'),
+      d: visualPath(
+        layoutEdgePath(edge, a, b, topic.style?.lineStyle === 'straight'),
+        source.settings?.visualStyle,
+        `edge:${edge.id}`,
+      ),
       fill: 'none',
       stroke: topicAppearance(source, topic.id).stroke,
       'stroke-width': topicAppearance(source, topic.id).lineWidth,
@@ -126,29 +126,21 @@ export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = fal
       ...topic.style,
     }
     const group = element('g', { transform: `translate(${node.x} ${node.y})` })
-    if (style.shape === 'ellipse')
-      element(
-        'ellipse',
-        {
-          cx: node.width / 2,
-          cy: node.height / 2,
-          rx: node.width / 2,
-          ry: node.height / 2,
-          fill: style.fill,
-        },
-        group,
-      )
-    else
-      element(
-        'rect',
-        {
-          width: node.width,
-          height: node.height,
-          rx: style.shape === 'rectangle' ? 0 : 14,
-          fill: style.fill,
-        },
-        group,
-      )
+    const content = drawTopicShape(
+      element,
+      group,
+      topic,
+      node.width,
+      node.height,
+      style.fill,
+      isRoot
+        ? source.settings?.visualStyle === 'sketch'
+          ? style.color
+          : style.fill
+        : style.stroke,
+      source.settings?.visualStyle,
+    )
+    const body = element('g', { transform: `translate(${content.x} ${content.y})` }, group)
     const metadata = topic.metadata
     const hasBadges = [
       metadata?.task,
@@ -157,9 +149,25 @@ export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = fal
       metadata?.equation,
       metadata?.audioAssetId,
     ].some(Boolean)
-    const bodyHeight =
-      node.height - (hasBadges ? 28 : 0) - (topic.notes || topic.attachments?.length ? 28 : 0)
-    const markerLayout = drawMarkerIcons(xml, group, metadata, node.width, bodyHeight, style.color)
+    const previewHeight =
+      showsTopicNotes(topic.style?.shape) && topic.notes
+        ? 48
+        : topic.style?.shape === 'image' && !topic.image
+          ? 52
+          : 0
+    const footerHeight =
+      (hasBadges ? 28 : 0) + (topic.notes || topic.attachments?.length ? 28 : 0) + previewHeight
+    const bodyHeight = content.height - footerHeight
+    const naturalHeight =
+      measureTopicContent(topic.title, isRoot, style.fontSize, topic).height - footerHeight
+    const markerLayout = drawMarkerIcons(
+      xml,
+      body,
+      metadata,
+      content.width,
+      bodyHeight,
+      style.color,
+    )
     const centerX = markerLayout.contentX + markerLayout.contentWidth / 2
     const lines = wrappedTitle(
       topic.title,
@@ -167,7 +175,8 @@ export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = fal
       topic.id === source.rootId ? 280 - 56 : 240 - 44,
     )
     const lineHeight = Math.ceil(style.fontSize * 1.5)
-    let contentY = (topic.id === source.rootId ? 14 : 10) + markerLayout.contentY
+    let contentY =
+      (isRoot ? 14 : 10) + markerLayout.contentY + Math.max(0, (bodyHeight - naturalHeight) / 2)
     if (topic.image) {
       const asset = source.assets?.[topic.image.assetId]
       if (!asset) throw new Error(translate('exportImageResourceIsMissing'))
@@ -181,7 +190,7 @@ export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = fal
           ...size,
           href: `data:${asset.mimeType};base64,${asset.data}`,
         },
-        group,
+        body,
       )
       contentY += size.height + 12
     }
@@ -198,12 +207,22 @@ export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = fal
         'font-style': style.italic ? 'italic' : 'normal',
         'xml:space': 'preserve',
       },
-      group,
+      body,
     )
     lines.forEach((line, index) =>
       element('tspan', { x: centerX, dy: index ? lineHeight : 0 }, text).appendChild(
         xml.createTextNode(xmlText(line || ' ')),
       ),
+    )
+    drawTopicAppearanceContent(
+      element,
+      body,
+      topic,
+      centerX,
+      Math.min(content.width - 32, 224),
+      bodyHeight + (topic.style?.shape === 'image' ? 28 : 14),
+      style.color,
+      appearance.fontFamily,
     )
     const metadataText = [
       metadata?.task
@@ -216,7 +235,7 @@ export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = fal
     ]
       .filter(Boolean)
       .join(' · ')
-    const firstBadgeLine = wrappedTitle(metadataText, 10, Math.max(12, node.width - 24))[0] ?? ''
+    const firstBadgeLine = wrappedTitle(metadataText, 10, Math.max(12, content.width - 24))[0] ?? ''
     const badge =
       firstBadgeLine === metadataText
         ? metadataText
@@ -225,19 +244,19 @@ export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = fal
       .filter(Boolean)
       .join(' · ')
     if (metadataDescription)
-      element('title', {}, group).appendChild(xml.createTextNode(xmlText(metadataDescription)))
+      element('title', {}, body).appendChild(xml.createTextNode(xmlText(metadataDescription)))
     if (metadataText)
       element(
         'text',
         {
-          x: node.width / 2,
-          y: bodyHeight + 18,
+          x: content.width / 2,
+          y: bodyHeight + previewHeight + 18,
           'text-anchor': 'middle',
           fill: style.color,
           'font-family': appearance.fontFamily,
           'font-size': 10,
         },
-        group,
+        body,
       ).appendChild(xml.createTextNode(xmlText(badge)))
     const details = [
       topic.notes ? translate('notes') : '',
@@ -254,14 +273,14 @@ export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = fal
       element(
         'text',
         {
-          x: node.width / 2,
-          y: node.height - 10,
+          x: content.width / 2,
+          y: content.height - 10,
           'text-anchor': 'middle',
           fill: style.color,
           'font-family': appearance.fontFamily,
           'font-size': 11,
         },
-        group,
+        body,
       ).appendChild(xml.createTextNode(details))
   }
   drawExportAnnotations(xml, root, source, layout.nodes, annotations, 'overlay')

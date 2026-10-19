@@ -8,7 +8,6 @@ import { newDocument, openDocument, saveDocument } from '@renderer/state/files'
 import { requireDesktopAPI } from '@renderer/lib/desktop'
 import { requestViewport } from '@renderer/state/viewport'
 import { usePresentation } from '@renderer/state/presentation'
-import { useSpatialView } from '@renderer/state/spatial'
 import { createRecoveryWriter } from '@renderer/lib/recoveryWriter'
 import { queueDocumentWrite } from '@renderer/lib/documentWriteQueue'
 import { startDocumentAutosave } from '@renderer/state/documentAutosave'
@@ -216,7 +215,6 @@ export const useFileLifecycle = (): void => {
       if (['zoomIn', 'zoomOut', 'actualSize', 'centerRoot'].includes(action)) {
         if (action === 'centerRoot') {
           state.select(state.history.document.rootId)
-          useSpatialView.getState().setFocus(state.activeSheetId, null)
         }
         if (
           action === 'zoomIn' ||

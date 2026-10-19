@@ -40,10 +40,11 @@ pub(crate) async fn replace(db: &mut SqliteConnection, workbook: &Value) -> Resu
             "groups",
             "callouts",
             "presentation",
+            "drawings",
         ] {
             metadata.remove(key);
         }
-        metadata.insert("arrays".into(), json!({"relations":doc.get("relations").is_some(),"groups":doc.get("groups").is_some(),"callouts":doc.get("callouts").is_some(),"presentation":doc.get("presentation").is_some()}));
+        metadata.insert("arrays".into(), json!({"relations":doc.get("relations").is_some(),"groups":doc.get("groups").is_some(),"callouts":doc.get("callouts").is_some(),"presentation":doc.get("presentation").is_some(),"drawings":doc.get("drawings").is_some()}));
         metadata.insert("assets".into(), json!(doc.get("assets").is_some()));
         sqlx::query("INSERT INTO sheets VALUES (?1,?2,?3,?4,?5,?6,?7)")
             .bind(sid)
@@ -85,7 +86,13 @@ pub(crate) async fn replace(db: &mut SqliteConnection, workbook: &Value) -> Resu
                     .await?;
             }
         }
-        for kind in ["relations", "groups", "callouts", "presentation"] {
+        for kind in [
+            "relations",
+            "groups",
+            "callouts",
+            "presentation",
+            "drawings",
+        ] {
             if let Some(items) = doc[kind].as_array() {
                 for (position, item) in items.iter().enumerate() {
                     let mut data = object(item)?.clone();

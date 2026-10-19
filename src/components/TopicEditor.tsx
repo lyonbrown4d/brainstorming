@@ -48,7 +48,7 @@ export const TopicEditor = ({
         PlainTextExtension,
         HistoryExtension,
         configExtension(AutoFocusExtension, {
-          disabled: surface !== 'canvas' && surface !== 'spatial',
+          disabled: surface !== 'canvas',
         }),
       ],
       register: (editor) =>
@@ -72,7 +72,7 @@ export const TopicEditor = ({
         const text =
           state.editingId === id && state.editingSurface === surface ? state.draft : committedTitle
         $getRoot().append($createParagraphNode().append($createTextNode(text)))
-        if (surface === 'canvas' || surface === 'spatial') {
+        if (surface === 'canvas') {
           if (state.editSelection === 'end') $getRoot().selectEnd()
           else $selectAll()
         }
@@ -81,16 +81,10 @@ export const TopicEditor = ({
   )
   return (
     <LexicalExtensionComposer extension={extension} contentEditable={null}>
-      <div
-        className={
-          surface === 'spatial'
-            ? 'flex max-h-[inherit] min-w-0 w-full items-center justify-center'
-            : 'topic-editor-shell'
-        }
-      >
+      <div className="topic-editor-shell">
         <ContentEditable
           id={`topic-${surface}-${id}`}
-          className={`${surface === 'canvas' ? 'topic-input' : surface === 'spatial' ? 'min-h-[1.5em] max-h-[inherit] w-full overflow-y-auto border-0 bg-transparent p-0 text-center text-inherit leading-[1.5] whitespace-pre-wrap [font:inherit] [overflow-wrap:anywhere] outline-none [&_p]:m-0' : surface === 'notes' ? 'topic-notes-input min-h-28 max-h-[280px] px-2.5 py-[9px] text-[13px] leading-relaxed' : 'topic-name-input min-h-[38px] max-h-[180px] px-2.5 py-2 text-sm leading-normal'} ${surface === 'canvas' || surface === 'spatial' ? '' : 'w-full overflow-y-auto rounded-[7px] border border-border bg-background text-foreground whitespace-pre-wrap [overflow-wrap:anywhere] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&_p]:m-0'} select-text nodrag nopan nowheel`}
+          className={`${surface === 'canvas' ? 'topic-input' : surface === 'notes' ? 'topic-notes-input min-h-28 max-h-[280px] px-2.5 py-[9px] text-[13px] leading-relaxed' : 'topic-name-input min-h-[38px] max-h-[180px] px-2.5 py-2 text-sm leading-normal'} ${surface === 'canvas' ? '' : 'w-full overflow-y-auto rounded-[7px] border border-border bg-background text-foreground whitespace-pre-wrap [overflow-wrap:anywhere] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&_p]:m-0'} select-text nodrag nopan nowheel`}
           aria-label={
             surface === 'outline'
               ? translate('outlineTopicTitle')
@@ -98,13 +92,13 @@ export const TopicEditor = ({
                 ? translate('topicNotes')
                 : surface === 'inspector'
                   ? translate('topicTitle')
-                  : active || surface === 'spatial'
+                  : active
                     ? translate('editTopicTitle')
                     : translate('topicContent')
           }
           aria-multiline
           spellCheck={false}
-          data-topic-id={surface === 'canvas' || surface === 'spatial' ? id : undefined}
+          data-topic-id={surface === 'canvas' ? id : undefined}
           onClick={(event) => {
             event.stopPropagation()
             if (surface === 'canvas' && interactAnnotationTopic(id)) return

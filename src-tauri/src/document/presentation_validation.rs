@@ -18,13 +18,13 @@ const LAYOUTS: &[&str] = &[
     "tree-table-down",
     "matrix",
 ];
-fn choice(value: &Value, choices: &[&str]) -> Result<()> {
+pub(super) fn choice(value: &Value, choices: &[&str]) -> Result<()> {
     if !choices.contains(&text(value)?) {
         return Err(invalid("扩展枚举值无效"));
     }
     Ok(())
 }
-fn number(value: &Value, min: f64, max: f64) -> Result<()> {
+pub(super) fn number(value: &Value, min: f64, max: f64) -> Result<()> {
     if value
         .as_f64()
         .is_none_or(|n| !n.is_finite() || n < min || n > max)
@@ -33,7 +33,7 @@ fn number(value: &Value, min: f64, max: f64) -> Result<()> {
     }
     Ok(())
 }
-fn bounded_text(value: &Value, max: usize, empty: bool) -> Result<()> {
+pub(super) fn bounded_text(value: &Value, max: usize, empty: bool) -> Result<()> {
     let value = text(value)?;
     if value.encode_utf16().count() > max || (!empty && value.trim().is_empty()) {
         return Err(invalid("扩展文本长度无效"));
@@ -50,13 +50,17 @@ fn color(value: &Value) -> Result<()> {
     }
     Ok(())
 }
-fn optional(value: &Value, key: &str, validate: impl FnOnce(&Value) -> Result<()>) -> Result<()> {
+pub(super) fn optional(
+    value: &Value,
+    key: &str,
+    validate: impl FnOnce(&Value) -> Result<()>,
+) -> Result<()> {
     match value.get(key) {
         Some(value) => validate(value),
         None => Ok(()),
     }
 }
-fn boolean(value: &Value) -> Result<()> {
+pub(super) fn boolean(value: &Value) -> Result<()> {
     if !value.is_boolean() {
         return Err(invalid("扩展布尔值无效"));
     }
@@ -88,7 +92,7 @@ pub(crate) fn topic(topic: &Value) -> Result<()> {
         optional(style, "fontSize", |v| number(v, 12., 32.))?;
         optional(style, "lineWidth", |v| number(v, 1., 6.))?;
         optional(style, "shape", |v| {
-            choice(v, &["rounded", "rectangle", "ellipse"])
+            choice(v, super::topic_shapes::TOPIC_SHAPES)
         })?;
         optional(style, "lineStyle", |v| choice(v, &["curve", "straight"]))
     })?;
@@ -133,6 +137,7 @@ pub(crate) fn settings(doc: &Value) -> Result<()> {
             settings,
             &[
                 "layout",
+                "visualStyle",
                 "theme",
                 "customPalette",
                 "background",
@@ -141,6 +146,9 @@ pub(crate) fn settings(doc: &Value) -> Result<()> {
             ],
         )?;
         optional(settings, "layout", |v| choice(v, LAYOUTS))?;
+        optional(settings, "visualStyle", |v| {
+            choice(v, &["normal", "sketch"])
+        })?;
         optional(settings, "theme", |v| {
             choice(
                 v,
@@ -208,22 +216,7 @@ pub(crate) fn annotation(kind: &str, item: &Value) -> Result<()> {
             keys(item, &["id", "topicId", "text"])?;
             bounded_text(&item["text"], 10_000, false)?;
         }
-        "presentation" => {
-            keys(item, &["topicId", "camera"])?;
-            optional(item, "camera", |camera| {
-                keys(camera, &["position", "target"])?;
-                for field in ["position", "target"] {
-                    let vector = list(&camera[field], 3)?;
-                    if vector.len() != 3 {
-                        return Err(invalid("相机向量须包含三个分量"));
-                    }
-                    for component in vector {
-                        number(component, -10_000_000., 10_000_000.)?;
-                    }
-                }
-                Ok(())
-            })?;
-        }
+        "presentation" => super::presentation_steps::validate(item)?,
         _ => return Err(invalid("批注类型无效")),
     }
     optional(item, "title", |v| bounded_text(v, 1000, true))?;

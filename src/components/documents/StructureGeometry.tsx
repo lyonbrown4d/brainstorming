@@ -1,13 +1,27 @@
+import { liveSketchEdgePath, type SketchEdgeGeometry } from '@shared/sketch-edges'
+import { visualPath } from '@shared/sketch'
 import { BaseEdge, ViewportPortal, type Edge, type EdgeProps } from '@xyflow/react'
 import type { MindMapDocument } from '@core'
 import type { LayoutDecoration } from '@layout'
 import { topicAppearance } from '@shared/appearance'
 import { layoutDecorationPath } from '@shared/layout-geometry'
 
-type StructureFlowEdge = Edge<{ path: string }, 'structure'>
+type StructureFlowEdge = Edge<{ path: string; liveSketch?: SketchEdgeGeometry }, 'structure'>
 
-export const StructureEdge = ({ id, data, style }: EdgeProps<StructureFlowEdge>) => {
-  return <BaseEdge id={id} path={data?.path ?? ''} style={style} interactionWidth={0} />
+export const StructureEdge = (props: EdgeProps<StructureFlowEdge>) => {
+  const { id, data, style, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition } =
+    props
+  const direction = { left: 'left', right: 'right', top: 'up', bottom: 'down' } as const
+  const path = data?.liveSketch
+    ? liveSketchEdgePath(
+        data.liveSketch,
+        { x: sourceX, y: sourceY },
+        { x: targetX, y: targetY },
+        direction[sourcePosition],
+        direction[targetPosition],
+      )
+    : (data?.path ?? '')
+  return <BaseEdge id={id} path={path} style={style} interactionWidth={0} />
 }
 
 export const StructureGeometry = ({
@@ -37,7 +51,7 @@ export const StructureGeometry = ({
             ...(decoration.kind === 'grid-line' ? { strokeOpacity: 0.4 } : {}),
             'data-structure-kind': decoration.kind,
           }
-          return decoration.kind === 'cell' ? (
+          return decoration.kind === 'cell' && document.settings?.visualStyle !== 'sketch' ? (
             <rect
               key={decoration.id}
               {...common}
@@ -53,8 +67,14 @@ export const StructureGeometry = ({
             <path
               key={decoration.id}
               {...common}
-              d={layoutDecorationPath(decoration)}
-              fill="none"
+              d={visualPath(
+                layoutDecorationPath(decoration),
+                document.settings?.visualStyle,
+                `decoration:${decoration.id}`,
+              )}
+              fill={decoration.kind === 'cell' ? appearance.stroke : 'none'}
+              fillOpacity={decoration.kind === 'cell' ? 0.035 : undefined}
+              strokeOpacity={decoration.kind === 'cell' ? 0.4 : common.strokeOpacity}
               strokeLinecap="round"
               strokeLinejoin="round"
             />

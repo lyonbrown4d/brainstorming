@@ -1,3 +1,4 @@
+import { InkActions } from '@renderer/components/ink/InkActions'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { CopyPlus, PlusSquare, Redo2, Undo2 } from 'lucide-react'
@@ -95,6 +96,7 @@ export const FloatingToolbar = () => {
             <CopyPlus size={19} />
           </Action>
           <AnnotationActions />
+          <InkActions />
         </DockGroup>
         <Separator orientation="vertical" className="mx-1 h-7 opacity-70" />
         <DockGroup label={translate('historyAndEditing')}>

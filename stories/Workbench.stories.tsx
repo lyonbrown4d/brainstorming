@@ -4,7 +4,6 @@ import { applyCommand, createExampleDocument } from '@core'
 import { App } from '@renderer/App'
 import { useEditor } from '@renderer/state/editor'
 import { setSelectedTopics, useSelection } from '@renderer/state/selection'
-import { useSpatialView } from '@renderer/state/spatial'
 import { openTopicProperties } from '@stories/properties'
 
 const meta = {
@@ -15,7 +14,6 @@ const meta = {
     useSelection.setState({ sheets: {} })
     useEditor.getState().replace(createExampleDocument())
     useEditor.setState({ recovery: null, outlineOpen: true, inspectorOpen: true })
-    useSpatialView.getState().setMode(useEditor.getState().activeSheetId, '2d')
     setSelectedTopics(['vision'])
   },
 } satisfies Meta<typeof App>
@@ -28,7 +26,7 @@ export const Default: Story = {
     await expect(canvas.getByRole('complementary', { name: '文档大纲' })).toBeVisible()
     const panel = await openTopicProperties(canvasElement)
     await expect(panel.getByRole('heading', { name: '属性' })).toBeVisible()
-    await expect(panel.getByRole('combobox', { name: '主题形状' })).toBeVisible()
+    await expect(panel.getByRole('button', { name: '表现形态' })).toBeVisible()
   },
 }
 

@@ -1,3 +1,5 @@
+import { useCanvasInk } from '@renderer/state/canvasInk'
+import { CanvasInk } from '@renderer/components/ink/CanvasInk'
 import { useAppearanceColors } from '@renderer/hooks/useAppearanceColors'
 import { useMessages } from '@renderer/i18n/useMessages'
 
@@ -17,7 +19,7 @@ import { useCanvasDrag } from '@renderer/hooks/useCanvasDrag'
 import { DragFeedback } from '@renderer/components/workbench/DragFeedback'
 import { CanvasMinimap } from '@renderer/components/CanvasMinimap'
 import { RelationEdge } from '@renderer/components/annotations/RelationEdge'
-import { presentationDocument, usePresentation } from '@renderer/state/presentation'
+import { usePresentation } from '@renderer/state/presentation'
 import { useEditor } from '@renderer/state/editor'
 import { selectTopic, setSelectedTopics } from '@renderer/state/selection'
 import { TopicNode, type TopicFlowNode } from '@renderer/components/TopicNode'
@@ -25,7 +27,7 @@ import { CanvasAnnotations } from '@renderer/components/annotations/CanvasAnnota
 import { SelectionVisibility } from '@renderer/components/SelectionVisibility'
 import { FloatingToolbar } from '@renderer/components/FloatingToolbar'
 import { documentAppearance } from '@shared/appearance'
-import { projectCanvas } from '@renderer/components/documents/projectCanvas'
+import { createCanvasProjector } from '@renderer/lib/canvasProjection'
 import { StructureEdge, StructureGeometry } from '@renderer/components/documents/StructureGeometry'
 const nodeTypes = { topic: TopicNode }
 const edgeTypes = { relation: RelationEdge, structure: StructureEdge }
@@ -41,14 +43,12 @@ export const Canvas = () => {
   const activeSheetId = useEditor((state) => state.activeSheetId)
   const [savedView] = useState(() => useEditor.getState().views[activeSheetId])
   const [initialFit] = useState(() => ({ padding: canvasFitPadding(), maxZoom: 1.2 }))
-  const presentation = usePresentation()
-  const presentedId =
-    presentation.playing && presentation.sheetId === activeSheetId
-      ? presentation.steps[presentation.index]?.topicId
-      : undefined
+  const playing = usePresentation((state) => state.playing)
+  const inkMode = useCanvasInk((state) => state.mode)
+  const [project] = useState(createCanvasProjector)
   const projection = useMemo(
-    () => projectCanvas(presentationDocument(document, presentedId), colors.canvas),
-    [document, presentedId, colors.canvas],
+    () => project(document, colors.canvas),
+    [document, colors.canvas, project],
   )
   const { reconnecting, ...relations } = useCanvasRelations(projection.edges)
   const drag = useCanvasDrag(projection.nodes)
@@ -61,8 +61,9 @@ export const Canvas = () => {
       }}
       id="sheet-panel"
       role="tabpanel"
+      tabIndex={-1}
       aria-label={translate('currentSheet')}
-      initial={{ opacity: 0 }}
+      initial={false}
       animate={{ opacity: 1 }}
       transition={{ duration: reduceMotion ? 0 : 0.12 }}
     >
@@ -78,7 +79,7 @@ export const Canvas = () => {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodeClick={(event, node) => {
-          if (presentation.playing) return
+          if (playing) return
           if (interactAnnotationTopic(node.id)) return
           useAnnotationInteraction.setState({ selected: null, editing: false })
           selectTopic(node.id, event.metaKey || event.ctrlKey || event.shiftKey)
@@ -87,7 +88,7 @@ export const Canvas = () => {
             ?.focus({ preventScroll: true })
         }}
         onSelectionEnd={() => {
-          if (presentation.playing) return
+          if (playing) return
           setSelectedTopics(
             flow
               .getNodes()
@@ -96,7 +97,7 @@ export const Canvas = () => {
           )
         }}
         onPaneClick={(event) => {
-          if (presentation.playing) return
+          if (playing) return
           const point = flow.screenToFlowPosition({ x: event.clientX, y: event.clientY })
           if (createFloatingAt(point.x, point.y)) return
           useAnnotationInteraction.setState({ selected: null, editing: false, fromId: null })
@@ -108,7 +109,7 @@ export const Canvas = () => {
             ?.focus({ preventScroll: true })
         }}
         onDoubleClick={(event) => {
-          if (presentation.playing) return
+          if (playing) return
           if (
             !(event.target instanceof Element) ||
             !event.target.classList.contains('react-flow__pane')
@@ -121,7 +122,7 @@ export const Canvas = () => {
         onlyRenderVisibleElements
         defaultViewport={savedView ?? { x: 0, y: 0, zoom: 1 }}
         fitView={!savedView}
-        onMove={(_event, viewport) => {
+        onMoveEnd={(_event, viewport) => {
           if (useEditor.getState().activeSheetId === activeSheetId)
             useEditor.setState((state) => ({
               views: { ...state.views, [activeSheetId]: viewport },
@@ -135,12 +136,12 @@ export const Canvas = () => {
         connectOnClick={false}
         edgesFocusable={false}
         nodesFocusable={false}
-        nodesDraggable={!presentation.playing}
-        elementsSelectable={!presentation.playing}
+        nodesDraggable={!playing && inkMode === 'select'}
+        elementsSelectable={!playing && inkMode === 'select'}
         selectNodesOnDrag
         nodeDragThreshold={4}
         selectionOnDrag={false}
-        panOnDrag={[0, 1, 2]}
+        panOnDrag={inkMode === 'select' ? [0, 1, 2] : false}
         selectionKeyCode="Shift"
         multiSelectionKeyCode={['Meta', 'Control']}
         panOnScroll
@@ -150,9 +151,10 @@ export const Canvas = () => {
         <StructureGeometry document={document} decorations={projection.decorations} />
         <CanvasAnnotations document={document} nodes={projection.layoutNodes} />
         <SelectionVisibility />
-        {!presentation.playing && <CanvasMinimap />}
+        {!playing && <CanvasInk />}
+        {!playing && <CanvasMinimap />}
       </ReactFlow>
-      {!presentation.playing && (
+      {!playing && (
         <CanvasOverlay>
           <DragFeedback />
           <FloatingToolbar />

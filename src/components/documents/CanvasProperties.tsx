@@ -1,6 +1,7 @@
 import { useMessages } from '@renderer/i18n/useMessages'
 
-import { useState } from 'react'
+import { useEditor } from '@renderer/state/editor'
+import { isCanvasSection, selectCanvasSection } from '@renderer/state/inspectorNavigation'
 import { StructurePicker } from '@renderer/components/documents/StructurePicker'
 import { DocumentSettingsPanel } from '@renderer/components/documents/DocumentSettingsPanel'
 import { TemplateDialog } from '@renderer/components/documents/TemplateDialog'
@@ -9,9 +10,15 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@renderer/components/u
 export const CanvasProperties = () => {
   const { translate } = useMessages()
 
-  const [section, setSection] = useState('structure')
+  const section = useEditor((state) => state.canvasSection)
   return (
-    <Tabs value={section} onValueChange={setSection} className="gap-0 pt-2">
+    <Tabs
+      value={section}
+      onValueChange={(value) => {
+        if (isCanvasSection(value)) selectCanvasSection(value)
+      }}
+      className="gap-0 pt-2"
+    >
       <TabsList
         aria-label={translate('sheetSettings')}
         variant="line"

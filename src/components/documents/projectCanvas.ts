@@ -1,3 +1,4 @@
+import { visualPath } from '@shared/sketch'
 import { layoutDocument, type LayoutNode } from '@layout'
 import type { MindMapDocument } from '@core'
 import { topicAppearance } from '@shared/appearance'
@@ -45,6 +46,7 @@ export const projectCanvas = (document: MindMapDocument, surface?: string) => {
         style: { width: node.width, height: node.height },
         data: {
           topic,
+          visualStyle: document.settings?.visualStyle ?? 'normal',
           root: node.id === document.rootId,
           branch: document.topics[document.rootId]?.children.includes(node.id) ?? false,
           fill: appearance.fill,
@@ -65,19 +67,35 @@ export const projectCanvas = (document: MindMapDocument, surface?: string) => {
       return {
         ...edge,
         type:
-          edge.routing || edge.waypoints
+          edge.routing || edge.waypoints || document.settings?.visualStyle === 'sketch'
             ? 'structure'
             : document.topics[edge.target]?.style?.lineStyle === 'straight'
               ? 'straight'
               : 'default',
-        ...(source && target && (edge.routing || edge.waypoints)
+        ...(source &&
+        target &&
+        (edge.routing || edge.waypoints || document.settings?.visualStyle === 'sketch')
           ? {
               data: {
-                path: layoutEdgePath(
-                  edge,
-                  source,
-                  target,
-                  document.topics[edge.target]?.style?.lineStyle === 'straight',
+                ...(document.settings?.visualStyle === 'sketch'
+                  ? {
+                      liveSketch: {
+                        edge,
+                        source,
+                        target,
+                        straight: document.topics[edge.target]?.style?.lineStyle === 'straight',
+                      },
+                    }
+                  : {}),
+                path: visualPath(
+                  layoutEdgePath(
+                    edge,
+                    source,
+                    target,
+                    document.topics[edge.target]?.style?.lineStyle === 'straight',
+                  ),
+                  document.settings?.visualStyle,
+                  `edge:${edge.id}`,
                 ),
               },
             }

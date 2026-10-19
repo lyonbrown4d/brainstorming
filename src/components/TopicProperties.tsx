@@ -3,11 +3,9 @@ import { useMessages } from '@renderer/i18n/useMessages'
 
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Trash2 } from 'lucide-react'
 import { getParentId } from '@core'
-import { useEffect } from 'react'
 import { useEditor } from '@renderer/state/editor'
 import { useSelectedIds } from '@renderer/state/selection'
 import { SelectionMarkers } from '@renderer/components/workbench/SelectionMarkers'
-import { useSpatialView } from '@renderer/state/spatial'
 import { TopicRichTitle } from '@renderer/components/metadata/TopicRichTitle'
 import { Button } from '@renderer/components/ui/button'
 import { TopicFormatting } from '@renderer/components/TopicFormatting'
@@ -21,14 +19,6 @@ export const TopicProperties = () => {
 
   const document = useEditor((state) => state.history.document)
   const selectedId = useEditor((state) => state.selectedId)
-  const sheetId = useEditor((state) => state.activeSheetId)
-  const spatial = useSpatialView((state) => state.sheets[sheetId]?.mode === '3d')
-  const editingId = useEditor((state) => state.editingId)
-  const editingSurface = useEditor((state) => state.editingSurface)
-  useEffect(() => {
-    if (spatial && editingId && editingSurface === 'inspector')
-      window.document.getElementById(`topic-inspector-${editingId}`)?.focus({ preventScroll: true })
-  }, [spatial, editingId, editingSurface])
   const selection = useSelectedIds()
   const selectedIds = [...new Set(selection.length ? selection : [selectedId])].filter(
     (id) => document.topics[id],

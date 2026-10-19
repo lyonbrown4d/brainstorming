@@ -1,10 +1,4 @@
-import type {
-  Relation,
-  TopicGroup,
-  TopicCallout,
-  PresentationStep,
-  FloatingPosition,
-} from '@core/extensions'
+import type { Relation, TopicGroup, TopicCallout, FloatingPosition } from '@core/extensions'
 import * as v from '@core/extension-validation'
 import { assertId } from '@core/validation'
 
@@ -64,17 +58,4 @@ export const validateFloatingPosition: (value: unknown) => asserts value is Floa
   v.number(position.x, -1_000_000, 1_000_000)
   v.number(position.y, -1_000_000, 1_000_000)
 }
-const vector = (value: unknown): void => {
-  for (const component of v.list(value, 3, 3)) v.number(component, -10_000_000, 10_000_000)
-}
-export const validatePresentationStep: (value: unknown) => asserts value is PresentationStep = (
-  value: unknown,
-): asserts value is PresentationStep => {
-  const step = v.record(value, ['topicId', 'camera'])
-  assertId(step.topicId)
-  v.optional(step, 'camera', (entry) => {
-    const camera = v.record(entry, ['position', 'target'])
-    vector(camera.position)
-    vector(camera.target)
-  })
-}
+export { validatePresentationStep } from '@core/presentation-validation'

@@ -19,9 +19,8 @@ import {
   withHistory,
 } from '@renderer/state/workbookState'
 import { usePresentation } from '@renderer/state/presentation'
-import { useSpatialView } from '@renderer/state/spatial'
 import { enterWorkspaceEditor } from '@renderer/state/workspace'
-import { draftCommand } from '@renderer/state/editorDraft'
+import { draftCommand, emptyEditorDraft } from '@renderer/state/editorDraft'
 import { serializedDocumentSnapshot } from '@renderer/state/documentSnapshot'
 import { deleteSelectedTopics, useSelection } from '@renderer/state/selection'
 import { addTopic } from '@renderer/state/topicCreation'
@@ -80,11 +79,8 @@ export const addDocumentSheet = (document: MindMapDocument): boolean => {
 export const useEditor = create<EditorState>((set, get) => ({
   ...initial,
   dropTargetId: null,
-  editingId: null,
-  editingSurface: null,
-  draft: '',
+  ...emptyEditorDraft,
   editSelection: 'all',
-  richDraft: null,
   baseline: serializedWorkbook(initial.workbook),
   path: null,
   error: null,
@@ -93,6 +89,8 @@ export const useEditor = create<EditorState>((set, get) => ({
   importReport: null,
   outlineOpen: false,
   inspectorOpen: false,
+  inspectorMode: 'topic',
+  canvasSection: 'structure',
   views: {},
   clock: 0,
   structurePast: [],
@@ -107,8 +105,6 @@ export const useEditor = create<EditorState>((set, get) => ({
   },
   startEdit: (id, value, surface = 'canvas', selection = 'all') => {
     if (usePresentation.getState().playing) return
-    const spatial = useSpatialView.getState().sheets[get().activeSheetId]?.mode === '3d'
-    if (spatial && surface === 'canvas') surface = 'spatial'
     if (get().editingId === id && get().editingSurface === surface) return
     get().commitDraft()
     if (get().editingId) return
@@ -125,10 +121,9 @@ export const useEditor = create<EditorState>((set, get) => ({
         selectedId: id,
         editingId: id,
         editingSurface: surface,
+        editingPageIndex: null,
+        ...(surface === 'inspector' ? { inspectorMode: 'topic' as const } : {}),
         editSelection: selection,
-        ...(spatial && (surface === 'inspector' || surface === 'notes')
-          ? { inspectorOpen: true }
-          : {}),
         richDraft: surface === 'rich-title' ? (topic.metadata?.richTitle ?? topic.title) : null,
         draft: value ?? (surface === 'notes' ? (topic.notes ?? '') : topic.title),
       })
@@ -142,10 +137,10 @@ export const useEditor = create<EditorState>((set, get) => ({
   commitDraft: () => {
     const command = draftCommand(get())
     if (command && !get().command(command)) return
-    set({ editingId: null, editingSurface: null, draft: '', richDraft: null })
+    set(emptyEditorDraft)
   },
   cancelEdit: () => {
-    set({ editingId: null, editingSurface: null, draft: '', richDraft: null })
+    set(emptyEditorDraft)
   },
   command: (command) => {
     if (usePresentation.getState().playing) return false
@@ -197,19 +192,17 @@ export const useEditor = create<EditorState>((set, get) => ({
   },
   replace: (document, path = null, recovered = false) => {
     const loaded = loadWorkbook(document)
-    useSpatialView.getState().reset()
     useSelection.setState({ sheets: {} })
     set({
       ...loaded,
-      editingId: null,
-      editingSurface: null,
-      draft: '',
-      richDraft: null,
+      ...emptyEditorDraft,
       baseline: recovered ? '' : serializedWorkbook(loaded.workbook),
       path,
       error: null,
       dropTargetId: null,
       importReport: null,
+      inspectorMode: 'topic',
+      canvasSection: 'structure',
       views: {},
       clock: 0,
       structurePast: [],
@@ -246,10 +239,7 @@ export const useEditor = create<EditorState>((set, get) => ({
       selectedId: session.history.document.topics[session.selectedId]
         ? session.selectedId
         : session.history.document.rootId,
-      editingId: null,
-      editingSurface: null,
-      draft: '',
-      richDraft: null,
+      ...emptyEditorDraft,
       dropTargetId: null,
       error: null,
     })

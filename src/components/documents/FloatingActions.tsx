@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { Popover } from 'radix-ui'
 import { CirclePlus, CornerDownRight } from 'lucide-react'
 import { useEditor } from '@renderer/state/editor'
-import { useSpatialView } from '@renderer/state/spatial'
 import { armFloatingTopic, useAnnotationInteraction } from '@renderer/state/annotationInteraction'
 import { runAnnotationCommand } from '@renderer/components/annotations/commands'
 import { Button } from '@renderer/components/ui/button'
@@ -36,7 +35,6 @@ export const FloatingActions = () => {
         aria-pressed={armed}
         onClick={() => {
           armFloatingTopic()
-          useSpatialView.getState().setMode(useEditor.getState().activeSheetId, '2d')
         }}
       >
         <CirclePlus className="size-4" />

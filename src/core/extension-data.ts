@@ -4,6 +4,7 @@ import type { MindMapDocument, Topic } from '@core/types'
 /** Extension validators admit only bounded JSON data; snapshots never share mutable arrays. */
 export const documentExtensionData = (document: MindMapDocument): DocumentExtensions => {
   return {
+    ...(document.drawings === undefined ? {} : { drawings: structuredClone(document.drawings) }),
     ...(document.settings === undefined ? {} : { settings: structuredClone(document.settings) }),
     ...(document.relations === undefined ? {} : { relations: structuredClone(document.relations) }),
     ...(document.groups === undefined ? {} : { groups: structuredClone(document.groups) }),

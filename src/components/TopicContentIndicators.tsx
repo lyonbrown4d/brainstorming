@@ -19,7 +19,7 @@ export const TopicContentIndicators = ({
   if (!hasNotes && attachmentCount === 0) return null
   const openInspector = (): void => {
     useEditor.getState().select(topicId)
-    useEditor.setState({ inspectorOpen: true })
+    useEditor.setState({ inspectorOpen: true, inspectorMode: 'topic' })
   }
   return (
     <div className="topic-content-indicators nodrag nopan flex h-7 shrink-0 items-center justify-center gap-1 pb-1 [&_button]:h-6 [&_button]:w-auto [&_button]:min-w-6 [&_button]:gap-[3px] [&_button]:px-[5px] [&_button]:text-[10px] [&_button]:text-inherit [&_button]:opacity-75">

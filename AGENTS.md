@@ -15,7 +15,7 @@ Brainstorming 是基于 React Flow + Tauri 2 / Rust 的本地优先跨平台思�
 - `src/shared`：前端平台 API 的白名单契约；Rust 在命令边界重新验证。
 - Core 不依赖 React、DOM、Tauri、React Flow 或其 Node/Edge 类型。
 - React Flow 节点/边是文档模型的视图投影，不是持久化协议。
-- 三维视图使用 Three.js、React Three Fiber 与 Drei；空间坐标由纯布局派生，相机、聚焦和视图模式按 Sheet 保存在会话状态，不写入文档或历史。二维与三维共用主题命令和 Lexical 编辑链路。
+- 产品聚焦思维导图与头脑风暴，画布使用 React Flow，不提供三维视图或独立 draw.io 编辑器。节点表现是同一主题的样式，切换保留标题、层级、备注和资源；游离想法与手绘和导图共存于同一 Sheet。
 - 主题树维护稳定 ID、唯一父节点、有序子节点、禁止循环和不可达节点。
 - 所有文档变更必须通过类型化命令；一次用户操作对应一次撤销。
 - 拖动中间位置、选区、测量缓存不写入文档历史；拖动结束提交移动命令。
@@ -27,7 +27,7 @@ Brainstorming 是基于 React Flow + Tauri 2 / Rust 的本地优先跨平台思�
 
 ## 工具链
 
-保留 Vite / Tauri CLI、Moon 单项目任务图与 pnpm。package scripts 直接调用成熟 CLI，不维护通用 tasks.ts 包装；多任务依赖与缓存交给 Moon。前端、配置和脚本使用 TypeScript，原生后端使用 Rust。React renderer 与 Storybook 启用正式 React Compiler，沿用 React 19 官方接入方式；不将其用于 core 或 Rust 后端。
+保留 Vite / Tauri CLI、Moon 单项目任务图与 pnpm。package scripts 直接调用成熟 CLI，不维护通用 tasks.ts 包装；多任务依赖与缓存交给 Moon。前端、配置和脚本使用 TypeScript，原生后端使用 Rust。开发模式保留 React Scan，React DevTools 使用官方 standalone 接入并通过本机开关启用，均不进入发布产物。React renderer 与 Storybook 启用正式 React Compiler，沿用 React 19 官方接入方式；不将其用于 core 或 Rust 后端。
 
 ## 实现与质量
 
@@ -40,13 +40,15 @@ Brainstorming 是基于 React Flow + Tauri 2 / Rust 的本地优先跨平台思�
 - 任何编码实现先检查现有依赖和成熟第三方库，优先复用通用能力，允许按需引入成熟库。选型检查维护状态、官方文档、类型支持、许可证、运行环境兼容性、包体积与安全性；只为主题树业务规则和必要集成维护自有逻辑。新增依赖使用 pnpm 并提交锁文件，不为通用能力另造基础组件或工具框架。
 - `pnpm lint` 强制检查内部路径、箭头函数及 300 行上限，`pnpm typecheck` 校验 TypeScript 契约；提交前与 CI 沿用同一套检查。详细别名和示例见 `docs/development.md`。
 - React 组件负责呈现和交互；模型、布局、文件协议分别维护。
-- 使用局部订阅和稳定引用，避免输入一个字符重绘全部主题。
+- 使用局部订阅和稳定引用，避免输入一个字符重绘全部主题。画布投影只缓存当前文档并复用未变化节点/边；视口只在移动结束写入会话。低倍率非选中主题显示轻量文本与形态，选中或编辑时恢复完整内容，尺寸保持不变。禁止为全图节点批量挂载布局动画。
+- 自由绘图复用 perfect-freehand；指针中间点仅留临时预览，结束后通过单次命令提交，取消不写历史。笔迹随 Sheet 保存，读取必须验证点数、总量、有限坐标和样式边界。
+- 演示为独立页面工作台，从主题树生成编排；仅挂载当前/下一页，页面列表虚拟化，禁止逐项播放重排隐藏画布。编排设置进入文档命令，播放进度与计时只留会话。
 - 渲染时的翻译使用 `useMessages` 返回的响应式函数，或直接使用 react-i18next 的 `t`；不要丢弃 `useTranslation` 返回值后调用全局翻译函数，避免 React Compiler 缓存旧语言。选项列表显式接收翻译函数；全局翻译仅用于事件和非 React 业务逻辑。
 - Enter、Tab、blur、快捷键必须考虑 IME composition。
 - 主题文本编辑复用 Lexical 官方 React 扩展；选区、输入法、纯文本粘贴和编辑内历史交给 Lexical，应用仅衔接导图命令。禁止通过逐字符重建编辑器或自写输入法状态机处理中文输入。
 - 新增 UI 优先使用 shadcn/ui + Radix 和成熟组件；主题样式与全局样式集中管理。通用能力优先选维护活跃的第三方库，仅为主题树业务规则、命令和必要集成编写自有逻辑。
 - 新增、连线、外框、概要、标注、历史和编辑操作放在画布底部浮动 Dock，单行平铺并支持横向滚动，参数面板优先向上展开；平时收起为可发现的小入口，hover 或键盘聚焦时展开；连线、编辑及子面板操作期间保持可用。持续调整的主题格式、标记、任务、链接、注解样式和画布结构、配色、模板放在右侧属性栏，使用横向 shadcn Tabs 分组；演示播放和设置入口放在标题栏。关联线、外框、概要和标注优先直接在画布创建与原位编辑，不通过模态表单代替画布操作；文件、安全、AI 配置等需要独立确认的流程可使用对话框。
-- 多文档使用画布顶部浮动标签，与底部 Dock 一样在 hover 或键盘聚焦时展开，支持横向滚动，不占用标题栏或固定内容行；每份文档保留独立文件路径、脏状态、历史、Sheet 和二维/三维会话。底部 Sheet 标签只切换当前文档的画布。
+- 多文档使用画布顶部浮动标签，与底部 Dock 一样在 hover 或键盘聚焦时展开，支持横向滚动，不占用标题栏或固定内容行；每份文档保留独立文件路径、脏状态、历史、Sheet 和二维视口。底部 Sheet 标签只切换当前文档的画布。
 - 现有 UI 迭代时同步检查通用控件，优先替换为官方 shadcn 组件；缺少的组件通过固定版本的官方 CLI 下载，使用 pnpm，避免自行重写同类基础控件。
 - `src/components/ui` 中下载的 shadcn 组件保持官方实现，不直接修改其逻辑、结构、默认样式或 API。业务差异通过上层组合组件、公开 props、`className` 和集中主题变量实现；组合组件放在业务目录，不放入 `ui`。
 - 业务视觉样式优先使用 Tailwind CSS utilities，通过组合组件的 `className` 表达布局、间距、字体、颜色和交互状态；不为新功能手写同类 CSS。已有界面被修改时同步迁移涉及的业务样式。CSS 文件仅保留集中主题变量、第三方集成及确实需要数据驱动的画布规则；动态主题颜色、尺寸通过类型明确的样式值或 CSS 变量传入。
@@ -57,7 +59,7 @@ Brainstorming 是基于 React Flow + Tauri 2 / Rust 的本地优先跨平台思�
 - 已有路径的导图按 Tab 自动保存，使用不修改编辑器的草稿快照；手动保存、另存为、密码变更、版本读取和释放共用按路径队列。保存结果只能更新原 Tab、原工作簿和原路径的保存基线，期间的新修改保持未保存状态。无路径导图只留内存，不写自动保存或恢复快照，关闭后丢失；继续保留未保存关闭确认。
 - 原生文件通过 SQLite 事务写入，不能先截断原文件；处理取消、损坏 SQLite/第三方 ZIP/JSON/XML、保存失败和恢复失败。
 - 测试覆盖主题树合法性、命令边界、撤销重做、序列化和恢复。
-- UI 遵循 [Tauri 官方 WebDriver 指南](https://v2.tauri.app/develop/tests/webdriver/)，使用 WebdriverIO + `@wdio/tauri-service` 的 embedded 驱动启动真实原生应用，覆盖 macOS、Windows、Linux；原生验收必须使用当前源码构建的完整 E2E 二进制，不混用旧二进制与新的开发 renderer；WDIO 插件与文件选择器测试入口仅在 e2e feature、独立应用标识下启用。Storybook 保留 Playwright 浏览器组件测试。
+- UI 遵循 [Tauri 官方 WebDriver 指南](https://v2.tauri.app/develop/tests/webdriver/)，使用 WebdriverIO + `@wdio/tauri-service` 的 embedded 驱动启动真实原生应用，覆盖 macOS、Windows、Linux；原生验收必须使用当前源码构建的完整 E2E 二进制，不混用旧二进制与新的开发 renderer；WDIO 插件与文件选择器测试入口仅在 e2e feature、独立应用标识下启用。Storybook 保留 Playwright 浏览器组件测试；画笔拖动必须使用真实浏览器输入验证命中层级，不以 dispatchEvent 或直接点击笔迹替代。
 - Storybook 提供主题和编辑器交互预览；性能使用固定 fixtures、多次采样。
 - CI 至少执行 format:check、lint、typecheck、test、build、Storybook、E2E。
 

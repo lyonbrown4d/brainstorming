@@ -40,7 +40,7 @@ export const TopicEditorPlugin = ({
   useEffect(() => {
     const preserveNativeSelection = nativeActivation.current
     nativeActivation.current = false
-    if (surface !== 'canvas' && surface !== 'spatial') return
+    if (surface !== 'canvas') return
     if (editor.isComposing()) return
     if (active && preserveNativeSelection) return
     if (active) {
@@ -145,7 +145,7 @@ export const TopicEditorPlugin = ({
             return true
           }
           if (surface === 'notes') return false
-          const mapSurface = surface === 'canvas' || surface === 'spatial' || surface === 'outline'
+          const mapSurface = surface === 'canvas' || surface === 'outline'
           if (
             mapSurface &&
             (!ownsDraft() ||

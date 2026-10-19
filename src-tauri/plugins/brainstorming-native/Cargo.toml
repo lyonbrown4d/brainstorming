@@ -5,6 +5,9 @@ edition = "2024"
 links = "tauri-plugin-brainstorming-native"
 license = "UNLICENSED"
 
+[features]
+e2e = []
+
 [dependencies]
 image = { version = "0.25.10", default-features = false, features = ["png", "tiff"] }
 tauri = "2.12.4"

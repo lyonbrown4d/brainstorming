@@ -97,14 +97,28 @@ export const useCanvasDrag = (projectedNodes: TopicFlowNode[]) => {
     const ids = new Set(selectedIds.length ? selectedIds : [primaryId])
     setNodes((previous) => {
       const dragging = new Map(previous.map((node) => [node.id, node]))
-      return projectedNodes.map((node) => ({
-        ...preserveMeasurement(node, dragging.get(node.id)),
-        ...(session.current?.excluded.has(node.id)
-          ? { position: dragging.get(node.id)?.position ?? node.position }
-          : {}),
-        selected: ids.has(node.id),
-        draggable: node.draggable !== false && !playing,
-      }))
+      let changed = previous.length !== projectedNodes.length
+      const next = projectedNodes.map((node) => {
+        const old = dragging.get(node.id)
+        const measured = preserveMeasurement(node, old)
+        const position = session.current?.excluded.has(node.id)
+          ? (old?.position ?? node.position)
+          : node.position
+        const selected = ids.has(node.id)
+        const draggable = node.draggable !== false && !playing
+        if (
+          old?.data === node.data &&
+          old.style === node.style &&
+          old.position.x === position.x &&
+          old.position.y === position.y &&
+          old.selected === selected &&
+          old.draggable === draggable
+        )
+          return old
+        changed = true
+        return { ...measured, position, selected, draggable }
+      })
+      return changed ? next : previous
     })
   }, [projectedNodes, selectedIds, primaryId, playing, setNodes])
 

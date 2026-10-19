@@ -1,8 +1,8 @@
+import { motion, useReducedMotion } from 'motion/react'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { useId, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, BookOpen } from 'lucide-react'
-import type { LayoutKind } from '@core'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import { Label } from '@renderer/components/ui/label'
@@ -27,21 +27,33 @@ export const CreationGallery = ({
   onExample,
   busy = false,
   error,
+  draft: controlledDraft,
+  onDraftChange,
   step: controlledStep,
   onStepChange,
   sidebar,
   showHeader = true,
 }: CreationGalleryProps) => {
   const { translate } = useMessages()
+  const reducedMotion = useReducedMotion()
   const structureOptions = getStructureOptions(translate)
   const cancelLabel = suppliedCancelLabel ?? translate('returnToCanvas')
 
   const nameId = useId()
   const [localStep, setLocalStep] = useState<1 | 2>(1)
   const step = controlledStep ?? localStep
-  const [title, setTitle] = useState('')
-  const [layout, setLayout] = useState<LayoutKind>('map')
-  const [template, setTemplate] = useState<CreationRequest['template']>('blank')
+  const [localDraft, setLocalDraft] = useState<CreationRequest>({
+    title: '',
+    layout: 'map',
+    template: 'blank',
+  })
+  const draft = controlledDraft ?? localDraft
+  const { title, layout, template } = draft
+  const updateDraft = (patch: Partial<CreationRequest>): void => {
+    const next = { ...draft, ...patch }
+    setLocalDraft(next)
+    onDraftChange?.(next)
+  }
   const [accepted, setAccepted] = useState(false)
   const submitting = useRef(false)
   const { headingRef, scrollRef } = useCreationStepFocus(step)
@@ -93,7 +105,13 @@ export const CreationGallery = ({
               sidebar && 'lg:grid-cols-[minmax(0,1fr)_22rem]',
             )}
           >
-            <div className="min-w-0">
+            <motion.div
+              key={step}
+              initial={reducedMotion ? false : { opacity: 0, x: step === 2 ? 12 : -12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: reducedMotion ? 0 : 0.16, ease: 'easeOut' }}
+              className="min-w-0"
+            >
               <h1
                 ref={headingRef}
                 tabIndex={-1}
@@ -102,7 +120,13 @@ export const CreationGallery = ({
                 {translate('newValue0', { value0: noun })}
               </h1>
               {step === 1 ? (
-                <StructureChoices value={layout} onChange={setLayout} disabled={disabled} />
+                <StructureChoices
+                  value={layout}
+                  onChange={(layout) => {
+                    updateDraft({ layout })
+                  }}
+                  disabled={disabled}
+                />
               ) : (
                 <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_14rem]">
                   <div className="flex flex-col gap-8">
@@ -117,7 +141,7 @@ export const CreationGallery = ({
                         className="h-11 bg-background"
                         autoComplete="off"
                         onChange={(event) => {
-                          setTitle(event.target.value)
+                          updateDraft({ title: event.target.value })
                         }}
                         onKeyDown={(event) => {
                           if (event.key === 'Enter' && isCompositionKey(event.nativeEvent))
@@ -132,7 +156,9 @@ export const CreationGallery = ({
                       <h2 className="text-sm font-medium">{translate('contentTemplate')}</h2>
                       <TemplateChoices
                         value={template}
-                        onChange={setTemplate}
+                        onChange={(template) => {
+                          updateDraft({ template })
+                        }}
                         disabled={disabled}
                       />
                     </section>
@@ -148,7 +174,7 @@ export const CreationGallery = ({
                   {error}
                 </p>
               )}
-            </div>
+            </motion.div>
             {sidebar}
             {!sidebar && onExample && (
               <Button

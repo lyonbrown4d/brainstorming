@@ -12,12 +12,14 @@ const rendererOptions = JSON.parse(
 const rendererOptimizeDeps = rendererOptions.optimizeDeps
 const config: StorybookConfig = {
   framework: '@storybook/react-vite',
+  // Production roots have a viewport height; previews need the same canvas contract.
+  previewHead: (head) => `${head}<style>#storybook-root { height: 100dvh; }</style>`,
   stories: ['../stories/**/*.stories.tsx'],
   addons: ['@storybook/addon-a11y', '@storybook/addon-vitest'],
   viteFinal: (config) =>
     mergeConfig(config, {
-      cacheDir: resolve('node_modules/.vite/brainstorming-storybook'),
-      resolve: { tsconfigPaths: true, dedupe: ['three'] },
+      cacheDir: config.cacheDir ?? resolve('node_modules/.vite/brainstorming-storybook'),
+      resolve: { tsconfigPaths: true },
       optimizeDeps: rendererOptimizeDeps,
       plugins: [babel({ presets: [reactCompilerPreset()] }), tailwindcss()],
     }),

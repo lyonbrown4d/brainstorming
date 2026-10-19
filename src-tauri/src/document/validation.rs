@@ -127,6 +127,7 @@ fn validate_document(doc: &Value) -> Result<()> {
             "floatingIds",
             "floatingPositions",
             "presentation",
+            "drawings",
         ],
     )?;
     if doc["format"] != "brainstorming" || doc["version"] != 1 {
@@ -201,5 +202,8 @@ fn validate_document(doc: &Value) -> Result<()> {
         return Err(invalid("文档包含不可达主题"));
     }
     super::content_validation::extensions(doc)?;
+    if let Some(drawings) = doc.get("drawings") {
+        super::drawing_validation::validate(drawings)?;
+    }
     Ok(())
 }

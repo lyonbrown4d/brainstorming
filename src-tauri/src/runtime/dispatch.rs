@@ -126,8 +126,15 @@ pub async fn dispatch(
         }
         "startupReady" => {
             state.mcp.stop(app).await;
-            if let Some(main) = app.get_webview_window("main") { let _ = main.show(); let _ = main.set_focus(); }
-            if let Some(splash) = app.get_webview_window("splash") { let _ = splash.close(); }
+            // Close the active splash before the final focus request, so its teardown
+            // cannot send keyboard focus back to a different application.
+            if let Some(main) = app.get_webview_window("main") {
+                main.show().map_err(|_| "无法显示主窗口")?;
+                if let Some(splash) = app.get_webview_window("splash") { let _ = splash.close(); }
+                #[cfg(target_os = "macos")]
+                app.show().map_err(|_| "无法显示应用")?;
+                main.set_focus().map_err(|_| "无法聚焦主窗口")?;
+            }
             Ok(Value::Null)
         }
         "startupFailed" => { if let Some(splash) = app.get_webview_window("splash") { let _ = splash.show(); } Ok(Value::Null) }

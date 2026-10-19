@@ -1,4 +1,5 @@
 import type { Topic, TopicImage } from '@core'
+import { topicShapeInsets, showsTopicNotes } from '@shared/topic-shapes'
 import { measureTopicMarkers } from '@layout/markers'
 /** Fit raster images without upscaling; shared with the renderer to reserve the same bounds. */
 export const measureTopicImage = (
@@ -14,11 +15,11 @@ export const measureTopicImage = (
   }
 }
 /** Deterministic estimates shared by layout and renderer; no browser measurements enter the document. */
-export const measureTopic = (
+export const measureTopicContent = (
   title: string,
   isRoot = false,
   customFontSize?: number,
-  content?: Pick<Topic, 'image' | 'notes' | 'attachments' | 'metadata'>,
+  content?: Pick<Topic, 'image' | 'notes' | 'attachments' | 'metadata' | 'style'>,
 ): {
   width: number
   height: number
@@ -61,7 +62,8 @@ export const measureTopic = (
       ? 28
       : 0
   const detailsHeight = content?.notes || content?.attachments?.length ? 28 : 0
-  return {
+  const shape = content?.style?.shape
+  const size = {
     width:
       Math.max(
         (isRoot ? 180 : 112) + verticalPadding,
@@ -77,6 +79,25 @@ export const measureTopic = (
       ) +
       markers.extraHeight +
       detailsHeight +
-      badgesHeight,
+      badgesHeight +
+      (showsTopicNotes(shape) && content?.notes ? 48 : 0) +
+      (shape === 'image' && !image ? 52 : 0),
   }
+  return size
+}
+
+export const measureTopic = (
+  title: string,
+  isRoot = false,
+  customFontSize?: number,
+  content?: Pick<Topic, 'image' | 'notes' | 'attachments' | 'metadata' | 'style'>,
+): { width: number; height: number } => {
+  const size = measureTopicContent(title, isRoot, customFontSize, content)
+  const shape = content?.style?.shape
+  const insets = topicShapeInsets(shape)
+  const width = Math.ceil(size.width / (1 - insets.x * 2))
+  const height = Math.ceil(size.height / (1 - insets.y * 2))
+  return shape === 'circle'
+    ? { width: Math.max(width, height), height: Math.max(width, height) }
+    : { width, height }
 }

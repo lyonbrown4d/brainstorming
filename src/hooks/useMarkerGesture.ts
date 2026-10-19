@@ -64,9 +64,7 @@ export const useMarkerGesture = (topicId: string, style: MarkerStyle, count = 1)
     motionStyle: { x, y, scale },
     start: (event: PointerEvent<HTMLElement>, mode: Mode) => {
       if (event.button !== 0) return
-      const card = event.currentTarget.closest<HTMLElement>(
-        '[data-testid^="topic-"], [data-spatial-card-id]',
-      )
+      const card = event.currentTarget.closest<HTMLElement>('[data-testid^="topic-"]')
       if (!card) return
       event.preventDefault()
       event.stopPropagation()

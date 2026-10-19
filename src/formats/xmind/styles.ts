@@ -7,6 +7,11 @@ const shapes: Readonly<Record<string, NonNullable<TopicStyle['shape']>>> = {
   'org.xmind.topicShape.roundedRect': 'rounded',
   'org.xmind.topicShape.rect': 'rectangle',
   'org.xmind.topicShape.ellipse': 'ellipse',
+  'org.xmind.topicShape.noShape': 'text',
+  'org.xmind.topicShape.diamond': 'diamond',
+  'org.xmind.topicShape.hexagon': 'hexagon',
+  'org.xmind.topicShape.cloud': 'cloud',
+  'org.xmind.topicShape.callout': 'speech',
 }
 
 export const importStyle = (value: unknown, warnings: Warnings): TopicStyle | undefined => {

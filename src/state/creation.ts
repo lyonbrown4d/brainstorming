@@ -6,7 +6,12 @@ import { openDocumentTab } from '@renderer/state/documentTabs'
 import { addDocumentSheet, useEditor } from '@renderer/state/editor'
 import { exampleWorkbook } from '@renderer/state/example'
 import { useSearch } from '@renderer/state/searchState'
-import { enterWorkspaceEditor, useWorkspace } from '@renderer/state/workspace'
+import {
+  emptyCreationDraft,
+  enterWorkspaceEditor,
+  updateCreationDraft,
+  useWorkspace,
+} from '@renderer/state/workspace'
 
 const commitReady = (): boolean => {
   if (useEditor.getState().busy) return false
@@ -82,6 +87,7 @@ export const createFromRequest = (request: CreationRequest): boolean => {
     } else {
       if (!openDocumentTab(document, null, true)) return false
     }
+    updateCreationDraft(sheet ? 'sheet' : 'document', emptyCreationDraft())
     enterWorkspaceEditor()
     return true
   } catch (error) {

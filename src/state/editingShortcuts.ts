@@ -13,11 +13,10 @@ import {
   reorderSelectedTopic,
 } from '@renderer/state/structuralEditing'
 import { requestViewport } from '@renderer/state/viewport'
-import { useSpatialView } from '@renderer/state/spatial'
 import { useSearch } from '@renderer/state/search'
 import { getNavigationTarget, isCompositionKey } from '@renderer/state/keyboard'
 
-/** Canvas and spatial topic controls share the same structural keyboard actions. */
+/** Topic controls share the same structural keyboard actions. */
 export const handleTopicNavigation = (event: KeyboardEvent, topicId?: string): boolean => {
   if (isCompositionKey(event)) return false
   if (
@@ -92,7 +91,6 @@ export const handleTopicShortcut = (event: KeyboardEvent): boolean => {
       state.command({ type: 'toggleCollapse', topicId: state.selectedId })
   } else if (key === 'r') {
     state.select(state.history.document.rootId)
-    useSpatialView.getState().setFocus(state.activeSheetId, null)
     requestViewport('centerRoot')
   } else if (key === '=' || key === '+') requestViewport('zoomIn')
   else if (key === '-') requestViewport('zoomOut')

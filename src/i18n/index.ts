@@ -1,3 +1,8 @@
+import { sketchMessages } from '@renderer/i18n/sketchMessages'
+import { settingsMessages } from '@renderer/i18n/settingsMessages'
+import { inkMessages } from '@renderer/i18n/inkMessages'
+import { topicAppearanceMessages } from '@renderer/i18n/topicAppearanceMessages'
+import { presentationMessages } from '@renderer/i18n/presentationMessages'
 import { resourceMessages } from '@renderer/i18n/resourceMessages'
 import { interfaceMessages } from '@renderer/i18n/interfaceMessages'
 import { requireDesktopAPI } from '@renderer/lib/desktop'
@@ -16,6 +21,11 @@ import { messages7 } from '@renderer/i18n/messages7'
 import { messages8 } from '@renderer/i18n/messages8'
 
 const messages = {
+  ...sketchMessages,
+  ...settingsMessages,
+  ...inkMessages,
+  ...topicAppearanceMessages,
+  ...presentationMessages,
   ...resourceMessages,
   ...interfaceMessages,
   ...documentTabMessages,

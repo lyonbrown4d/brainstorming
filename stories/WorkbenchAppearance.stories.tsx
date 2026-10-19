@@ -7,14 +7,12 @@ import { createStoryDesktop } from '@stories/desktopBridge'
 import { createWorkbenchDocument } from '@stories/workbenchFixture'
 import { useEditor } from '@renderer/state/editor'
 import { openDocumentTab } from '@renderer/state/documentTabs'
-import { useSpatialView } from '@renderer/state/spatial'
 import { APPEARANCE_STORAGE_KEY, type AppearanceMode } from '@shared/appAppearance'
 import type { DesktopPlatform } from '@shared/window'
 
 interface PreviewProps {
   platform: DesktopPlatform
   appearance: AppearanceMode
-  spatial?: boolean
 }
 const WorkbenchPreview = ({ platform, appearance }: PreviewProps) => (
   <div className="h-dvh w-full overflow-hidden">
@@ -29,7 +27,7 @@ const meta = {
   title: 'Brainstorming/暖白与石墨',
   component: WorkbenchPreview,
   parameters: { layout: 'fullscreen' },
-  args: { platform: 'windows', appearance: 'light', spatial: false },
+  args: { platform: 'windows', appearance: 'light' },
   beforeEach: ({ args }) => {
     const previous = localStorage.getItem(APPEARANCE_STORAGE_KEY)
     localStorage.setItem(APPEARANCE_STORAGE_KEY, args.appearance)
@@ -42,9 +40,6 @@ const meta = {
     })
     openDocumentTab(createWorkbenchDocument(), null, false, true)
     useEditor.setState({ selectedId: 'design', outlineOpen: false, inspectorOpen: true })
-    useSpatialView
-      .getState()
-      .setMode(useEditor.getState().activeSheetId, args.spatial ? '3d' : '2d')
     return () => {
       restore()
       if (previous === null) localStorage.removeItem(APPEARANCE_STORAGE_KEY)
@@ -63,20 +58,15 @@ const meta = {
     if (args.platform === 'macos')
       await expect(canvas.queryByRole('button', { name: '关闭窗口' })).not.toBeInTheDocument()
     else await expect(canvas.getByRole('button', { name: '关闭窗口' })).toBeVisible()
-    if (!args.spatial) {
-      const node = canvas.getByTestId('topic-design')
-      await expect(node).toBeVisible()
-      const surface = canvas.getByRole('tabpanel', { name: '当前画布' })
-      await expect(surface.getBoundingClientRect().height).toBeGreaterThan(400)
-      await waitFor(() =>
-        expect(getComputedStyle(surface).backgroundColor).toBe(
-          args.appearance === 'dark' ? 'rgb(28, 30, 34)' : 'rgb(247, 247, 242)',
-        ),
-      )
-    } else
-      await expect(
-        await canvas.findByRole('button', { name: '选择主题 视觉设计' }, { timeout: 10000 }),
-      ).toBeVisible()
+    const node = canvas.getByTestId('topic-design')
+    await expect(node).toBeVisible()
+    const surface = canvas.getByRole('tabpanel', { name: '当前画布' })
+    await expect(surface.getBoundingClientRect().height).toBeGreaterThan(400)
+    await waitFor(() =>
+      expect(getComputedStyle(surface).backgroundColor).toBe(
+        args.appearance === 'dark' ? 'rgb(28, 30, 34)' : 'rgb(247, 247, 242)',
+      ),
+    )
     await userEvent.click(canvas.getByRole('button', { name: '展开浮动工具栏' }))
   },
 } satisfies Meta<typeof WorkbenchPreview>
@@ -88,5 +78,3 @@ export const MacLight: Story = { args: { platform: 'macos' } }
 export const MacDark: Story = { args: { platform: 'macos', appearance: 'dark' } }
 export const LinuxLight: Story = { args: { platform: 'linux' } }
 export const LinuxDark: Story = { args: { platform: 'linux', appearance: 'dark' } }
-export const SpatialLight: Story = { args: { spatial: true } }
-export const SpatialDark: Story = { args: { spatial: true, appearance: 'dark' } }

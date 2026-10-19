@@ -70,7 +70,7 @@ export const readableText = (background: string): string =>
       ? '#ffffff'
       : '#000000'
 
-/** Resolve to portable hex colors for DOM, Three.js and standalone exports. */
+/** Resolve to portable hex colors for the canvas and standalone exports. */
 export const paletteAppearance = (palette: DocumentPalette) => ({
   ...palette,
   text: readableText(palette.background),

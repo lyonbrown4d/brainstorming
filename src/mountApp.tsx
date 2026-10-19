@@ -1,3 +1,4 @@
+import { HashRouter } from 'react-router'
 import { notifyNativeStartup } from '@renderer/lib/desktop'
 import { StrictMode } from 'react'
 import { AppearanceProvider } from '@renderer/components/appearance/AppearanceProvider'
@@ -17,7 +18,9 @@ createRoot(container, {
 }).render(
   <StrictMode>
     <AppearanceProvider>
-      <App />
+      <HashRouter>
+        <App />
+      </HashRouter>
     </AppearanceProvider>
   </StrictMode>,
 )

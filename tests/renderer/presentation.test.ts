@@ -9,20 +9,21 @@ import {
 import { selectAnnotation, useAnnotationInteraction } from '@renderer/state/annotationInteraction'
 import { isDirty, useEditor } from '@renderer/state/editor'
 import { setSelectedTopics, useSelection } from '@renderer/state/selection'
-import { useSpatialView } from '@renderer/state/spatial'
 import {
+  advancePresentation,
+  closePresentationWorkspace,
+  openPresentationComposer,
   presentationSteps,
+  setPresentationMode,
+  selectPresentationPage,
   showPresentationStep,
   stopPresentation,
   usePresentation,
 } from '@renderer/state/presentation'
 
-const camera = { position: [2, 5, 10] as const, target: [0, 0, 0] as const }
-const savedCamera = { position: [8, 9, 12] as const, target: [1, 2, 0] as const }
 const view = { x: 35, y: -60, zoom: 0.8 }
-
 beforeEach(() => {
-  stopPresentation()
+  closePresentationWorkspace()
   const document = applyCommand(createDocument('中心', 'first'), {
     type: 'batch',
     commands: [
@@ -39,72 +40,110 @@ beforeEach(() => {
   useEditor.getState().replace(workbook)
   useEditor.setState({ busy: false })
 })
-afterEach(stopPresentation)
+afterEach(closePresentationWorkspace)
 
-describe('transient presentation sessions', () => {
-  it('builds a visible depth-first route without saving steps, history or dirty content', () => {
+describe('independent slide presentation sessions', () => {
+  it('generates a root overview and first-level pages without changing document/history/selection/view', () => {
     useEditor.getState().command({ type: 'toggleCollapse', topicId: 'a' })
+    setSelectedTopics(['a', 'b'])
+    useEditor.setState({ views: { first: view } })
     const before = useEditor.getState()
     const contents = serializeWorkbook(before.workbook)
+    const dirty = isDirty()
     expect(presentationSteps(before.history.document).map(({ topicId }) => topicId)).toEqual([
       'root',
       'a',
       'b',
-      'floating',
     ])
-    const dirty = isDirty()
     showPresentationStep(0)
-    expect(usePresentation.getState()).toMatchObject({ playing: true, generated: true, index: 0 })
-    showPresentationStep(3)
-    expect(useEditor.getState().selectedId).toBe('floating')
-    expect(useEditor.getState().history).toBe(before.history)
+    expect(usePresentation.getState()).toMatchObject({
+      playing: true,
+      generated: true,
+      index: 0,
+      workspaceMode: 'audience',
+    })
+    showPresentationStep(2)
+    expect(useEditor.getState().selectedId).toBe(before.selectedId)
+    expect(useSelection.getState().sheets.first).toEqual(['a', 'b'])
+    expect(useEditor.getState().views.first).toBe(view)
+    useEditor.setState({ selectedId: 'root', views: { first: { x: 10, y: 20, zoom: 2 } } })
+    useSelection.setState({ sheets: { first: ['root'] } })
     stopPresentation()
     expect(useEditor.getState().selectedId).toBe(before.selectedId)
+    expect(useSelection.getState().sheets.first).toEqual(['a', 'b'])
+    expect(useEditor.getState().views.first).toBe(view)
+    expect(useEditor.getState().history).toBe(before.history)
     expect(serializeWorkbook(useEditor.getState().workbook)).toBe(contents)
     expect(isDirty()).toBe(dirty)
     expect(useEditor.getState().history.document.presentation).toBeUndefined()
+    expect(usePresentation.getState().workspaceMode).toBeNull()
   })
 
-  it('plays saved camera steps and restores selection, mode, focus and 2D viewport', () => {
+  it('preserves saved order, skips hidden pages and reveals items before moving to the next page', () => {
     useEditor.getState().command({
       type: 'setPresentation',
-      steps: [{ topicId: 'a', camera: savedCamera }, { topicId: 'leaf' }],
+      steps: [
+        { topicId: 'a', reveal: 'items', layout: 'list', notes: '提示' },
+        { topicId: 'root', hidden: true },
+        { topicId: 'b' },
+      ],
     })
-    setSelectedTopics(['a', 'b'])
-    useEditor.setState({ views: { first: view } })
-    const before = useEditor.getState().history
+    const history = useEditor.getState().history
     showPresentationStep(0)
-    expect(usePresentation.getState().generated).toBe(false)
-    expect(usePresentation.getState().cameraRequest?.camera).toEqual(savedCamera)
-    expect(useSpatialView.getState().sheets.first?.mode).toBe('3d')
-    showPresentationStep(1)
-    expect(useSpatialView.getState().sheets.first?.focusId).toBe('leaf')
-    useEditor.setState({ views: { first: { x: 400, y: 300, zoom: 1.2 } } })
+    expect(usePresentation.getState().steps.map((step) => step.topicId)).toEqual(['a', 'b'])
+    expect(usePresentation.getState().itemIndex).toBe(0)
+    advancePresentation(1)
+    expect(usePresentation.getState()).toMatchObject({ index: 0, itemIndex: 1 })
+    advancePresentation(-1)
+    expect(usePresentation.getState()).toMatchObject({ index: 0, itemIndex: 0 })
+    advancePresentation(1)
+    advancePresentation(1)
+    expect(usePresentation.getState()).toMatchObject({ index: 1, itemIndex: 0 })
+    advancePresentation(1)
+    expect(usePresentation.getState().index).toBe(1)
     stopPresentation()
-    expect(useEditor.getState().selectedId).toBe('b')
-    expect(useSelection.getState().sheets.first).toEqual(['a', 'b'])
-    expect(useSpatialView.getState().sheets.first).toBeUndefined()
-    expect(useEditor.getState().views.first).toEqual(view)
-    expect(usePresentation.getState().viewportRequest?.view).toEqual(view)
-    expect(useEditor.getState().history).toBe(before)
+    expect(useEditor.getState().history).toBe(history)
   })
 
-  it('restores an existing 3D camera even when its focus has not changed', () => {
-    useSpatialView.getState().setMode('first', '3d')
-    useSpatialView.getState().setFocus('first', 'a')
-    useSpatialView.getState().setCamera('first', camera)
+  it('windows long pages without dropping overflow items or advancing early', () => {
+    useEditor.getState().command({
+      type: 'batch',
+      commands: Array.from({ length: 8 }, (_, index) => ({
+        type: 'addTopic' as const,
+        parentId: 'a',
+        id: `child${index}`,
+        title: `Item ${index}`,
+      })),
+    })
     showPresentationStep(1)
-    useSpatialView.getState().setCamera('first', savedCamera)
-    stopPresentation()
-    expect(useSpatialView.getState().sheets.first).toEqual({ mode: '3d', focusId: 'a', camera })
-    expect(usePresentation.getState().cameraRequest?.camera).toEqual(camera)
-    useEditor.getState().replace(useEditor.getState().workbook)
-    expect(usePresentation.getState().cameraRequest).toBeNull()
-    expect(usePresentation.getState().viewportRequest).toBeNull()
+    expect(usePresentation.getState().itemIndex).toBe(6)
+    advancePresentation(1)
+    expect(usePresentation.getState()).toMatchObject({ index: 1, itemIndex: 9 })
+    advancePresentation(-1)
+    expect(usePresentation.getState()).toMatchObject({ index: 1, itemIndex: 6 })
+    advancePresentation(1)
+    advancePresentation(1)
+    expect(usePresentation.getState().index).toBe(2)
   })
 
-  it('stops on Sheet change, restoring the original Sheet without changing the destination', () => {
-    useEditor.getState().select('b')
+  it('returns to the composer after preview and switches presenter/audience without restarting the clock', () => {
+    openPresentationComposer()
+    selectPresentationPage(1)
+    showPresentationStep(0)
+    const startedAt = usePresentation.getState().startedAt
+    setPresentationMode('presenter')
+    expect(usePresentation.getState().workspaceMode).toBe('presenter')
+    expect(usePresentation.getState().startedAt).toBe(startedAt)
+    stopPresentation()
+    expect(usePresentation.getState().workspaceMode).toBe('composer')
+    expect(usePresentation.getState().composerIndex).toBe(1)
+    closePresentationWorkspace()
+    expect(usePresentation.getState().workspaceMode).toBeNull()
+    setPresentationMode('presenter')
+    expect(usePresentation.getState().workspaceMode).toBeNull()
+  })
+
+  it('stops on sheet or workbook replacement without copying old canvas session state', () => {
     useEditor.setState({ views: { first: view } })
     showPresentationStep(1)
     useEditor.getState().switchSheet('second')
@@ -112,24 +151,15 @@ describe('transient presentation sessions', () => {
     expect(useEditor.getState().activeSheetId).toBe('second')
     expect(useEditor.getState().selectedId).toBe('root')
     useEditor.getState().switchSheet('first')
-    expect(useEditor.getState().selectedId).toBe('b')
-    expect(useEditor.getState().views.first).toEqual(view)
-  })
-
-  it('does not copy the old view into a replacement workbook, even with the same IDs', () => {
-    useEditor.getState().select('b')
-    useSpatialView.getState().setMode('first', '3d')
-    useSpatialView.getState().setCamera('first', camera)
     const workbook = useEditor.getState().workbook
     showPresentationStep(1)
     useEditor.getState().replace(workbook)
     expect(usePresentation.getState().playing).toBe(false)
-    expect(useEditor.getState().selectedId).toBe('root')
-    expect(useSpatialView.getState().sheets).toEqual({})
     expect(useEditor.getState().views).toEqual({})
+    expect(usePresentation.getState().viewportRequest).toBeNull()
   })
 
-  it('commits a draft before starting and adds no history for navigation or stop', () => {
+  it('commits a title draft once before starting and keeps navigation outside history', () => {
     useEditor.getState().startEdit('a')
     useEditor.getState().setDraft('New title')
     showPresentationStep(0)
@@ -142,7 +172,7 @@ describe('transient presentation sessions', () => {
     expect(useEditor.getState().history).toBe(history)
   })
 
-  it('rejects editing, fold commands and history travel while playing', () => {
+  it('rejects edits, annotations and history travel while playing', () => {
     showPresentationStep(0)
     const history = useEditor.getState().history
     expect(useEditor.getState().command({ type: 'toggleCollapse', topicId: 'root' })).toBe(false)
@@ -153,11 +183,15 @@ describe('transient presentation sessions', () => {
     useEditor.getState().redo()
     expect(useEditor.getState().editingId).toBeNull()
     expect(useEditor.getState().history).toBe(history)
-    expect(usePresentation.getState().playing).toBe(true)
   })
 
-  it('retains an invalid draft and rejects out-of-range steps without starting playback', () => {
+  it('rejects out-of-range/all-hidden playback and retains invalid drafts', () => {
     showPresentationStep(999)
+    expect(usePresentation.getState().playing).toBe(false)
+    useEditor
+      .getState()
+      .command({ type: 'setPresentation', steps: [{ topicId: 'root', hidden: true }] })
+    showPresentationStep(0)
     expect(usePresentation.getState().playing).toBe(false)
     useEditor.getState().startEdit('a', undefined, 'notes')
     useEditor.getState().setDraft('长'.repeat(100_001))

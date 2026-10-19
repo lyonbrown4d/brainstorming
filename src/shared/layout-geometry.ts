@@ -45,7 +45,7 @@ export const layoutEdgePath = (
 export const layoutDecorationPath = (decoration: LayoutDecoration): string => {
   const { x, y, width, height, kind, direction } = decoration
   if (kind === 'spine' || kind === 'grid-line') return `M ${x} ${y} L ${x + width} ${y + height}`
-  if (kind === 'cell') return ''
+  if (kind === 'cell') return `M${x} ${y} H${x + width} V${y + height} H${x} Z`
   const outer = direction === 'left' ? x + width : x
   const inner = direction === 'left' ? x : x + width
   const middle = (outer + inner) / 2

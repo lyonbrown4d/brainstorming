@@ -1,4 +1,5 @@
 import type { DocumentAsset, Side } from '@core/types'
+import type { CanvasStroke, DrawingCommand } from '@core/ink'
 export const LAYOUT_KINDS = [
   'map',
   'logic-right',
@@ -50,7 +51,9 @@ export interface TopicMetadata {
   readonly notesFormat?: 'plain' | 'markdown'
   readonly richTitle?: string
 }
+export type SheetVisualStyle = 'normal' | 'sketch'
 export interface DocumentSettings {
+  readonly visualStyle?: SheetVisualStyle
   readonly layout?: LayoutKind
   readonly theme?:
     'brainstorming' | 'ocean' | 'forest' | 'sunset' | 'mono' | 'dawn' | 'paper' | 'night'
@@ -93,6 +96,11 @@ export interface FloatingPosition {
 }
 export interface PresentationStep {
   readonly topicId: string
+  readonly layout?: 'auto' | 'list' | 'image' | 'structure'
+  readonly hidden?: boolean
+  readonly notes?: string
+  readonly reveal?: 'all' | 'items'
+  /** Legacy file compatibility. Slide playback does not move the canvas camera. */
   readonly camera?: {
     readonly position: readonly [number, number, number]
     readonly target: readonly [number, number, number]
@@ -104,6 +112,7 @@ export interface DocumentAnnotations {
   readonly callouts?: readonly TopicCallout[]
 }
 export interface DocumentExtensions extends DocumentAnnotations {
+  readonly drawings?: readonly CanvasStroke[]
   readonly settings?: DocumentSettings
   readonly floatingIds?: readonly string[]
   readonly floatingPositions?: Readonly<Record<string, FloatingPosition>>
@@ -111,6 +120,7 @@ export interface DocumentExtensions extends DocumentAnnotations {
   readonly presentation?: readonly PresentationStep[]
 }
 export type ExtensionCommand =
+  | DrawingCommand
   | {
       readonly type: 'setTopicMetadata'
       readonly topicId: string

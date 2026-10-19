@@ -3,13 +3,17 @@ import { browser, expect } from '@wdio/globals'
 import { Key } from 'webdriverio'
 import { named, reloadNativePage } from '@tests/native/driver'
 
-const chooseAppearance = async (label: string): Promise<void> => {
-  await browser.$('button[aria-label="应用外观"]').click()
+export const chooseAppearance = async (label: string): Promise<void> => {
+  await named('应用设置').click()
+  await expect(browser.$('[role="dialog"]')).toBeDisplayed()
+  await browser.$('[role="combobox"][aria-label="应用外观"]').click()
   // The embedded driver sends click without pointerdown; Radix opens via keyboard.
   await browser.keys(Key.ArrowDown)
-  await expect(named(label)).toBeDisplayed()
-  await named(label).click()
-  await expect(browser.$('[role="menu"]')).not.toBeDisplayed()
+  const choice = browser.$('[role="listbox"]').$(`aria/${label}`)
+  await expect(choice).toBeDisplayed()
+  await choice.click()
+  await browser.keys(Key.Escape)
+  await expect(browser.$('[role="dialog"]')).not.toBeDisplayed()
 }
 
 const loadedLogo = async (): Promise<string> => {
@@ -50,7 +54,7 @@ export const checkBrandAppearance = async (): Promise<void> => {
   await browser.saveScreenshot(await nativeArtifact('brainstorming-native-brand-dark.png'))
 
   await reloadNativePage()
-  await expect(browser.$('button[aria-label="应用外观"]')).toBeEnabled()
+  await expect(browser.$('button[aria-label="应用设置"]')).toBeEnabled()
   await expect(browser.$('html')).toHaveAttribute('data-theme', 'dark')
   expect(await loadedLogo()).toBe(darkLogo)
 
@@ -60,8 +64,19 @@ export const checkBrandAppearance = async (): Promise<void> => {
   )
   await expect(browser.$('html')).toHaveAttribute('data-theme', systemTheme)
   expect(await loadedLogo()).toBe(systemTheme === 'dark' ? darkLogo : lightLogo)
-  await browser.$('button[aria-label="应用外观"]').click()
+  await named('应用设置').click()
+  await browser.$('[role="combobox"][aria-label="应用外观"]').click()
   await browser.keys(Key.ArrowDown)
-  await expect(named('跟随系统')).toHaveAttribute('aria-checked', 'true')
+  await browser.waitUntil(
+    async () =>
+      browser.execute(
+        () =>
+          document
+            .querySelector('[role="listbox"] [role="option"][data-state="checked"]')
+            ?.textContent.trim() === '跟随系统',
+      ),
+    { timeoutMsg: 'The persisted appearance selection must follow the system' },
+  )
+  await browser.keys(Key.Escape)
   await browser.keys(Key.Escape)
 }

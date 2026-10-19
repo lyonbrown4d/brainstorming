@@ -4,7 +4,6 @@ import { Popover } from 'radix-ui'
 import { Filter } from 'lucide-react'
 import { useEditor } from '@renderer/state/editor'
 import { revealSearchMatch } from '@renderer/state/search'
-import { useSpatialView } from '@renderer/state/spatial'
 import { getMarkerOptions } from '@renderer/components/metadata/markers'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
@@ -146,10 +145,6 @@ export const TopicFilter = () => {
                     text: topic.title,
                     count: 1,
                   })
-                  if (useSpatialView.getState().sheets[sheetId]?.mode === '3d')
-                    useSpatialView
-                      .getState()
-                      .setFocus(sheetId, topic.id === document.rootId ? null : topic.id)
                 }}
               >
                 {topic.title}

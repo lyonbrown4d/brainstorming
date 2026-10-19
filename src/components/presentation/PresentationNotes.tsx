@@ -1,0 +1,50 @@
+import { MessageSquareText } from 'lucide-react'
+import { Textarea } from '@renderer/components/ui/textarea'
+import { useMessages } from '@renderer/i18n/useMessages'
+import { useEditor } from '@renderer/state/editor'
+import {
+  isPresentationNoteDraft,
+  startPresentationNotes,
+  type PresentationNoteTarget,
+} from '@renderer/state/presentationEditing'
+
+interface PresentationNotesProps {
+  notes: string
+  disabled: boolean
+  target: PresentationNoteTarget
+}
+
+/** Live notes share the save/recovery draft; committing creates one history entry. */
+export const PresentationNotes = ({ notes, disabled, target }: PresentationNotesProps) => {
+  const { translate } = useMessages()
+  const draft = useEditor((state) => (isPresentationNoteDraft(state, target) ? state.draft : notes))
+  return (
+    <div className="rounded-xl border bg-background p-4 shadow-sm">
+      <label
+        htmlFor="presentation-notes"
+        className="mb-3 flex items-center gap-2 text-sm font-medium"
+      >
+        <MessageSquareText className="size-4" />
+        {translate('presentationNotes')}
+      </label>
+      <Textarea
+        id="presentation-notes"
+        className="min-h-20 resize-y border-0 p-0 shadow-none focus-visible:ring-0"
+        value={draft}
+        disabled={disabled}
+        maxLength={10_000}
+        placeholder={translate('presentationNotesPlaceholder')}
+        onFocus={() => {
+          startPresentationNotes(target)
+        }}
+        onChange={(event) => {
+          if (startPresentationNotes(target)) useEditor.getState().setDraft(event.target.value)
+        }}
+        onBlur={() => {
+          const state = useEditor.getState()
+          if (isPresentationNoteDraft(state, target)) state.commitDraft()
+        }}
+      />
+    </div>
+  )
+}

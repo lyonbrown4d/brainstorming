@@ -1,4 +1,5 @@
 import type { MindMapDocument, Topic } from '@core/types'
+import { validateDrawings } from '@core/ink'
 import type { DocumentExtensions, TopicMetadata } from '@core/extensions'
 import * as v from '@core/extension-validation'
 import { validateDocumentSettings } from '@core/metadata-validation'
@@ -19,6 +20,7 @@ export const validateDocumentExtensions = (
     if (!Object.hasOwn(topics, id)) throw new Error(`扩展引用的主题 ${id} 不存在`)
   }
   v.optional(value, 'settings', validateDocumentSettings)
+  v.optional(value, 'drawings', validateDrawings)
   const annotationIds = new Set<string>()
   const annotationId = (id: string): void => {
     if (annotationIds.has(id)) throw new Error('批注 ID 重复')

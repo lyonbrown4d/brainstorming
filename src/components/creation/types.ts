@@ -17,6 +17,8 @@ export interface CreationGalleryProps {
   readonly onExample?: () => void
   readonly busy?: boolean
   readonly error?: string | null
+  readonly draft?: CreationRequest
+  readonly onDraftChange?: (draft: CreationRequest) => void
   readonly step?: 1 | 2
   readonly onStepChange?: (step: 1 | 2) => void
   readonly sidebar?: ReactNode

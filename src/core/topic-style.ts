@@ -1,4 +1,4 @@
-import type { TopicStyle } from '@core/types'
+import { TOPIC_SHAPES, type TopicStyle } from '@core/types'
 
 const styleKeys = [
   'fill',
@@ -43,7 +43,7 @@ export const validateTopicStyle: (value: unknown) => asserts value is TopicStyle
         valid = typeof entry === 'boolean'
         break
       case 'shape':
-        valid = entry === 'rounded' || entry === 'rectangle' || entry === 'ellipse'
+        valid = typeof entry === 'string' && TOPIC_SHAPES.some((shape) => shape === entry)
         break
       case 'lineStyle':
         valid = entry === 'curve' || entry === 'straight'

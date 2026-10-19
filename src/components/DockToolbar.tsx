@@ -6,6 +6,7 @@ import { PanelBottom, PanelTop } from 'lucide-react'
 import { useDockToolbar } from '@renderer/hooks/useDockToolbar'
 import { Button } from '@renderer/components/ui/button'
 import { ScrollArea, ScrollBar } from '@renderer/components/ui/scroll-area'
+import { noMotion, workbenchMotion } from '@renderer/lib/workbenchMotion'
 
 export const DockToolbar = ({
   children,
@@ -75,8 +76,13 @@ export const DockToolbar = ({
       </Button>
       <motion.div
         initial={false}
-        animate={{ y: open ? 0 : edge === 'top' ? -8 : 8, opacity: open ? 1 : 0 }}
-        transition={reduced ? { duration: 0 } : { duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        animate={{
+          y: open || reduced ? 0 : edge === 'top' ? -8 : 8,
+          scale: open || reduced ? 1 : 0.98,
+          opacity: open ? 1 : 0,
+        }}
+        transition={reduced ? noMotion : workbenchMotion.dock}
+        style={{ transformOrigin: edge === 'top' ? 'top center' : 'bottom center' }}
         id={id}
         aria-hidden={!open}
         inert={!open}

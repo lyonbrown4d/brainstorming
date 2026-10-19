@@ -1,3 +1,5 @@
+import { WorkspaceRouterBoundary, WorkspaceRoutes } from '@renderer/routing/WorkspaceRouter'
+import { SettingsRoute } from '@renderer/routing/SettingsRoute'
 import { useLinkPreviewQueue } from '@renderer/hooks/useLinkPreviewQueue'
 import { useFileDrop } from '@renderer/hooks/useFileDrop'
 import { FileDropOverlay } from '@renderer/components/FileDropOverlay'
@@ -6,10 +8,9 @@ import { useMessages } from '@renderer/i18n/useMessages'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from '@renderer/lib/queryClient'
 import { usePresentation } from '@renderer/state/presentation'
-import { PresentationPlayback } from '@renderer/components/documents/PresentationControls'
 import { ReactFlowProvider } from '@xyflow/react'
 import { X } from 'lucide-react'
-import { useMemo } from 'react'
+import { lazy, Suspense, useMemo } from 'react'
 import { AnimatePresence, MotionConfig } from 'motion/react'
 import { WorkbenchPanel } from '@renderer/components/WorkbenchPanel'
 import { useNativeViewport } from '@renderer/hooks/useNativeViewport'
@@ -26,9 +27,7 @@ import { Inspector } from '@renderer/components/Inspector'
 import { Outline } from '@renderer/components/Outline'
 import { SearchPanel } from '@renderer/components/SearchPanel'
 import { PasswordPrompt } from '@renderer/components/files/PasswordPrompt'
-import { SpatialWorkspace } from '@renderer/components/SpatialWorkspace'
 import { useEditor } from '@renderer/state/editor'
-import { useSpatialView } from '@renderer/state/spatial'
 import { useDocumentTabs } from '@renderer/state/documentTabs'
 import {
   restoreWorkspaceRecovery,
@@ -49,7 +48,11 @@ import '@renderer/styles/window.css'
 import '@renderer/styles/topics.css'
 import '@renderer/styles/motion.css'
 
-export const App = () => {
+const PresentationWorkspace = lazy(
+  () => import('@renderer/components/presentation/PresentationWorkspace'),
+)
+
+const AppWorkspace = () => {
   const { translate } = useMessages()
 
   useNativeViewport()
@@ -61,11 +64,11 @@ export const App = () => {
   const fileDrop = useFileDrop()
   const chrome = useWindowChrome()
   const playing = usePresentation((state) => state.playing)
+  const presentationMode = usePresentation((state) => state.workspaceMode)
   const screen = useWorkspace((state) => state.screen)
   const outline = useEditor((state) => state.outlineOpen)
   const inspector = useEditor((state) => state.inspectorOpen)
   const activeSheetId = useEditor((state) => state.activeSheetId)
-  const spatial = useSpatialView((state) => state.sheets[activeSheetId]?.mode === '3d')
   const error = useEditor((state) => state.error)
   const recovery = useDocumentTabs((state) => state.recovery)
   const activeTabId = useDocumentTabs((state) => state.activeId)
@@ -83,6 +86,7 @@ export const App = () => {
             data-fullscreen={chrome.fullScreen}
           >
             <FileDropOverlay {...fileDrop} />
+            <SettingsRoute />
             {!playing && (screen === 'editor' ? <Toolbar /> : <WorkspaceHeader />)}
             <div className="app-body relative flex min-h-0 flex-1">
               <main className="workspace-main relative flex min-h-0 min-w-0 flex-1 flex-col">
@@ -130,7 +134,11 @@ export const App = () => {
                   </div>
                 ) : (
                   <ReactFlowProvider>
-                    <div className="workspace-content relative flex min-h-0 min-w-0 flex-1">
+                    <div
+                      className={`workspace-content relative flex min-h-0 min-w-0 flex-1 ${presentationMode ? 'invisible pointer-events-none' : ''}`}
+                      inert={presentationMode !== null}
+                      aria-hidden={presentationMode !== null || undefined}
+                    >
                       {!playing && (
                         <CanvasOverlay className="z-40">
                           <DocumentTabs />
@@ -143,11 +151,7 @@ export const App = () => {
                           </WorkbenchPanel>
                         )}
                       </AnimatePresence>
-                      {spatial ? (
-                        <SpatialWorkspace key={`${activeTabId}:${activeSheetId}`} />
-                      ) : (
-                        <Canvas key={`${activeTabId}:${activeSheetId}`} />
-                      )}
+                      <Canvas key={`${activeTabId}:${activeSheetId}`} />
                       <AnimatePresence initial={false}>
                         {inspector && !playing && (
                           <WorkbenchPanel key="inspector" side="right">
@@ -156,14 +160,37 @@ export const App = () => {
                         )}
                       </AnimatePresence>
                     </div>
-                    <PresentationPlayback />
+                    {presentationMode && (
+                      <div
+                        className={`absolute inset-0 z-40 bg-background ${presentationMode === 'composer' ? 'bottom-12 sm:bottom-10' : ''}`}
+                        data-presentation-workspace
+                      >
+                        <Suspense
+                          fallback={
+                            <div
+                              className="flex h-full items-center justify-center text-sm text-muted-foreground"
+                              role="status"
+                            >
+                              {translate('presentation')}
+                            </div>
+                          }
+                        >
+                          <PresentationWorkspace />
+                          {presentationMode === 'composer' && (
+                            <CanvasOverlay className="z-50">
+                              <DocumentTabs />
+                            </CanvasOverlay>
+                          )}
+                        </Suspense>
+                      </div>
+                    )}
                     {!playing && (
                       <footer className="status-bar z-[8] flex h-12 min-h-12 sm:h-10 sm:min-h-10 shrink-0 items-center gap-2 border-t border-border/80 bg-background pr-2 text-muted-foreground lg:gap-3 lg:pr-4">
                         <SheetTabs />
                         <span className="topic-count hidden shrink-0 text-xs whitespace-nowrap lg:inline">
                           {translate('topicCount', { count })}
                         </span>
-                        {!spatial && <ZoomControls />}
+                        {!presentationMode && <ZoomControls />}
                         <KeyboardHelp />
                       </footer>
                     )}
@@ -177,3 +204,11 @@ export const App = () => {
     </QueryClientProvider>
   )
 }
+
+export const App = () => (
+  <WorkspaceRouterBoundary>
+    <WorkspaceRoutes>
+      <AppWorkspace />
+    </WorkspaceRoutes>
+  </WorkspaceRouterBoundary>
+)

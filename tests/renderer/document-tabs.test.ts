@@ -9,7 +9,6 @@ import {
   useDocumentTabs,
 } from '@renderer/state/documentTabs'
 import { useWorkspace } from '@renderer/state/workspace'
-import { useSpatialView } from '@renderer/state/spatial'
 import { resetFileSecurityState } from '@renderer/state/password'
 import { desktop } from '@tests/fixtures/desktop'
 
@@ -39,7 +38,6 @@ beforeEach(() => {
   useEditor.setState(useEditor.getInitialState(), true)
   useWorkspace.setState(useWorkspace.getInitialState(), true)
   useDocumentTabs.setState({ tabs: [], activeId: null, recovery: [] })
-  useSpatialView.getState().reset()
   resetFileSecurityState()
 })
 afterEach(() => {
@@ -55,12 +53,10 @@ describe('document tab sessions', () => {
     useEditor.getState().startEdit('root')
     useEditor.getState().setDraft('Alpha second draft')
     useEditor.setState({ views: { 'alpha-second': { x: 31, y: 42, zoom: 1.5 } } })
-    useSpatialView.getState().setMode('alpha-second', '3d')
     expect(openDocumentTab(beta(), '/beta.brainstorming')).toBe(true)
     const secondId = activeId()
     expect(useEditor.getState().draft).toBe('')
     expect(useEditor.getState().views).toEqual({})
-    expect(useSpatialView.getState().sheets).toEqual({})
     rename('Beta edited')
     useEditor.getState().undo()
     expect(useEditor.getState().history.document.title).toBe('Beta')
@@ -71,7 +67,6 @@ describe('document tab sessions', () => {
     expect(useEditor.getState().history.past).toHaveLength(1)
     expect(useEditor.getState().editingId).toBeNull()
     expect(useEditor.getState().views['alpha-second']).toEqual({ x: 31, y: 42, zoom: 1.5 })
-    expect(useSpatialView.getState().sheets['alpha-second']?.mode).toBe('3d')
     useEditor.getState().undo()
     expect(useEditor.getState().history.document.title).toBe('Alpha second')
     useEditor.getState().switchSheet('alpha')

@@ -9,6 +9,7 @@ export type {
   Side,
   Topic,
   TopicStyle,
+  TopicShape,
   DocumentAsset,
   TopicImage,
   TopicContentCommand,
@@ -54,6 +55,7 @@ export type {
   TopicTask,
   TopicMetadata,
   DocumentSettings,
+  SheetVisualStyle,
   Relation,
   TopicGroup,
   TopicCallout,
@@ -80,3 +82,7 @@ export { AUDIO_MIME_TYPES, validateAudioAsset } from '@core/topic-content'
 
 export type { AssetStorage, AssetPreview, AssetTiles } from '@core/asset-storage'
 export { assetSize } from '@core/topic-content'
+
+export { TOPIC_SHAPES } from '@core/types'
+export { INK_LIMITS, validateCanvasStroke, validateDrawings } from '@core/ink'
+export type { CanvasPoint, CanvasStroke, DrawingCommand } from '@core/ink'

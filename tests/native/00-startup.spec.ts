@@ -18,10 +18,22 @@ describe('native startup, window chrome and menu shortcuts', () => {
     await browser.waitUntil(async () => !(await browser.tauri.listWindows()).includes('splash'))
     await browser.tauri.switchWindow('main')
     await browser.saveScreenshot(await nativeArtifact('brainstorming-native-startup.png'))
-    await browser.waitUntil(
-      async () => (await fixture<NativeWindowState>('windowState', {})).focused,
-      { timeoutMsg: 'The native main window did not receive focus after the splash handoff' },
-    )
+    try {
+      await browser.waitUntil(
+        async () => (await fixture<NativeWindowState>('windowState', {})).focused,
+        { timeoutMsg: 'The native main window did not receive focus after the splash handoff' },
+      )
+    } catch (failure) {
+      try {
+        console.error(
+          'Native splash handoff focus diagnostics:',
+          JSON.stringify(await fixture<unknown>('windowState', { diagnostics: true })),
+        )
+      } catch (diagnosticsFailure) {
+        console.error('Native focus diagnostics unavailable:', diagnosticsFailure)
+      }
+      throw failure
+    }
     const state = await fixture<NativeWindowState>('windowState', {})
     expect(state.visible).toBe(true)
     expect(state.focused).toBe(true)

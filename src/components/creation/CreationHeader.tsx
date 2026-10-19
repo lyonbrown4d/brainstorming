@@ -3,8 +3,7 @@ import { WindowTitlebar } from '@renderer/components/WindowTitlebar'
 import { WindowControls } from '@renderer/components/WindowControls'
 import { useMessages } from '@renderer/i18n/useMessages'
 
-import { LanguageMenu } from '@renderer/components/LanguageMenu'
-import { AppAppearance } from '@renderer/components/appearance/AppAppearance'
+import { SettingsButton } from '@renderer/components/settings/SettingsButton'
 import { ArrowLeft, FolderOpen } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import {
@@ -81,8 +80,7 @@ export const CreationHeader = ({
         </StepperList>
       </Stepper>
       <div className="toolbar-actions flex items-center gap-2">
-        <LanguageMenu />
-        <AppAppearance />
+        <SettingsButton />
         {onOpen && (
           <Button
             variant="outline"

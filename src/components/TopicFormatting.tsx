@@ -1,3 +1,4 @@
+import { TopicAppearancePicker } from '@renderer/components/TopicAppearancePicker'
 import { useAppearanceColors } from '@renderer/hooks/useAppearanceColors'
 import { useMessages } from '@renderer/i18n/useMessages'
 import {
@@ -58,7 +59,7 @@ export const TopicFormatting = ({
 }) => {
   const { translate } = useMessages()
   const colors = useAppearanceColors()
-  const { shapeOptions, lineOptions, fillColors, textColors } = getTopicFormattingOptions(translate)
+  const { lineOptions, fillColors, textColors } = getTopicFormattingOptions(translate)
 
   const document = useEditor((state) => state.history.document)
   const selectedId = useEditor((state) => state.selectedId)
@@ -162,21 +163,13 @@ export const TopicFormatting = ({
   return (
     <div className="topic-formatting">
       <section className="format-group border-t border-border/70 py-3 first:border-0 [&_h3]:mb-2.5 [&_h3]:text-xs [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-[18px]">
-        <h3>{translate('appearance')}</h3>
-        <span className="mb-2 block text-xs text-muted-foreground">{translate('shape')}</span>
-        <div className="select-control relative flex items-center [&_.field-select]:w-full [&_.field-select]:pr-8 [&_.field-select]:pl-11">
-          <span
-            className={`shape-preview pointer-events-none absolute left-3 h-[15px] w-[22px] border-[1.5px] border-secondary-foreground ${style.shape === 'ellipse' ? 'rounded-full' : style.shape === 'rectangle' ? 'rounded-none' : 'rounded'}`}
-          />
-          <FieldSelect
-            label={translate('topicShape')}
-            value={style.shape ?? 'rounded'}
-            options={shapeOptions}
-            onChange={(value) => {
-              update({ shape: value })
-            }}
-          />
-        </div>
+        <h3>{translate('topicAppearance')}</h3>
+        <TopicAppearancePicker
+          value={style.shape ?? 'rounded'}
+          onChange={(shape) => {
+            update({ shape })
+          }}
+        />
         <h3>{translate('fill')}</h3>
         <ColorPalette
           colors={fillColors}

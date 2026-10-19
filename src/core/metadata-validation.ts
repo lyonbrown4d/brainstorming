@@ -115,6 +115,7 @@ export const validateDocumentSettings: (value: unknown) => asserts value is Docu
 ) => {
   const settings = v.record(value, [
     'layout',
+    'visualStyle',
     'theme',
     'customPalette',
     'background',
@@ -122,6 +123,9 @@ export const validateDocumentSettings: (value: unknown) => asserts value is Docu
     'lineWidth',
   ])
   v.optional(settings, 'layout', validateLayoutKind)
+  v.optional(settings, 'visualStyle', (entry) => {
+    v.oneOf(entry, ['normal', 'sketch'])
+  })
   v.optional(settings, 'theme', (entry) => {
     v.oneOf(entry, ['brainstorming', 'ocean', 'forest', 'sunset', 'mono', 'dawn', 'paper', 'night'])
   })

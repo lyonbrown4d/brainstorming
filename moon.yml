@@ -81,6 +81,16 @@ tasks:
     deps: [build]
     options:
       cache: false
+  storybook-build:
+    command: pnpm build-storybook
+    inputs: ['@group(source)']
+    outputs: [storybook-static]
+  canvas-test:
+    command: pnpm test:canvas
+    inputs: ['@group(source)']
+    deps: [storybook-build]
+    options:
+      cache: false
   check:
     inputs: ['@group(source)']
     deps: [format, lint, typecheck, test, build]

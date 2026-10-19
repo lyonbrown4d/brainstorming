@@ -1,3 +1,4 @@
+import { visualPath } from '@shared/sketch'
 import type { Document, Element } from '@xmldom/xmldom'
 import type { MindMapDocument } from '@core'
 import type { MindMapLayout } from '@layout'
@@ -22,14 +23,17 @@ export const drawStructureGeometry = (
   for (const decoration of layout.decorations ?? []) {
     const appearance = topicAppearance(document, decoration.topicId ?? document.rootId)
     const cell = decoration.kind === 'cell'
-    const element = xml.createElementNS('http://www.w3.org/2000/svg', cell ? 'rect' : 'path')
+    const element = xml.createElementNS(
+      'http://www.w3.org/2000/svg',
+      cell && document.settings?.visualStyle !== 'sketch' ? 'rect' : 'path',
+    )
     const attrs: Record<string, string | number> = {
       'data-structure-kind': decoration.kind,
       stroke: appearance.stroke,
       'stroke-width': cell || decoration.kind === 'grid-line' ? 1 : appearance.lineWidth,
       ...(decoration.kind === 'grid-line' ? { 'stroke-opacity': 0.4 } : {}),
       fill: cell ? appearance.stroke : 'none',
-      ...(cell
+      ...(cell && document.settings?.visualStyle !== 'sketch'
         ? {
             x: decoration.x,
             y: decoration.y,
@@ -39,7 +43,12 @@ export const drawStructureGeometry = (
             'stroke-opacity': 0.4,
           }
         : {
-            d: layoutDecorationPath(decoration),
+            d: visualPath(
+              layoutDecorationPath(decoration),
+              document.settings?.visualStyle,
+              `decoration:${decoration.id}`,
+            ),
+            ...(cell ? { 'fill-opacity': 0.035, 'stroke-opacity': 0.4 } : {}),
             'stroke-linecap': 'round',
             'stroke-linejoin': 'round',
           }),
