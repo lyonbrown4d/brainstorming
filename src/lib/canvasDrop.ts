@@ -1,4 +1,5 @@
 import { getParentId, type Command, type MindMapDocument, type Side } from '@core'
+import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
 import type { TopicFlowNode } from '@renderer/components/TopicNode'
 import type { LayoutDirection } from '@layout/types'
 
@@ -19,7 +20,9 @@ export interface CanvasDrop {
   readonly index?: number
   readonly side: Side
 }
-export const nodeCenter = (node: TopicFlowNode): Point => {
+export const nodeCenter = (
+  node: Pick<TopicFlowNode, 'position' | 'style' | 'width' | 'height'>,
+): Point => {
   return {
     x: node.position.x + Number(node.style?.width ?? node.width ?? 160) / 2,
     y: node.position.y + Number(node.style?.height ?? node.height ?? 48) / 2,
@@ -29,19 +32,21 @@ export const nodeCenter = (node: TopicFlowNode): Point => {
 /** Center drops attach; dropping at a sibling's outer edge inserts before or after it. */
 export const findCanvasDrop = (
   document: MindMapDocument,
-  nodes: readonly TopicFlowNode[],
+  nodes: readonly CanvasFlowNode[],
   excluded: ReadonlySet<string>,
   point: Point,
 ): CanvasDrop | undefined => {
   return findTopicDrop(
     document,
-    nodes.map((node) => ({
-      id: node.id,
-      position: node.position,
-      width: Number(node.style?.width ?? node.width ?? 160),
-      height: Number(node.style?.height ?? node.height ?? 48),
-      direction: node.data.direction ?? 'right',
-    })),
+    nodes
+      .filter((node) => node.type !== 'ink')
+      .map((node) => ({
+        id: node.id,
+        position: node.position,
+        width: Number(node.style?.width ?? node.width ?? 160),
+        height: Number(node.style?.height ?? node.height ?? 48),
+        direction: node.data.direction ?? 'right',
+      })),
     excluded,
     point,
   )
@@ -131,8 +136,12 @@ export const canvasDropCommand = (
           {
             type: 'setFloatingPosition' as const,
             topicId,
-            x: position.x + delta.x,
-            y: position.y + delta.y,
+            x:
+              (document.floatingPositions?.[topicId]?.x ??
+                position.x - (document.topics[topicId]?.style?.offsetX ?? 0)) + delta.x,
+            y:
+              (document.floatingPositions?.[topicId]?.y ??
+                position.y - (document.topics[topicId]?.style?.offsetY ?? 0)) + delta.y,
           },
         ]
       : []

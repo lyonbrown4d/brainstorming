@@ -8,6 +8,7 @@ export interface CanvasDragInteraction {
   readonly document: MindMapDocument
   readonly sheetId: string
   readonly roots: readonly string[]
+  readonly drawingCount: number
   readonly drop: CanvasDrop | null
 }
 
@@ -20,9 +21,12 @@ export const beginCanvasDrag = (
   document: MindMapDocument,
   sheetId: string,
   roots: readonly string[],
+  drawingCount = 0,
 ): symbol => {
   const token = Symbol('canvas-drag')
-  useCanvasInteraction.setState({ drag: { token, document, sheetId, roots, drop: null } })
+  useCanvasInteraction.setState({
+    drag: { token, document, sheetId, roots, drawingCount, drop: null },
+  })
   return token
 }
 
@@ -46,7 +50,9 @@ export const clearCanvasDrag = (token: symbol): void => {
 }
 
 export const canvasDragMessage = (drag: CanvasDragInteraction): string => {
-  const { document, roots, drop } = drag
+  const { document, roots, drop, drawingCount } = drag
+  if (!drop && drawingCount)
+    return translate('inkMoveSelection', { count: roots.length + drawingCount })
   if (!drop)
     return roots.every((id) => document.floatingIds?.includes(id))
       ? translate('moveValue0FloatingTopics', { value0: roots.length })

@@ -158,6 +158,6 @@ DevTools CLI 自身使用 Electron，仅作为开发依赖，产品运行时仍�
 
 ## React Flow 交互参考
 
-画板工具参考 [官方白板指南](https://reactflow.dev/learn/advanced-use/whiteboard)，沿用 React Flow 坐标转换和视口，笔迹复用 perfect-freehand。画笔输入层高于 React Flow renderer；擦除模式让已绘笔迹直接接收输入，并禁用节点拖动和画布拖动。选择模式恢复正常导图操作。
+画板工具参考 [官方白板指南](https://reactflow.dev/learn/advanced-use/whiteboard)，沿用 React Flow 坐标转换和视口，笔迹复用 perfect-freehand。画笔输入层高于 React Flow renderer；擦除模式让已绘笔迹直接接收输入，并禁用节点拖动和画布拖动。选择模式恢复正常导图操作。笔迹使用独立 React Flow 节点，复用官方 [NodeResizer](https://reactflow.dev/api-reference/components/node-resizer)、框选和组拖动；原始采样不在缩放过程中重写。混合选区只平移，不改变主题父级；主题与笔迹通过同一批量命令提交，预览、选择和取消不进入历史。真实鼠标回归位于 `tests/canvas/ink-editing.spec.ts`。
 
 演示参考 [官方幻灯片教程](https://reactflow.dev/learn/tutorials/slide-shows-with-react-flow) 的内容与导航状态分离、键盘导航和有限目标聚焦思路。当前产品保留已确认的页面编排、观众与演讲者视图；播放不改变底层导图布局，也不为每页复制整张导图。

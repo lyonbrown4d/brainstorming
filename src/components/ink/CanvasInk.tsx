@@ -3,12 +3,10 @@ import { useEditor } from '@renderer/state/editor'
 import { usePresentation } from '@renderer/state/presentation'
 import { useCanvasInk } from '@renderer/state/canvasInk'
 import { useInkDrawing } from '@renderer/hooks/useInkDrawing'
-import { canvasStrokePath } from '@shared/ink-path'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 export const CanvasInk = () => {
   const { translate } = useMessages()
-  const drawings = useEditor((state) => state.history.document.drawings)
   const busy = useEditor((state) => state.busy)
   const playing = usePresentation((state) => state.playing)
   const mode = useCanvasInk((state) => state.mode)
@@ -22,27 +20,6 @@ export const CanvasInk = () => {
           className="pointer-events-none absolute top-0 left-0 h-px w-px overflow-visible"
           aria-hidden
         >
-          {drawings?.map((stroke) => (
-            <path
-              key={stroke.id}
-              data-drawing-id={stroke.id}
-              data-canvas-stroke={stroke.id}
-              d={canvasStrokePath(stroke)}
-              fill={stroke.color}
-              stroke="transparent"
-              strokeWidth={8}
-              style={{
-                pointerEvents: active && mode === 'eraser' ? 'visiblePainted' : 'none',
-                cursor: 'crosshair',
-              }}
-              onPointerDown={(event) => {
-                if (!active || mode !== 'eraser' || event.button !== 0) return
-                event.preventDefault()
-                event.stopPropagation()
-                useEditor.getState().command({ type: 'removeDrawing', drawingId: stroke.id })
-              }}
-            />
-          ))}
           <path ref={preview} />
         </svg>
       </ViewportPortal>

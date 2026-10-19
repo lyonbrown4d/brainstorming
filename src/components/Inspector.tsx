@@ -5,6 +5,8 @@ import { ChevronRight } from 'lucide-react'
 import { useEditor } from '@renderer/state/editor'
 import { useAnnotationInteraction } from '@renderer/state/annotationInteraction'
 import { closeInspector, selectInspectorMode } from '@renderer/state/inspectorNavigation'
+import { useSelectedDrawingIds, useSelectedIds } from '@renderer/state/selection'
+import { InkSelectionProperties } from '@renderer/components/ink/InkSelectionProperties'
 import { TopicProperties } from '@renderer/components/TopicProperties'
 import { CanvasProperties } from '@renderer/components/documents/CanvasProperties'
 import { AnnotationStyleControls } from '@renderer/components/annotations/AnnotationStyleControls'
@@ -19,6 +21,8 @@ export const Inspector = () => {
   const selection = useAnnotationInteraction((state) => state.selected)
   const annotation = selection?.sheetId === sheetId ? selection : null
   const mode = useEditor((state) => state.inspectorMode)
+  const drawings = useSelectedDrawingIds()
+  const topics = useSelectedIds()
   return (
     <aside
       className="flex min-h-0 w-[272px] shrink-0 basis-[272px] flex-col border-l border-border bg-background text-sm"
@@ -75,7 +79,14 @@ export const Inspector = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.12 }}
           >
-            {annotation ? <AnnotationStyleControls inline /> : <TopicProperties />}
+            {annotation ? (
+              <AnnotationStyleControls inline />
+            ) : (
+              <>
+                {drawings.length > 0 && <InkSelectionProperties />}
+                {(topics.length > 0 || drawings.length === 0) && <TopicProperties />}
+              </>
+            )}
           </motion.div>
         </TabsContent>
         <TabsContent

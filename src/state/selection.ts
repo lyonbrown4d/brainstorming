@@ -6,37 +6,74 @@ import { useEditor } from '@renderer/state/editor'
 const empty: readonly string[] = []
 export const useSelection = create<{
   sheets: Readonly<Record<string, readonly string[]>>
-}>(() => ({ sheets: {} }))
+  drawings: Readonly<Record<string, readonly string[]>>
+}>(() => ({ sheets: {}, drawings: {} }))
 
 export const selectedTopicIds = (state: EditorData): readonly string[] => {
   const ids = useSelection.getState().sheets[state.activeSheetId] ?? [state.selectedId]
   const valid = ids.filter((id) => state.history.document.topics[id])
-  return valid.length ? valid : [state.selectedId]
+  return valid
 }
 
-export const setSelectedTopics = (ids: readonly string[]): void => {
+export const selectedDrawingIds = (state: EditorData): readonly string[] => {
+  const valid = new Set(state.history.document.drawings?.map((stroke) => stroke.id))
+  return (useSelection.getState().drawings[state.activeSheetId] ?? empty).filter((id) =>
+    valid.has(id),
+  )
+}
+
+export const setCanvasSelection = (
+  topicIds: readonly string[],
+  drawingIds: readonly string[],
+): void => {
   const state = useEditor.getState()
   state.commitDraft()
   if (useEditor.getState().editingId) return
   const current = useEditor.getState()
-  const valid = [...new Set(ids)].filter((id) => current.history.document.topics[id])
-  if (!valid.length) valid.push(current.selectedId)
+  const topics = [...new Set(topicIds)].filter((id) => current.history.document.topics[id])
+  const available = new Set(current.history.document.drawings?.map((stroke) => stroke.id))
+  const drawings = [...new Set(drawingIds)].filter((id) => available.has(id))
   useSelection.setState((selection) => ({
-    sheets: { ...selection.sheets, [current.activeSheetId]: valid },
+    sheets: { ...selection.sheets, [current.activeSheetId]: topics },
+    drawings: { ...selection.drawings, [current.activeSheetId]: drawings },
   }))
-  useEditor.setState({ selectedId: valid.at(-1) ?? current.selectedId })
+  if (topics.length) useEditor.setState({ selectedId: topics.at(-1) ?? current.selectedId })
+}
+
+export const setSelectedTopics = (ids: readonly string[]): void => {
+  setCanvasSelection(ids.length ? ids : [useEditor.getState().selectedId], [])
+}
+
+export const selectDrawing = (id: string, additive: boolean): void => {
+  const state = useEditor.getState()
+  const current = selectedDrawingIds(state)
+  setCanvasSelection(
+    additive ? selectedTopicIds(state) : [],
+    additive
+      ? current.includes(id)
+        ? current.filter((key) => key !== id)
+        : [...current, id]
+      : [id],
+  )
+}
+
+export const useSelectedDrawingIds = (): readonly string[] => {
+  const sheetId = useEditor((state) => state.activeSheetId)
+  return useSelection((state) => state.drawings[sheetId] ?? empty)
 }
 
 export const selectTopic = (id: string, additive = false): void => {
   const state = useEditor.getState()
   const current = selectedTopicIds(state)
-  if (!additive && current.length === 1 && current[0] === id) return
-  setSelectedTopics(
+  if (!additive && current.length === 1 && current[0] === id && !selectedDrawingIds(state).length)
+    return
+  setCanvasSelection(
     additive
       ? current.includes(id)
         ? current.filter((item) => item !== id)
         : [...current, id]
       : [id],
+    additive ? selectedDrawingIds(state) : [],
   )
 }
 
@@ -45,7 +82,7 @@ export const useTopicSelected = (id: string): boolean => {
   const primary = useEditor((state) => state.selectedId === id)
   return useSelection((state) => {
     const ids = state.sheets[sheetId]
-    return ids?.length ? ids.includes(id) : primary
+    return ids ? ids.includes(id) : primary
   })
 }
 
@@ -63,9 +100,18 @@ export const deleteSelectedTopics = (): void => {
     current.history.document,
     selectedTopicIds(current).filter((id) => id !== current.history.document.rootId),
   )
-  if (!ids.length) return
+  const drawings = selectedDrawingIds(current)
+  if (!ids.length && !drawings.length) return
   const parentId = getParentId(current.history.document, ids[0] ?? '')
-  if (current.command({ type: 'deleteTopics', topicIds: ids }))
+  if (
+    current.command({
+      type: 'batch',
+      commands: [
+        ...(ids.length ? [{ type: 'deleteTopics' as const, topicIds: ids }] : []),
+        ...drawings.map((drawingId) => ({ type: 'removeDrawing' as const, drawingId })),
+      ],
+    })
+  )
     setSelectedTopics([parentId ?? current.history.document.rootId])
 }
 

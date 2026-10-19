@@ -100,6 +100,7 @@ export const useEditor = create<EditorState>((set, get) => ({
     if (get().editingId) return
     useSelection.setState((selection) => ({
       sheets: { ...selection.sheets, [get().activeSheetId]: [id] },
+      drawings: { ...selection.drawings, [get().activeSheetId]: [] },
     }))
     set({ selectedId: id })
   },
@@ -114,6 +115,7 @@ export const useEditor = create<EditorState>((set, get) => ({
       if (ids && (ids.length !== 1 || ids[0] !== id))
         useSelection.setState((selection) => ({
           sheets: { ...selection.sheets, [get().activeSheetId]: [id] },
+          drawings: { ...selection.drawings, [get().activeSheetId]: [] },
         }))
     }
     if (topic)
@@ -192,7 +194,7 @@ export const useEditor = create<EditorState>((set, get) => ({
   },
   replace: (document, path = null, recovered = false) => {
     const loaded = loadWorkbook(document)
-    useSelection.setState({ sheets: {} })
+    useSelection.setState({ sheets: {}, drawings: {} })
     set({
       ...loaded,
       ...emptyEditorDraft,

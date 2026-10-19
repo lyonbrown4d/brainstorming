@@ -157,7 +157,11 @@ describe('Sheet sketch appearance', () => {
     const parsed = new DOMParser().parseFromString(svg, 'image/svg+xml')
     const paths = Array.from(parsed.getElementsByTagName('path'))
     expect(svg).not.toMatch(/NaN|Infinity|undefined/)
-    expect(projection.nodes.every((node) => node.data.visualStyle === 'sketch')).toBe(true)
+    expect(
+      projection.nodes
+        .filter((node) => node.type !== 'ink')
+        .every((node) => node.data.visualStyle === 'sketch'),
+    ).toBe(true)
     for (const edge of projection.edges) {
       expect(edge.type).toBe('structure')
       if (!edge.data || !('path' in edge.data)) throw new Error('missing sketch branch')

@@ -1,4 +1,11 @@
 export const inkMessages = {
+  inkSelected: ['已选中 {{count}} 条笔迹', '{{count}} strokes selected'],
+  inkDeleteSelection: ['删除选中项', 'Delete selection'],
+  inkStroke: ['手绘笔迹', 'Freehand stroke'],
+  inkMoveSelection: [
+    '移动选区 {{count}} 项 · Esc 取消',
+    'Move {{count}} selected items · Esc to cancel',
+  ],
   inkTools: ['画笔', 'Drawing'],
   inkPen: ['自由绘图', 'Freehand drawing'],
   inkSelect: ['选择与移动', 'Select and move'],

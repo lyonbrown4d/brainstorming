@@ -1,4 +1,5 @@
 import { validateDocument, type MindMapDocument } from '@core'
+import { applyManualOffsets } from '@layout/manual-offsets'
 import { layoutMapDocument } from '@layout/map'
 import { layoutStructuredDocument } from '@layout/structured'
 import type { MindMapLayout } from '@layout/types'
@@ -21,5 +22,8 @@ export const layoutDocument = (document: MindMapDocument): MindMapLayout => {
     !Object.values(document.topics).some(
       (topic) => topic.structure !== undefined && topic.structure !== 'map',
     )
-  return defaultMap ? layoutMapDocument(document) : layoutStructuredDocument(document)
+  return applyManualOffsets(
+    document,
+    defaultMap ? layoutMapDocument(document) : layoutStructuredDocument(document),
+  )
 }

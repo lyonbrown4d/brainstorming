@@ -4,6 +4,7 @@ import type { MindMapDocument } from '@core'
 import { topicAppearance } from '@shared/appearance'
 import { layoutEdgePath } from '@shared/layout-geometry'
 import { relationEdges } from '@renderer/components/annotations/projection'
+import { projectInk, type CanvasFlowNode } from '@renderer/lib/canvasNodes'
 import type { TopicFlowNode } from '@renderer/components/TopicNode'
 
 export const edgeHandles = (
@@ -55,7 +56,7 @@ export const projectCanvas = (document: MindMapDocument, surface?: string) => {
           fontFamily: appearance.fontFamily,
           ...(node.direction ? { direction: node.direction } : {}),
         },
-        draggable: node.id !== document.rootId,
+        draggable: true,
       },
     ]
   })
@@ -111,7 +112,7 @@ export const projectCanvas = (document: MindMapDocument, surface?: string) => {
       }
     })
   return {
-    nodes,
+    nodes: [...nodes, ...projectInk(document)] as CanvasFlowNode[],
     edges: [
       ...edges,
       ...relationEdges(document, new Set(byId.keys())).map((edge) => {

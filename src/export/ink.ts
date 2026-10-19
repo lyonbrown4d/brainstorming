@@ -2,9 +2,7 @@ import type { MindMapDocument } from '@core'
 import type { Document, Element } from '@xmldom/xmldom'
 import { canvasStrokePath } from '@shared/ink-path'
 
-export const inkExtents = (
-  document: MindMapDocument,
-): { x: number; y: number; width: number; height: number }[] =>
+export const inkExtents = (document: MindMapDocument) =>
   (document.drawings ?? []).map((stroke) => {
     let minX = Infinity,
       minY = Infinity,
@@ -16,11 +14,12 @@ export const inkExtents = (
       maxX = Math.max(maxX, point.x)
       maxY = Math.max(maxY, point.y)
     }
+    const transform = stroke.transform ?? { x: 0, y: 0, scaleX: 1, scaleY: 1 }
     return {
-      x: minX - stroke.width,
-      y: minY - stroke.width,
-      width: maxX - minX + stroke.width * 2,
-      height: maxY - minY + stroke.width * 2,
+      x: (minX - stroke.width) * transform.scaleX + transform.x,
+      y: (minY - stroke.width) * transform.scaleY + transform.y,
+      width: (maxX - minX + stroke.width * 2) * transform.scaleX,
+      height: (maxY - minY + stroke.width * 2) * transform.scaleY,
     }
   })
 

@@ -11,6 +11,10 @@ async fn drawings_roundtrip_as_ordered_annotations_and_invalid_changes_preserve_
     let store = DocumentStore::new();
     let mut workbook = fixture::workbook();
     let stroke = json!({"id":"ink-a","color":"#123abc","width":4,"points":[{"x":-200,"y":50,"pressure":0.5},{"x":500,"y":100,"pressure":1}]});
+    let mut stroke = stroke;
+    stroke["transform"] = json!({"x":45,"y":-20,"scaleX":2,"scaleY":0.5});
+    workbook["sheets"][0]["document"]["topics"]["a"]["style"]["offsetX"] = json!(60);
+    workbook["sheets"][0]["document"]["topics"]["a"]["style"]["offsetY"] = json!(-40);
     workbook["sheets"][0]["document"]["drawings"] = json!([stroke]);
     workbook["sheets"][1]["document"]["drawings"] = json!([]);
     assert!(validate_workbook(&workbook).is_ok());
@@ -21,6 +25,19 @@ async fn drawings_roundtrip_as_ordered_annotations_and_invalid_changes_preserve_
     assert_eq!(store.read(&path, None).await.unwrap(), workbook);
     let mut invalid = workbook.clone();
     invalid["sheets"][0]["document"]["drawings"][0]["points"][0]["pressure"] = json!(2);
+    assert!(store.write(&path, invalid, None, None, None).await.is_err());
+    assert_eq!(store.read(&path, None).await.unwrap(), workbook);
+    for patch in [
+        json!({"x":0,"y":0,"scaleX":0,"scaleY":1}),
+        json!({"x":1000000,"y":0,"scaleX":2,"scaleY":1}),
+    ] {
+        let mut invalid = workbook.clone();
+        invalid["sheets"][0]["document"]["drawings"][0]["transform"] = patch;
+        assert!(store.write(&path, invalid, None, None, None).await.is_err());
+        assert_eq!(store.read(&path, None).await.unwrap(), workbook);
+    }
+    let mut invalid = workbook.clone();
+    invalid["sheets"][0]["document"]["topics"]["a"]["style"]["offsetX"] = json!(1000001);
     assert!(store.write(&path, invalid, None, None, None).await.is_err());
     assert_eq!(store.read(&path, None).await.unwrap(), workbook);
     store.release(&path).await.unwrap();

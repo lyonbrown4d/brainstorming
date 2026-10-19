@@ -143,6 +143,7 @@ export const copySelectedTopics = async (cut = false): Promise<void> => {
   const before = capture()
   if (!before) return
   const ids = selectedTopicIds(before)
+  if (!ids.length) return
   if (cut && ids.includes(before.history.document.rootId)) {
     before.setError(translate('theCentralTopicCannotBeCutYou'))
     return
@@ -186,7 +187,7 @@ export const pasteSelectedTopics = async (): Promise<void> => {
 export const duplicateSelectedTopics = (): void => {
   if (pending) return
   const before = capture()
-  if (!before) return
+  if (!before?.selectedTopics.length) return
   pending = true
   try {
     const clipboard = createTopicClipboard(before.history.document, selectedTopicIds(before))

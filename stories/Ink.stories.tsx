@@ -28,9 +28,9 @@ const meta = {
       }),
     )
     useEditor.setState({ outlineOpen: false, inspectorOpen: false, recovery: null })
-  },
-  afterEach: () => {
-    setInkMode('select')
+    return () => {
+      setInkMode('select')
+    }
   },
 } satisfies Meta<typeof App>
 export default meta
@@ -59,5 +59,32 @@ export const EraseAndUndo: Story = {
     )
     await userEvent.keyboard('{Escape}')
     await expect(canvas.queryByText('点击笔画移除 · Esc 返回选择')).not.toBeInTheDocument()
+  },
+}
+
+export const MixedSelection: Story = {
+  beforeEach: () => {
+    useEditor.getState().replace(
+      applyCommand(createDocument('组合移动'), {
+        type: 'batch',
+        commands: [
+          { type: 'addTopic', parentId: 'root', id: 'branch', title: '关联节点' },
+          { type: 'addTopic', parentId: 'branch', id: 'descendant', title: '随分支移动' },
+          {
+            type: 'upsertDrawing',
+            stroke: {
+              id: 'mixed-ink',
+              width: 8,
+              color: '#e48a38',
+              points: [
+                { x: 220, y: 180, pressure: 0.5 },
+                { x: 300, y: 180, pressure: 0.5 },
+                { x: 390, y: 180, pressure: 0.5 },
+              ],
+            },
+          },
+        ],
+      }),
+    )
   },
 }

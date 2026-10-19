@@ -1,4 +1,7 @@
 import { useCanvasInk } from '@renderer/state/canvasInk'
+import { InkNode } from '@renderer/components/ink/InkNode'
+import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
+import { canvasSelection } from '@renderer/lib/canvasGesture'
 import { CanvasInk } from '@renderer/components/ink/CanvasInk'
 import { useAppearanceColors } from '@renderer/hooks/useAppearanceColors'
 import { useMessages } from '@renderer/i18n/useMessages'
@@ -21,22 +24,22 @@ import { CanvasMinimap } from '@renderer/components/CanvasMinimap'
 import { RelationEdge } from '@renderer/components/annotations/RelationEdge'
 import { usePresentation } from '@renderer/state/presentation'
 import { useEditor } from '@renderer/state/editor'
-import { selectTopic, setSelectedTopics } from '@renderer/state/selection'
-import { TopicNode, type TopicFlowNode } from '@renderer/components/TopicNode'
+import { selectTopic, selectDrawing, setCanvasSelection } from '@renderer/state/selection'
+import { TopicNode } from '@renderer/components/TopicNode'
 import { CanvasAnnotations } from '@renderer/components/annotations/CanvasAnnotations'
 import { SelectionVisibility } from '@renderer/components/SelectionVisibility'
 import { FloatingToolbar } from '@renderer/components/FloatingToolbar'
 import { documentAppearance } from '@shared/appearance'
 import { createCanvasProjector } from '@renderer/lib/canvasProjection'
 import { StructureEdge, StructureGeometry } from '@renderer/components/documents/StructureGeometry'
-const nodeTypes = { topic: TopicNode }
+const nodeTypes = { topic: TopicNode, ink: InkNode }
 const edgeTypes = { relation: RelationEdge, structure: StructureEdge }
 export { ZoomControls } from '@renderer/components/ZoomControls'
 export const Canvas = () => {
   const { translate } = useMessages()
 
   const colors = useAppearanceColors()
-  const flow = useReactFlow<TopicFlowNode>()
+  const flow = useReactFlow<CanvasFlowNode>()
   useCanvasViewport()
   const reduceMotion = useReducedMotion()
   const document = useEditor((state) => state.history.document)
@@ -67,7 +70,7 @@ export const Canvas = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: reduceMotion ? 0 : 0.12 }}
     >
-      <ReactFlow<TopicFlowNode>
+      <ReactFlow<CanvasFlowNode>
         key={document.id}
         className={
           reconnecting
@@ -80,6 +83,12 @@ export const Canvas = () => {
         edgeTypes={edgeTypes}
         onNodeClick={(event, node) => {
           if (playing) return
+          if (node.type === 'ink') {
+            useAnnotationInteraction.setState({ selected: null, editing: false, fromId: null })
+            selectDrawing(node.data.stroke.id, event.metaKey || event.ctrlKey || event.shiftKey)
+            window.document.getElementById('sheet-panel')?.focus({ preventScroll: true })
+            return
+          }
           if (interactAnnotationTopic(node.id)) return
           useAnnotationInteraction.setState({ selected: null, editing: false })
           selectTopic(node.id, event.metaKey || event.ctrlKey || event.shiftKey)
@@ -89,12 +98,8 @@ export const Canvas = () => {
         }}
         onSelectionEnd={() => {
           if (playing) return
-          setSelectedTopics(
-            flow
-              .getNodes()
-              .filter((node) => node.selected)
-              .map((node) => node.id),
-          )
+          const selection = canvasSelection(flow.getNodes().filter((node) => node.selected))
+          setCanvasSelection(selection.topics, selection.drawings)
         }}
         onPaneClick={(event) => {
           if (playing) return

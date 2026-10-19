@@ -9,6 +9,7 @@ import { useTopicFilters } from '@renderer/components/documents/filterTopics'
 export interface DocumentSession {
   readonly editor: EditorState
   readonly selection: ReturnType<typeof useSelection.getState>['sheets']
+  readonly drawings: ReturnType<typeof useSelection.getState>['drawings']
   readonly security: ReturnType<typeof useFileSecurityState.getState>
   readonly filters: ReturnType<typeof useTopicFilters.getState>
 }
@@ -17,6 +18,7 @@ export interface DocumentSession {
 export const captureDocumentSession = (): DocumentSession => ({
   editor: useEditor.getState(),
   selection: useSelection.getState().sheets,
+  drawings: useSelection.getState().drawings,
   security:
     useFileSecurityState.getState().documentId === useEditor.getState().workbook.id
       ? useFileSecurityState.getState()
@@ -29,7 +31,7 @@ export const captureDocumentSession = (): DocumentSession => ({
 })
 
 export const restoreDocumentSession = (session: DocumentSession): void => {
-  useSelection.setState({ sheets: session.selection })
+  useSelection.setState({ sheets: session.selection, drawings: session.drawings })
   useFileSecurityState.setState(session.security)
   useTopicFilters.setState(session.filters)
   useAnnotationInteraction.setState({

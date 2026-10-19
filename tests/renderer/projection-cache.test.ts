@@ -35,10 +35,14 @@ describe('canvas projection identity', () => {
       title: '另一个导图',
     })
     expect(
-      project(changed).nodes.find((node) => node.id === document.rootId)?.data.topic.title,
+      project(changed)
+        .nodes.filter((node) => node.type !== 'ink')
+        .find((node) => node.id === document.rootId)?.data.topic.title,
     ).toBe('另一个导图')
     expect(
-      project(document).nodes.find((node) => node.id === document.rootId)?.data.topic.title,
+      project(document)
+        .nodes.filter((node) => node.type !== 'ink')
+        .find((node) => node.id === document.rootId)?.data.topic.title,
     ).toBe(document.title)
   })
 

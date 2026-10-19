@@ -1,11 +1,12 @@
 import { translate } from '@renderer/i18n'
 import { getParentId } from '@core'
 import { useEditor } from '@renderer/state/editor'
+import { selectedTopicIds } from '@renderer/state/selection'
 
 const structuralSelection = () => {
   useEditor.getState().commitDraft()
   const state = useEditor.getState()
-  if (state.editingId) return undefined
+  if (state.editingId || !selectedTopicIds(state).includes(state.selectedId)) return undefined
   const document = state.history.document
   const topic = document.topics[state.selectedId]
   const parentId = getParentId(document, state.selectedId)

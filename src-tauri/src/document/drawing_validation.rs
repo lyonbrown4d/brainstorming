@@ -11,7 +11,7 @@ pub(super) fn validate(value: &Value) -> Result<()> {
     let mut ids = HashSet::new();
     let mut total = 0;
     for stroke in list(value, 2000)? {
-        keys(stroke, &["id", "color", "width", "points"])?;
+        keys(stroke, &["id", "color", "width", "points", "transform"])?;
         let stroke_id = id(&stroke["id"])?;
         bounded_text(&stroke["id"], 128, false)?;
         if !ids.insert(stroke_id) {
@@ -25,6 +25,14 @@ pub(super) fn validate(value: &Value) -> Result<()> {
             return Err(invalid("画笔颜色须为六位十六进制值"));
         }
         number(&stroke["width"], 1., 24.)?;
+        let transform = stroke.get("transform");
+        if let Some(transform) = transform {
+            keys(transform, &["x", "y", "scaleX", "scaleY"])?;
+            number(&transform["x"], -1e10, 1e10)?;
+            number(&transform["y"], -1e10, 1e10)?;
+            number(&transform["scaleX"], 0.001, 1000.)?;
+            number(&transform["scaleY"], 0.001, 1000.)?;
+        }
         let points = list(&stroke["points"], 8192)?;
         total += points.len();
         if points.is_empty() || total > 262_144 {
@@ -35,6 +43,16 @@ pub(super) fn validate(value: &Value) -> Result<()> {
             number(&point["x"], -1_000_000., 1_000_000.)?;
             number(&point["y"], -1_000_000., 1_000_000.)?;
             number(&point["pressure"], 0., 1.)?;
+            if let Some(transform) = transform {
+                for (axis, scale) in [("x", "scaleX"), ("y", "scaleY")] {
+                    let value = point[axis].as_f64().unwrap_or_default()
+                        * transform[scale].as_f64().unwrap_or_default()
+                        + transform[axis].as_f64().unwrap_or_default();
+                    if !value.is_finite() || value.abs() > 1_000_000. {
+                        return Err(invalid("变换后的笔迹坐标超出范围"));
+                    }
+                }
+            }
         }
     }
     Ok(())

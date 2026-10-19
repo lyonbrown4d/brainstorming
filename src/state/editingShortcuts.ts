@@ -1,7 +1,7 @@
 import { translate } from '@renderer/i18n'
 import { getVisibleTopicIds } from '@core'
 import { useEditor } from '@renderer/state/editor'
-import { setSelectedTopics } from '@renderer/state/selection'
+import { setCanvasSelection, selectedTopicIds } from '@renderer/state/selection'
 import {
   copySelectedTopics,
   duplicateSelectedTopics,
@@ -33,6 +33,12 @@ export const handleTopicNavigation = (event: KeyboardEvent, topicId?: string): b
   if (
     !['Tab', 'Enter', 'Delete', 'Backspace', 'F2', ' '].includes(event.key) &&
     !event.key.startsWith('Arrow')
+  )
+    return false
+  if (
+    !topicId &&
+    !selectedTopicIds(useEditor.getState()).length &&
+    !['Delete', 'Backspace'].includes(event.key)
   )
     return false
   if (topicId && useEditor.getState().selectedId !== topicId) useEditor.getState().select(topicId)
@@ -87,7 +93,10 @@ export const handleTopicShortcut = (event: KeyboardEvent): boolean => {
   if (key === 'enter') insertParentTopic()
   else if (key === 'delete' || key === 'backspace') removeTopicOnly()
   else if (key === '/') {
-    if (state.history.document.topics[state.selectedId]?.children.length)
+    if (
+      selectedTopicIds(state).includes(state.selectedId) &&
+      state.history.document.topics[state.selectedId]?.children.length
+    )
       state.command({ type: 'toggleCollapse', topicId: state.selectedId })
   } else if (key === 'r') {
     state.select(state.history.document.rootId)
@@ -95,7 +104,11 @@ export const handleTopicShortcut = (event: KeyboardEvent): boolean => {
   } else if (key === '=' || key === '+') requestViewport('zoomIn')
   else if (key === '-') requestViewport('zoomOut')
   else if (key === '0') requestViewport('actualSize')
-  else if (key === 'a') setSelectedTopics(getVisibleTopicIds(useEditor.getState().history.document))
+  else if (key === 'a')
+    setCanvasSelection(
+      getVisibleTopicIds(state.history.document),
+      state.history.document.drawings?.map((stroke) => stroke.id) ?? [],
+    )
   else if (key === 'f') useSearch.setState({ open: true })
   else if (key === 'c' || key === 'x') void copySelectedTopics(key === 'x')
   else if (key === 'v') void pasteSelectedTopics()

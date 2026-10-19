@@ -1,12 +1,23 @@
 import { useEffect, useRef } from 'react'
 import { useNodesState, type OnNodeDrag, type ReactFlowProps } from '@xyflow/react'
-import { normalizeTopicSelection, type MindMapDocument } from '@core'
-import { getSubtreeIds } from '@core/tree'
-import type { TopicFlowNode } from '@renderer/components/TopicNode'
-import { canvasDropCommand, findCanvasDrop, nodeCenter } from '@renderer/lib/canvasDrop'
+import { type MindMapDocument } from '@core'
+import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
+import {
+  canvasTopicRoots,
+  canvasDescendants,
+  canvasMoveCommand,
+  canvasSelection,
+} from '@renderer/lib/canvasGesture'
+import { findCanvasDrop, nodeCenter } from '@renderer/lib/canvasDrop'
 import { projectCanvas } from '@renderer/components/documents/projectCanvas'
 import { useEditor } from '@renderer/state/editor'
-import { selectedTopicIds, setSelectedTopics, useSelectedIds } from '@renderer/state/selection'
+import {
+  selectedTopicIds,
+  selectedDrawingIds,
+  setCanvasSelection,
+  useSelectedDrawingIds,
+  useSelectedIds,
+} from '@renderer/state/selection'
 import { usePresentation } from '@renderer/state/presentation'
 import {
   beginCanvasDrag,
@@ -19,6 +30,8 @@ interface DragSession {
   readonly sheetId: string
   readonly document: MindMapDocument
   readonly roots: string[]
+  readonly drawings: string[]
+  readonly canDrop: boolean
   readonly excluded: Set<string>
   readonly origins: Map<string, { x: number; y: number }>
   readonly anchorId: string
@@ -26,9 +39,9 @@ interface DragSession {
 
 /** Preserve dimensions measured by React Flow while only selection/position changes. */
 const preserveMeasurement = (
-  node: TopicFlowNode,
-  previous: TopicFlowNode | undefined,
-): TopicFlowNode => {
+  node: CanvasFlowNode,
+  previous: CanvasFlowNode | undefined,
+): CanvasFlowNode => {
   return previous?.measured &&
     node.style?.width === previous.style?.width &&
     node.style?.height === previous.style?.height
@@ -37,11 +50,12 @@ const preserveMeasurement = (
 }
 
 /** React Flow owns pointer/box selection; document commands are submitted only at gesture end. */
-export const useCanvasDrag = (projectedNodes: TopicFlowNode[]) => {
+export const useCanvasDrag = (projectedNodes: CanvasFlowNode[]) => {
   const selectedIds = useSelectedIds()
+  const drawingIds = useSelectedDrawingIds()
   const playing = usePresentation((state) => state.playing)
   const primaryId = useEditor((state) => state.selectedId)
-  const [nodes, setNodes, onNodesChange] = useNodesState<TopicFlowNode>(projectedNodes)
+  const [nodes, setNodes, onNodesChange] = useNodesState<CanvasFlowNode>(projectedNodes)
   const session = useRef<DragSession | null>(null)
   const cancelled = useRef(false)
   useEffect(() => {
@@ -54,11 +68,12 @@ export const useCanvasDrag = (projectedNodes: TopicFlowNode[]) => {
       useEditor.setState({ dropTargetId: null })
       const editor = useEditor.getState()
       const selected = new Set(selectedTopicIds(editor))
+      const drawings = new Set(selectedDrawingIds(editor))
       setNodes((previous) => {
         const measured = new Map(previous.map((node) => [node.id, node]))
         return projectCanvas(editor.history.document).nodes.map((node) => ({
           ...preserveMeasurement(node, measured.get(node.id)),
-          selected: selected.has(node.id),
+          selected: node.type === 'ink' ? drawings.has(node.data.stroke.id) : selected.has(node.id),
         }))
       })
     }
@@ -94,7 +109,8 @@ export const useCanvasDrag = (projectedNodes: TopicFlowNode[]) => {
     }
   }, [setNodes])
   useEffect(() => {
-    const ids = new Set(selectedIds.length ? selectedIds : [primaryId])
+    const ids = new Set(selectedTopicIds(useEditor.getState()))
+    const drawings = new Set(drawingIds)
     setNodes((previous) => {
       const dragging = new Map(previous.map((node) => [node.id, node]))
       let changed = previous.length !== projectedNodes.length
@@ -104,7 +120,7 @@ export const useCanvasDrag = (projectedNodes: TopicFlowNode[]) => {
         const position = session.current?.excluded.has(node.id)
           ? (old?.position ?? node.position)
           : node.position
-        const selected = ids.has(node.id)
+        const selected = node.type === 'ink' ? drawings.has(node.data.stroke.id) : ids.has(node.id)
         const draggable = node.draggable !== false && !playing
         if (
           old?.data === node.data &&
@@ -120,9 +136,9 @@ export const useCanvasDrag = (projectedNodes: TopicFlowNode[]) => {
       })
       return changed ? next : previous
     })
-  }, [projectedNodes, selectedIds, primaryId, playing, setNodes])
+  }, [projectedNodes, selectedIds, drawingIds, primaryId, playing, setNodes])
 
-  const onDragStart: OnNodeDrag<TopicFlowNode> = (_event, dragged, draggedNodes) => {
+  const onDragStart: OnNodeDrag<CanvasFlowNode> = (_event, dragged, draggedNodes) => {
     cancelled.current = false
     if (usePresentation.getState().playing) return
     const editor = useEditor.getState()
@@ -130,30 +146,37 @@ export const useCanvasDrag = (projectedNodes: TopicFlowNode[]) => {
     const current = useEditor.getState()
     if (current.editingId || current.busy) return
     const document = current.history.document
-    const selected = selectedTopicIds(current)
-    const ids = selected.includes(dragged.id)
+    const topics = selectedTopicIds(current)
+    const drawings = selectedDrawingIds(current)
+    const selected = projectedNodes.filter((node) =>
+      node.type === 'ink' ? drawings.includes(node.data.stroke.id) : topics.includes(node.id),
+    )
+    const moving = selected.some((node) => node.id === dragged.id)
       ? selected
       : draggedNodes.length > 1
-        ? draggedNodes.map((node) => node.id)
-        : [dragged.id]
-    const roots = normalizeTopicSelection(
-      document,
-      ids.filter((id) => id !== document.rootId),
-    )
-    if (!roots.length) return
-    const excluded = new Set(roots.flatMap((id) => getSubtreeIds(document, id)))
+        ? draggedNodes
+        : [dragged]
+    const ids = canvasSelection(moving)
+    const roots = canvasTopicRoots(document, ids.topics)
+    if (!roots.length && !ids.drawings.length) return
+    const excluded = new Set([
+      ...canvasDescendants(document, roots),
+      ...moving.filter((node) => node.type === 'ink').map((node) => node.id),
+    ])
     session.current = {
-      token: beginCanvasDrag(document, current.activeSheetId, roots),
+      token: beginCanvasDrag(document, current.activeSheetId, roots, ids.drawings.length),
       sheetId: current.activeSheetId,
       document,
       roots,
+      drawings: ids.drawings,
+      canDrop: !ids.drawings.length && !roots.includes(document.rootId),
       excluded,
       origins: new Map(projectedNodes.map((node) => [node.id, { ...node.position }])),
       anchorId: dragged.id,
     }
-    setSelectedTopics(ids)
+    setCanvasSelection(ids.topics, ids.drawings)
   }
-  const onDrag: OnNodeDrag<TopicFlowNode> = (_event, dragged) => {
+  const onDrag: OnNodeDrag<CanvasFlowNode> = (_event, dragged) => {
     const active = session.current
     const origin = active?.origins.get(dragged.id)
     if (!active || !origin) return
@@ -168,17 +191,19 @@ export const useCanvasDrag = (projectedNodes: TopicFlowNode[]) => {
           : node
       }),
     )
-    const drop = findCanvasDrop(
-      active.document,
-      projectedNodes,
-      active.excluded,
-      nodeCenter(dragged),
-    )
+    const drop = active.canDrop
+      ? findCanvasDrop(
+          active.document,
+          projectedNodes.filter((node) => node.type !== 'ink'),
+          active.excluded,
+          nodeCenter(dragged),
+        )
+      : undefined
     updateCanvasDrag(active.token, drop)
     const dropTargetId = drop?.targetId ?? null
     if (dropTargetId !== useEditor.getState().dropTargetId) useEditor.setState({ dropTargetId })
   }
-  const onDragStop: OnNodeDrag<TopicFlowNode> = (_event, dragged, draggedNodes) => {
+  const onDragStop: OnNodeDrag<CanvasFlowNode> = (_event, dragged, draggedNodes) => {
     cancelled.current = false
     const active = session.current
     session.current = null
@@ -193,15 +218,18 @@ export const useCanvasDrag = (projectedNodes: TopicFlowNode[]) => {
       editor.history.document === active.document &&
       !usePresentation.getState().playing
     ) {
-      const drop = findCanvasDrop(
-        active.document,
-        projectedNodes,
-        active.excluded,
-        nodeCenter(anchor),
-      )
-      const command = canvasDropCommand(
+      const drop = active.canDrop
+        ? findCanvasDrop(
+            active.document,
+            projectedNodes.filter((node) => node.type !== 'ink'),
+            active.excluded,
+            nodeCenter(anchor),
+          )
+        : undefined
+      const command = canvasMoveCommand(
         active.document,
         active.roots,
+        active.drawings,
         active.origins,
         {
           x: anchor.position.x - origin.x,
@@ -214,17 +242,18 @@ export const useCanvasDrag = (projectedNodes: TopicFlowNode[]) => {
     useEditor.setState({ dropTargetId: null })
     const current = useEditor.getState()
     const selected = new Set(selectedTopicIds(current))
+    const drawings = new Set(selectedDrawingIds(current))
     // Read the resulting document; a stale projection would briefly reset a completed drop.
     setNodes((previous) => {
       const measured = new Map(previous.map((node) => [node.id, node]))
       return projectCanvas(current.history.document).nodes.map((node) => ({
         ...preserveMeasurement(node, measured.get(node.id)),
-        selected: selected.has(node.id),
+        selected: node.type === 'ink' ? drawings.has(node.data.stroke.id) : selected.has(node.id),
       }))
     })
   }
   const selectionDrag: Pick<
-    ReactFlowProps<TopicFlowNode>,
+    ReactFlowProps<CanvasFlowNode>,
     'onSelectionDragStart' | 'onSelectionDrag' | 'onSelectionDragStop'
   > = {
     onSelectionDragStart: (event, group) => {

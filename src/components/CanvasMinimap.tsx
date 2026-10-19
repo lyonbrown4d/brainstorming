@@ -8,6 +8,16 @@ import { MiniMap, Panel, type Node } from '@xyflow/react'
 import { memo } from 'react'
 
 const nodeColor = (node: Node): string => {
+  if (node.type === 'ink') {
+    const stroke = node.data.stroke
+    if (
+      stroke &&
+      typeof stroke === 'object' &&
+      'color' in stroke &&
+      typeof stroke.color === 'string'
+    )
+      return stroke.color
+  }
   const document = useEditor.getState().history.document
   const appearance = topicAppearance(document, node.id)
   return node.id === document.rootId ? appearance.fill : appearance.stroke

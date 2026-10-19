@@ -31,6 +31,9 @@ export const TOPIC_SHAPES = [
 export type TopicShape = (typeof TOPIC_SHAPES)[number]
 
 export interface TopicStyle {
+  /** Manual subtree translation after automatic layout. */
+  readonly offsetX?: number
+  readonly offsetY?: number
   readonly fill?: string
   readonly color?: string
   readonly fontSize?: number

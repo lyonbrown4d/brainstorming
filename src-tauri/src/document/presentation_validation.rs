@@ -73,6 +73,8 @@ pub(crate) fn topic(topic: &Value) -> Result<()> {
         keys(
             style,
             &[
+                "offsetX",
+                "offsetY",
                 "fill",
                 "color",
                 "fontSize",
@@ -88,6 +90,9 @@ pub(crate) fn topic(topic: &Value) -> Result<()> {
         }
         for key in ["bold", "italic"] {
             optional(style, key, boolean)?;
+        }
+        for key in ["offsetX", "offsetY"] {
+            optional(style, key, |v| number(v, -1_000_000., 1_000_000.))?;
         }
         optional(style, "fontSize", |v| number(v, 12., 32.))?;
         optional(style, "lineWidth", |v| number(v, 1., 6.))?;

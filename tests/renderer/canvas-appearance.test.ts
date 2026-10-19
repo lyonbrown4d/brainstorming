@@ -31,7 +31,10 @@ describe('canvas appearance is a view projection', () => {
     expect(serializeDocument(original)).toBe(before)
     expect(topicAppearance(original, 'design')).toEqual(portable)
     const projection = projectCanvas(original, '#1c1e22')
-    expect(projection.nodes.find((node) => node.id === 'design')?.data.fill).toBe(dark.fill)
+    expect(
+      projection.nodes.filter((node) => node.type !== 'ink').find((node) => node.id === 'design')
+        ?.data.fill,
+    ).toBe(dark.fill)
     expect(projection.nodes.map((node) => node.position)).toEqual(
       projectCanvas(original).nodes.map((node) => node.position),
     )
