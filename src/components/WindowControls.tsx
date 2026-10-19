@@ -15,7 +15,11 @@ export const WindowControls = () => {
     { key: 'closeWindow', Icon: X, action: () => api.closeWindow?.() },
   ] as const
   return (
-    <div className="absolute top-0 right-0 flex h-11 items-stretch" data-no-drag>
+    <div
+      className="absolute top-0 right-0 flex h-11 items-stretch"
+      data-no-drag
+      data-tauri-drag-region="false"
+    >
       {controls.map(({ key, Icon, action }) => (
         <Button
           key={key}
