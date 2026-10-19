@@ -43,7 +43,7 @@ export const TopicNodeBody = ({
           />
         )}
         <div
-          className={`topic-title flex items-center justify-center px-[17px] py-2.5 text-center leading-normal [&>span]:break-words [&>span]:whitespace-pre-wrap ${hasContent ? 'h-auto w-full min-h-0 flex-1' : 'h-full'}`}
+          className={`topic-title flex min-w-0 w-full items-center justify-center px-[17px] py-2.5 text-center leading-normal [&>span]:break-words [&>span]:whitespace-pre-wrap ${hasContent ? 'h-auto min-h-0 flex-1' : 'h-full'}`}
           style={{
             fontSize: style?.fontSize ?? (root ? 24 : 16),
             fontWeight: (style?.bold ?? (root || branch)) ? 600 : 400,

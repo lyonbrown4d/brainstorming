@@ -105,12 +105,8 @@ test('freely moves an attached subtree, shows local reparent feedback, cancels a
     .poll(async () => (await bounds(node(page, 'branch'))).x)
     .toBeCloseTo(branch.x + 60, 0)
   const moved = await bounds(node(page, 'descendant'))
-  const anchor = await startDrag(page, moved)
-  await page.mouse.move(
-    anchor.x + 5 + root.x + root.width / 2 - moved.x - moved.width / 2,
-    anchor.y + root.y + root.height / 2 - moved.y - moved.height / 2,
-    { steps: 12 },
-  )
+  await startDrag(page, moved)
+  await page.mouse.move(root.x + root.width / 2, root.y + root.height / 2, { steps: 12 })
   await expect(page.getByTestId('drop-preview')).toHaveAttribute('data-parent-id', 'root')
   await expect(page.getByTestId('drop-preview')).toHaveAttribute('data-drop-mode', 'child')
   await expect(page.getByTestId('drag-feedback')).toContainText('成为「组合移动」的子主题')
@@ -132,12 +128,8 @@ test('insertion feedback identifies the resulting parent and keeps the hierarchy
   await open(page)
   const child = await bounds(node(page, 'descendant'))
   const target = await bounds(node(page, 'branch'))
-  const from = await startDrag(page, child)
-  await page.mouse.move(
-    from.x + 5 + target.x + target.width / 2 - child.x - child.width / 2,
-    from.y + target.y - 4 - child.y - child.height / 2,
-    { steps: 12 },
-  )
+  await startDrag(page, child)
+  await page.mouse.move(target.x + target.width / 2, target.y - 4, { steps: 12 })
   await expect(page.getByTestId('drop-preview')).toHaveAttribute('data-drop-mode', 'sibling')
   await expect(page.getByTestId('drop-preview')).toHaveAttribute('data-parent-id', 'root')
   await expect(page.getByTestId('drop-insertion')).toBeVisible()

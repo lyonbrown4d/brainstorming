@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useNodesState, type OnNodeDrag, type ReactFlowProps } from '@xyflow/react'
+import { useNodesState, useReactFlow, type OnNodeDrag, type ReactFlowProps } from '@xyflow/react'
 import { type MindMapDocument } from '@core'
 import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
 import {
@@ -8,7 +8,8 @@ import {
   canvasMoveCommand,
   canvasSelection,
 } from '@renderer/lib/canvasGesture'
-import { findCanvasDrop, nodeCenter } from '@renderer/lib/canvasDrop'
+import { findCanvasDrop } from '@renderer/lib/canvasDrop'
+import { canvasDragPointer } from '@renderer/lib/canvasDragPointer'
 import { projectCanvas } from '@renderer/components/documents/projectCanvas'
 import { useEditor } from '@renderer/state/editor'
 import {
@@ -51,6 +52,7 @@ const preserveMeasurement = (
 
 /** React Flow owns pointer/box selection; document commands are submitted only at gesture end. */
 export const useCanvasDrag = (projectedNodes: CanvasFlowNode[]) => {
+  const { screenToFlowPosition } = useReactFlow<CanvasFlowNode>()
   const selectedIds = useSelectedIds()
   const drawingIds = useSelectedDrawingIds()
   const playing = usePresentation((state) => state.playing)
@@ -176,7 +178,7 @@ export const useCanvasDrag = (projectedNodes: CanvasFlowNode[]) => {
     }
     setCanvasSelection(ids.topics, ids.drawings)
   }
-  const onDrag: OnNodeDrag<CanvasFlowNode> = (_event, dragged) => {
+  const onDrag: OnNodeDrag<CanvasFlowNode> = (event, dragged) => {
     const active = session.current
     const origin = active?.origins.get(dragged.id)
     if (!active || !origin) return
@@ -191,19 +193,21 @@ export const useCanvasDrag = (projectedNodes: CanvasFlowNode[]) => {
           : node
       }),
     )
-    const drop = active.canDrop
-      ? findCanvasDrop(
-          active.document,
-          projectedNodes.filter((node) => node.type !== 'ink'),
-          active.excluded,
-          nodeCenter(dragged),
-        )
-      : undefined
+    const pointer = canvasDragPointer(event)
+    const drop =
+      active.canDrop && pointer
+        ? findCanvasDrop(
+            active.document,
+            projectedNodes.filter((node) => node.type !== 'ink'),
+            active.excluded,
+            screenToFlowPosition(pointer),
+          )
+        : undefined
     updateCanvasDrag(active.token, drop)
     const dropTargetId = drop?.targetId ?? null
     if (dropTargetId !== useEditor.getState().dropTargetId) useEditor.setState({ dropTargetId })
   }
-  const onDragStop: OnNodeDrag<CanvasFlowNode> = (_event, dragged, draggedNodes) => {
+  const onDragStop: OnNodeDrag<CanvasFlowNode> = (event, dragged, draggedNodes) => {
     cancelled.current = false
     const active = session.current
     session.current = null
@@ -218,14 +222,16 @@ export const useCanvasDrag = (projectedNodes: CanvasFlowNode[]) => {
       editor.history.document === active.document &&
       !usePresentation.getState().playing
     ) {
-      const drop = active.canDrop
-        ? findCanvasDrop(
-            active.document,
-            projectedNodes.filter((node) => node.type !== 'ink'),
-            active.excluded,
-            nodeCenter(anchor),
-          )
-        : undefined
+      const pointer = canvasDragPointer(event)
+      const drop =
+        active.canDrop && pointer
+          ? findCanvasDrop(
+              active.document,
+              projectedNodes.filter((node) => node.type !== 'ink'),
+              active.excluded,
+              screenToFlowPosition(pointer),
+            )
+          : undefined
       const command = canvasMoveCommand(
         active.document,
         active.roots,

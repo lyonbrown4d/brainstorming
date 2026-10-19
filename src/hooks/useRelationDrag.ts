@@ -4,19 +4,23 @@ import type { MindMapDocument, Relation } from '@core'
 import type { RelationPoint } from '@core/extensions'
 import { useEditor } from '@renderer/state/editor'
 import { usePresentation } from '@renderer/state/presentation'
-import { useAnnotationInteraction } from '@renderer/state/annotationInteraction'
+import { selectAnnotation, useAnnotationInteraction } from '@renderer/state/annotationInteraction'
 import { runAnnotationCommand } from '@renderer/components/annotations/commands'
-import type { relationGeometry } from '@shared/relation-geometry'
+import { translateRelationPath, type RelationDragGeometry } from '@renderer/lib/relationPathDrag'
 
-type Geometry = ReturnType<typeof relationGeometry>
-type DragPart = { kind: 'label' } | { kind: 'control' | 'waypoint'; index: number }
+type DragPart =
+  { kind: 'label' } | { kind: 'path' } | { kind: 'control' | 'waypoint'; index: number }
 interface Preview {
   document: MindMapDocument
   relation: Relation
 }
 /** Only pointer-up commits; the document identity protects concurrent edits and Sheet switches. */
-export const useRelationDrag = (relation: Relation | undefined, geometry: Geometry | undefined) => {
+export const useRelationDrag = (
+  relation: Relation | undefined,
+  geometry: RelationDragGeometry | undefined,
+) => {
   const flow = useReactFlow()
+  const playing = usePresentation((state) => state.playing)
   const sheetId = useEditor((state) => state.activeSheetId)
   const document = useEditor((state) => state.history.document)
   const [preview, setPreview] = useState<Preview | null>(null)
@@ -25,12 +29,13 @@ export const useRelationDrag = (relation: Relation | undefined, geometry: Geomet
     () => () => {
       cancel.current?.()
     },
-    [sheetId],
+    [sheetId, document, playing],
   )
-  const begin = (event: PointerEvent<HTMLElement>, part: DragPart): void => {
+  const begin = (event: PointerEvent, part: DragPart): void => {
     if (!relation || !geometry || event.button !== 0 || usePresentation.getState().playing) return
     const editor = useEditor.getState()
     if (editor.busy || editor.editingId || useAnnotationInteraction.getState().editing) return
+    if (part.kind === 'path') selectAnnotation('relation', relation.id)
     event.stopPropagation()
     event.preventDefault()
     cancel.current?.()
@@ -88,10 +93,12 @@ export const useRelationDrag = (relation: Relation | undefined, geometry: Geomet
         latest = {
           ...original,
           labelOffset: {
-            x: (original.labelOffset?.x ?? 0) + delta.x,
-            y: (original.labelOffset?.y ?? 0) + delta.y,
+            x: geometry.labelOffset.x + delta.x,
+            y: geometry.labelOffset.y + delta.y,
           },
         }
+      } else if (part.kind === 'path') {
+        latest = translateRelationPath(original, geometry, delta)
       } else {
         const points = part.kind === 'control' ? geometry.controls : geometry.waypoints
         const changed = points.map((entry, index): RelationPoint =>

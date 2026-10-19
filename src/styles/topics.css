@@ -26,38 +26,14 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.topic-editor-shell {
-  display: block;
-  width: 100%;
-  min-width: 0;
-}
 .topic-input p {
   margin: 0;
-}
-.topic:not(.is-editing) .topic-input {
-  caret-color: transparent;
-  pointer-events: none;
-  user-select: none;
 }
 .topic:not(.is-editing) .topic-input ::selection {
   background: transparent;
 }
 .react-flow__node-topic:has(.is-editing) {
   z-index: 10 !important;
-}
-.topic.is-editing .topic-title {
-  position: absolute;
-  inset: 0 auto auto 0;
-  width: max(100%, 240px);
-  height: auto;
-  min-height: 100%;
-  max-height: min(420px, 60vh);
-  overflow-y: auto;
-  border-radius: inherit;
-  background: var(--topic-fill);
-  box-shadow:
-    0 0 0 2px var(--ui-primary),
-    var(--ui-shadow-floating);
 }
 .topic.is-editing .fold-button,
 .topic.is-editing::after {

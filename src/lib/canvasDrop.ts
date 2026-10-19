@@ -108,6 +108,12 @@ export const findTopicDrop = (
       }
     }
   }
+  // The halo assists sibling insertion only; child attachment requires the actual topic body.
+  if (
+    Math.abs(point.x - center.x) > closest.width / 2 ||
+    Math.abs(point.y - center.y) > closest.height / 2
+  )
+    return undefined
   return {
     targetId: closest.id,
     parentId: closest.id,

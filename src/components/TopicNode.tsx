@@ -118,6 +118,13 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
         stroke={root ? (data.visualStyle === 'sketch' ? (data.textColor ?? color) : fill) : color}
         className="pointer-events-none absolute inset-0 h-full w-full"
       />
+      <span
+        aria-hidden
+        className={cn(
+          'pointer-events-none absolute inset-0 rounded-[inherit] bg-current/5 outline-1 -outline-offset-1 outline-current/55 transition-opacity duration-150 ease-out motion-reduce:transition-none',
+          editingHere ? 'opacity-100' : 'opacity-0',
+        )}
+      />
       {[Position.Top, Position.Right, Position.Bottom, Position.Left].map((position) => (
         <Handle
           key={`target-${position}`}

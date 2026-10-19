@@ -55,16 +55,21 @@ export const TopicEditorPlugin = ({
   }, [active, editor, surface])
   useEffect(() => {
     if (active || editor.isComposing()) return
-    if (editor.read('latest', () => $getRoot().getTextContent()) !== title)
+    if (editor.read('latest', () => $getRoot().getTextContent()) !== title) {
+      const focused = editor.getRootElement()?.contains(window.document.activeElement)
       editor.update(
-        () =>
+        () => {
           $getRoot()
             .clear()
-            .append($createParagraphNode().append($createTextNode(title))),
-        { tag: ['topic-sync', SKIP_DOM_SELECTION_TAG] },
+            .append($createParagraphNode().append($createTextNode(title)))
+          // Restoring a cancelled canvas draft must also restore its replacement range.
+          if (focused && surface === 'canvas') $selectAll()
+        },
+        { tag: focused ? ['topic-sync'] : ['topic-sync', SKIP_DOM_SELECTION_TAG] },
       )
+    }
     editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined)
-  }, [active, editor, title])
+  }, [active, editor, title, surface])
 
   useEffect(() => {
     const ownsDraft = (): boolean => {

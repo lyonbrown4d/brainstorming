@@ -12,6 +12,7 @@ import {
 } from '@core'
 import { getSubtreeIds } from '@core/tree'
 import { canvasDropCommand, findCanvasDrop, nodeCenter } from '@renderer/lib/canvasDrop'
+import { canvasDragPointer } from '@renderer/lib/canvasDragPointer'
 import { projectCanvas } from '@renderer/components/documents/projectCanvas'
 
 const fixture = () => {
@@ -168,16 +169,32 @@ describe('canvas group drop commands', () => {
     expect(undo(moved).document).toBe(document)
   })
 
-  it('does not attach when the dragged center is beside the target rather than over it', () => {
+  it.each([1, 8, 20])('does not attach a pointer %spx outside the topic body', (gap) => {
     const { document, nodes } = fixture()
     const target = nodes.find((node) => node.id === 'vision')
     if (!target) throw new Error('Missing target')
     const center = nodeCenter(target)
     expect(
       findCanvasDrop(document, [target], new Set(), {
-        x: target.position.x + Number(target.style?.width) + 20,
+        x: target.position.x + Number(target.style?.width) + gap,
         y: center.y,
       }),
     ).toBeUndefined()
+  })
+})
+
+describe('drag pointer coordinates', () => {
+  it('keeps the mouse grab point and touch release coordinates instead of a node center', () => {
+    expect(canvasDragPointer({ clientX: 73, clientY: 104 })).toEqual({ x: 73, y: 104 })
+    expect(
+      canvasDragPointer({
+        touches: [{ clientX: 91, clientY: 133 }],
+        changedTouches: [{ clientX: 12, clientY: 16 }],
+      }),
+    ).toEqual({ x: 91, y: 133 })
+    expect(
+      canvasDragPointer({ touches: [], changedTouches: [{ clientX: 98, clientY: 141 }] }),
+    ).toEqual({ x: 98, y: 141 })
+    expect(canvasDragPointer({ touches: [], changedTouches: [] })).toBeUndefined()
   })
 })

@@ -113,12 +113,15 @@ export const relationGeometry = (
   const padding = (relation.width ?? 2) * 6 + 4
   const left = Math.min(...points.map((p) => p.x)) - padding
   const top = Math.min(...points.map((p) => p.y)) - padding
+  // Keep a default label clear of the route and its midpoint controls.
+  const labelOffset = relation.labelOffset ?? { x: 0, y: -28 }
   return {
     path,
     midpoint,
     controls,
     waypoints,
-    label: add(center, relation.labelOffset ?? { x: 0, y: 0 }),
+    labelOffset,
+    label: add(center, labelOffset),
     bounds: {
       x: left,
       y: top,

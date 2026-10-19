@@ -82,16 +82,13 @@ export const projectCanvas = (document: MindMapDocument, surface?: string) => {
         (edge.routing || edge.waypoints || document.settings?.visualStyle === 'sketch')
           ? {
               data: {
-                ...(document.settings?.visualStyle === 'sketch'
-                  ? {
-                      liveSketch: {
-                        edge,
-                        source,
-                        target,
-                        straight: document.topics[edge.target]?.style?.lineStyle === 'straight',
-                      },
-                    }
-                  : {}),
+                liveGeometry: {
+                  edge,
+                  source,
+                  target,
+                  straight: document.topics[edge.target]?.style?.lineStyle === 'straight',
+                },
+                visualStyle: document.settings?.visualStyle ?? 'normal',
                 path: visualPath(
                   layoutEdgePath(
                     edge,

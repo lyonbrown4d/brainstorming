@@ -1,24 +1,31 @@
-import { liveSketchEdgePath, type SketchEdgeGeometry } from '@shared/sketch-edges'
+import { liveLayoutEdgePath, type LiveEdgeGeometry } from '@shared/live-layout-geometry'
 import { visualPath } from '@shared/sketch'
 import { BaseEdge, ViewportPortal, type Edge, type EdgeProps } from '@xyflow/react'
-import type { MindMapDocument } from '@core'
+import type { MindMapDocument, SheetVisualStyle } from '@core'
 import type { LayoutDecoration } from '@layout'
 import { topicAppearance } from '@shared/appearance'
 import { layoutDecorationPath } from '@shared/layout-geometry'
 
-type StructureFlowEdge = Edge<{ path: string; liveSketch?: SketchEdgeGeometry }, 'structure'>
+type StructureFlowEdge = Edge<
+  { path: string; liveGeometry?: LiveEdgeGeometry; visualStyle?: SheetVisualStyle },
+  'structure'
+>
 
 export const StructureEdge = (props: EdgeProps<StructureFlowEdge>) => {
   const { id, data, style, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition } =
     props
   const direction = { left: 'left', right: 'right', top: 'up', bottom: 'down' } as const
-  const path = data?.liveSketch
-    ? liveSketchEdgePath(
-        data.liveSketch,
-        { x: sourceX, y: sourceY },
-        { x: targetX, y: targetY },
-        direction[sourcePosition],
-        direction[targetPosition],
+  const path = data?.liveGeometry
+    ? visualPath(
+        liveLayoutEdgePath(
+          data.liveGeometry,
+          { x: sourceX, y: sourceY },
+          { x: targetX, y: targetY },
+          direction[sourcePosition],
+          direction[targetPosition],
+        ),
+        data.visualStyle,
+        `edge:${id}`,
       )
     : (data?.path ?? '')
   return <BaseEdge id={id} path={path} style={style} interactionWidth={0} />

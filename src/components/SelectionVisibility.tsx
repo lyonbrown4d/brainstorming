@@ -40,6 +40,8 @@ export const SelectionVisibility = () => {
         })
         return
       }
+      // Pointer placement and history must not reframe an unchanged selection.
+      if (prior.selectedId === selectedId && prior.document.topics[selectedId]) return
       const node = flow.getNode(selectedId)
       if (!node || width === 0 || height === 0) return
       const viewport = flow.getViewport()

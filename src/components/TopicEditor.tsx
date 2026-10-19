@@ -81,10 +81,12 @@ export const TopicEditor = ({
   )
   return (
     <LexicalExtensionComposer extension={extension} contentEditable={null}>
-      <div className="topic-editor-shell">
+      <div
+        className={`topic-editor-shell block min-w-0 w-full ${surface === 'canvas' ? 'max-h-full overflow-y-auto' : ''}`}
+      >
         <ContentEditable
           id={`topic-${surface}-${id}`}
-          className={`${surface === 'canvas' ? 'topic-input' : surface === 'notes' ? 'topic-notes-input min-h-28 max-h-[280px] px-2.5 py-[9px] text-[13px] leading-relaxed' : 'topic-name-input min-h-[38px] max-h-[180px] px-2.5 py-2 text-sm leading-normal'} ${surface === 'canvas' ? '' : 'w-full overflow-y-auto rounded-[7px] border border-border bg-background text-foreground whitespace-pre-wrap [overflow-wrap:anywhere] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&_p]:m-0'} select-text nodrag nopan nowheel`}
+          className={`${surface === 'canvas' ? 'topic-input' : surface === 'notes' ? 'topic-notes-input min-h-28 max-h-[280px] px-2.5 py-[9px] text-[13px] leading-relaxed' : 'topic-name-input min-h-[38px] max-h-[180px] px-2.5 py-2 text-sm leading-normal'} ${surface === 'canvas' ? '' : 'w-full overflow-y-auto rounded-[7px] border border-border bg-background text-foreground whitespace-pre-wrap [overflow-wrap:anywhere] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&_p]:m-0'} ${surface !== 'canvas' || active ? 'cursor-text select-text nodrag nopan nowheel' : 'pointer-events-none select-none caret-transparent [&_*]:pointer-events-none [&_*]:select-none'}`}
           aria-label={
             surface === 'outline'
               ? translate('outlineTopicTitle')

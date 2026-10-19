@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react'
 import { BaseEdge, EdgeLabelRenderer, useReactFlow, type EdgeProps } from '@xyflow/react'
 import { useMessages } from '@renderer/i18n/useMessages'
 import { useEditor } from '@renderer/state/editor'
@@ -29,7 +30,7 @@ export const RelationEdge = (props: EdgeProps) => {
     end = { x: props.targetX, y: props.targetY }
   const geometryFor = (relation: NonNullable<typeof saved>) =>
     relationGeometry(relation, start, end, props.sourcePosition, props.targetPosition)
-  const drag = useRelationDrag(saved, saved ? geometryFor(saved) : undefined)
+  const drag = useRelationDrag(saved, saved ? { ...geometryFor(saved), start, end } : undefined)
   const relation = drag.relation
   if (!relation) return null
   const geometry = geometryFor(relation)
@@ -42,6 +43,21 @@ export const RelationEdge = (props: EdgeProps) => {
       : relation.routing === 'straight'
         ? []
         : geometry.controls
+  const select = (event: MouseEvent<SVGPathElement>) => {
+    event.stopPropagation()
+    selectAnnotation('relation', relation.id)
+  }
+  const edit = (event: MouseEvent<SVGPathElement>) => {
+    event.stopPropagation()
+    if (playing) return
+    if (relation.routing === 'orthogonal' && geometry.waypoints.length < 32) {
+      const next = [
+        ...geometry.waypoints.map(geometry.relative),
+        geometry.relative(flow.screenToFlowPosition({ x: event.clientX, y: event.clientY })),
+      ]
+      runAnnotationCommand({ type: 'upsertRelation', relation: { ...relation, waypoints: next } })
+    } else selectAnnotation('relation', relation.id, true)
+  }
   return (
     <>
       <BaseEdge
@@ -58,25 +74,22 @@ export const RelationEdge = (props: EdgeProps) => {
         }}
         {...(props.markerStart ? { markerStart: props.markerStart } : {})}
         {...(props.markerEnd ? { markerEnd: props.markerEnd } : {})}
-        interactionWidth={20}
-        onClick={(event) => {
-          event.stopPropagation()
-          selectAnnotation('relation', relation.id)
+        interactionWidth={0}
+      />
+      <path
+        className={`react-flow__edge-interaction nodrag nopan ${playing ? '' : 'cursor-move'}`}
+        d={geometry.path}
+        fill="none"
+        stroke="transparent"
+        strokeWidth={20}
+        pointerEvents="stroke"
+        vectorEffect="non-scaling-stroke"
+        data-testid={`relation-body-${relation.id}`}
+        onPointerDown={(event) => {
+          drag.begin(event, { kind: 'path' })
         }}
-        onDoubleClick={(event) => {
-          event.stopPropagation()
-          if (playing) return
-          if (relation.routing === 'orthogonal' && geometry.waypoints.length < 32) {
-            const next = [
-              ...geometry.waypoints.map(geometry.relative),
-              geometry.relative(flow.screenToFlowPosition({ x: event.clientX, y: event.clientY })),
-            ]
-            runAnnotationCommand({
-              type: 'upsertRelation',
-              relation: { ...relation, waypoints: next },
-            })
-          } else selectAnnotation('relation', relation.id, true)
-        }}
+        onClick={select}
+        onDoubleClick={edit}
       />
       <EdgeLabelRenderer>
         <div
