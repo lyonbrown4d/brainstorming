@@ -1,3 +1,4 @@
+import '@renderer/styles/loading.scss'
 import type { Preview } from '@storybook/react-vite'
 import { installPlatformAPI } from '@renderer/lib/desktop'
 import { createStoryDesktop } from '@stories/desktopBridge'

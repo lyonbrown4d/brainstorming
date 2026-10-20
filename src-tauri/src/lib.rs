@@ -1,6 +1,11 @@
 pub mod builtin_art;
+pub mod compute;
 pub mod document;
+pub mod editor_engine;
 pub mod export_image;
+pub mod interchange;
+pub mod layout_engine;
+pub mod scene;
 pub mod search;
 pub mod storage;
 pub mod templates;
@@ -8,6 +13,8 @@ pub mod transport;
 
 #[cfg(feature = "native-ui")]
 mod application;
+#[cfg(feature = "native-ui")]
+pub mod bindings;
 #[cfg(feature = "native-ui")]
 mod media;
 #[cfg(feature = "native-ui")]

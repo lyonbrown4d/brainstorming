@@ -9,28 +9,35 @@ pub async fn revision(state: &AppState, args: &Value) -> Result<Value> {
   let id = input::text(args, "documentId", 4096)?;
   input::identifier(id)?;
   let workbook = input::workbook(input::text(args, "contents", input::MAX_DOCUMENT)?)?;
-  if input::workbook_id(&workbook)? != id {
+  Ok(json!(revision_workbook(state, id, &workbook).await?))
+}
+
+pub(super) async fn revision_workbook(
+  state: &AppState,
+  id: &str,
+  workbook: &Value,
+) -> Result<Option<String>> {
+  if input::workbook_id(workbook)? != id {
     return Err("预览工作簿不一致".into());
   }
   let session = state.session.lock().await;
   if session.closing {
-    return Ok(Value::Null);
+    return Ok(None);
   }
   let Some(path) = session
     .sources
     .get(id)
     .filter(|p| session.retained.contains(*p) && session.authorized.contains(*p))
   else {
-    return Ok(Value::Null);
+    return Ok(None);
   };
   if session.password_for(id).is_some() {
-    return Ok(Value::Null);
+    return Ok(None);
   }
   state
     .documents
-    .preview_revision(path, &workbook, None)
+    .preview_revision(path, workbook, None)
     .await
-    .map(|revision| json!(revision))
     .map_err(|e| e.to_string())
 }
 
@@ -83,6 +90,50 @@ pub async fn write(state: &AppState, args: &Value) -> Result<Value> {
     .write_previews(path, revision, cover, previews, None)
     .await
     .map(|written| json!(written))
+    .map_err(|e| e.to_string())
+}
+
+pub(super) async fn write_bytes(
+  state: &AppState,
+  id: &str,
+  revision: String,
+  cover: String,
+  previews: Vec<SheetPreview>,
+) -> Result<bool> {
+  let mut total = 0usize;
+  if previews.is_empty() || previews.len() > 128 {
+    return Err("预览画布数量无效".into());
+  }
+  for sheet in &previews {
+    if sheet.png.len() > MAX_PREVIEW_BYTES {
+      return Err("文档预览超过限制".into());
+    }
+    total = total
+      .checked_add(sheet.png.len())
+      .ok_or("文档预览超过限制")?;
+    if total > MAX_TOTAL_PREVIEW_BYTES {
+      return Err("文档预览超过限制".into());
+    }
+  }
+  // Keep the same authorization gate as the old writer through the revision check.
+  let session = state.session.lock().await;
+  if session.closing {
+    return Ok(false);
+  }
+  let Some(path) = session
+    .sources
+    .get(id)
+    .filter(|p| session.retained.contains(*p) && session.authorized.contains(*p))
+  else {
+    return Ok(false);
+  };
+  if session.password_for(id).is_some() {
+    return Ok(false);
+  }
+  state
+    .documents
+    .write_previews(path, revision, cover, previews, None)
+    .await
     .map_err(|e| e.to_string())
 }
 

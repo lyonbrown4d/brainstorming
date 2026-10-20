@@ -4,6 +4,7 @@ language: typescript
 fileGroups:
   source:
     - src/**/*
+    - '!src/generated/**'
     - src-tauri/src/**/*
     - src-tauri/tests/**/*
     - src-tauri/plugins/**/*
@@ -29,18 +30,26 @@ fileGroups:
     - '*.md'
     - pnpm-lock.yaml
 tasks:
+  bindings:
+    command: pnpm generate:bindings
+    inputs: ['src-tauri/src/**/*', 'src-tauri/Cargo.toml', 'src-tauri/Cargo.lock']
+    outputs: ['src/generated/native.ts']
   format:
     command: pnpm format:check
     inputs: ['@group(source)']
+    deps: [bindings]
   lint:
     command: pnpm lint
     inputs: ['@group(source)']
+    deps: [bindings]
   typecheck:
     command: pnpm typecheck
     inputs: ['@group(source)']
+    deps: [bindings]
   test:
     command: pnpm test
     inputs: ['@group(source)']
+    deps: [bindings]
   build:
     command: pnpm build
     inputs: ['@group(source)']
@@ -84,6 +93,7 @@ tasks:
   storybook-build:
     command: pnpm build-storybook
     inputs: ['@group(source)']
+    deps: [bindings]
     outputs: [storybook-static]
   canvas-test:
     command: pnpm test:canvas

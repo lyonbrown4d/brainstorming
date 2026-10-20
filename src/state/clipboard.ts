@@ -10,6 +10,8 @@ import {
 } from '@core'
 import { useEditor } from '@renderer/state/editor'
 import { selectedTopicIds, setSelectedTopics } from '@renderer/state/selection'
+import { hasNativeEditor } from '@renderer/state/nativeEditorQueue'
+import { useDocumentTabs } from '@renderer/state/documentTabs'
 
 export const TOPIC_CLIPBOARD_PREFIX = 'Brainstorming topics v1\n'
 const MAX_CLIPBOARD_BYTES = 56 * 1024 * 1024
@@ -119,16 +121,40 @@ const pastePayload = (
     assetIds,
     annotationIds,
   }
-  const document = applyCommand(before.history.document, command)
-  validateWorkbook({
-    ...before.workbook,
-    sheets: before.workbook.sheets.map((sheet) =>
-      sheet.id === before.activeSheetId ? { ...sheet, document } : sheet,
-    ),
-  })
+  if (!hasNativeEditor()) {
+    const document = applyCommand(before.history.document, command)
+    validateWorkbook({
+      ...before.workbook,
+      sheets: before.workbook.sheets.map((sheet) =>
+        sheet.id === before.activeSheetId ? { ...sheet, document } : sheet,
+      ),
+    })
+  }
   if (!unchanged(before)) return
-  if (useEditor.getState().command(command)) {
-    setSelectedTopics(clipboard.roots.flatMap((id) => (topicIds[id] ? [topicIds[id]] : [])))
+  const pastedIds = clipboard.roots.flatMap((id) => (topicIds[id] ? [topicIds[id]] : []))
+  if (
+    useEditor.getState().command(command, undefined, () => {
+      const current = useEditor.getState()
+      if (
+        current.workbook.id === before.workbook.id &&
+        current.activeSheetId === before.activeSheetId
+      )
+        setSelectedTopics(pastedIds)
+      else
+        useDocumentTabs.setState((state) => ({
+          tabs: state.tabs.map((tab) =>
+            tab.editor.workbook.id === before.workbook.id
+              ? {
+                  ...tab,
+                  selection: { ...tab.selection, [before.activeSheetId]: pastedIds },
+                  editor: { ...tab.editor, selectedId: pastedIds.at(-1) ?? tab.editor.selectedId },
+                }
+              : tab,
+          ),
+        }))
+    })
+  ) {
+    if (!hasNativeEditor()) setSelectedTopics(pastedIds)
     if (omittedLinks)
       useEditor
         .getState()

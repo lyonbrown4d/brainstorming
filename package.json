@@ -16,23 +16,23 @@
     "pnpm": ">=12 <13"
   },
   "scripts": {
-    "dev": "tauri dev",
-    "lint": "eslint .",
+    "dev": "pnpm generate:bindings && tauri dev",
+    "lint": "pnpm generate:bindings && eslint .",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "typecheck": "pnpm generate:bindings && tsc --noEmit",
+    "test": "pnpm generate:bindings && vitest run",
+    "test:watch": "pnpm generate:bindings && vitest",
     "test:e2e": "wdio run wdio.conf.ts",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build",
-    "test:storybook": "vitest run --config vitest.storybook.config.ts",
-    "build": "vite build",
+    "storybook": "pnpm generate:bindings && storybook dev -p 6006",
+    "build-storybook": "pnpm generate:bindings && storybook build",
+    "test:storybook": "pnpm generate:bindings && vitest run --config vitest.storybook.config.ts",
+    "build": "pnpm generate:bindings && vite build",
     "package": "tsx scripts/build-desktop.ts",
     "ci-gate": "moon run brainstorming:check",
     "moon": "moon",
     "prepare": "husky",
-    "frontend:dev": "vite",
+    "frontend:dev": "pnpm generate:bindings && vite",
     "build:desktop": "tsx scripts/build-desktop.ts",
     "tauri": "tauri",
     "dev:ios": "tauri ios dev",
@@ -44,7 +44,8 @@
     "native:vips": "tsx scripts/prepare-native-vips.ts",
     "build:e2e": "cross-env VITE_NATIVE_E2E=1 tauri build --debug --no-bundle --features e2e --config src-tauri/tauri.e2e.conf.json",
     "devtools": "cross-env HOST=127.0.0.1 react-devtools",
-    "test:canvas": "playwright test --config playwright.canvas.config.ts"
+    "test:canvas": "playwright test --config playwright.canvas.config.ts",
+    "generate:bindings": "cross-env TAURI_CONFIG={} cargo run --quiet --manifest-path src-tauri/Cargo.toml --bin generate-bindings"
   },
   "dependencies": {
     "@dnd-kit/core": "6.3.1",
@@ -84,6 +85,7 @@
     "katex": "0.19.0",
     "lexical": "0.52.0",
     "lodash-es": "4.18.1",
+    "lru-cache": "^11.5.3",
     "lucide-react": "1.59.0",
     "magic-bytes.js": "1.13.1",
     "mdast-util-from-markdown": "2.1.0",
@@ -148,6 +150,7 @@
     "react-devtools": "8.0.0",
     "react-devtools-core": "8.0.0",
     "react-scan": "0.5.7",
+    "sass-embedded": "^1.105.2",
     "storybook": "10.6.2",
     "tailwindcss": "4.3.3",
     "tsx": "4.23.15",
@@ -163,6 +166,6 @@
       "eslint --fix",
       "prettier --write"
     ],
-    "*.{json,md,css,yml,yaml}": "prettier --write"
+    "*.{json,md,css,scss,yml,yaml}": "prettier --write"
   }
 }

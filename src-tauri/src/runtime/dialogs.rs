@@ -17,7 +17,10 @@ pub async fn open(app: &AppHandle) -> Result<Option<PathBuf>> {
     app
       .dialog()
       .file()
-      .add_filter("Brainstorming / XMind", &["brainstorming", "xmind"])
+      .add_filter(
+        "Brainstorming / XMind / Outline",
+        &["brainstorming", "xmind", "opml", "md", "markdown", "txt"],
+      )
       .set_picker_mode(PickerMode::Document)
       .set_file_access_mode(FileAccessMode::Scoped)
       .pick_file(move |file| {

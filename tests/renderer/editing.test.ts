@@ -97,7 +97,7 @@ describe('主题多选', () => {
 })
 
 describe('查找与替换', () => {
-  it('定位隐藏结果时展开祖先，字段替换不影响标题且可撤销', () => {
+  it('定位隐藏结果时展开祖先，字段替换不影响标题且可撤销', async () => {
     useEditor.getState().command({ type: 'toggleCollapse', topicId: 'a' })
     useSearch.setState({ query: 'Alpha', replacement: '新' })
     const results = currentSearchResults()
@@ -108,13 +108,13 @@ describe('查找与替换', () => {
     expect(useEditor.getState().selectedId).toBe('c')
     expect(useEditor.getState().history.document.topics.a?.collapsed).toBe(false)
     const note = currentSearchResults().find((match) => match.field === 'notes')
-    if (note) replaceSearchResults(note)
+    if (note) await replaceSearchResults(note)
     expect(useEditor.getState().history.document.topics.a?.notes).toBe('新 notes')
     expect(useEditor.getState().history.document.topics.a?.title).toBe('Alpha alpha')
     useEditor.getState().undo()
     expect(useEditor.getState().history.document.topics.a?.notes).toBe('Alpha notes')
   })
-  it('所有画布搜索跨页定位，全部替换仅修改当前画布且一次撤销', () => {
+  it('所有画布搜索跨页定位，全部替换仅修改当前画布且一次撤销', async () => {
     const first = useEditor.getState().activeSheetId
     useEditor.getState().addSheet()
     const second = useEditor.getState().activeSheetId
@@ -128,7 +128,7 @@ describe('查找与替换', () => {
     const secondMatch = currentSearchResults().find((match) => match.sheetId === second)
     if (secondMatch) revealSearchMatch(secondMatch)
     const past = useEditor.getState().history.past.length
-    replaceSearchResults()
+    await replaceSearchResults()
     expect(useEditor.getState().history.past).toHaveLength(past + 1)
     expect(useEditor.getState().history.document.title).toBe('新 sheet')
     expect(

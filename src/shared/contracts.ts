@@ -1,3 +1,4 @@
+import type { ComputeAPI } from '@shared/compute'
 import type { BuiltinArtAPI } from '@shared/builtinArt'
 import type { TemplatesAPI } from '@shared/templates'
 import type { ImageExportAPI } from '@shared/exportImages'
@@ -62,6 +63,8 @@ export interface DesktopAPI
     ContentSearchAPI,
     NotificationAPI,
     DocumentPreviewAPI {
+  /** Native compute is absent only from explicitly injected component previews. */
+  readonly compute?: ComputeAPI
   minimizeWindow?(): Promise<void>
   toggleFullScreen?(): Promise<void>
   toggleMaximizeWindow?(): Promise<void>

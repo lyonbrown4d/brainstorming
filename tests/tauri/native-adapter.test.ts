@@ -2,8 +2,7 @@ import { fixtureCatalog, fixtureTemplate } from '@tests/fixtures/templates'
 import { describe, expect, it, vi } from 'vitest'
 import { createNativeAPI, type NativeInitialization } from '@renderer/lib/nativeAPI'
 import type { NativeDrop, NativeTransport } from '@renderer/lib/nativeTransport'
-import { createDocument, createWorkbook, deserializeWorkbook } from '@core'
-import { encodeXmind } from '@formats/interchange'
+import { createDocument, createWorkbook, deserializeWorkbook, serializeWorkbook } from '@core'
 
 const initial: NativeInitialization = {
   platform: 'macos',
@@ -19,7 +18,7 @@ const fixture = () => {
   const transport: NativeTransport = {
     request: <T>(method: string, args: Record<string, unknown> = {}): Promise<T> => {
       calls.push({ method, args })
-      return Promise.resolve(result as T)
+      return result instanceof Error ? Promise.reject(result) : Promise.resolve(result as T)
     },
     listen: (event, callback) => {
       events.set(event, callback)
@@ -145,28 +144,27 @@ describe('Tauri platform adapter', () => {
     native.emitDrop(null)
     expect(dropped.mock.calls).toEqual([[{ paths: ['/maps/map.brainstorming'], x: 20, y: 50 }]])
   })
-  it('converts XMind to an unsaved native document and keeps import warnings', async () => {
+  it('receives a native-converted XMind document and keeps import warnings', async () => {
     const native = fixture()
     const { api } = await createNativeAPI(native.transport, initial)
-    const bytes = encodeXmind(createWorkbook(createDocument('Imported root', 'source-map')))
+    const contents = serializeWorkbook(
+      createWorkbook(createDocument('Imported root', 'source-map')),
+    )
     native.setResult({
       path: null,
       sourcePath: '/maps/source.xmind',
-      contents: '',
-      importSource: { name: 'source.xmind', bytes: Array.from(bytes) },
+      contents,
+      warnings: ['未导入 XMind 主题配色（1 项）'],
     })
     const opened = await api.openDocument()
     expect(opened?.path).toBeNull()
     expect(opened?.sourcePath).toBe('/maps/source.xmind')
+    expect(opened?.warnings).toEqual(['未导入 XMind 主题配色（1 项）'])
     expect(deserializeWorkbook(opened?.contents ?? '').sheets[0]?.document.title).toBe(
       'Imported root',
     )
-    native.setResult({
-      path: null,
-      contents: '',
-      importSource: { name: 'broken.xmind', bytes: [0, 1] },
-    })
-    await expect(api.openDocument()).rejects.toThrow()
+    native.setResult(new Error('ZIP 文件损坏'))
+    await expect(api.openDocument()).rejects.toThrow('ZIP 文件损坏')
   })
   it('cleans up earlier listeners when a required native subscription fails', async () => {
     const native = fixture()

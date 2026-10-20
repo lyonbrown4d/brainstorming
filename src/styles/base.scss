@@ -42,18 +42,18 @@
     transition:
       background 140ms,
       color 140ms;
-  }
-  button:hover {
-    background: var(--ui-accent);
-    color: var(--ui-accent-foreground);
-  }
-  button:disabled {
-    opacity: 0.4;
-    cursor: default;
-  }
-  button:disabled:hover {
-    background: transparent;
-    color: inherit;
+    &:hover {
+      background: var(--ui-accent);
+      color: var(--ui-accent-foreground);
+    }
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+    &:disabled:hover {
+      background: transparent;
+      color: inherit;
+    }
   }
   button:focus-visible,
   select:focus-visible,

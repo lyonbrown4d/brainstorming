@@ -1,5 +1,5 @@
 import '@renderer/styles/ui.css'
-import '@renderer/styles/base.css'
+import '@renderer/styles/base.scss'
 import { useEffect, useState } from 'react'
 import { MemoryRouter, useLocation } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -235,7 +235,7 @@ export const NativeSearchFailure: Story = {
     const dialog = await page.findByRole('dialog', { name: '命令面板' })
     await userEvent.type(within(dialog).getByRole('combobox'), 'zoom')
     await expect(await within(dialog).findByText('导图内容暂时无法搜索，请稍后重试')).toBeVisible()
-    await expect(within(dialog).getByRole('option', { name: '放大' })).toBeVisible()
+    await expect(within(dialog).getByRole('option', { name: /^放大(?:\s|$)/ })).toBeVisible()
     await userEvent.keyboard('{Escape}')
   },
 }

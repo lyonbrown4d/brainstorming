@@ -10,8 +10,8 @@ import { useWorkspace } from '@renderer/state/workspace'
 import { Toolbar } from '@renderer/components/Toolbar'
 import { TooltipProvider } from '@renderer/components/ui/tooltip'
 import '@renderer/styles/ui.css'
-import '@renderer/styles/base.css'
-import '@renderer/styles/window.css'
+import '@renderer/styles/base.scss'
+import '@renderer/styles/window.scss'
 
 const installRecentBridge = (getRecentFiles: DesktopAPI['getRecentFiles']) => {
   queryClient.removeQueries({ queryKey: ['recent-files'] })

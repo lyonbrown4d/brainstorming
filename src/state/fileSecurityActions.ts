@@ -1,3 +1,4 @@
+import { flushNativeEditor, hasNativeEditor } from '@renderer/state/nativeEditorQueue'
 import { translate } from '@renderer/i18n'
 import { deserializeWorkbook } from '@core'
 import type { OpenedDocument } from '@shared/contracts'
@@ -39,6 +40,7 @@ export const changeFilePassword = async (password: string | null): Promise<void>
   const documentId = workbook.id
   useEditor.setState({ busy: true })
   try {
+    if (hasNativeEditor()) await flushNativeEditor(documentId)
     const security = await queueDocumentWrite(path, () =>
       requireDesktopAPI().setFilePassword(documentId, password),
     )
@@ -92,6 +94,7 @@ export const restoreBackup = async (id: string): Promise<void> => {
   useEditor.setState({ busy: true })
   let opened: OpenedDocument | null = null
   try {
+    if (hasNativeEditor()) await flushNativeEditor(before.workbook.id)
     opened = await queueDocumentWrite(before.path, async () =>
       unlockOpenedDocument(await requireDesktopAPI().restoreDocumentBackup(id)),
     )

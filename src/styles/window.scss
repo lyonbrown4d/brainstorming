@@ -1,0 +1,11 @@
+@media (max-width: 1000px) {
+  .app-shell {
+    .document-breadcrumb {
+      display: none;
+    }
+    .document-title h1 {
+      max-width: 160px;
+      font-size: 14px;
+    }
+  }
+}

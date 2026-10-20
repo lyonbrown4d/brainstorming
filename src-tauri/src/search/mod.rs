@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod bounds_tests;
+mod exact;
 mod model;
 mod query;
 #[cfg(test)]
@@ -8,8 +9,8 @@ mod validation;
 
 pub use model::*;
 use sqlx::{QueryBuilder, Row, Sqlite, SqlitePool, sqlite::SqlitePoolOptions};
-use std::collections::HashSet;
-use tokio::sync::Mutex;
+use std::{collections::HashSet, sync::Arc};
+use tokio::sync::{Mutex, Semaphore};
 
 type Result<T> = std::result::Result<T, String>;
 
@@ -18,6 +19,8 @@ pub struct SearchService {
   pool: SqlitePool,
   // Serialize batches, searches and renderer resets to guarantee full snapshots.
   operations: Mutex<()>,
+  // One executing and one waiting exact search; permits also cover cancelled CPU batches.
+  find_slots: Arc<Semaphore>,
 }
 impl SearchService {
   pub async fn new() -> Result<Self> {
@@ -44,6 +47,7 @@ impl SearchService {
     Ok(Self {
       pool,
       operations: Mutex::new(()),
+      find_slots: Arc::new(Semaphore::new(2)),
     })
   }
   pub async fn sync(&self, input: SyncContentIndex) -> Result<()> {
@@ -140,6 +144,7 @@ impl SearchService {
     Ok(())
   }
   pub async fn shutdown(&self) {
+    self.find_slots.close();
     let _operation = self.operations.lock().await;
     self.pool.close().await;
   }

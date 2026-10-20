@@ -1,5 +1,5 @@
 import '@renderer/styles/ui.css'
-import '@renderer/styles/base.css'
+import '@renderer/styles/base.scss'
 import { useState, type ComponentProps } from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'

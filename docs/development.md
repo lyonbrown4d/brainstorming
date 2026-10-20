@@ -13,6 +13,12 @@ pnpm dev
 
 `pnpm dev` 通过 Tauri CLI 启动 Vite 和原生窗口。Vite 服务只是原生 WebView 的开发资源，不是独立 Web 产品。浏览器直接打开时不会获得文件、密码或恢复能力。
 
+## 原生接口生成
+
+`pnpm generate:bindings` 从真实 Rust 命令生成 `src/generated/native.ts`。该目录已被 Git、ESLint 和 Prettier 忽略，不能手工编辑或提交。开发、类型检查、测试、Storybook 和构建入口会先生成绑定，Moon 也将其列为前置任务。生成器使用基础 `TAURI_CONFIG={}`，避免继承外层 E2E 构建的测试权限配置。首次运行前端检查需要 Rust 和对应平台的 Tauri / libvips 开发依赖；CI 的前端任务同样安装这些依赖。
+
+新增计算命令时，在 `src-tauri/src/platform/compute.rs` 声明 Tauri / Specta 命令，加入 `bindings.rs` 的唯一命令清单，再通过 `src/lib/nativeComputeAPI.ts` 转为业务视图类型。修订号用十进制字符串传输，避免 Rust u64 在 JavaScript 中丢失精度。动态工作簿使用具名 JSON 类型并在原生边界校验，不开启全局大整数强转。计算接口处理会话与派生结果，不改变版本化 JSON 或 SQLite 文件表结构，无需新增 SQL 迁移。
+
 ## 常用命令
 
 | 命令                                             | 用途                                                                |
@@ -51,7 +57,7 @@ CI 保留 Node 24 / 26 的前端、Storybook 构建与浏览器检查；Ubuntu �
 
 保留 React Compiler 和开发环境 React Scan。内部模块通过 `tsconfig.json` 的 `@core`、`@layout`、`@formats`、`@assets`、`@renderer`、`@shared`、`@tests`、`@project` 等别名导入。禁止相对模块路径，资源 URL 和系统文件路径不受此限制。
 
-手写源文件、测试和 TypeScript 配置不超过 300 行；不压缩代码规避限制。使用箭头函数、严格类型、局部 Zustand 订阅与 TanStack Query。UI 优先组合现成 shadcn 组件，通过 props、className 和集中主题调整，不能直接修改下载组件；样式优先使用 Tailwind utilities。
+手写源文件、测试和 TypeScript 配置不超过 300 行；不压缩代码规避限制。使用箭头函数、严格类型、局部 Zustand 订阅与 TanStack Query。UI 优先组合现成 shadcn 组件，通过 props、className 和集中主题调整，不能直接修改下载组件；样式优先使用 Tailwind utilities；需要手写的样式使用 SCSS，Vite 通过官方 `sass-embedded` 预处理。通过浅层嵌套、`@use` 和必要的 mixin 复用规则，不另建业务样式库。`src/styles/ui.css` 保留为 Tailwind v4 与 shadcn 的 CSS 入口，不经过 Sass。
 
 ## 工作区路由与设置
 

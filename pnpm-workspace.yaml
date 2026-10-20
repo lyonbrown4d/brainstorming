@@ -2,6 +2,7 @@
 engineStrict: true
 strictPeerDependencies: false
 allowBuilds:
+  '@parcel/watcher@2.6.0': true
   esbuild: true
   '@moonrepo/cli': true
   'electron@23.3.13': true

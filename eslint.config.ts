@@ -11,6 +11,7 @@ export default defineConfig(
   {
     ignores: [
       'node_modules/**',
+      'src/generated/**',
       'dist/**',
       'out/**',
       'test-results-desktop/**',

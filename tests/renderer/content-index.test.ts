@@ -6,6 +6,7 @@ import { useEditor } from '@renderer/state/editor'
 import { closeDocumentTab, openDocumentTab, useDocumentTabs } from '@renderer/state/documentTabs'
 import { useWorkspace } from '@renderer/state/workspace'
 import { queryContentIndex, startContentIndexSync } from '@renderer/state/contentIndex'
+import { useContentIndexRevision } from '@renderer/state/contentIndexRevision'
 
 let stop: (() => void) | undefined
 const synchronize = vi.fn<(input: ContentIndexSync) => Promise<void>>(() => Promise.resolve())
@@ -117,4 +118,27 @@ it('surfaces a failed native update and retries every unsynchronized workbook on
   await queryContentIndex('After')
   expect(synchronize.mock.calls.at(-1)?.[0].upserts[0]?.topics[0]?.title).toBe('After recovery')
   expect(search).toHaveBeenLastCalledWith({ query: 'After' })
+})
+
+it('publishes reactive revisions for committed content and unique epochs across index restarts', async () => {
+  openDocumentTab(createDocument('Original', 'reactive-index'))
+  const before = useContentIndexRevision.getState().revision
+  stop = startContentIndexSync()
+  const mounted = useContentIndexRevision.getState().revision
+  expect(mounted).toBeGreaterThan(before)
+  await queryContentIndex('Original')
+  useEditor.getState().select('root')
+  useEditor.getState().startEdit('root')
+  useEditor.getState().setDraft('Uncommitted')
+  expect(useContentIndexRevision.getState().revision).toBe(mounted)
+  useEditor.getState().commitDraft()
+  const edited = useContentIndexRevision.getState().revision
+  expect(edited).toBeGreaterThan(mounted)
+  stop()
+  const unmounted = useContentIndexRevision.getState().revision
+  expect(unmounted).toBeGreaterThan(edited)
+  stop = startContentIndexSync()
+  expect(useContentIndexRevision.getState().revision).toBeGreaterThan(unmounted)
+  await queryContentIndex('Uncommitted')
+  expect(synchronize.mock.calls.at(-1)?.[0].upserts[0]?.topics[0]?.title).toBe('Uncommitted')
 })

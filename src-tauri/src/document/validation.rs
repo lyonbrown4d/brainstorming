@@ -109,7 +109,7 @@ pub fn validate_workbook(workbook: &Value) -> Result<()> {
   Ok(())
 }
 
-fn validate_document(doc: &Value) -> Result<()> {
+pub(crate) fn validate_document(doc: &Value) -> Result<()> {
   keys(
     doc,
     &[

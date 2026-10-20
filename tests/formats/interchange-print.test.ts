@@ -32,6 +32,7 @@ const printSurface = (fail = false) => {
       print: vi.fn(),
     },
   }
+  vi.stubGlobal('document', { fonts: { ready: Promise.resolve() } })
   vi.stubGlobal('window', {
     document: { createElement: () => frame, body: { appendChild: vi.fn() } },
     addEventListener: vi.fn(),

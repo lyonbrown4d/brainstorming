@@ -17,3 +17,6 @@ apm_modules/
 test-results-desktop/
 
 dist/
+
+# Generated from Rust by tauri-specta; regenerate before frontend checks/build.
+src/generated/

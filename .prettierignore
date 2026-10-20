@@ -23,3 +23,6 @@ dist/
 
 # Local design-skill runtime cache.
 .impeccable/hook.cache.json
+
+# tauri-specta output is regenerated from Rust.
+src/generated/

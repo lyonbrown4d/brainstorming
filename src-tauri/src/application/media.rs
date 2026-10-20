@@ -17,6 +17,8 @@ static_module! {
             async metadata: MetadataStore;
             async vault: ResourceVault;
             documents: DocumentStore;
+            compute: crate::compute::ComputeService;
+            editor: crate::editor_engine::EditorEngine;
             async session: SessionService;
             async search: SearchService;
             ai: AIService;

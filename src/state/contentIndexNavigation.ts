@@ -2,7 +2,7 @@ import type { ContentSearchResult } from '@shared/contentSearch'
 import { useEditor } from '@renderer/state/editor'
 import { switchDocumentTab, useDocumentTabs } from '@renderer/state/documentTabs'
 import { revealSearchMatch } from '@renderer/state/search'
-import { requestTopicFocus } from '@renderer/state/viewport'
+import { flushNativeEditor, hasPendingNativeEditor } from '@renderer/state/nativeEditorQueue'
 
 /** An old result can only navigate a target that is still open and present. */
 export const openContentSearchResult = (result: ContentSearchResult): boolean => {
@@ -16,23 +16,30 @@ export const openContentSearchResult = (result: ContentSearchResult): boolean =>
       : tab.editor.workbook
   const sheet = workbook.sheets.find((entry) => entry.id === result.sheetId)
   if (!sheet?.document.topics[result.topicId]) return false
-  if (tab.id !== activeId && !switchDocumentTab(tab.id)) return false
-  revealSearchMatch({
-    sheetId: result.sheetId,
-    topicId: result.topicId,
-    field: 'title',
-    text: result.title,
-    count: 1,
-  })
-  const current = useEditor.getState()
-  if (
-    current.workbook.id !== result.workbookId ||
-    current.activeSheetId !== result.sheetId ||
-    current.selectedId !== result.topicId ||
-    !current.history.document.topics[result.topicId] ||
-    current.editingId
-  )
-    return false
-  requestTopicFocus(result.topicId)
-  return true
+  editor.commitDraft()
+  if (useEditor.getState().editingId) return false
+  const sourceId = editor.workbook.id
+  const navigate = (): boolean => {
+    if (useEditor.getState().workbook.id !== sourceId) return false
+    const latestTab = useDocumentTabs.getState().tabs.find((entry) => entry.id === tab.id)
+    if (!latestTab) return false
+    if (tab.id !== useDocumentTabs.getState().activeId && !switchDocumentTab(tab.id)) return false
+    return revealSearchMatch({
+      sheetId: result.sheetId,
+      topicId: result.topicId,
+      field: 'title',
+      text: result.title,
+      count: 1,
+    })
+  }
+  if (hasPendingNativeEditor(sourceId)) {
+    void flushNativeEditor(sourceId)
+      .then(navigate)
+      .catch((error: unknown) => {
+        if (useEditor.getState().workbook.id === sourceId)
+          useEditor.getState().setError(error instanceof Error ? error.message : String(error))
+      })
+    return true
+  }
+  return navigate()
 }

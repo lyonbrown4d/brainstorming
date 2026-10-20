@@ -22,6 +22,15 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: pnpm
       - run: node --version && pnpm --version
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+      # Bindings are generated from real native command definitions and never committed.
+      - name: Install Tauri binding generation prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libvips-dev
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm ci-gate

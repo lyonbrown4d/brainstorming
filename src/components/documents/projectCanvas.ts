@@ -1,6 +1,6 @@
 import { relationAnchors } from '@shared/relation-geometry'
 import { visualPath } from '@shared/sketch'
-import { layoutDocument, type LayoutNode } from '@layout'
+import { layoutDocument, type LayoutNode, type MindMapLayout } from '@layout'
 import type { MindMapDocument } from '@core'
 import { topicAppearance } from '@shared/appearance'
 import { layoutEdgePath } from '@shared/layout-geometry'
@@ -30,8 +30,11 @@ export const edgeHandles = (
   const to = vertical ? (dy > 0 ? 'top' : 'bottom') : dx > 0 ? 'left' : 'right'
   return { sourceHandle: `source-${from}`, targetHandle: `target-${to}` }
 }
-export const projectCanvas = (document: MindMapDocument, surface?: string) => {
-  const layout = layoutDocument(document)
+export const projectCanvas = (
+  document: MindMapDocument,
+  surface?: string,
+  layout: MindMapLayout = layoutDocument(document),
+) => {
   const byId = new Map(layout.nodes.map((node) => [node.id, node]))
   const relationsById = new Map(
     (document.relations ?? []).map((relation) => [`relation-${relation.id}`, relation]),

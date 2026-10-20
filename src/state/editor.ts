@@ -1,81 +1,34 @@
 import { translate } from '@renderer/i18n'
 import { create } from 'zustand'
-import { truncateSheetName } from '@core/workbook'
-import {
-  createDocument,
-  applyWorkbookCommand,
-  executeCommand,
-  type WorkbookCommand,
-  type MindMapDocument,
-} from '@core'
+import { createDocument, executeCommand } from '@core'
 import type { EditorState } from '@renderer/state/editorTypes'
 import {
   loadWorkbook,
   serializedWorkbook,
   sessionFor,
-  snapshot,
-  restoreStructure,
   travelHistory,
   withHistory,
 } from '@renderer/state/workbookState'
 import { usePresentation } from '@renderer/state/presentation'
 import { enterWorkspaceEditor } from '@renderer/state/workspace'
 import { draftCommand, emptyEditorDraft } from '@renderer/state/editorDraft'
-import { serializedDocumentSnapshot } from '@renderer/state/documentSnapshot'
 import { deleteSelectedTopics, useSelection } from '@renderer/state/selection'
 import { addTopic } from '@renderer/state/topicCreation'
+import { dispatchNativeEditor } from '@renderer/state/nativeEditorBridge'
+import {
+  flushNativeEditor,
+  forgetNativeEditor,
+  hasNativeEditor,
+  hasPendingNativeEditor,
+} from '@renderer/state/nativeEditorQueue'
+import { useDocumentTabs } from '@renderer/state/documentTabs'
+import { addDocumentSheet, editSheets } from '@renderer/state/sheetEditing'
+import { switchSheet } from '@renderer/state/sheetNavigation'
+
+export { addDocumentSheet } from '@renderer/state/sheetEditing'
+export { editorIsDirty, isDirty } from '@renderer/state/editorDirty'
 
 const initial = loadWorkbook(createDocument('未命名'))
-const editSheets = (command: WorkbookCommand, nextId?: string): void => {
-  const state = useEditor.getState()
-  if (usePresentation.getState().playing) return
-  state.commitDraft()
-  if (useEditor.getState().editingId) return
-  const current = useEditor.getState()
-  try {
-    const before = snapshot(current)
-    const workbook = applyWorkbookCommand(current.workbook, command)
-    if (workbook === current.workbook) return
-    const activeSheetId =
-      nextId ??
-      (workbook.sheets.some((sheet) => sheet.id === current.activeSheetId)
-        ? current.activeSheetId
-        : workbook.sheets[0]?.id)
-    if (!activeSheetId) throw new Error(translate('aWorkbookNeedsAtLeastOneSheet'))
-    const sessions = Object.fromEntries(
-      workbook.sheets.map((sheet) => [
-        sheet.id,
-        before.sessions[sheet.id] ?? sessionFor(sheet.document),
-      ]),
-    )
-    const after = { workbook, activeSheetId, sessions }
-    useEditor.setState({
-      ...restoreStructure(current, after),
-      workbook,
-      sessions,
-      clock: current.clock + 1,
-      structurePast: [...current.structurePast, { before, after, order: current.clock + 1 }].slice(
-        -100,
-      ),
-      structureFuture: [],
-      error: null,
-    })
-  } catch (error) {
-    state.setError(error instanceof Error ? error.message : translate('sheetOperationFailed'))
-  }
-}
-export const addDocumentSheet = (document: MindMapDocument): boolean => {
-  if (useEditor.getState().busy) return false
-  const id = crypto.randomUUID()
-  const name =
-    truncateSheetName(document.title.replace(/[\p{Cc}]/gu, ' ').trim()) ||
-    translate('newSheetLabel402')
-  editSheets(
-    { type: 'addSheet', sheet: { id, name, document: { ...document, id: crypto.randomUUID() } } },
-    id,
-  )
-  return useEditor.getState().activeSheetId === id
-}
 export const useEditor = create<EditorState>((set, get) => ({
   ...initial,
   dropTargetId: null,
@@ -109,6 +62,21 @@ export const useEditor = create<EditorState>((set, get) => ({
     if (get().editingId === id && get().editingSurface === surface) return
     get().commitDraft()
     if (get().editingId) return
+    if (hasNativeEditor() && hasPendingNativeEditor(get().workbook.id)) {
+      const workbookId = get().workbook.id
+      const sheetId = get().activeSheetId
+      void flushNativeEditor(workbookId)
+        .then(() => {
+          const current = useEditor.getState()
+          if (current.workbook.id === workbookId && current.activeSheetId === sheetId)
+            current.startEdit(id, value, surface, selection)
+        })
+        .catch((error: unknown) => {
+          if (get().workbook.id === workbookId)
+            get().setError(error instanceof Error ? error.message : String(error))
+        })
+      return
+    }
     const topic = get().history.document.topics[id]
     if (topic) {
       const ids = useSelection.getState().sheets[get().activeSheetId]
@@ -137,15 +105,52 @@ export const useEditor = create<EditorState>((set, get) => ({
     set({ richDraft, draft })
   },
   commitDraft: () => {
-    const command = draftCommand(get())
-    if (command && !get().command(command)) return
+    const before = get()
+    const command = draftCommand(before)
+    if (
+      command &&
+      !get().command(command, () => {
+        const restored = {
+          selectedId: before.selectedId,
+          editingId: before.editingId,
+          editingSurface: before.editingSurface,
+          editingPageIndex: before.editingPageIndex,
+          draft: before.draft,
+          richDraft: before.richDraft,
+          editSelection: before.editSelection,
+        }
+        if (get().workbook.id === before.workbook.id && get().editingId === null) set(restored)
+        useDocumentTabs.setState((tabs) => ({
+          tabs: tabs.tabs.map((tab) =>
+            tab.editor.workbook.id === before.workbook.id
+              ? { ...tab, editor: { ...tab.editor, ...restored } }
+              : tab,
+          ),
+        }))
+      })
+    )
+      return
     set(emptyEditorDraft)
   },
   cancelEdit: () => {
     set(emptyEditorDraft)
   },
-  command: (command) => {
+  command: (command, onFailure, onAck) => {
     if (usePresentation.getState().playing) return false
+    if (hasNativeEditor()) {
+      const state = get()
+      const accepted = dispatchNativeEditor(
+        state.workbook,
+        {
+          kind: 'topic',
+          sheetId: state.activeSheetId,
+          command,
+        },
+        { onFailure, afterAck: onAck },
+      )
+      if (accepted) set({ clock: state.clock + 1 })
+      return accepted
+    }
     try {
       const state = get()
       const history = executeCommand(state.history, command)
@@ -184,16 +189,27 @@ export const useEditor = create<EditorState>((set, get) => ({
     if (usePresentation.getState().playing) return
     get().commitDraft()
     if (get().editingId) return
+    if (hasNativeEditor()) {
+      const state = get()
+      if (dispatchNativeEditor(state.workbook, { kind: 'undo' })) set({ clock: state.clock + 1 })
+      return
+    }
     set(travelHistory(get(), 'undo'))
   },
   redo: () => {
     if (usePresentation.getState().playing) return
     get().commitDraft()
     if (get().editingId) return
+    if (hasNativeEditor()) {
+      const state = get()
+      if (dispatchNativeEditor(state.workbook, { kind: 'redo' })) set({ clock: state.clock + 1 })
+      return
+    }
     set(travelHistory(get(), 'redo'))
   },
   replace: (document, path = null, recovered = false) => {
     const loaded = loadWorkbook(document)
+    forgetNativeEditor(loaded.workbook.id)
     useSelection.setState({ sheets: {}, drawings: {} })
     set({
       ...loaded,
@@ -224,28 +240,7 @@ export const useEditor = create<EditorState>((set, get) => ({
   setError: (error) => {
     set({ error })
   },
-  switchSheet: (id) => {
-    if (id === get().activeSheetId) return
-    get().commitDraft()
-    if (get().editingId) return
-    const state = get()
-    const session = state.sessions[id]
-    if (!session) {
-      state.setError('画布不存在')
-      return
-    }
-    set({
-      sessions: snapshot(state).sessions,
-      activeSheetId: id,
-      history: session.history,
-      selectedId: session.history.document.topics[session.selectedId]
-        ? session.selectedId
-        : session.history.document.rootId,
-      ...emptyEditorDraft,
-      dropTargetId: null,
-      error: null,
-    })
-  },
+  switchSheet,
   addDocumentSheet,
   addSheet: () => {
     const id = crypto.randomUUID()
@@ -275,15 +270,3 @@ export const useEditor = create<EditorState>((set, get) => ({
     editSheets({ type: 'moveSheet', sheetId, index })
   },
 }))
-
-export const editorIsDirty = (state: EditorState): boolean => {
-  try {
-    return serializedDocumentSnapshot(state) !== state.baseline
-  } catch {
-    return true
-  }
-}
-
-export const isDirty = (): boolean => {
-  return editorIsDirty(useEditor.getState())
-}

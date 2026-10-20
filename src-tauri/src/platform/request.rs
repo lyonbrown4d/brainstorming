@@ -22,7 +22,6 @@ pub(super) fn trusted_url(url: &url::Url, app: &AppHandle) -> bool {
   (url.scheme() == "tauri" && url.host_str() == Some("localhost"))
     || (matches!(url.scheme(), "http" | "https") && url.host_str() == Some("tauri.localhost"))
 }
-#[tauri::command]
 pub async fn native_request(
   app: AppHandle,
   window: WebviewWindow,

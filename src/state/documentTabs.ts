@@ -12,6 +12,11 @@ import {
 import { translate } from '@renderer/i18n'
 import { resetFileSecurityState, useFileSecurityState } from '@renderer/state/password'
 import { defaultTopicFilters, useTopicFilters } from '@renderer/components/documents/filterTopics'
+import {
+  flushNativeEditor,
+  hasPendingNativeEditor,
+  releaseNativeEditor,
+} from '@renderer/state/nativeEditorQueue'
 
 export interface DocumentTab extends DocumentSession {
   readonly id: string
@@ -28,6 +33,11 @@ export const useDocumentTabs = create<DocumentTabsState>(() => ({
 }))
 let switching = false
 export const isSwitchingDocument = (): boolean => switching
+const releaseClosedTab = (workbookId: string): void => {
+  void releaseNativeEditor(workbookId).catch((error: unknown) => {
+    useEditor.getState().setError(error instanceof Error ? error.message : String(error))
+  })
+}
 
 export const synchronizeDocumentTab = (allowBusy = false): void => {
   if (
@@ -68,6 +78,15 @@ const commitCurrent = (): boolean => {
 }
 export const switchDocumentTab = (id: string): boolean => {
   if (!commitCurrent()) return false
+  const workbookId = useEditor.getState().workbook.id
+  if (hasPendingNativeEditor(workbookId)) {
+    void flushNativeEditor(workbookId)
+      .then(() => switchDocumentTab(id))
+      .catch((error: unknown) => {
+        useEditor.getState().setError(error instanceof Error ? error.message : String(error))
+      })
+    return true
+  }
   const tab = useDocumentTabs.getState().tabs.find((entry) => entry.id === id)
   if (!tab) return false
   switching = true
@@ -100,6 +119,15 @@ export const openDocumentTab = (
   prepared = false,
 ): boolean => {
   if (!prepared && !commitCurrent()) return false
+  const workbookId = useEditor.getState().workbook.id
+  if (hasPendingNativeEditor(workbookId)) {
+    void flushNativeEditor(workbookId)
+      .then(() => openDocumentTab(document, path, recovered, prepared))
+      .catch((error: unknown) => {
+        useEditor.getState().setError(error instanceof Error ? error.message : String(error))
+      })
+    return true
+  }
   const existing = findDocumentTab(path, document.version === 1 ? undefined : document.id)
   if (existing) return switchDocumentTab(existing.id)
   if (useDocumentTabs.getState().tabs.length >= 32) {
@@ -130,6 +158,14 @@ export const closeDocumentTab = (id: string): boolean => {
   const index = state.tabs.findIndex((tab) => tab.id === id)
   const tab = state.tabs[index]
   if (!tab) return false
+  if (hasPendingNativeEditor(tab.editor.workbook.id)) {
+    void flushNativeEditor(tab.editor.workbook.id)
+      .then(() => closeDocumentTab(id))
+      .catch((error: unknown) => {
+        useEditor.getState().setError(error instanceof Error ? error.message : String(error))
+      })
+    return true
+  }
   if (
     editorIsDirty(tab.editor) &&
     !window.confirm(translate('closeDirtyMap', { title: tab.editor.workbook.title }))
@@ -138,6 +174,7 @@ export const closeDocumentTab = (id: string): boolean => {
   const tabs = state.tabs.filter((entry) => entry.id !== id)
   if (state.activeId !== id) {
     useDocumentTabs.setState({ tabs })
+    releaseClosedTab(tab.editor.workbook.id)
     return true
   }
   const next = tabs[Math.min(index, tabs.length - 1)]
@@ -160,6 +197,7 @@ export const closeDocumentTab = (id: string): boolean => {
   }
   if (next) synchronizeDocumentTab()
   else useDocumentTabs.setState({ tabs: [], activeId: null })
+  releaseClosedTab(tab.editor.workbook.id)
   return true
 }
 export const closeActiveDocument = (): void => {

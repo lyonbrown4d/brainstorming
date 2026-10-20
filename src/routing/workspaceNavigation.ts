@@ -1,3 +1,4 @@
+import { cancelPendingPresentation } from '@renderer/state/presentationPending'
 import { isCanvasSection } from '@renderer/state/inspectorNavigation'
 import { beginCreation, showWorkspaceHome } from '@renderer/state/creation'
 import {
@@ -24,7 +25,9 @@ export const commitWorkspaceNavigation = (): boolean => {
   const editor = useEditor.getState()
   if (editor.busy) return false
   editor.commitDraft()
-  return !useEditor.getState().editingId
+  if (useEditor.getState().editingId) return false
+  cancelPendingPresentation()
+  return true
 }
 
 const activateDocumentRoute = (route: WorkspaceRoute): void => {

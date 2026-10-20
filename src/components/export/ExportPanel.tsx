@@ -88,6 +88,7 @@ export const ExportPanel = ({
         return
       }
       let path: string | null
+      const compute = getPlatformAPI()?.compute
       if (isNativeImageFormat(format)) {
         if (!preview.source || !sheet) throw new Error(translate('sheetToExportDoesNotExist'))
         const jobId = crypto.randomUUID()
@@ -103,6 +104,16 @@ export const ExportPanel = ({
           ...(scale === undefined ? {} : { scale }),
           ...(format === 'jpg' ? { jpegQuality: Number(jpegQuality) } : {}),
         })
+      } else if (
+        compute &&
+        (format === 'md' || format === 'opml' || format === 'txt' || format === 'xmind')
+      ) {
+        setStage('choosing')
+        path = await compute.exportFormat(
+          workbook,
+          format,
+          scope === 'workbook' ? undefined : currentSheetId,
+        )
       } else {
         const request = await createExport(
           workbook,

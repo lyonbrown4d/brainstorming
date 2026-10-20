@@ -15,6 +15,8 @@ pub struct AppState {
   pub test_dialogs: tokio::sync::Mutex<std::collections::VecDeque<(String, Option<PathBuf>)>>,
   pub directory: PathBuf,
   pub documents: Arc<DocumentStore>,
+  pub compute: Arc<crate::compute::ComputeService>,
+  pub editor: Arc<crate::editor_engine::EditorEngine>,
   pub metadata: Arc<MetadataStore>,
   pub vault: Arc<ResourceVault>,
   pub session: Arc<Mutex<Session>>,

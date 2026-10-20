@@ -1,3 +1,4 @@
+import { createComputeAPI } from '@renderer/lib/nativeComputeAPI'
 import { builtinArtCatalogSchema, parseBuiltinArtAsset } from '@shared/builtinArt'
 import { contentTemplateSchema, templateCatalogSchema, templateIdSchema } from '@shared/templates'
 import { imageExportProgressSchema, type ImageExportProgress } from '@shared/exportImages'
@@ -114,6 +115,7 @@ export const createNativeAPI = async (
     })
   }
   const api: DesktopAPI = {
+    compute: createComputeAPI(),
     ...(windowAction
       ? {
           minimizeWindow: () => windowAction('minimize'),

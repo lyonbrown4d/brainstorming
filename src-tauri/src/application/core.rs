@@ -1,6 +1,6 @@
 use super::{
-  document::DocumentServices, integration::IntegrationServices, platform::RuntimeConfig,
-  search::SearchServices, session::SessionService,
+  compute::ComputeServices, document::DocumentServices, integration::IntegrationServices,
+  platform::RuntimeConfig, search::SearchServices, session::SessionService,
 };
 use crate::{
   document::DocumentStore,
@@ -30,6 +30,10 @@ static_module! {
             notifications: NotificationService;
             image_exports: ImageExportService;
         };
+        import computations: ComputeServices {
+            compute: crate::compute::ComputeService;
+            editor: crate::editor_engine::EditorEngine;
+        };
     }
 }
 impl AppState {
@@ -58,6 +62,8 @@ impl AppState {
       notifications: services.notifications()?,
       image_exports: services.image_exports()?,
       search: services.search().await?,
+      compute: services.compute()?,
+      editor: services.editor()?,
       resource_origin: RwLock::new("http://brainstorming.localhost".into()),
     }))
   }

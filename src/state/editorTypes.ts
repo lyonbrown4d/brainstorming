@@ -66,7 +66,7 @@ export interface EditorState extends EditorData {
   setRichDraft: (markdown: string, plainTitle: string) => void
   commitDraft: () => void
   cancelEdit: () => void
-  command: (command: Command) => boolean
+  command: (command: Command, onFailure?: () => void, onAck?: () => void) => boolean
   add: (kind: 'child' | 'sibling') => void
   remove: () => void
   undo: () => void

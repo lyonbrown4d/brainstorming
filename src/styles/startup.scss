@@ -1,3 +1,5 @@
+@use 'loading';
+
 /* The pre-React main surface and the independent native splash share this layout. */
 .startup-screen {
   position: fixed;
@@ -52,20 +54,22 @@
   display: none;
 }
 
-:root[data-theme='dark'] .startup-logo-light {
-  display: none;
+@mixin dark-startup-logo {
+  .startup-logo-light {
+    display: none;
+  }
+  .startup-logo-dark {
+    display: block;
+  }
 }
 
-:root[data-theme='dark'] .startup-logo-dark {
-  display: block;
+:root[data-theme='dark'] {
+  @include dark-startup-logo;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) .startup-logo-light {
-    display: none;
-  }
-  :root:not([data-theme]) .startup-logo-dark {
-    display: block;
+  :root:not([data-theme]) {
+    @include dark-startup-logo;
   }
 }
 

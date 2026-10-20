@@ -3,6 +3,8 @@ mod ai_transport;
 mod ai_validation;
 mod atomic;
 mod clipboard;
+pub(crate) mod compute;
+pub(crate) mod compute_previews;
 mod content_search;
 pub mod dialogs;
 mod dispatch;
@@ -36,6 +38,10 @@ mod tests;
 pub async fn renderer_started(app: &tauri::AppHandle) {
   use tauri::Manager;
   if let Some(state) = app.try_state::<std::sync::Arc<AppState>>() {
+    if state.editor.clear().await.is_err() {
+      tracing::error!("Document engine reset failed");
+    }
+    state.compute.invalidate();
     if state.search.clear().await.is_err() {
       tracing::error!("Content search reset failed");
     }

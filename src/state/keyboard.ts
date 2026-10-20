@@ -1,7 +1,7 @@
-import { requireDesktopAPI } from '@renderer/lib/desktop'
+import { getPlatformAPI, requireDesktopAPI } from '@renderer/lib/desktop'
 import type { DesktopPlatform } from '@shared/window'
 import type { MindMapDocument } from '@core'
-import { layoutDocument, type LayoutDirection, type LayoutNode } from '@layout'
+import { layoutDocument, type LayoutDirection, type LayoutNode, type MindMapLayout } from '@layout'
 
 /** Safari may end composition before dispatching its final Enter key. */
 export const isCompositionKey = (event: KeyboardEvent): boolean => {
@@ -30,20 +30,24 @@ const opposite: Readonly<Record<LayoutDirection, LayoutDirection>> = {
   down: 'up',
 }
 
-const navigationLayout = (document: MindMapDocument): NavigationLayout => {
-  const cached = navigationLayouts.get(document)
-  if (cached) return cached
-  const layout = layoutDocument(document)
-  const result: NavigationLayout = {
+export const setNavigationLayout = (document: MindMapDocument, layout: MindMapLayout): void => {
+  navigationLayouts.set(document, {
     nodes: new Map(layout.nodes.map((node) => [node.id, node])),
     parents: new Map(layout.edges.map((edge) => [edge.target, edge.source])),
     incoming: new Map(
       layout.edges.flatMap((edge) => (edge.direction ? [[edge.target, edge.direction]] : [])),
     ),
     defaultMap: layout.nodes.every((node) => node.direction === undefined),
-  }
-  navigationLayouts.set(document, result)
-  return result
+  })
+}
+
+const navigationLayout = (document: MindMapDocument): NavigationLayout | undefined => {
+  const cached = navigationLayouts.get(document)
+  if (cached) return cached
+  // Storybook and explicit preview tests can keep the pure TypeScript layout.
+  if (getPlatformAPI()?.compute) return undefined
+  setNavigationLayout(document, layoutDocument(document))
+  return navigationLayouts.get(document)
 }
 
 const visibleChildren = (
@@ -92,6 +96,7 @@ export const getNavigationTarget = (
   const direction = directions.get(key)
   if (!direction || !document.topics[selectedId]) return undefined
   const layout = navigationLayout(document)
+  if (!layout) return undefined
   const node = layout.nodes.get(selectedId)
   if (!node) return undefined
   const parentId = layout.parents.get(selectedId)

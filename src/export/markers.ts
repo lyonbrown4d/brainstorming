@@ -5,6 +5,20 @@ import type { TopicMetadata } from '@core'
 import { measureTopicMarkers } from '@layout'
 import { brandMarkerIcon } from '@shared/markerIcons'
 import { markerOptions } from '@renderer/components/metadata/markers'
+
+/** Exact bundled vector used by both SVG export and the native scene. */
+export const markerMarkup = (marker: string, color: string, size: number): string => {
+  const vector = brandMarkerIcon(marker)
+  const known =
+    markerOptions.find((option) => option.value === marker) ??
+    markerOptions.find((option) => option.value === 'question')
+  return vector
+    ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${vector.width} ${vector.height}" fill="${color}">${vector.body}</svg>`
+    : known
+      ? renderToStaticMarkup(createElement(known.Icon, { color, size }))
+      : ''
+}
+
 /** Only bundled brand vectors and known Lucide components can enter the export document. */
 export const drawMarkerIcons = (
   xml: Document,
@@ -32,15 +46,7 @@ export const drawMarkerIcons = (
     position === 'top' ? 6 : position === 'bottom' ? bodyHeight - size - 6 : (bodyHeight - size) / 2
   const markers = metadata?.markers ?? []
   markers.slice(0, 4).forEach((marker, index) => {
-    const vector = brandMarkerIcon(marker)
-    const known =
-      markerOptions.find((option) => option.value === marker) ??
-      markerOptions.find((option) => option.value === 'question')
-    const markup = vector
-      ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${vector.width} ${vector.height}" fill="${color}">${vector.body}</svg>`
-      : known
-        ? renderToStaticMarkup(createElement(known.Icon, { color, size }))
-        : ''
+    const markup = markerMarkup(marker, color, size)
     const source = new DOMParser().parseFromString(markup, 'image/svg+xml').documentElement
     if (!source) return
     const icon = xml.importNode(source, true)

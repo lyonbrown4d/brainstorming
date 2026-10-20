@@ -1,5 +1,4 @@
 @import 'tailwindcss';
-@import './loading.css';
 
 :root {
   --ui-background: #ffffff;

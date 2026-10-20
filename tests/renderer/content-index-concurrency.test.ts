@@ -9,7 +9,14 @@ import { desktop } from '@tests/fixtures/desktop'
 import { useEditor } from '@renderer/state/editor'
 import { openDocumentTab, useDocumentTabs } from '@renderer/state/documentTabs'
 import { useWorkspace } from '@renderer/state/workspace'
-import { queryContentIndex, startContentIndexSync } from '@renderer/state/contentIndex'
+import {
+  queryContentIndex,
+  queryDocumentMatches,
+  startContentIndexSync,
+} from '@renderer/state/contentIndex'
+import type { SearchMatch } from '@core'
+import type { ComputeAPI } from '@shared/compute'
+import { loadWorkbook } from '@renderer/state/workbookState'
 
 const deferred = <T>() => {
   let resolve!: (value: T) => void
@@ -108,4 +115,51 @@ it('orders an empty cleanup before the next mount instead of letting it erase th
   expect(mutations.at(-2)?.retainedWorkbookIds).toEqual([])
   expect(mutations.at(-1)?.retainedWorkbookIds).toEqual([useEditor.getState().workbook.id])
   expect(mutations.at(-1)?.upserts[0]?.topics[0]?.title).toBe('Document')
+})
+
+it('waits for index readiness and repeats exact find after a newer edit', async () => {
+  const indexGate = deferred<undefined>()
+  const findGate = deferred<SearchMatch[]>()
+  const find = vi.fn((): Promise<SearchMatch[]> => Promise.resolve([]))
+  find.mockImplementationOnce(() => findGate.promise)
+  desktop({
+    syncContentIndex: () => indexGate.promise,
+    compute: { find } as unknown as ComputeAPI,
+  })
+  openDocumentTab(createDocument('Original', 'original'))
+  stop = startContentIndexSync()
+  const workbookId = useEditor.getState().workbook.id
+  const pending = queryDocumentMatches({ workbookId, query: 'Latest', includeNotes: true })
+  await vi.advanceTimersByTimeAsync(0)
+  expect(find).not.toHaveBeenCalled()
+  indexGate.resolve(undefined)
+  await vi.advanceTimersByTimeAsync(0)
+  expect(find).toHaveBeenCalledTimes(1)
+  // Native acknowledgment replaces the render mirror while exact find is in flight.
+  useEditor.setState(loadWorkbook(createDocument('Latest', 'original')))
+  findGate.resolve([])
+  await vi.advanceTimersByTimeAsync(200)
+  await pending
+  expect(find).toHaveBeenCalledTimes(2)
+  expect(find).toHaveBeenCalledWith({ workbookId, query: 'Latest', includeNotes: true })
+})
+
+it('rejects exact find when the index is absent or the request is aborted', async () => {
+  await expect(queryDocumentMatches({ workbookId: 'none', query: 'a' })).rejects.toThrow(
+    'not initialized',
+  )
+  const gate = deferred<SearchMatch[]>()
+  const find = vi.fn(() => gate.promise)
+  desktop({ compute: { find } as unknown as ComputeAPI })
+  openDocumentTab(createDocument('Document', 'document'))
+  stop = startContentIndexSync()
+  const controller = new AbortController()
+  const pending = queryDocumentMatches(
+    { workbookId: useEditor.getState().workbook.id, query: 'Document' },
+    controller.signal,
+  )
+  await vi.advanceTimersByTimeAsync(0)
+  controller.abort()
+  gate.resolve([])
+  await expect(pending).rejects.toMatchObject({ name: 'AbortError' })
 })

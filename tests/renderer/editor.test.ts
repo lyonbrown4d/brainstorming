@@ -90,7 +90,9 @@ describe('文件边界', () => {
     useEditor.getState().startEdit('root')
     useEditor.getState().setDraft('已写入的标题')
     const operation = saveDocument()
-    expect(saved.mock.calls).toHaveLength(1)
+    await vi.waitFor(() => {
+      expect(saved.mock.calls).toHaveLength(1)
+    })
     useEditor.getState().startEdit('root')
     useEditor.getState().setDraft('保存期间的新输入')
     finish?.('/map.brainstorming')

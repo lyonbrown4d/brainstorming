@@ -171,6 +171,9 @@ describe('工作簿文件边界', () => {
     useEditor.getState().startEdit('root')
     useEditor.getState().setDraft('第二页已保存内容')
     const saving = saveDocument()
+    await vi.waitFor(() => {
+      expect(persist).toHaveBeenCalledOnce()
+    })
     const request = persist.mock.calls[0]?.[0]
     if (!request) throw new Error('未调用保存')
     const saved = deserializeWorkbook(request.contents)

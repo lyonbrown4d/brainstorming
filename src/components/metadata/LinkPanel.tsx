@@ -12,6 +12,7 @@ import { Input } from '@renderer/components/ui/input'
 import { FieldSelect } from '@renderer/components/FieldSelect'
 import { setMetadataField } from '@renderer/components/metadata/commands'
 import { requireDesktopAPI } from '@renderer/lib/desktop'
+import { flushNativeEditor, hasNativeEditor } from '@renderer/state/nativeEditorQueue'
 
 export const openTopicLink = (link: TopicLink): void => {
   const state = useEditor.getState()
@@ -30,12 +31,31 @@ export const openTopicLink = (link: TopicLink): void => {
       })
     return
   }
-  const sheetId = link.sheetId ?? state.activeSheetId
-  state.switchSheet(sheetId)
+  void revealTopicLink(link).catch((error: unknown) => {
+    useEditor.getState().setError(error instanceof Error ? error.message : String(error))
+  })
+}
+
+const revealTopicLink = async (link: Extract<TopicLink, { kind: 'topic' }>): Promise<void> => {
+  const source = useEditor.getState()
+  const workbookId = source.workbook.id
+  const sheetId = link.sheetId ?? source.activeSheetId
+  source.commitDraft()
+  if (useEditor.getState().editingId) return
+  await flushNativeEditor(workbookId)
+  if (useEditor.getState().workbook.id !== workbookId) return
+  useEditor.getState().switchSheet(sheetId)
+  await flushNativeEditor(workbookId)
   const current = useEditor.getState()
+  if (current.workbook.id !== workbookId) return
   if (current.activeSheetId !== sheetId || !current.history.document.topics[link.topicId]) {
     current.setError(translate('linkedTopicDoesNotExist'))
     return
+  }
+  const select = (): void => {
+    const latest = useEditor.getState()
+    if (latest.workbook.id === workbookId && latest.activeSheetId === sheetId)
+      latest.select(link.topicId)
   }
   const commands = []
   let parent = getParentId(current.history.document, link.topicId)
@@ -44,9 +64,13 @@ export const openTopicLink = (link: TopicLink): void => {
       commands.push({ type: 'toggleCollapse' as const, topicId: parent })
     parent = getParentId(current.history.document, parent)
   }
-  if (commands.length && !current.command({ type: 'batch', commands })) return
-  current.select(link.topicId)
+  if (commands.length) {
+    if (!current.command({ type: 'batch', commands }, undefined, select)) return
+    if (hasNativeEditor()) return
+  }
+  select()
 }
+
 export const LinkPanel = ({ topicId, metadata }: { topicId: string; metadata: TopicMetadata }) => {
   const focusRef = useTopicPropertyFocusTarget(topicId, 'link')
   const { translate } = useMessages()

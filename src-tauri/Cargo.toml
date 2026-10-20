@@ -13,6 +13,11 @@ path = "src/main.rs"
 required-features = ["native-ui"]
 
 [[bin]]
+name = "generate-bindings"
+path = "src/bin/generate_bindings.rs"
+required-features = ["native-ui"]
+
+[[bin]]
 name = "brainstorming-thumbnailer"
 path = "src/bin/thumbnailer.rs"
 
@@ -22,7 +27,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [features]
 default = ["native-ui"]
-native-ui = ["dep:fluxdi", "dep:tauri", "dep:tauri-plugin-dialog", "dep:tauri-plugin-opener", "dep:tauri-plugin-clipboard-manager", "dep:tauri-plugin-fs", "dep:tauri-plugin-deep-link", "dep:tauri-plugin-os", "dep:tauri-plugin-log", "dep:tauri-plugin-window-state", "dep:tauri-plugin-notification", "dep:tauri-plugin-brainstorming-native", "dep:tauri-plugin-single-instance", "dep:tauri-plugin-macos-fps"]
+native-ui = ["dep:tauri-specta", "dep:specta-typescript", "dep:fluxdi", "dep:tauri", "dep:tauri-plugin-dialog", "dep:tauri-plugin-opener", "dep:tauri-plugin-clipboard-manager", "dep:tauri-plugin-fs", "dep:tauri-plugin-deep-link", "dep:tauri-plugin-os", "dep:tauri-plugin-log", "dep:tauri-plugin-window-state", "dep:tauri-plugin-notification", "dep:tauri-plugin-brainstorming-native", "dep:tauri-plugin-single-instance", "dep:tauri-plugin-macos-fps"]
 e2e = ["native-ui", "dep:tauri-plugin-wdio", "dep:tauri-plugin-wdio-webdriver", "tauri-plugin-brainstorming-native/e2e"]
 
 [build-dependencies]
@@ -49,6 +54,13 @@ thiserror = "2.0.21"
 tokio = { version = "1.53.3", features = ["rt-multi-thread", "sync", "time", "net", "fs", "io-util", "macros"] }
 tokio-util = { version = "0.7.20", features = ["io", "rt"] }
 futures-util = "0.3.34"
+d3-hierarchy = "0.1.1"
+specta = { version = "=2.0.0-rc.25", features = ["derive", "serde_json"] }
+tauri-specta = { version = "=2.0.0-rc.25", optional = true, features = ["typescript"] }
+specta-typescript = { version = "0.0.12", optional = true }
+zip = { version = "9.0.5", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+quick-xml = "0.42.0"
+pulldown-cmark = "0.13.4"
 sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros"] }
 # SQLx 0.9 requires libsqlite3-sys <0.38; use its latest compatible stable release.
 libsqlite3-sys = { version = "0.37.0", features = ["bundled-sqlcipher-vendored-openssl"] }
@@ -77,6 +89,7 @@ lol_html = "3.0.1"
 scraper = "0.27.0"
 regex = "1.13.1"
 unicode-segmentation = "1.13.3"
+icu_segmenter = { version = "2.3.0", features = ["compiled_data", "auto"] }
 base64 = "0.23.1"
 rmcp = { version = "3.5.1", default-features = false, features = ["server", "transport-streamable-http-server"] }
 tower = { version = "0.5.3", features = ["util"] }

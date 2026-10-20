@@ -1,3 +1,4 @@
+import { flushNativeEditor } from '@renderer/state/nativeEditorQueue'
 import { translate } from '@renderer/i18n'
 import { useEffect } from 'react'
 import { $getRoot, getNearestEditorFromDOMNode, REDO_COMMAND, UNDO_COMMAND } from 'lexical'
@@ -73,6 +74,8 @@ export const useFileLifecycle = (): void => {
       useDocumentTabs.getState().recovery.length === 0 &&
       hadWorkspace
     const writeRecovery = async (): Promise<void> => {
+      if (!canWriteRecovery()) return
+      await flushNativeEditor()
       if (!canWriteRecovery()) return
       await bridge.writeWorkspaceRecovery(workspaceRecoveryContents())
     }

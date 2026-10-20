@@ -1,3 +1,4 @@
+import { flushNativeEditor } from '@renderer/state/nativeEditorQueue'
 import { queueDocumentPreviews } from '@renderer/lib/documentPreviews'
 import type { OpenedDocument } from '@shared/contracts'
 import { translate } from '@renderer/i18n'
@@ -40,6 +41,7 @@ const acceptFileSelection = async (select: () => Promise<OpenedDocument | null>)
   let reusedId: string | null = null
   useEditor.setState({ busy: true })
   try {
+    await flushNativeEditor()
     await waitForDocumentWrites()
     const selected = await select()
     if (!selected) return
@@ -112,10 +114,13 @@ export const saveDocument = async (saveAs = false): Promise<void> => {
     return
   useEditor.getState().commitDraft()
   if (useEditor.getState().editingId) return
-  const { workbook, path } = useEditor.getState()
-  const contents = serializedWorkbook(workbook)
+  const workbookId = useEditor.getState().workbook.id
   useEditor.setState({ busy: true, error: null })
   try {
+    await flushNativeEditor(workbookId)
+    if (useEditor.getState().workbook.id !== workbookId) return
+    const { workbook, path } = useEditor.getState()
+    const contents = serializedWorkbook(workbook)
     const savedPath = await queueDocumentWrite(path, () =>
       requireDesktopAPI().saveDocument({
         path: saveAs ? null : path,

@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { createDocument, deserializeWorkbook } from '@core'
+import { layoutDocument } from '@layout'
+import type { ComputeAPI, NativeLayoutInput } from '@shared/compute'
 import type { SaveRequest } from '@shared/contracts'
 import { desktop } from '@tests/fixtures/desktop'
 import { isDirty, useEditor } from '@renderer/state/editor'
@@ -148,10 +150,16 @@ it('preserves invalid input and dirty state instead of writing an invalid snapsh
 it('keeps a successful save clean when its background preview fails', async () => {
   const preview = vi.fn(() => Promise.reject(new Error('Preview unavailable')))
   const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
-  desktop({ saveDocument: persist, getDocumentPreviewRevision: preview })
   openDocumentTab(createDocument('Original', 'named'), '/named.brainstorming')
   stop = startDocumentAutosave()
   rename('Saved despite preview failure')
+  desktop({
+    saveDocument: persist,
+    compute: {
+      layout: ({ document }: NativeLayoutInput) => Promise.resolve(layoutDocument(document)),
+      refreshPreviews: preview,
+    } as unknown as ComputeAPI,
+  })
   try {
     await vi.advanceTimersByTimeAsync(6000)
     expect(preview).toHaveBeenCalledOnce()
@@ -162,4 +170,26 @@ it('keeps a successful save clean when its background preview fails', async () =
   } finally {
     warning.mockRestore()
   }
+})
+
+it('submits one native preview request with scene geometry and no PNG byte arrays', async () => {
+  const refreshPreviews = vi.fn<ComputeAPI['refreshPreviews']>(() => Promise.resolve())
+  openDocumentTab(createDocument('Original', 'named'), '/named.brainstorming')
+  stop = startDocumentAutosave()
+  rename('Native preview')
+  desktop({
+    saveDocument: persist,
+    compute: {
+      layout: ({ document }: NativeLayoutInput) => Promise.resolve(layoutDocument(document)),
+      refreshPreviews,
+    } as unknown as ComputeAPI,
+  })
+  await vi.advanceTimersByTimeAsync(6000)
+  expect(refreshPreviews).toHaveBeenCalledOnce()
+  const request = refreshPreviews.mock.calls[0]?.[0]
+  if (!request) throw new Error('Missing preview request')
+  expect(request.documentId).toBe('named')
+  expect(request.contents).toContain('Native preview')
+  expect(Object.keys(request.geometry)).toHaveLength(1)
+  expect(JSON.stringify(request)).not.toContain('"png"')
 })

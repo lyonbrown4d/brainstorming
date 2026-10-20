@@ -6,7 +6,7 @@ import { isSwitchingDocument, useDocumentTabs } from '@renderer/state/documentTa
 
 interface IndexedWorkbook {
   readonly source: MindMapWorkbook
-  readonly input: ContentIndexWorkbook
+  input?: ContentIndexWorkbook
 }
 
 // A stable queue also orders disposal against a subsequent Strict Mode mount.
@@ -36,7 +36,7 @@ const sameWorkbooks = (
   left.size === right.size &&
   [...left].every(([id, entry]) => right.get(id)?.source === entry.source)
 
-export const createContentIndexSync = (api: ContentSearchAPI) => {
+export const createContentIndexSync = (api: ContentSearchAPI, onChanged?: () => void) => {
   let alive = true
   let desired = new Map<string, IndexedWorkbook>()
   let synchronized = new Map<string, IndexedWorkbook>()
@@ -50,7 +50,7 @@ export const createContentIndexSync = (api: ContentSearchAPI) => {
     latest = queueSync(async () => {
       const upserts = [...target.values()]
         .filter((entry) => synchronized.get(entry.source.id)?.source !== entry.source)
-        .map((entry) => entry.input)
+        .map((entry) => (entry.input ??= indexWorkbook(entry.source)))
       await api.syncContentIndex({ upserts, retainedWorkbookIds: [...target.keys()] })
       // A failed native transaction never advances this baseline.
       synchronized = target
@@ -70,15 +70,13 @@ export const createContentIndexSync = (api: ContentSearchAPI) => {
           ? editor.workbook
           : tab.editor.workbook
       const previous = desired.get(source.id)
-      next.set(
-        source.id,
-        previous?.source === source ? previous : { source, input: indexWorkbook(source) },
-      )
+      next.set(source.id, previous?.source === source ? previous : { source })
     }
     if (sameWorkbooks(desired, next)) return
     desired = next
     revision += 1
     schedule()
+    onChanged?.()
   }
   const unsubscribeEditor = useEditor.subscribe(refresh)
   const unsubscribeTabs = useDocumentTabs.subscribe(refresh)

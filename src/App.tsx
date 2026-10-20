@@ -45,10 +45,11 @@ import { useWorkspace } from '@renderer/state/workspace'
 import { CreationWorkspace, WorkspaceHeader } from '@renderer/components/creation/CreationWorkspace'
 import '@xyflow/react/dist/style.css'
 import '@renderer/styles/ui.css'
-import '@renderer/styles/base.css'
-import '@renderer/styles/window.css'
-import '@renderer/styles/topics.css'
-import '@renderer/styles/motion.css'
+import '@renderer/styles/loading.scss'
+import '@renderer/styles/base.scss'
+import '@renderer/styles/window.scss'
+import '@renderer/styles/topics.scss'
+import '@renderer/styles/motion.scss'
 
 const PresentationWorkspace = lazy(
   () => import('@renderer/components/presentation/PresentationWorkspace'),

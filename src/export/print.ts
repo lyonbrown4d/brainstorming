@@ -1,21 +1,17 @@
 import { createWorkbook } from '@core'
-import { prepareExportResources } from '@renderer/export/resources'
 import { translate } from '@renderer/i18n'
-import { prepareMarkerIcons } from '@shared/markerIcons'
 import type { MindMapDocument } from '@core'
-import { renderSheetSvg } from '@renderer/export/svg'
+import { prepareSheetImage } from '@renderer/export/images'
 
 /** Print the complete pure-layout SVG in an isolated, scriptless document. */
 export const printSheet = async (
   document: MindMapDocument,
   includeCollapsed = false,
 ): Promise<void> => {
-  const prepared = await prepareExportResources(createWorkbook(document), false)
+  const prepared = createWorkbook(document)
   const sheet = prepared.sheets[0]
   if (!sheet) throw new Error(translate('exportImageResourceIsMissing'))
-  document = sheet.document
-  await prepareMarkerIcons(document)
-  const source = renderSheetSvg(document, includeCollapsed)
+  const source = await prepareSheetImage(prepared, sheet.id, includeCollapsed)
   const url = URL.createObjectURL(new Blob([source.svg], { type: 'image/svg+xml;charset=utf-8' }))
   const frame = window.document.createElement('iframe')
   frame.title = translate('brainstormingFullMapPrint')

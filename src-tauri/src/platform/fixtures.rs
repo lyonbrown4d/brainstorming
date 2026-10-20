@@ -6,7 +6,6 @@ use serde_json::{Value, json};
 use std::sync::Arc;
 use tauri::{AppHandle, Manager, State, WebviewWindow};
 
-#[tauri::command]
 pub async fn e2e_fixture(
   app: AppHandle,
   window: WebviewWindow,

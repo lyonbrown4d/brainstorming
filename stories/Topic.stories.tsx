@@ -4,8 +4,8 @@ import { TopicNode, type TopicFlowNode } from '@renderer/components/TopicNode'
 import { createDocument } from '@core'
 import { useEditor } from '@renderer/state/editor'
 import '@xyflow/react/dist/style.css'
-import '@renderer/styles/base.css'
-import '@renderer/styles/topics.css'
+import '@renderer/styles/base.scss'
+import '@renderer/styles/topics.scss'
 const topic = createDocument('一个新的想法').topics.root
 const nodeTypes = { topic: TopicNode }
 const TopicPreview = ({ root = false }: { root?: boolean }) => {

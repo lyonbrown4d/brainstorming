@@ -1,8 +1,9 @@
 import { useMessages } from '@renderer/i18n/useMessages'
 
-import { useMemo, useState } from 'react'
-import { searchWorkbook, type SearchMatch } from '@core'
+import { useState } from 'react'
+import type { SearchMatch } from '@core'
 import { useEditor } from '@renderer/state/editor'
+import { useDocumentSearch } from '@renderer/hooks/useDocumentSearch'
 import { isCompositionKey } from '@renderer/state/keyboard'
 import { replaceSearchResults, revealSearchMatch, useSearch } from '@renderer/state/search'
 import { Button } from '@renderer/components/ui/button'
@@ -22,23 +23,17 @@ export const SearchPanel = () => {
   const workbook = useEditor((state) => state.workbook)
   const sheetId = useEditor((state) => state.activeSheetId)
   const [chosen, setChosen] = useState<SearchMatch | null>(null)
-  const results = useMemo(
-    () =>
-      searchWorkbook(workbook, search.query, {
-        matchCase: search.matchCase,
-        wholeWord: search.wholeWord,
-        includeNotes: search.includeNotes,
-        ...(search.allSheets ? {} : { sheetId }),
-      }),
-    [
-      workbook,
-      sheetId,
-      search.query,
-      search.matchCase,
-      search.wholeWord,
-      search.includeNotes,
-      search.allSheets,
-    ],
+  const [replacing, setReplacing] = useState(false)
+  const { results, loading, error, retry } = useDocumentSearch(
+    workbook.id,
+    search.query,
+    {
+      matchCase: search.matchCase,
+      wholeWord: search.wholeWord,
+      includeNotes: search.includeNotes,
+      ...(search.allSheets ? {} : { sheetId }),
+    },
+    search.open,
   )
   const currentResults = results.filter((match) => match.sheetId === sheetId)
   const selected =
@@ -116,30 +111,46 @@ export const SearchPanel = () => {
           />
           <Button
             variant="outline"
-            disabled={selected?.sheetId !== sheetId}
+            disabled={selected?.sheetId !== sheetId || loading || replacing}
             onClick={() => {
-              if (selected) replaceSearchResults(selected)
+              if (!selected) return
+              setReplacing(true)
+              void Promise.resolve(replaceSearchResults(selected)).finally(() => {
+                setReplacing(false)
+              })
             }}
           >
             {translate('replaceThisResult')}
           </Button>
           <Button
-            disabled={!currentResults.length}
+            disabled={!currentResults.length || loading || replacing}
             onClick={() => {
-              replaceSearchResults()
+              setReplacing(true)
+              void Promise.resolve(replaceSearchResults()).finally(() => {
+                setReplacing(false)
+              })
             }}
           >
             {translate('replaceAllOnThisSheet')}
           </Button>
         </div>
         <p className="text-xs text-muted-foreground" role="status">
-          {search.query
-            ? translate('value0MatchesValue1ResultsOnThisSheet', {
-                value0: results.reduce((count, match) => count + match.count, 0),
-                value1: currentResults.length,
-              })
-            : translate('enterTextToSearch')}
+          {loading
+            ? translate('loading')
+            : error
+              ? translate('operationFailedPleaseRetry')
+              : search.query
+                ? translate('value0MatchesValue1ResultsOnThisSheet', {
+                    value0: results.reduce((count, match) => count + match.count, 0),
+                    value1: currentResults.length,
+                  })
+                : translate('enterTextToSearch')}
         </p>
+        {error && (
+          <Button variant="outline" onClick={() => void retry()}>
+            {translate('retry')}
+          </Button>
+        )}
         <div className="max-h-72 space-y-1 overflow-y-auto" aria-label={translate('searchResults')}>
           {results.map((match) => (
             <Button
@@ -162,7 +173,7 @@ export const SearchPanel = () => {
               </span>
             </Button>
           ))}
-          {search.query && results.length === 0 && (
+          {search.query && !loading && !error && results.length === 0 && (
             <p className="py-8 text-center text-sm text-muted-foreground">
               {translate('noMatchingTopics')}
             </p>

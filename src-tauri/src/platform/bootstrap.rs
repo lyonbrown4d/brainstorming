@@ -21,13 +21,7 @@ pub fn run() {
         _ => PermissionResponse::Deny,
       }
     });
-  #[cfg(not(feature = "e2e"))]
-  let builder = builder.invoke_handler(tauri::generate_handler![super::request::native_request]);
-  #[cfg(feature = "e2e")]
-  let builder = builder.invoke_handler(tauri::generate_handler![
-    super::request::native_request,
-    super::fixtures::e2e_fixture
-  ]);
+  let builder = builder.invoke_handler(crate::bindings::builder().invoke_handler());
   let app = builder
     .setup(|app| {
       super::menu::register(app.handle());

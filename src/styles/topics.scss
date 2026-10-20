@@ -21,18 +21,20 @@
 .topic.is-editing::after {
   visibility: hidden;
 }
-.topic-leaf::after {
-  content: '';
-  position: absolute;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--branch-color);
-  top: calc(50% - 2px);
-  right: -5px;
-  pointer-events: none;
-}
-.topic-leaf.side-left::after {
-  right: auto;
-  left: -5px;
+.topic-leaf {
+  &::after {
+    content: '';
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--branch-color);
+    top: calc(50% - 2px);
+    right: -5px;
+    pointer-events: none;
+  }
+  &.side-left::after {
+    right: auto;
+    left: -5px;
+  }
 }

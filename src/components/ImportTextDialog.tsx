@@ -2,7 +2,7 @@ import { useMessages } from '@renderer/i18n/useMessages'
 
 import { useId, useRef, useState } from 'react'
 import type { MindMapWorkbook } from '@core'
-import { decodeMarkdown, decodeOpml } from '@formats/interchange'
+import { requireDesktopAPI } from '@renderer/lib/desktop'
 import { Button } from '@renderer/components/ui/button'
 import { Label } from '@renderer/components/ui/label'
 import { Input } from '@renderer/components/ui/input'
@@ -29,7 +29,7 @@ export const ImportTextDialog = ({ onImport, defaultOpen = false }: ImportTextDi
   const { translate } = useMessages()
 
   const [open, setOpen] = useState(defaultOpen)
-  const [format, setFormat] = useState<'md' | 'opml'>('md')
+  const [format, setFormat] = useState<'md' | 'opml' | 'txt'>('md')
   const [text, setText] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -70,13 +70,24 @@ export const ImportTextDialog = ({ onImport, defaultOpen = false }: ImportTextDi
           onSubmit={(event) => {
             event.preventDefault()
             if (locked.current) return
-            try {
-              setError('')
-              setPreview(format === 'md' ? decodeMarkdown(text) : decodeOpml(text))
-            } catch (cause) {
-              setPreview(null)
-              setError(cause instanceof Error ? cause.message : translate('couldNotParseOutline'))
-            }
+            locked.current = true
+            setBusy(true)
+            setError('')
+            const compute = requireDesktopAPI().compute
+            void (
+              compute
+                ? compute.importText(format, text)
+                : Promise.reject(new Error('原生导入服务不可用'))
+            )
+              .then(setPreview)
+              .catch((cause: unknown) => {
+                setPreview(null)
+                setError(cause instanceof Error ? cause.message : translate('couldNotParseOutline'))
+              })
+              .finally(() => {
+                locked.current = false
+                setBusy(false)
+              })
           }}
         >
           <FieldSelect
@@ -85,6 +96,7 @@ export const ImportTextDialog = ({ onImport, defaultOpen = false }: ImportTextDi
             options={[
               { value: 'md', label: 'Markdown' },
               { value: 'opml', label: 'OPML' },
+              { value: 'txt', label: 'TXT' },
             ]}
             onChange={(value) => {
               setFormat(value)
@@ -95,7 +107,7 @@ export const ImportTextDialog = ({ onImport, defaultOpen = false }: ImportTextDi
             {translate('chooseTextFile')}
             <Input
               type="file"
-              accept=".md,.markdown,.opml,.xml,text/markdown,text/xml"
+              accept=".md,.markdown,.opml,.xml,.txt,text/markdown,text/xml,text/plain"
               disabled={busy}
               onChange={(event) => {
                 const file = event.target.files?.[0]
@@ -108,7 +120,13 @@ export const ImportTextDialog = ({ onImport, defaultOpen = false }: ImportTextDi
                   .text()
                   .then((content) => {
                     setText(content)
-                    setFormat(/\.(?:opml|xml)$/i.test(file.name) ? 'opml' : 'md')
+                    setFormat(
+                      /\.(?:opml|xml)$/i.test(file.name)
+                        ? 'opml'
+                        : /\.txt$/i.test(file.name)
+                          ? 'txt'
+                          : 'md',
+                    )
                     setPreview(null)
                     setError('')
                   })

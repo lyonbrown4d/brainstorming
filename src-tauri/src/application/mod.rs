@@ -1,3 +1,4 @@
+mod compute;
 mod core;
 mod document;
 mod integration;
@@ -29,6 +30,7 @@ impl Module for BackendModule {
       Box::new(document::DocumentModule(self.graph.clone())),
       Box::new(integration::IntegrationModule(self.graph.clone())),
       Box::new(search::SearchModule(self.graph.clone())),
+      Box::new(compute::ComputeModule(self.graph.clone())),
     ];
     if self.native {
       modules.push(Box::new(media::MediaModule(self.graph.clone())));
@@ -50,6 +52,7 @@ fn services(directory: PathBuf, app: Option<AppHandle>) -> BackendModule {
     document,
     search::SearchServices::new(),
     integrations,
+    compute::ComputeServices::new(),
   ));
   // Reuse the context while keeping the container reference in the cached
   // provider weak: Root -> cache -> strong container -> Root would leak.
@@ -156,6 +159,8 @@ async fn stop_owned(
     media.revoke();
   }
   state.image_exports.begin_shutdown();
+  state.compute.shutdown().await;
+  state.editor.shutdown().await?;
   state.ai.cancel_all().await;
   state.mcp.shutdown().await;
   let mut open = admission.write().await;

@@ -8,16 +8,16 @@ Brainstorming 是基于 React Flow + Tauri 2 / Rust 的本地优先跨平台思�
 
 ## 架构
 
-- `src/core`：纯 TypeScript 主题树、命令、历史、校验、版本化 JSON。
-- `src/formats`：XMind 与大纲转换及导入报告；原生 SQLite 由 Rust 读写，不将第三方文件字段写入 core。
-- `src/layout`：主题树到左右布局的纯计算，优先采用成熟布局库。
+- `src/core`：TypeScript 文档契约、草稿与必要视图适配、参考命令和版本化 JSON；正式文档命令与历史由 Rust `editor_engine` 执行。
+- `src/formats`：交换格式类型与预览、差分测试参考；正式导入导出使用 Rust `interchange`，原生 SQLite 由 Rust 读写，不将第三方文件字段写入 core。
+- `src/layout`：主题测量、几何类型与布局参考；正式布局由 Rust `layout_engine` 复用 d3-hierarchy 计算。
 - `src-tauri/src`：Rust 原生服务；`src-tauri/plugins/brainstorming-native`：Swift / Kotlin 平台适配；`src`：共享 React 前端。
 - `src/shared`：前端平台 API 的白名单契约；Rust 在命令边界重新验证。
 - Core 不依赖 React、DOM、Tauri、React Flow 或其 Node/Edge 类型。
 - React Flow 节点/边是文档模型的视图投影，不是持久化协议。
 - 产品聚焦思维导图与头脑风暴，画布使用 React Flow，不提供三维视图或独立 draw.io 编辑器。节点表现是同一主题的样式，切换保留标题、层级、备注和资源；游离想法与手绘和导图共存于同一 Sheet。
 - 主题树维护稳定 ID、唯一父节点、有序子节点、禁止循环和不可达节点。
-- 所有文档变更必须通过类型化命令；一次用户操作对应一次撤销。
+- 所有文档变更必须通过类型化命令；一次用户操作对应一次撤销。前端按工作簿排队，通过生成的 Tauri 绑定调用 Rust 编辑器，修订号使用十进制字符串；前端仅保持视图镜像与即时交互状态。保存、搜索、导航等依赖结果的操作须等待相关命令完成。
 - 拖动中间位置、选区、测量缓存不写入文档历史；拖动结束提交移动命令。
 - 产品运行于 Tauri，目标为 macOS、Windows、Linux、iOS、Android，不维护纯 Web 产品或浏览器文件、密码、恢复降级。Storybook 可注入类型明确的平台 API 预览组件。
 - Rust 重复计算优先使用成熟异步缓存库；当前图片派生元数据使用 Moka，键包含原图内容摘要、管线版本和参数。缓存必须有容量和过期上限，不缓存失败、明文临时文件、密钥或授权结果；命中仍执行取消、文件变化校验与资源授权。
@@ -28,6 +28,8 @@ Brainstorming 是基于 React Flow + Tauri 2 / Rust 的本地优先跨平台思�
 ## 工具链
 
 保留 Vite / Tauri CLI、Moon 单项目任务图与 pnpm。package scripts 直接调用成熟 CLI，不维护通用 tasks.ts 包装；多任务依赖与缓存交给 Moon。前端、配置和脚本使用 TypeScript，原生后端使用 Rust。开发模式保留 React Scan，React DevTools 使用官方 standalone 接入并通过本机开关启用，均不进入发布产物。React renderer 与 Storybook 启用正式 React Compiler，沿用 React 19 官方接入方式；不将其用于 core 或 Rust 后端。
+
+新计算命令使用 `tauri-specta` 生成绑定。`src/generated` 只作为开发与构建产物，不进入 Git；通过 `pnpm generate:bindings` 重新生成，禁止手改。
 
 ## 实现与质量
 
@@ -51,7 +53,7 @@ Brainstorming 是基于 React Flow + Tauri 2 / Rust 的本地优先跨平台思�
 - 多文档使用画布顶部浮动标签，与底部 Dock 一样在 hover 或键盘聚焦时展开，支持横向滚动，不占用标题栏或固定内容行；每份文档保留独立文件路径、脏状态、历史、Sheet 和二维视口。底部 Sheet 标签只切换当前文档的画布。
 - 现有 UI 迭代时同步检查通用控件，优先替换为官方 shadcn 组件；缺少的组件通过固定版本的官方 CLI 下载，使用 pnpm，避免自行重写同类基础控件。
 - `src/components/ui` 中下载的 shadcn 组件保持官方实现，不直接修改其逻辑、结构、默认样式或 API。业务差异通过上层组合组件、公开 props、`className` 和集中主题变量实现；组合组件放在业务目录，不放入 `ui`。
-- 全项目的业务视觉样式（主界面、创建引导、画布、属性栏、设置、演示和启动页）优先使用 Tailwind CSS utilities，通过组合组件的 `className` 表达布局、间距、字体、颜色和交互状态；不新增同类手写 CSS 或通过 `@apply` 建立平行样式库。已有界面被修改时同步迁移涉及的业务样式。CSS 文件仅保留集中主题变量、第三方集成及确实需要数据驱动的画布规则；动态主题颜色、尺寸通过类型明确的样式值或 CSS 变量传入。
+- 全项目的业务视觉样式（主界面、创建引导、画布、属性栏、设置、演示和启动页）优先使用 Tailwind CSS utilities，通过组合组件的 `className` 表达布局、间距、字体、颜色和交互状态；不新增同类手写 CSS 或通过 `@apply` 建立平行样式库。已有界面被修改时同步迁移涉及的业务样式。需要手写的样式优先使用 SCSS，通过有限嵌套、`@use`、变量和 mixin 复用规则；保持选择器浅层，避免全局副作用。现有手写 CSS 随迭代迁移到 SCSS；Tailwind v4 入口与 shadcn 注册表主题保持 CSS，不交给 Sass 编译。样式文件仅保留集中主题变量、第三方集成及确实需要数据驱动的画布规则；动态主题颜色、尺寸通过类型明确的样式值或 CSS 变量传入。
 - 升级 shadcn 组件通过官方 CLI/注册表重新获取并审查差异，不能在原始组件上维护业务补丁。下载源码属于第三方组件，标明来源；源码行数拆分要求面向手写业务代码，不为行数拆散上游组件。
 - Rust 统一由仓库根目录 `rustfmt.toml` 管理格式，使用两空格缩进，禁止硬 Tab；主程序与本地插件均遵循同一配置。
 - ESLint 管质量，Prettier 管格式；Husky 提交前检查格式和类型。

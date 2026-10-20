@@ -5,6 +5,7 @@ import { nativeArtifact } from '@tests/native/artifacts'
 import {
   artifact,
   fillContentEditable,
+  focusNativeWindow,
   create,
   ensureProperties,
   fileAction,
@@ -20,7 +21,8 @@ import {
 
 const palette = () => browser.$('[data-command-palette]')
 const search = async (query: string): Promise<void> => {
-  await shortcut('k')
+  await focusNativeWindow()
+  await browser.keys([process.platform === 'darwin' ? Key.Command : Key.Control, Key.Shift, 'p'])
   await expect(palette()).toBeDisplayed()
   await palette().$('[cmdk-input]').setValue(query)
 }

@@ -7,7 +7,7 @@ import { CanvasInk } from '@renderer/components/ink/CanvasInk'
 import { useAppearanceColors } from '@renderer/hooks/useAppearanceColors'
 import { useMessages } from '@renderer/i18n/useMessages'
 
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { ConnectionMode, ReactFlow, useReactFlow } from '@xyflow/react'
 import {
@@ -33,10 +33,17 @@ import { CanvasAnnotations } from '@renderer/components/annotations/CanvasAnnota
 import { SelectionVisibility } from '@renderer/components/SelectionVisibility'
 import { FloatingToolbar } from '@renderer/components/FloatingToolbar'
 import { documentAppearance } from '@shared/appearance'
-import { createCanvasProjector } from '@renderer/lib/canvasProjection'
+import { useCanvasProjection } from '@renderer/hooks/useCanvasProjection'
+import type { projectCanvas } from '@renderer/components/documents/projectCanvas'
 import { StructureEdge, StructureGeometry } from '@renderer/components/documents/StructureGeometry'
 const nodeTypes = { topic: TopicNode, ink: InkNode }
 const edgeTypes = { relation: RelationEdge, structure: StructureEdge }
+const emptyProjection: ReturnType<typeof projectCanvas> = {
+  nodes: [],
+  edges: [],
+  layoutNodes: [],
+  decorations: [],
+}
 export { ZoomControls } from '@renderer/components/ZoomControls'
 export const Canvas = () => {
   const { translate } = useMessages()
@@ -51,13 +58,26 @@ export const Canvas = () => {
   const [initialFit] = useState(() => ({ padding: canvasFitPadding(), maxZoom: 1.2 }))
   const playing = usePresentation((state) => state.playing)
   const inkMode = useCanvasInk((state) => state.mode)
-  const [project] = useState(createCanvasProjector)
-  const projection = useMemo(
-    () => project(document, colors.canvas),
-    [document, colors.canvas, project],
-  )
+  const {
+    projection: readyProjection,
+    loading,
+    error,
+    retry,
+  } = useCanvasProjection(document, activeSheetId, colors.canvas)
+  const projection = readyProjection ?? emptyProjection
+  const fitted = useRef(false)
+  useEffect(() => {
+    if (savedView || !readyProjection || fitted.current) return
+    fitted.current = true
+    const frame = requestAnimationFrame(() => {
+      void flow.fitView(initialFit)
+    })
+    return () => {
+      cancelAnimationFrame(frame)
+    }
+  }, [flow, initialFit, readyProjection, savedView])
   const { reconnecting, ...relations } = useCanvasRelations(projection.edges)
-  const drag = useCanvasDrag(projection.nodes)
+  const drag = useCanvasDrag(projection.nodes, `${activeSheetId}:${document.id}`)
   const placedOnClick = useRef(false)
   return (
     <CanvasContextMenu>
@@ -83,6 +103,7 @@ export const Canvas = () => {
               : ''
           }
           {...drag}
+          nodes={readyProjection ? drag.nodes : []}
           {...relations}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
@@ -184,6 +205,31 @@ export const Canvas = () => {
           {!playing && <CanvasInk />}
           {!playing && <CanvasMinimap />}
         </ReactFlow>
+        {!readyProjection && (
+          <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
+            {error ? (
+              <div
+                className="pointer-events-auto flex items-center gap-3 rounded-lg border bg-background px-4 py-3 text-sm shadow-sm"
+                role="alert"
+              >
+                <span>{translate('operationFailedPleaseRetry')}</span>
+                <button
+                  type="button"
+                  className="text-primary underline"
+                  onClick={() => {
+                    void retry()
+                  }}
+                >
+                  {translate('retry')}
+                </button>
+              </div>
+            ) : loading ? (
+              <span className="rounded-lg bg-background/90 px-4 py-2 text-sm" role="status">
+                {translate('loading')}
+              </span>
+            ) : null}
+          </div>
+        )}
         {!playing && (
           <CanvasOverlay>
             <DragFeedback />

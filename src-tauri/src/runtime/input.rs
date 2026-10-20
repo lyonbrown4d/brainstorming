@@ -36,8 +36,11 @@ pub fn path(value: &str, save: bool) -> Result<PathBuf> {
     .and_then(|v| v.to_str())
     .unwrap_or("")
     .to_lowercase();
-  if !path.is_absolute() || !(ext == "brainstorming" || (!save && ext == "xmind")) {
-    return Err("请选择 .brainstorming 文件".into());
+  if !path.is_absolute()
+    || !(ext == "brainstorming"
+      || (!save && ["xmind", "opml", "md", "markdown", "txt"].contains(&ext.as_str())))
+  {
+    return Err("请选择支持的导图或大纲文件".into());
   }
   Ok(path)
 }

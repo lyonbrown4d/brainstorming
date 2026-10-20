@@ -1,5 +1,8 @@
 use super::{MediaState, Result};
-use crate::runtime::{documents, input};
+use crate::{
+  interchange,
+  runtime::{documents, input},
+};
 use serde_json::{Value, json};
 use std::{path::PathBuf, time::Instant};
 
@@ -138,14 +141,13 @@ async fn raw(media: &MediaState, input: Value) -> Result<Value> {
   let mut assets = Vec::new();
   for (name, bytes) in files {
     if is_document(&PathBuf::from(&name)) {
-      if name.to_lowercase().ends_with(".xmind") {
-        documents.push(
-          tokio::task::spawn_blocking(
-            move || json!({"path":null,"contents":"","importSource":{"name":name,"bytes":bytes}}),
-          )
+      if !name.to_lowercase().ends_with(".brainstorming") {
+        static IMPORT_LIMIT: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(2);
+        let _permit = IMPORT_LIMIT.acquire().await.map_err(|_| "导入服务已关闭")?;
+        let imported = tokio::task::spawn_blocking(move || interchange::import(&bytes, &name))
           .await
-          .map_err(|_| "导入文档编码任务失败")?,
-        );
+          .map_err(|_| "导入处理失败")??;
+        documents.push(json!({"path":null,"contents":imported.workbook.to_string(),"warnings":imported.warnings}));
       } else {
         let directory =
           super::temporary::Directory::create(media.state.directory.clone(), "raw-document-")
@@ -205,10 +207,11 @@ fn parse_raw(input: Value) -> Result<Vec<(String, Vec<u8>)>> {
     .collect()
 }
 fn is_document(path: &std::path::Path) -> bool {
-  path
-    .extension()
-    .and_then(|s| s.to_str())
-    .is_some_and(|s| s.eq_ignore_ascii_case("brainstorming") || s.eq_ignore_ascii_case("xmind"))
+  path.extension().and_then(|s| s.to_str()).is_some_and(|s| {
+    ["brainstorming", "xmind", "opml", "md", "markdown", "txt"]
+      .iter()
+      .any(|ext| s.eq_ignore_ascii_case(ext))
+  })
 }
 async fn cancel_unlocks(media: &MediaState, documents: &[Value]) {
   let mut session = media.state.session.lock().await;

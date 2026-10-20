@@ -1,6 +1,7 @@
 mod catalog;
 #[cfg(test)]
 mod catalog_tests;
+mod compute_resources;
 mod derivative_cache;
 mod dispatch;
 mod export;
@@ -39,6 +40,13 @@ pub struct MediaState {
   raw_documents: tokio::sync::Mutex<Vec<temporary::Directory>>,
 }
 impl MediaState {
+  pub(crate) async fn hydrate_workbook(
+    &self,
+    workbook: serde_json::Value,
+    original: bool,
+  ) -> Result<serde_json::Value> {
+    compute_resources::hydrate(&self.importer.catalog, workbook, original).await
+  }
   pub async fn new(app: AppHandle, state: Arc<AppState>) -> Result<Self> {
     let catalog = Arc::new(catalog::Catalog::new(state.clone()));
     let importer = Arc::new(Importer::new(state.clone(), catalog.clone()));

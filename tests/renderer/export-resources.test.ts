@@ -4,6 +4,10 @@ import { applyCommand, createDocument, createWorkbook, type DocumentAsset } from
 import { createExport } from '@renderer/export/files'
 import { prepareExportResources } from '@renderer/export/resources'
 import { desktop } from '@tests/fixtures/desktop'
+import type { ComputeAPI } from '@shared/compute'
+import { layoutDocument } from '@layout'
+import { prepareSheetImage } from '@renderer/export/images'
+import { queryClient } from '@renderer/lib/queryClient'
 
 const storedAttachment: DocumentAsset = {
   id: 'video',
@@ -21,6 +25,7 @@ const withAttachment = () =>
   )
 afterEach(() => {
   vi.unstubAllGlobals()
+  queryClient.clear()
 })
 
 describe('bounded resource interchange exports', () => {
@@ -115,4 +120,56 @@ describe('bounded resource interchange exports', () => {
     await expect(prepareExportResources(withAttachment(), true)).rejects.toThrow('8 MiB')
     expect(fetch).not.toHaveBeenCalled()
   })
+})
+
+it('leaves stored images on the native side and shares canvas/export geometry across color edits', async () => {
+  const fetch = vi.fn(() =>
+    Promise.reject(new Error('Renderer must not fetch native export assets')),
+  )
+  vi.stubGlobal('fetch', fetch)
+  vi.stubGlobal('document', { fonts: { ready: Promise.resolve() } })
+  const asset: DocumentAsset = {
+    id: 'native-image',
+    name: 'large.png',
+    mimeType: 'image/png',
+    storage: {
+      objectId: 'd'.repeat(64),
+      byteLength: 100 * 1024 ** 2,
+      width: 1000,
+      height: 800,
+      preview: {
+        objectId: 'e'.repeat(64),
+        byteLength: 256_000,
+        mimeType: 'image/png',
+        width: 1000,
+        height: 800,
+      },
+    },
+  }
+  const document = applyCommand(createDocument('Native image', 'native-export-reference'), {
+    type: 'setTopicImage',
+    topicId: 'root',
+    asset,
+    width: 1000,
+    height: 800,
+  })
+  const workbook = createWorkbook(document)
+  const layout = vi.fn<ComputeAPI['layout']>((input) =>
+    Promise.resolve(layoutDocument(input.document)),
+  )
+  const scene = { svg: '<svg xmlns="http://www.w3.org/2000/svg"/>', width: 200, height: 140 }
+  const renderSheet = vi.fn<ComputeAPI['renderSheet']>(() => Promise.resolve(scene))
+  desktop({ compute: { layout, renderSheet } as unknown as ComputeAPI })
+  const sheetId = workbook.sheets[0]?.id ?? ''
+  expect(await prepareSheetImage(workbook, sheetId)).toBe(scene)
+  const received = renderSheet.mock.calls[0]?.[0].sheets[0]?.document.assets?.[asset.id]
+  expect(received?.storage).toEqual(asset.storage)
+  expect(received?.data).toBeUndefined()
+  const recolored = createWorkbook(
+    applyCommand(document, { type: 'setTopicStyle', topicId: 'root', style: { fill: '#112233' } }),
+  )
+  expect(await prepareSheetImage(recolored, sheetId)).toBe(scene)
+  expect(layout).toHaveBeenCalledOnce()
+  expect(renderSheet).toHaveBeenCalledTimes(2)
+  expect(fetch).not.toHaveBeenCalled()
 })

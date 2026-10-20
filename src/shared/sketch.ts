@@ -1,13 +1,15 @@
 import rough from 'roughjs'
+import { LRUCache } from 'lru-cache'
 import type { SheetVisualStyle, TopicShape } from '@core'
 import type { Options } from 'roughjs/bin/core'
 import { topicShapePath } from '@shared/topic-shapes'
 
 const generator = rough.generator()
-const outlines = new Map<string, string>()
-const MAX_ENTRIES = 1024
-const MAX_CHARACTERS = 2 * 1024 * 1024
-let characters = 0
+const outlines = new LRUCache<string, string>({
+  max: 1024,
+  maxSize: 2 * 1024 * 1024,
+  sizeCalculation: (value, key) => key.length + value.length,
+})
 
 /** Stable nonzero Rough.js seed (1..2^31-1); no renderer/session randomness. */
 const seedFor = (identity: string): number => {
@@ -21,11 +23,7 @@ const cachedGeometry = (path: string, identity: string, options: Options): strin
   if (!path) return path
   const key = `${identity}:${path}`
   const cached = outlines.get(key)
-  if (cached !== undefined) {
-    outlines.delete(key)
-    outlines.set(key, cached)
-    return cached
-  }
+  if (cached !== undefined) return cached
   const drawable = generator.path(path, {
     seed: seedFor(identity),
     ...options,
@@ -36,17 +34,7 @@ const cachedGeometry = (path: string, identity: string, options: Options): strin
     .toPaths(drawable)
     .map((part) => part.d)
     .join(' ')
-  const length = key.length + result.length
-  if (length <= MAX_CHARACTERS) {
-    while (outlines.size >= MAX_ENTRIES || characters + length > MAX_CHARACTERS) {
-      const oldest = outlines.entries().next().value
-      if (!oldest) break
-      characters -= oldest[0].length + oldest[1].length
-      outlines.delete(oldest[0])
-    }
-    outlines.set(key, result)
-    characters += length
-  }
+  if (key.length + result.length <= 2 * 1024 * 1024) outlines.set(key, result)
   return result
 }
 

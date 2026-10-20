@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import startupHtml from '@project/splash.html?raw'
 import lightLogo from '@renderer/assets/brand/logo-light.png'
 import darkLogo from '@renderer/assets/brand/logo-dark.png'
-import startupStyles from '@renderer/styles/ui.css?inline'
+import themeStyles from '@renderer/styles/ui.css?inline'
+import startupStyles from '@renderer/styles/startup.scss?inline'
 import { showStartupIssue } from '@renderer/startupStatus'
 
 // Preview the actual pre-React markup rather than maintaining a second React copy.
@@ -11,7 +12,7 @@ const preview = startupHtml
   .replaceAll('/src/assets/brand/logo-dark.png', darkLogo)
   .replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '')
   .replace(/<link\b[^>]*rel="stylesheet"[^>]*>/g, '')
-  .replace('</head>', `<style>${startupStyles}</style></head>`)
+  .replace('</head>', `<style>${themeStyles}${startupStyles}</style></head>`)
 
 const meta = {
   title: 'Brainstorming/启动画面',

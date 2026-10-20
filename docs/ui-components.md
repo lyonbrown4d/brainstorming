@@ -24,7 +24,7 @@ Tabs 由官方 CLI `shadcn@4.22.0` 获取，`ui/tabs.tsx` 保持上游实现。�
 - `MarkerAction` 在右侧主题属性中组合官方 FieldSelect 和 ScrollArea；优先级与进度即时应用，Simple Icons 通过 Iconify offline 和随包图标数据呈现，不请求外部图标服务。
 - `TopicContentPanel` 组合 Lexical、Button、Badge、ScrollArea 和图片预览，管理主题内容。
 
-差异优先通过组合、公开 props 和 `className` 实现，主题变量集中在 `styles/ui.css`。业务布局优先通过 Tailwind utilities 表达，动态画布值保留为类型明确的样式值；不把业务状态或导图命令放入基础组件。
+差异优先通过组合、公开 props 和 `className` 实现，主题变量集中在 `styles/ui.css`。业务布局优先通过 Tailwind utilities 表达，需要手写的样式使用 SCSS 预处理；Tailwind v4 / shadcn 的 `ui.css` 入口保留 CSS。动态画布值保留为类型明确的样式值；不把业务状态或导图命令放入基础组件。
 
 已有界面在迭代时一并检查基础控件。本轮替换主题样式选择器、移动父主题选择器、画布名称输入、画布控制、大纲和标签操作按钮；React Flow、Lexical 和 dnd-kit 继续负责各自的专业交互。
 

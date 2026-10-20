@@ -6,7 +6,13 @@ import { createRecoveryWriter } from '@renderer/lib/recoveryWriter'
 import { queueDocumentWrite } from '@renderer/lib/documentWriteQueue'
 import { useEditor } from '@renderer/state/editor'
 import { isSwitchingDocument, useDocumentTabs } from '@renderer/state/documentTabs'
-import { serializedDocumentSnapshot } from '@renderer/state/documentSnapshot'
+import {
+  sameSnapshot,
+  snapshotIdentity,
+  serializedDocumentSnapshot,
+  type SnapshotIdentity,
+} from '@renderer/state/documentSnapshot'
+import { flushNativeEditor, hasPendingNativeEditor } from '@renderer/state/nativeEditorQueue'
 import {
   savedDocumentEditor,
   updateDocumentSaveState,
@@ -17,7 +23,8 @@ import { suggestedFileName } from '@renderer/state/fileName'
 interface AutosaveEntry {
   readonly target: DocumentSaveTarget
   readonly writer: ReturnType<typeof createRecoveryWriter>
-  contents: string | null
+  candidate: SnapshotIdentity | null
+  baseline: string | null
   retry: Subscription | undefined
   error: string | null
 }
@@ -40,12 +47,15 @@ export const startDocumentAutosave = (): (() => void) => {
   const createEntry = (target: DocumentSaveTarget): AutosaveEntry => {
     const entry: AutosaveEntry = {
       target,
-      contents: null,
+      candidate: null,
+      baseline: null,
       retry: undefined,
       error: null,
       writer: createRecoveryWriter(
         () =>
           queueDocumentWrite(target.path, async () => {
+            if (!eligible(entry)) return
+            await flushNativeEditor(target.workbookId)
             if (!eligible(entry)) return
             const state = savedDocumentEditor(target)
             if (!state) return
@@ -105,25 +115,13 @@ export const startDocumentAutosave = (): (() => void) => {
         entry = createEntry({ tabId: tab.id, workbookId: state.workbook.id, path: state.path })
         entries.set(tab.id, entry)
       }
-      try {
-        const contents = serializedDocumentSnapshot(state)
-        if (contents === state.baseline || useEditor.getState().busy) {
-          entry.writer.cancel()
-          entry.retry?.unsubscribe()
-          entry.contents = null
-        } else if (entry.contents !== contents) {
-          entry.contents = contents
-          entry.retry?.unsubscribe()
-          entry.writer.schedule()
-        }
-      } catch (error) {
-        // Invalid drafts remain editable; manual save/commit presents their validation error.
-        entry.writer.cancel()
-        entry.contents = null
-        if (error instanceof Error && entry.error !== error.message) {
-          entry.error = error.message
-          updateDocumentSaveState(entry.target, { error: error.message })
-        }
+      const candidate = snapshotIdentity(state)
+      if (useEditor.getState().busy || hasPendingNativeEditor(state.workbook.id)) continue
+      if (!sameSnapshot(entry.candidate, candidate) || entry.baseline !== state.baseline) {
+        entry.baseline = state.baseline
+        entry.candidate = candidate
+        entry.retry?.unsubscribe()
+        entry.writer.schedule()
       }
     }
   }

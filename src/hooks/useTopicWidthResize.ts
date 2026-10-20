@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useReactFlow, type NodeResizerProps } from '@xyflow/react'
 import { applyCommand, type MindMapDocument, type Topic } from '@core'
-import { layoutDocument } from '@layout'
+import { computeNativeLayout } from '@renderer/lib/nativeLayout'
 import { useEditor } from '@renderer/state/editor'
 import { usePresentation } from '@renderer/state/presentation'
 import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
@@ -127,28 +127,44 @@ export const useTopicWidthResize = (
         restore(active)
         return
       }
-      let style = { ...active.topic.style, width }
-      if (Math.abs(bounds.x - active.position.x) > 0.01) {
-        const candidate = applyCommand(active.document, {
-          type: 'setTopicStyle',
-          topicId: id,
-          style,
-        })
-        const nextNode = layoutDocument(candidate).nodes.find((node) => node.id === id)
-        if (!nextNode) {
-          restore(active)
-          return
-        }
-        const oldRight = active.position.x + active.width
-        const newRight = nextNode.x + nextNode.width
-        const offsetX = (active.topic.style?.offsetX ?? 0) + oldRight - newRight
-        if (!Number.isFinite(offsetX) || Math.abs(offsetX) > 1_000_000) {
-          restore(active)
-          return
-        }
-        if (Math.abs(oldRight - newRight) > 0.01) style = { ...style, offsetX }
+      const style = { ...active.topic.style, width }
+      if (Math.abs(bounds.x - active.position.x) <= 0.01) {
+        if (!editor.command({ type: 'setTopicStyle', topicId: id, style })) restore(active)
+        return
       }
-      if (!editor.command({ type: 'setTopicStyle', topicId: id, style })) restore(active)
+      const candidate = applyCommand(active.document, {
+        type: 'setTopicStyle',
+        topicId: id,
+        style,
+      })
+      void computeNativeLayout(candidate)
+        .then((layout) => {
+          const current = useEditor.getState()
+          if (
+            current.activeSheetId !== active.sheetId ||
+            current.history.document !== active.document ||
+            usePresentation.getState().playing
+          )
+            return
+          const nextNode = layout.nodes.find((node) => node.id === id)
+          if (!nextNode) {
+            restore(active)
+            return
+          }
+          const oldRight = active.position.x + active.width
+          const newRight = nextNode.x + nextNode.width
+          const offsetX = (active.topic.style?.offsetX ?? 0) + oldRight - newRight
+          if (!Number.isFinite(offsetX) || Math.abs(offsetX) > 1_000_000) {
+            restore(active)
+            return
+          }
+          const finalStyle = Math.abs(oldRight - newRight) > 0.01 ? { ...style, offsetX } : style
+          if (!current.command({ type: 'setTopicStyle', topicId: id, style: finalStyle }))
+            restore(active)
+        })
+        .catch(() => {
+          restore(active)
+        })
     },
   }
 }

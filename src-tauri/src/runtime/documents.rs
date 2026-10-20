@@ -2,7 +2,10 @@ use super::{
   input::{self, Result},
   state::AppState,
 };
-use crate::document::{self, CompositeSource, ResourceSource};
+use crate::{
+  document::{self, CompositeSource, ResourceSource},
+  interchange,
+};
 use serde_json::{Value, json};
 use std::{
   collections::HashSet,
@@ -31,25 +34,40 @@ pub async fn open(state: &AppState, path: PathBuf) -> Result<Value> {
   if !metadata.is_file() {
     return Err("请选择文档文件".into());
   }
-  if path
+  let extension = path
     .extension()
-    .is_some_and(|e| e.eq_ignore_ascii_case("xmind"))
-  {
-    if metadata.len() > 32 * 1024 * 1024 {
-      return Err("文件超过 32 MiB".into());
+    .and_then(|value| value.to_str())
+    .unwrap_or("")
+    .to_ascii_lowercase();
+  if ["xmind", "opml", "md", "markdown", "txt"].contains(&extension.as_str()) {
+    static IMPORT_LIMIT: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(2);
+    let maximum = if extension == "xmind" {
+      32 * 1024 * 1024
+    } else {
+      8 * 1024 * 1024
+    };
+    if metadata.len() > maximum {
+      return Err("导入文件超过大小限制".into());
     }
     let bytes = tokio::fs::read(&path)
       .await
-      .map_err(|_| "无法读取 XMind 文件")?;
+      .map_err(|_| "无法读取导入文件")?;
+    if bytes.len() as u64 > maximum {
+      return Err("导入文件超过大小限制".into());
+    }
     let name = path
       .file_name()
       .unwrap_or_default()
       .to_string_lossy()
       .to_string();
+    let _permit = IMPORT_LIMIT.acquire().await.map_err(|_| "导入服务已关闭")?;
+    let imported = tokio::task::spawn_blocking(move || interchange::import(&bytes, &name))
+      .await
+      .map_err(|_| "导入处理失败")??;
     let mut session = state.session.lock().await;
     remember(state, &mut session, &path).await;
     return Ok(
-      json!({"path":null,"sourcePath":path,"contents":"","importSource":{"name":name,"bytes":bytes}}),
+      json!({"path":null,"sourcePath":path,"contents":imported.workbook.to_string(),"warnings":imported.warnings}),
     );
   }
   let mut session = state.session.lock().await;

@@ -237,3 +237,8 @@ impl DocumentStore {
     Ok(Arc::new(DocumentSource::new(path, password).await?) as Arc<dyn ResourceSource>)
   }
 }
+
+/// Layout validates one canvas without requiring unrelated cross-sheet link targets.
+pub(crate) fn validate_canvas(document: &serde_json::Value) -> Result<()> {
+  validation::validate_document(document)
+}

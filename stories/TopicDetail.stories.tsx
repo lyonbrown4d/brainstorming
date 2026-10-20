@@ -7,8 +7,8 @@ import { TopicNode, type TopicFlowNode } from '@renderer/components/TopicNode'
 import { useEditor } from '@renderer/state/editor'
 import '@xyflow/react/dist/style.css'
 import '@renderer/styles/ui.css'
-import '@renderer/styles/base.css'
-import '@renderer/styles/topics.css'
+import '@renderer/styles/base.scss'
+import '@renderer/styles/topics.scss'
 
 const nodeTypes = { topic: TopicNode }
 const detailDocument = () =>

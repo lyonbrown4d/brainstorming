@@ -5,6 +5,9 @@ import { translate } from '@renderer/i18n'
 import { prepareExportResources } from '@renderer/export/resources'
 import { checkRasterSize, renderSheetSvg, type SheetSvg } from '@renderer/export/svg'
 import { resolveRasterSize } from '@renderer/export/quality'
+import { getPlatformAPI } from '@renderer/lib/desktop'
+import { fetchNativeLayout, layoutMeasurements } from '@renderer/lib/nativeLayout'
+import { buildVisualGeometry } from '@renderer/lib/visualGeometry'
 
 export const prepareSheetImage = async (
   workbook: MindMapWorkbook,
@@ -14,13 +17,40 @@ export const prepareSheetImage = async (
 ): Promise<SheetSvg> => {
   signal?.throwIfAborted()
   const selected = exportSheets(workbook, sheetId)
-  const prepared = await prepareExportResources(selected, false, signal)
-  const sheet = prepared.sheets.find((item) => item.id === sheetId)
+  const sheet = selected.sheets.find((item) => item.id === sheetId)
   if (!sheet) throw new Error(translate('sheetToExportDoesNotExist'))
+  const compute = getPlatformAPI()?.compute
+  if (compute) {
+    await document.fonts.ready
+    signal?.throwIfAborted()
+    await prepareMarkerIcons(sheet.document)
+    signal?.throwIfAborted()
+    const source = includeCollapsed
+      ? {
+          ...sheet.document,
+          topics: Object.fromEntries(
+            Object.values(sheet.document.topics).map((topic) => [
+              topic.id,
+              { ...topic, collapsed: false },
+            ]),
+          ),
+        }
+      : sheet.document
+    const measurements = layoutMeasurements(source)
+    const layout = await fetchNativeLayout(source, sheetId, measurements)
+    signal?.throwIfAborted()
+    const geometry = buildVisualGeometry(source, layout, measurements)
+    const scene = await compute.renderSheet(selected, sheetId, includeCollapsed, geometry)
+    signal?.throwIfAborted()
+    return scene
+  }
+  const prepared = await prepareExportResources(selected, false, signal)
+  const preview = prepared.sheets.find((item) => item.id === sheetId)
+  if (!preview) throw new Error(translate('sheetToExportDoesNotExist'))
   await document.fonts.ready
-  await prepareMarkerIcons(sheet.document)
+  await prepareMarkerIcons(preview.document)
   signal?.throwIfAborted()
-  return renderSheetSvg(sheet.document, includeCollapsed)
+  return renderSheetSvg(preview.document, includeCollapsed)
 }
 
 export const rasterizeSheet = async (

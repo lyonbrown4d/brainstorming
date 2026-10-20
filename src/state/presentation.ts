@@ -5,6 +5,11 @@ import type { SheetView } from '@renderer/state/editorTypes'
 import { useWorkspace } from '@renderer/state/workspace'
 import { useSelection } from '@renderer/state/selection'
 import { presentationPlan } from '@core/presentation-plan'
+import {
+  cancelPendingPresentation,
+  deferPresentationUntilCommitted,
+  setPendingPresentationMode,
+} from '@renderer/state/presentationPending'
 
 export type PresentationMode = 'composer' | 'audience' | 'presenter'
 interface PresentationSnapshot {
@@ -55,6 +60,7 @@ let unsubscribe: (() => void) | undefined
 export const presentationSteps = presentationPlan
 
 export const openPresentationComposer = (): void => {
+  cancelPendingPresentation()
   const editor = useEditor.getState()
   editor.commitDraft()
   if (useEditor.getState().editingId || editor.busy) return
@@ -71,6 +77,7 @@ export const openPresentationComposer = (): void => {
 }
 
 export const selectPresentationPage = (composerIndex: number): void => {
+  cancelPendingPresentation()
   useEditor.getState().commitDraft()
   if (useEditor.getState().editingId) return
   if (
@@ -92,6 +99,13 @@ export const showPresentationStep = (index: number): void => {
     useEditor.getState().commitDraft()
     const editor = useEditor.getState()
     if (editor.editingId || editor.busy) return
+    if (
+      deferPresentationUntilCommitted((mode) => {
+        showPresentationStep(index)
+        setPresentationMode(mode)
+      })
+    )
+      return
     const steps = presentationSteps(editor.history.document).filter((step) => !step.hidden)
     if (!steps[index]) return
     const sheetId = editor.activeSheetId
@@ -161,9 +175,11 @@ export const advancePresentation = (direction: 1 | -1): void => {
 
 export const setPresentationMode = (workspaceMode: 'audience' | 'presenter'): void => {
   if (usePresentation.getState().playing) usePresentation.setState({ workspaceMode })
+  else setPendingPresentationMode(workspaceMode)
 }
 
 export const stopPresentation = (): void => {
+  cancelPendingPresentation()
   const state = usePresentation.getState()
   unsubscribe?.()
   unsubscribe = undefined

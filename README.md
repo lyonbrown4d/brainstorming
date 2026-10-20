@@ -16,6 +16,8 @@ pnpm native:vips --macos
 pnpm dev
 ```
 
+开发、检查与构建会先从 Rust 生成 Tauri 类型绑定；`src/generated` 不提交，首次检查也需要原生构建依赖。手写样式使用 SCSS，Tailwind / shadcn 的主题入口保留 CSS。
+
 Vite 构建根目录 `index.html` 和 `splash.html`，React 源码位于 `src/`，Rust 和原生插件位于 `src-tauri/`。开发环境启用 React Scan；`VITE_REACT_SCAN=false` 可关闭。React Compiler 保持启用。macOS 开发及正式构建默认启用 `tauri-plugin-macos-fps`，应用图标与界面 Logo 同时适用于开发模式。
 
 桌面使用独立 splash，待 React 挂载完成后显示主窗，自定义标题栏保留原生窗口操作。移动端使用系统启动页、触摸入口、安全区与系统文件选择器。导图颜色按 Sheet 保存，与浅色、深色、跟随系统的界面外观独立。
