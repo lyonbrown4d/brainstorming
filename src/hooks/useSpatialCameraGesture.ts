@@ -63,18 +63,19 @@ export const useSpatialCameraGesture = (
     const editor = useEditor.getState()
     const workbookId = editor.workbook.id
     const sheetId = editor.activeSheetId
+    const camera = createSpatialPerspectiveCamera(initialSize)
+    const controls = createSpatialControls(camera, element, Boolean(reducedMotion))
     const start = readSpatialNavigationStart(
       workbookId,
       sheetId,
       initialSize,
       flow.getViewport(),
       sceneRef.current,
+      controls,
     )
     const { view: first, initial } = start
     const { distance, target } = initial
     const baseTarget = target
-    const camera = createSpatialPerspectiveCamera(initialSize)
-    const controls = createSpatialControls(camera, element, Boolean(reducedMotion))
     controlsRef.current = controls
     setSpatialSceneDistanceLimits(controls, sceneRef.current)
     controls.enabled = activeRef.current

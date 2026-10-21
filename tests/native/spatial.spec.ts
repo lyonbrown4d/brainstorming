@@ -2,6 +2,7 @@ import { browser, expect } from '@wdio/globals'
 import { Key } from 'webdriverio'
 import { chooseAppearance } from '@tests/native/appearance'
 import { nativeArtifact } from '@tests/native/artifacts'
+import { verifySpatialPinch } from '@tests/native/spatial-gestures'
 import {
   artifact,
   closeSaved,
@@ -32,6 +33,7 @@ describe('native spatial canvas', () => {
     await expect(browser.$('[data-view-mode="3d"]')).toBeDisplayed()
     await expect(browser.$('[data-spatial-renderer]')).toBeDisplayed()
     await expect(browser.$('[data-spatial-renderer] canvas')).toBeDisplayed()
+    await verifySpatialPinch()
     await root().click()
     await openDepth()
     await depth().setValue('175')

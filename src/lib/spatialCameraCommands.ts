@@ -29,8 +29,10 @@ const topicCenter = (
     : null
 }
 
-/** Fit the native 3D scene, including ink, before projection into React Flow. */
-const computeSpatialCameraSceneSphere = (scene: SpatialCameraScene): Sphere | null => {
+/** Bound the native 3D scene, including ink, before projection into React Flow. */
+const computeSpatialCameraSceneBounds = (
+  scene: SpatialCameraScene,
+): { box: Box3; sphere: Sphere } | null => {
   const bounds = new Box3()
   for (const node of scene.layout?.nodes ?? []) {
     const z = scene.depths?.[node.id] ?? 0
@@ -65,32 +67,40 @@ const computeSpatialCameraSceneSphere = (scene: SpatialCameraScene): Sphere | nu
       center.distanceTo(sphere.center) + Math.hypot(width, height) / 2,
     )
   }
-  return sphere
+  return { box: bounds, sphere }
 }
 
-let sphereCache: {
+let boundsCache: {
   layout: SpatialCameraScene['layout']
   depths: SpatialCameraScene['depths']
   drawings: SpatialCameraScene['drawings']
-  sphere: Sphere | null
+  bounds: ReturnType<typeof computeSpatialCameraSceneBounds>
 } | null = null
 
 /** Stable native layout identities avoid scanning the scene during a camera gesture. */
-export const spatialCameraSceneSphere = (scene: SpatialCameraScene): Sphere | null => {
+const spatialCameraSceneBounds = (
+  scene: SpatialCameraScene,
+): ReturnType<typeof computeSpatialCameraSceneBounds> => {
   if (
-    !sphereCache ||
-    sphereCache.layout !== scene.layout ||
-    sphereCache.depths !== scene.depths ||
-    sphereCache.drawings !== scene.drawings
+    !boundsCache ||
+    boundsCache.layout !== scene.layout ||
+    boundsCache.depths !== scene.depths ||
+    boundsCache.drawings !== scene.drawings
   )
-    sphereCache = {
+    boundsCache = {
       layout: scene.layout,
       depths: scene.depths,
       drawings: scene.drawings,
-      sphere: computeSpatialCameraSceneSphere(scene),
+      bounds: computeSpatialCameraSceneBounds(scene),
     }
-  return sphereCache.sphere?.clone() ?? null
+  return boundsCache.bounds
 }
+
+export const spatialCameraSceneSphere = (scene: SpatialCameraScene): Sphere | null =>
+  spatialCameraSceneBounds(scene)?.sphere.clone() ?? null
+
+const spatialCameraSceneBox = (scene: SpatialCameraScene): Box3 | null =>
+  spatialCameraSceneBounds(scene)?.box.clone() ?? null
 
 /** Scene-relative bounds keep dolly useful at both very small and very large maps. */
 export const setSpatialSceneDistanceLimits = (
@@ -98,15 +108,26 @@ export const setSpatialSceneDistanceLimits = (
   scene: SpatialCameraScene,
 ): void => {
   const radius = spatialCameraSceneSphere(scene)?.radius ?? 250
-  controls.minDistance = Math.max(5, radius * 0.05)
-  controls.maxDistance = Math.max(1_000, radius * 60)
+  controls.minDistance = 150
+  controls.maxDistance = Math.max(10_000, radius * 20)
 }
 
-export const spatialSceneResetDistance = (scene: SpatialCameraScene, size: CameraSize): number => {
-  const radius = spatialCameraSceneSphere(scene)?.radius ?? 250
-  const vertical = (21 * Math.PI) / 180
-  const horizontal = Math.atan(Math.tan(vertical) * (size.width / size.height))
-  return (radius * 1.15) / Math.sin(Math.min(vertical, horizontal))
+export const spatialSceneResetDistance = (
+  scene: SpatialCameraScene,
+  controls: Pick<CameraControlsImpl, 'getDistanceToFitBox'>,
+): number => {
+  const box = spatialCameraSceneBox(scene)
+  if (!box) return 400
+  const size = box.getSize(new Vector3())
+  // The earlier spatial camera used one world unit per 100 canvas pixels.
+  return Math.max(
+    400,
+    controls.getDistanceToFitBox(
+      size.x * 1.22 + size.z * 0.35,
+      size.y * 1.42 + size.z * 0.35,
+      Math.max(size.z, 20),
+    ),
+  )
 }
 
 /** First 3D entry derives a camera from the 3D scene, never from a 2D pan or zoom. */
@@ -114,10 +135,11 @@ export const spatialCameraDefaultFrame = (
   scene: SpatialCameraScene,
   view: SpatialView,
   size: CameraSize,
+  controls: Pick<CameraControlsImpl, 'getDistanceToFitBox'>,
 ) => {
-  const center = spatialCameraSceneSphere(scene)?.center ?? new Vector3()
+  const center = spatialCameraSceneBox(scene)?.getCenter(new Vector3()) ?? new Vector3()
   const target = view.target ?? { x: center.x, y: -center.y, z: center.z }
-  const distance = spatialSceneResetDistance(scene, size)
+  const distance = spatialSceneResetDistance(scene, controls)
   return { target, distance, viewport: cameraViewport(size, target, distance) }
 }
 
@@ -130,9 +152,12 @@ export const runSpatialCameraCommand = (
 ): boolean => {
   if (size.width <= 0 || size.height <= 0) return false
   if (command === 'fit') {
-    const sphere = spatialCameraSceneSphere(scene)
-    if (!sphere) return false
-    void controls.fitToSphere(sphere, transition)
+    const box = spatialCameraSceneBox(scene)
+    if (!box) return false
+    const center = box.getCenter(new Vector3())
+    void controls.moveTo(center.x, center.y, center.z, transition)
+    void controls.dollyTo(spatialSceneResetDistance(scene, controls), transition)
+    void controls.setFocalOffset(0, 0, 0, transition)
     return true
   }
   if (command === 'focusSelected' || command === 'centerRoot' || typeof command === 'object') {
@@ -152,8 +177,8 @@ export const runSpatialCameraCommand = (
   const distance = position.distanceTo(target)
   const next =
     command === 'actualSize'
-      ? spatialSceneResetDistance(scene, size)
-      : distance * (command === 'zoomIn' ? 1 / 1.2 : 1.2)
+      ? spatialSceneResetDistance(scene, controls)
+      : distance * (command === 'zoomIn' ? 0.82 : 1.22)
   void controls.dollyTo(next, transition)
   return true
 }

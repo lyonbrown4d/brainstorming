@@ -12,7 +12,6 @@ import {
 import { projectSpatialPoint } from '@renderer/lib/spatialCamera'
 import {
   applySpatialCameraWheel,
-  setSpatialCameraZoomLimits,
   spatialCameraSnapshot,
 } from '@renderer/lib/spatialCameraController'
 import type { SpatialView } from '@renderer/state/spatialView'
@@ -73,7 +72,7 @@ it('accumulates rapid pinch zoom against the native goal before damping catches 
     const goal = controls
       .getPosition(new Vector3(), true)
       .distanceTo(controls.getTarget(new Vector3(), true))
-    expect(goal).toBeCloseTo(distance * Math.exp(-0.4), 5)
+    expect(goal).toBeCloseTo(distance * Math.exp(-1.6), 5)
   } finally {
     controls.dispose()
     vi.unstubAllGlobals()
@@ -132,9 +131,6 @@ it('reads the installed CameraControls target and distance as the render pose', 
   const camera = new PerspectiveCamera(42, size.width / size.height, 0.1, 10_000_000)
   const controls = new CameraControlsImpl(camera)
   const distance = cameraDistanceFromViewport(size.height, 1.2)
-  setSpatialCameraZoomLimits(controls, size.height)
-  expect(controls.minDistance).toBeCloseTo(cameraDistanceFromViewport(size.height, 2), 8)
-  expect(controls.maxDistance).toBeCloseTo(cameraDistanceFromViewport(size.height, 0.15), 8)
   const view: SpatialView = { mode: '3d', yaw: 0.6, pitch: 0.4, spacing: 100 }
   void controls.setLookAt(
     ...cameraPositionFor({ ...view, target: { x: 85, y: -40, z: 30 } }, distance),

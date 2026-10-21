@@ -74,7 +74,7 @@ test('two-finger wheel pans and Ctrl-wheel pinches the map without zooming the p
   const panned = await bounds(branch)
   await page.keyboard.down('Control')
   try {
-    await page.mouse.wheel(0, -160)
+    await page.mouse.wheel(0, -40)
   } finally {
     await page.keyboard.up('Control')
   }
@@ -94,7 +94,7 @@ test('Alt-wheel rotates the spatial map while keeping the editor ready', async (
   await page.mouse.move(point.x, point.y)
   await page.keyboard.down('Alt')
   try {
-    await page.mouse.wheel(150, 100)
+    await page.mouse.wheel(60, 40)
   } finally {
     await page.keyboard.up('Alt')
   }
@@ -168,11 +168,11 @@ test('3D buttons, keyboard shortcuts, and pinch all change the same native camer
   await page.mouse.move(point.x, point.y)
   await page.keyboard.down('Control')
   try {
-    await page.mouse.wheel(0, -160)
+    await page.mouse.wheel(0, -40)
   } finally {
     await page.keyboard.up('Control')
   }
-  await expect.poll(() => cameraDistance(page)).toBeLessThan(beforePinch)
+  await expect.poll(() => cameraDistance(page)).toBeLessThan(beforePinch * 0.8)
   await page.getByRole('button', { name: '重置视距', exact: true }).click()
   await expect.poll(() => cameraDistance(page)).toBeGreaterThan(0)
 })

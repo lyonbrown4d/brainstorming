@@ -1,4 +1,5 @@
 import { useCanvasInk } from '@renderer/state/canvasInk'
+import type { CameraControlsImpl } from '@react-three/drei'
 import { useCanvasInteraction } from '@renderer/state/canvasInteraction'
 import { useEditor } from '@renderer/state/editor'
 import { usePresentation } from '@renderer/state/presentation'
@@ -95,6 +96,7 @@ export const readSpatialNavigationStart = (
   size: CameraSize,
   viewport: Viewport,
   scene: SpatialCameraScene,
+  controls: Pick<CameraControlsImpl, 'getDistanceToFitBox'>,
 ) => {
   const persistedSpatial = useEditor.getState().history.document.settings?.spatial
   const view = getSpatialView(workbookId, sheetId)
@@ -111,7 +113,7 @@ export const readSpatialNavigationStart = (
       view,
       size,
       viewport,
-      remembered ?? spatialCameraDefaultFrame(scene, view, size),
+      remembered ?? spatialCameraDefaultFrame(scene, view, size, controls),
     ),
   }
 }

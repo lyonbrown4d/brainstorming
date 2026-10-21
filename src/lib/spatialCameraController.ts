@@ -17,7 +17,6 @@ import {
   type SpatialCameraScene,
 } from '@renderer/lib/spatialCameraCommands'
 import {
-  cameraDistanceFromViewport,
   cameraOrientation,
   cameraPositionFor,
   cameraViewport,
@@ -56,7 +55,8 @@ export const createSpatialControls = (
   controls.maxDistance = 1_000_000
   controls.minPolarAngle = 0
   controls.maxPolarAngle = Math.PI
-  controls.truckSpeed = 2
+  controls.truckSpeed = 1.4
+  controls.dollySpeed = 0.7
   controls.mouseButtons = {
     left: CameraControlsImpl.ACTION.ROTATE,
     right: CameraControlsImpl.ACTION.NONE,
@@ -74,11 +74,6 @@ export const createSpatialControls = (
 
 export const createSpatialPerspectiveCamera = (size: CameraSize): PerspectiveCamera =>
   new PerspectiveCamera(42, size.width / size.height, 0.1, 10_000_000)
-
-export const setSpatialCameraZoomLimits = (controls: CameraControlsImpl, height: number): void => {
-  controls.minDistance = cameraDistanceFromViewport(height, 2)
-  controls.maxDistance = cameraDistanceFromViewport(height, 0.15)
-}
 
 export const spatialCameraSnapshot = (
   controls: CameraControlsImpl,
@@ -150,13 +145,16 @@ export const applySpatialCameraWheel = (
   height: number,
 ): void => {
   const unit = (distance * 2 * Math.tan((Math.PI * 21) / 180)) / height
-  if (action.kind === 'truck') void controls.truck(action.x * unit, -action.y * unit, true)
+  if (action.kind === 'truck') void controls.truck(action.x * unit, action.y * unit, true)
   else if (action.kind === 'dolly') {
     const goal = controls
       .getPosition(new Vector3(), true)
       .distanceTo(controls.getTarget(new Vector3(), true))
-    void controls.dollyTo(goal * Math.exp(action.y * 0.002), true)
-  } else void controls.rotate(action.x * 0.003, action.y * 0.003, true)
+    void controls.dollyTo(goal * Math.exp(action.y * 0.008), true)
+  } else {
+    const radiansPerPixel = (Math.PI * 2) / height
+    void controls.rotate(action.x * radiansPerPixel, action.y * radiansPerPixel, true)
+  }
 }
 
 /** Keep the projection and adapter calibrated when only the pane dimensions change. */

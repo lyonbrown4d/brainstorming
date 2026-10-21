@@ -20,7 +20,7 @@ const overControl = (target: EventTarget | null): boolean =>
   target instanceof Element &&
   Boolean(
     target.closest(
-      'input, textarea, select, button, [contenteditable], [role="dialog"], [role="menu"], [data-radix-popper-content-wrapper]',
+      'input, textarea, select, button, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="dialog"], [role="menu"], [data-radix-popper-content-wrapper]',
     ),
   )
 

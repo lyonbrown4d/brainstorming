@@ -12,6 +12,7 @@ import {
   spatialCameraDefaultFrame,
   spatialCameraSceneSphere,
   spatialSceneResetDistance,
+  setSpatialSceneDistanceLimits,
   type SpatialCameraScene,
 } from '@renderer/lib/spatialCameraCommands'
 import type { SpatialView } from '@renderer/state/spatialView'
@@ -55,10 +56,14 @@ it('frames canonical 3D topics and ink with perspective-safe card corners', () =
   expect(sphere.radius).toBeGreaterThanOrEqual(
     childCenter.distanceTo(sphere.center) + Math.hypot(200, 90) / 2,
   )
-  const first = spatialCameraDefaultFrame(scene, view, size)
+  const fitDistance = vi.fn<(width: number, height: number, depth: number) => number>(() => 1_234)
+  const controls = { getDistanceToFitBox: fitDistance }
+  const first = spatialCameraDefaultFrame(scene, view, size, controls)
   expect(first.target).toEqual({ x: sphere.center.x, y: -sphere.center.y, z: sphere.center.z })
-  expect(first.distance).toBeCloseTo(spatialSceneResetDistance(scene, size), 6)
+  expect(first.distance).toBeCloseTo(spatialSceneResetDistance(scene, controls), 6)
   expect(first.distance).toBeGreaterThan(700)
+  expect(fitDistance.mock.calls[0]?.[0]).toBeGreaterThan(1_300)
+  expect(fitDistance.mock.calls[0]?.[2]).toBe(280)
   sphere.radius = 1
   expect(spatialCameraSceneSphere(scene)?.radius).toBeGreaterThan(350)
 })
@@ -88,6 +93,7 @@ it('native fit, focus and dolly preserve orientation and use true camera distanc
     expect(fitted.view.yaw).toBeCloseTo(view.yaw, 5)
     expect(fitted.view.pitch).toBeCloseTo(view.pitch, 5)
     expect(fitted.view.target?.z).toBeCloseTo(40, 5)
+    expect(fitted.distance).toBeCloseTo(spatialSceneResetDistance(scene, controls), 5)
 
     expect(runSpatialCameraCommand(controls, 'focusSelected', scene, size, false)).toBe(true)
     controls.update(1 / 60)
@@ -98,15 +104,75 @@ it('native fit, focus and dolly preserve orientation and use true camera distanc
 
     expect(runSpatialCameraCommand(controls, 'zoomIn', scene, size, false)).toBe(true)
     controls.update(1 / 60)
-    expect(spatialCameraSnapshot(controls, view, size).distance).toBeLessThan(focused.distance)
+    const zoomedIn = spatialCameraSnapshot(controls, view, size).distance
+    expect(zoomedIn).toBeLessThan(focused.distance)
+    expect(runSpatialCameraCommand(controls, 'zoomOut', scene, size, false)).toBe(true)
+    controls.update(1 / 60)
+    expect(spatialCameraSnapshot(controls, view, size).distance).toBeGreaterThan(zoomedIn)
     expect(runSpatialCameraCommand(controls, 'actualSize', scene, size, false)).toBe(true)
     controls.update(1 / 60)
     expect(spatialCameraSnapshot(controls, view, size).distance).toBeCloseTo(
-      spatialSceneResetDistance(scene, size),
+      spatialSceneResetDistance(scene, controls),
       5,
     )
   } finally {
     controls.dispose()
+    vi.unstubAllGlobals()
+  }
+})
+
+it('fits wide scenes by camera aspect and retains a comfortable minimum for one topic', () => {
+  vi.stubGlobal(
+    'DOMRect',
+    class {
+      constructor(
+        public x = 0,
+        public y = 0,
+        public width = 0,
+        public height = 0,
+      ) {}
+    },
+  )
+  const wide: SpatialCameraScene = {
+    ...scene,
+    layout: {
+      nodes: [
+        { id: 'root', x: -1_000, y: -35, width: 180, height: 70, side: 'right' },
+        { id: 'child', x: 820, y: -35, width: 180, height: 70, side: 'right' },
+      ],
+      edges: [],
+    },
+    depths: { root: 0, child: 0 },
+    drawings: [],
+  }
+  const landscape = new CameraControlsImpl(createSpatialPerspectiveCamera(size))
+  const portrait = new CameraControlsImpl(
+    createSpatialPerspectiveCamera({ width: 800, height: 1200 }),
+  )
+  try {
+    const getDistanceToFitBox = vi.fn<(width: number, height: number, depth: number) => number>(
+      () => 1_234,
+    )
+    expect(spatialSceneResetDistance(wide, { getDistanceToFitBox })).toBe(1_234)
+    expect(getDistanceToFitBox.mock.calls[0]?.[0]).toBe(2_440)
+    expect(getDistanceToFitBox.mock.calls[0]?.[1]).toBeCloseTo(99.4)
+    expect(getDistanceToFitBox.mock.calls[0]?.[2]).toBe(20)
+    expect(spatialSceneResetDistance(wide, landscape)).toBeLessThan(
+      spatialSceneResetDistance(wide, portrait),
+    )
+    const root = wide.layout?.nodes[0]
+    if (!root) throw new Error('missing root topic')
+    const single: SpatialCameraScene = {
+      ...wide,
+      layout: { nodes: [root], edges: [] },
+    }
+    expect(spatialSceneResetDistance(single, landscape)).toBe(400)
+    setSpatialSceneDistanceLimits(landscape, wide)
+    expect(landscape.minDistance).toBe(150)
+    expect(landscape.maxDistance).toBeGreaterThanOrEqual(10_000)
+  } finally {
+    landscape.dispose()
+    portrait.dispose()
     vi.unstubAllGlobals()
   }
 })
