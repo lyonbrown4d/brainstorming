@@ -33,7 +33,7 @@ export const SpatialSolid = memo(
     scale: number
     orientation: SpatialView
   }) => {
-    const thickness = 16
+    const thickness = 4
     // Canonical dimensions keep the expensive extrusion stable while the camera moves.
     const geometry = useMemo(
       () => makeSpatialSolidGeometry(shape, width / scale, height / scale, thickness),
@@ -59,16 +59,12 @@ export const SpatialSolid = memo(
       [orientation, worldWidth, worldHeight, scale, width, height],
     )
     const rotation = useMemo(() => spatialCameraQuaternion(orientation), [orientation])
-    const sideFill = useMemo(() => new Color(fill).multiplyScalar(0.82), [fill])
+    const sideFill = useMemo(() => new Color(fill).multiplyScalar(0.92), [fill])
     return (
       <group position={[worldX, -worldY, worldZ]} quaternion={rotation}>
         <mesh geometry={geometry} matrix={matrix} matrixAutoUpdate={false}>
-          <meshStandardMaterial
-            attach="material-0"
-            color={fill}
-            roughness={0.85}
-            side={DoubleSide}
-          />
+          {/* Match the editor face; lighting must not create a second gray card behind it. */}
+          <meshBasicMaterial attach="material-0" color={fill} side={DoubleSide} />
           <meshStandardMaterial
             attach="material-1"
             color={sideFill}
