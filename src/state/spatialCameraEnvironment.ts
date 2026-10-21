@@ -15,6 +15,7 @@ import { usePresentation } from '@renderer/state/presentation'
 import { useSpatialView } from '@renderer/state/spatialView'
 import {
   canNavigateSpatialCamera,
+  clearSpatialNavigationPreview,
   subscribeSpatialCameraCommands,
   type SpatialCameraSession,
 } from '@renderer/state/spatialNavigation'
@@ -28,7 +29,7 @@ interface Environment {
   readonly scene: () => SpatialCameraScene
   readonly size: () => CameraSize
   readonly distance: () => number
-  readonly ready: () => boolean
+  readonly defaultTarget: NonNullable<SpatialSettings['target']>
   readonly finishSession: (commit: boolean) => void
   readonly transition: boolean
   readonly onCommand: () => void
@@ -57,7 +58,7 @@ export const bindSpatialCameraEnvironment = (input: Environment): (() => void) =
       input.sheetId,
       () => {
         if (input.session()?.pointerId === null) input.finishSession(true)
-        return input.ready()
+        return !input.session()
       },
       (command) => {
         setSpatialSceneDistanceLimits(input.controls, input.scene())
@@ -79,7 +80,8 @@ export const bindSpatialCameraEnvironment = (input: Environment): (() => void) =
       if (next !== persistedSettings) {
         persistedSettings = next
         input.onSettingsChanged()
-        if (!input.session()) useSpatialView.getState().clearView(input.workbookId, input.sheetId)
+        if (!input.session())
+          clearSpatialNavigationPreview(input.workbookId, input.sheetId, input.defaultTarget)
       }
       input.onView()
     }),

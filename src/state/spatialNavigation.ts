@@ -134,6 +134,18 @@ export const publishSpatialNavigationFrame = (
   })
 }
 
+/** Clearing an angle preview must retain the session's non-persisted default center. */
+export const clearSpatialNavigationPreview = (
+  workbookId: string,
+  sheetId: string,
+  defaultTarget: NonNullable<SpatialView['target']>,
+): void => {
+  useSpatialView.getState().clearView(workbookId, sheetId)
+  const view = getSpatialView(workbookId, sheetId)
+  if (view.mode === '3d' && !view.target)
+    useSpatialView.getState().setView(workbookId, sheetId, { target: defaultTarget })
+}
+
 export const restoreSpatialNavigationPreview = (
   workbookId: string,
   sheetId: string,

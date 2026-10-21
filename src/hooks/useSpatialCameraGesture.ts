@@ -30,6 +30,7 @@ import { setSpatialViewport } from '@renderer/state/spatialViewports'
 import {
   canNavigateSpatialCamera,
   createSpatialCameraSession,
+  clearSpatialNavigationPreview,
   readSpatialNavigationStart,
   restoreSpatialNavigationPreview,
   saveSpatialNavigationSession,
@@ -126,7 +127,7 @@ export const useSpatialCameraGesture = (
         previousFrame = 0
         if (session?.ended) finish(true)
         else if (!session && !preservePreview)
-          useSpatialView.getState().clearView(workbookId, sheetId)
+          clearSpatialNavigationPreview(workbookId, sheetId, target)
       }
     }
     const wake = (): void => {
@@ -194,11 +195,6 @@ export const useSpatialCameraGesture = (
       applySpatialCameraWheel(controls, action, currentDistance, size().height)
       wake()
     }
-    const cancel = (pointerId?: number): boolean => {
-      if (!session || (pointerId !== undefined && session.pointerId !== pointerId)) return false
-      finish(false)
-      return true
-    }
     const externalView = (): void => {
       if (writing || session || disposed) return
       const next = externalSpatialCameraFrame(
@@ -233,7 +229,11 @@ export const useSpatialCameraGesture = (
         canNavigateSpatialCamera(workbookId, sheetId, useEditor.getState().history.document),
       onStart: pointerDown,
       onEnd: pointerUp,
-      onCancel: cancel,
+      onCancel: (pointerId) => {
+        if (!session || (pointerId !== undefined && session.pointerId !== pointerId)) return false
+        finish(false)
+        return true
+      },
       onWheel: wheel,
       distance: () => currentDistance,
       view: () => currentView,
@@ -257,7 +257,7 @@ export const useSpatialCameraGesture = (
       scene: () => sceneRef.current,
       size,
       distance: () => currentDistance,
-      ready: () => !session,
+      defaultTarget: target,
       finishSession: finish,
       transition: !reducedMotion,
       onCommand: () => {
