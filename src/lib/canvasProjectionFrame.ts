@@ -6,12 +6,16 @@ type Projector = ReturnType<typeof createCanvasProjector>
 export interface CanvasProjectionFrame {
   readonly scopeId: string
   readonly pending: boolean
+  readonly document: MindMapDocument
+  readonly layout: MindMapLayout
+  readonly depths?: Readonly<Record<string, number>> | undefined
   readonly projection: ReturnType<Projector>
 }
 interface FrameSource {
   readonly scopeId: string
   readonly document: MindMapDocument
   readonly layout: MindMapLayout | undefined
+  readonly depths?: Readonly<Record<string, number>> | undefined
   readonly placeholder: boolean
   readonly surface: string | undefined
 }
@@ -36,7 +40,22 @@ export const completeCanvasFrame = (
   )
   return previous?.scopeId === source.scopeId &&
     !previous.pending &&
-    previous.projection === projection
+    previous.projection === projection &&
+    previous.depths === source.depths
     ? previous
-    : { scopeId: source.scopeId, pending: false, projection }
+    : {
+        scopeId: source.scopeId,
+        pending: false,
+        document: source.document,
+        layout: source.layout,
+        projection,
+        ...(source.depths ? { depths: source.depths } : {}),
+      }
 }
+
+/** A retained frame can be shown during refresh, but its old depths cannot own a new gesture. */
+export const spatialFrameReady = (
+  frame: CanvasProjectionFrame | null,
+  placeholder: boolean,
+  pending: boolean,
+): boolean => Boolean(frame?.depths && !frame.pending && !placeholder && !pending)

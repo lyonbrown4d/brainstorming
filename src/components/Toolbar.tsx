@@ -1,3 +1,4 @@
+import { SpatialModeSwitch } from '@renderer/components/spatial/SpatialModeSwitch'
 import { CommandPaletteTrigger } from '@renderer/components/commands/CommandPaletteTrigger'
 import { closeInspector, toggleInspector } from '@renderer/state/inspectorNavigation'
 import { BrandLogo } from '@renderer/components/BrandLogo'
@@ -23,8 +24,8 @@ export const Toolbar = () => {
   const inspector = useEditor((state) => state.inspectorOpen)
   const dirty = useEditor(editorIsDirty)
   return (
-    <WindowTitlebar className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:gap-4">
-      <div className="flex min-w-0 items-center gap-2 xl:gap-3">
+    <WindowTitlebar className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-2 !px-0">
+      <div className="flex min-w-0 items-center gap-2 ml-3 sm:ml-4 xl:gap-3 group-data-[platform=macos]/shell:ml-28 group-data-[platform=macos]/shell:group-data-[fullscreen=true]/shell:ml-5">
         <Button
           variant="ghost"
           className="size-8 shrink-0 rounded-md p-0"
@@ -58,7 +59,8 @@ export const Toolbar = () => {
                 : translate('localDraft')}
         </span>
       </div>
-      <div className="toolbar-actions flex min-w-0 shrink-0 items-center justify-end gap-1 overflow-x-auto sm:col-span-1">
+      <SpatialModeSwitch />
+      <div className="toolbar-actions flex min-w-0 shrink-0 items-center justify-end gap-1 overflow-x-auto pr-3 sm:pr-4 group-data-[platform=windows]/shell:pr-32 group-data-[platform=linux]/shell:pr-32">
         <PresentationLauncher />
         <CommandPaletteTrigger />
         <SettingsButton />

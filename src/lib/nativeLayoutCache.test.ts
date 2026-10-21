@@ -5,6 +5,8 @@ import type { MindMapLayout } from '@layout'
 
 const layout: MindMapLayout = { nodes: [], edges: [] }
 const key = (id: string) => ['canvas-layout', 'sheet', id, 'geometry'] as const
+const spatialKey = (id: string) =>
+  ['canvas-spatial-layout', 'sheet', id, 'geometry', 'depth'] as const
 const cleanups: (() => void)[] = []
 afterEach(() => {
   for (const dispose of cleanups.splice(0)) dispose()
@@ -89,4 +91,24 @@ it('bounds retained bytes, including large keys, and leaves other query domains 
   expect(client.getQueryData(key('small'))).toBe(layout)
   unsubscribe()
   expect(client.getQueryData(key('small'))).toBeUndefined()
+})
+
+it('shares count and byte budgets between native 2D and spatial layouts', () => {
+  const byCount = bounded(2)
+  const spatial = { layout, depths: { root: 0 } }
+  byCount.client.setQueryData(key('2d-old'), layout)
+  byCount.client.setQueryData(spatialKey('3d'), spatial)
+  byCount.client.setQueryData(key('2d-new'), layout)
+  expect(byCount.client.getQueryData(key('2d-old'))).toBeUndefined()
+  expect(byCount.client.getQueryData(spatialKey('3d'))).toBe(spatial)
+  expect(byCount.client.getQueryCache().getAll()).toHaveLength(2)
+
+  const byBytes = bounded(10, 2_000)
+  byBytes.client.setQueryData(key('small'), layout)
+  const largeDepths = Object.fromEntries(
+    Array.from({ length: 30 }, (_, index) => [`topic-${index}`, index]),
+  )
+  byBytes.client.setQueryData(spatialKey('many-depths'), { layout, depths: largeDepths })
+  expect(byBytes.client.getQueryData(spatialKey('many-depths'))).toBeUndefined()
+  expect(byBytes.client.getQueryData(key('small'))).toBe(layout)
 })

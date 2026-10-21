@@ -16,6 +16,20 @@ import {
 } from '@core'
 
 describe('local document extensions', () => {
+  it('persists spatial settings as one undoable document-settings change', () => {
+    const original = createHistory(createDocument('空间视图'))
+    const spatial = { mode: '3d' as const, yaw: 1.2, pitch: -0.9, spacing: 200 }
+    const updated = executeCommand(original, {
+      type: 'setDocumentSettings',
+      settings: { layout: 'map', spatial },
+    })
+    expect(updated.document.settings?.spatial).toEqual(spatial)
+    expect(deserializeDocument(serializeDocument(updated.document))).toEqual(updated.document)
+    expect(undo(updated).document).toBe(original.document)
+    spatial.spacing = 0
+    expect(updated.document.settings?.spatial?.spacing).toBe(200)
+  })
+
   it('roundtrips all extensions and audio references through additive v1 JSON snapshots', () => {
     const source = extensionFixture()
     const result = deserializeDocument(serializeDocument(source))

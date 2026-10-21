@@ -1,7 +1,7 @@
 import { commands } from '@renderer/generated/native'
 import type { MindMapWorkbook } from '@core'
 import type { MindMapLayout } from '@layout'
-import type { ComputeAPI, NativeEditorSnapshot } from '@shared/compute'
+import type { ComputeAPI, NativeEditorSnapshot, NativeSpatialLayout } from '@shared/compute'
 
 const wire = (value: object): Parameters<typeof commands.editorOpen>[1] =>
   value as unknown as Parameters<typeof commands.editorOpen>[1]
@@ -35,6 +35,14 @@ export const createComputeAPI = (): ComputeAPI => ({
           document: wire(input.document),
           measurements: input.measurements.map((size) => ({ ...size })),
         })) as unknown as MindMapLayout,
+    ),
+  spatialLayout: (input) =>
+    invoke(
+      async () =>
+        (await commands.computeSpatialLayout({
+          document: wire(input.document),
+          measurements: input.measurements.map((size) => ({ ...size })),
+        })) as unknown as NativeSpatialLayout,
     ),
   find: (input) =>
     invoke(async () =>

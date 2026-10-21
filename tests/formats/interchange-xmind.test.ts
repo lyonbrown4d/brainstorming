@@ -63,14 +63,14 @@ describe('XMind Brainstorming extension interchange', () => {
     expect(current.sheets[0]?.document.topics.root?.metadata?.link).toBeUndefined()
     expect(linked.topics.root?.metadata?.link).toBeDefined()
   })
-  it('preserves manual width and linked summary descendants through the native extension', () => {
+  it('preserves manual width, spatial depth and linked summary descendants through the native extension', () => {
     const document = applyCommand(createDocument('概要与宽度'), {
       type: 'batch',
       commands: [
         { type: 'addTopic', id: 'source', parentId: 'root', title: '范围主题', side: 'right' },
         { type: 'addTopic', id: 'summary', parentId: 'root', title: '概要主题', side: 'right' },
         { type: 'addTopic', id: 'detail', parentId: 'summary', title: '概要子主题' },
-        { type: 'setTopicStyle', topicId: 'summary', style: { width: 240 } },
+        { type: 'setTopicStyle', topicId: 'summary', style: { width: 240, spatialDepth: 125 } },
         {
           type: 'upsertGroup',
           group: { id: 'range', kind: 'summary', topicIds: ['source'], summaryTopicId: 'summary' },
@@ -80,6 +80,7 @@ describe('XMind Brainstorming extension interchange', () => {
     const result = importXmind(encodeXmind(createWorkbook(document))).workbook.sheets[0]?.document
     expect(result?.groups).toEqual(document.groups)
     expect(result?.topics.summary?.style?.width).toBe(240)
+    expect(result?.topics.summary?.style?.spatialDepth).toBe(125)
     expect(result?.topics.summary?.children).toEqual(['detail'])
     expect(result?.topics.detail?.title).toBe('概要子主题')
   })
@@ -170,6 +171,7 @@ describe('XMind Brainstorming extension interchange', () => {
         background: '#112233',
         fontFamily: 'system-ui',
         lineWidth: 4,
+        spatial: { mode: '3d', yaw: 0.4, pitch: -0.2, spacing: 75 },
       },
     })
     document = applyCommand(document, {

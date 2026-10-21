@@ -85,6 +85,7 @@ fn apply_one(document: &mut Value, command: &Value) -> Result<(), String> {
       for key in [
         "offsetX",
         "offsetY",
+        "spatialDepth",
         "fill",
         "color",
         "fontSize",

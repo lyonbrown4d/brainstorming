@@ -8,6 +8,12 @@ import { useAppearanceColors } from '@renderer/hooks/useAppearanceColors'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { useEffect, useRef, useState } from 'react'
+import { SpatialRenderingLayer } from '@renderer/components/spatial/SpatialRenderingLayer'
+import { getSpatialViewport, setSpatialViewport } from '@renderer/state/spatialViewports'
+import { useActiveSpatialView } from '@renderer/hooks/useActiveSpatialView'
+import { useSpatialViewportRestore } from '@renderer/hooks/useSpatialViewportRestore'
+import { useSpatialCameraGesture } from '@renderer/hooks/useSpatialCameraGesture'
+import { SpatialCanvasControls } from '@renderer/components/spatial/SpatialCanvasControls'
 import { motion, useReducedMotion } from 'motion/react'
 import { ConnectionMode, ReactFlow, useReactFlow } from '@xyflow/react'
 import {
@@ -49,21 +55,26 @@ export const Canvas = () => {
   const { translate } = useMessages()
 
   const colors = useAppearanceColors()
+  const { view, workbookId } = useActiveSpatialView()
+  useSpatialCameraGesture()
   const flow = useReactFlow<CanvasFlowNode>()
   useCanvasViewport()
   const reduceMotion = useReducedMotion()
   const document = useEditor((state) => state.history.document)
   const activeSheetId = useEditor((state) => state.activeSheetId)
-  const [savedView] = useState(() => useEditor.getState().views[activeSheetId])
+  const [savedView] = useState(() => getSpatialViewport(workbookId, activeSheetId, view.mode))
   const [initialFit] = useState(() => ({ padding: canvasFitPadding(), maxZoom: 1.2 }))
   const playing = usePresentation((state) => state.playing)
   const inkMode = useCanvasInk((state) => state.mode)
   const {
     projection: readyProjection,
+    depths,
+    interactionReady,
     loading,
     error,
     retry,
   } = useCanvasProjection(document, activeSheetId, colors.canvas)
+  useSpatialViewportRestore(interactionReady)
   const projection = readyProjection ?? emptyProjection
   const fitted = useRef(false)
   useEffect(() => {
@@ -77,7 +88,25 @@ export const Canvas = () => {
     }
   }, [flow, initialFit, readyProjection, savedView])
   const { reconnecting, ...relations } = useCanvasRelations(projection.edges)
-  const drag = useCanvasDrag(projection.nodes, `${activeSheetId}:${document.id}`)
+  const drag = useCanvasDrag(
+    projection.nodes,
+    `${activeSheetId}:${document.id}`,
+    depths ?? undefined,
+    interactionReady,
+  )
+  useEffect(() => {
+    if (interactionReady) return
+    const block = (event: KeyboardEvent): void => {
+      if (event.target instanceof Element && event.target.closest('#sheet-panel')) {
+        event.preventDefault()
+        event.stopImmediatePropagation()
+      }
+    }
+    window.addEventListener('keydown', block, true)
+    return () => {
+      window.removeEventListener('keydown', block, true)
+    }
+  }, [interactionReady])
   const placedOnClick = useRef(false)
   return (
     <CanvasContextMenu>
@@ -87,6 +116,7 @@ export const Canvas = () => {
           backgroundColor: documentAppearance(document, colors.canvas).background,
           fontFamily: documentAppearance(document).fontFamily,
         }}
+        data-view-mode={view.mode}
         id="sheet-panel"
         role="tabpanel"
         tabIndex={-1}
@@ -95,6 +125,9 @@ export const Canvas = () => {
         animate={{ opacity: 1 }}
         transition={{ duration: reduceMotion ? 0 : 0.12 }}
       >
+        {view.mode === '3d' && depths && (
+          <SpatialRenderingLayer nodes={drag.nodes} depths={depths} />
+        )}
         <ReactFlow<CanvasFlowNode>
           key={document.id}
           className={
@@ -173,21 +206,19 @@ export const Canvas = () => {
           fitView={!savedView}
           onMoveEnd={(_event, viewport) => {
             if (useEditor.getState().activeSheetId === activeSheetId)
-              useEditor.setState((state) => ({
-                views: { ...state.views, [activeSheetId]: viewport },
-              }))
+              setSpatialViewport(workbookId, activeSheetId, view.mode, viewport)
           }}
           fitViewOptions={initialFit}
           minZoom={0.15}
           maxZoom={2}
           deleteKeyCode={null}
-          nodesConnectable={!playing && inkMode === 'select'}
+          nodesConnectable={interactionReady && !playing && inkMode === 'select'}
           connectionMode={ConnectionMode.Loose}
           connectOnClick={false}
           edgesFocusable={false}
           nodesFocusable={false}
-          nodesDraggable={!playing && inkMode === 'select'}
-          elementsSelectable={!playing && inkMode === 'select'}
+          nodesDraggable={interactionReady && !playing && inkMode === 'select'}
+          elementsSelectable={interactionReady && !playing && inkMode === 'select'}
           selectNodesOnDrag
           nodeDragThreshold={4}
           selectionOnDrag={false}
@@ -198,6 +229,7 @@ export const Canvas = () => {
           zoomActivationKeyCode={['Meta', 'Control']}
           zoomOnDoubleClick={false}
         >
+          {!playing && <SpatialCanvasControls />}
           <StructureGeometry document={document} decorations={projection.decorations} />
           <CanvasAnnotations document={document} nodes={projection.layoutNodes} />
           <SelectionVisibility />
@@ -205,8 +237,8 @@ export const Canvas = () => {
           {!playing && <CanvasInk />}
           {!playing && <CanvasMinimap />}
         </ReactFlow>
-        {!readyProjection && (
-          <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
+        {!interactionReady && (
+          <div className="absolute inset-0 z-20 grid place-items-center bg-background/15">
             {error ? (
               <div
                 className="pointer-events-auto flex items-center gap-3 rounded-lg border bg-background px-4 py-3 text-sm shadow-sm"

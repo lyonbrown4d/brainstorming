@@ -1,6 +1,6 @@
 use crate::compute::wire::{JsonValue, WireValue};
 use crate::{
-  compute::{FindInput, FindMatch, LayoutInput},
+  compute::{FindInput, FindMatch, LayoutInput, SpatialLayout},
   editor_engine::EngineSnapshot,
   layout_engine::Layout,
   runtime::AppState,
@@ -119,6 +119,20 @@ pub async fn compute_layout(
   state
     .compute
     .layout(input)
+    .await
+    .map(|layout| (*layout).clone())
+}
+#[tauri::command]
+#[specta::specta]
+pub async fn compute_spatial_layout(
+  app: AppHandle,
+  window: WebviewWindow,
+  input: LayoutInput,
+) -> Result<SpatialLayout, String> {
+  let (state, _lease) = access(&app, &window).await?;
+  state
+    .compute
+    .spatial_layout(input)
     .await
     .map(|layout| (*layout).clone())
 }

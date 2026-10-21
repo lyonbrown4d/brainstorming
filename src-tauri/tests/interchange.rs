@@ -30,12 +30,12 @@ fn workbook() -> Value {
     {"id":"first","name":"第一页","document":{"format":"brainstorming","version":1,"id":"first",
       "title":"中心","rootId":"root","topics":{
         "root":{"id":"root","title":"中心","children":["source","child"],"collapsed":false,"side":"right",
-          "metadata":{"task":{"priority":2}},"style":{"width":240,"scale":1.5,"fill":"#112233"}},
+          "metadata":{"task":{"priority":2}},"style":{"width":240,"scale":1.5,"spatialDepth":125,"fill":"#112233"}},
         "source":{"id":"source","title":"范围","children":[],"collapsed":false,"side":"right"},
         "child":{"id":"child","title":"分支","children":[],"collapsed":false,"side":"left",
           "notes":"# Markdown\n正文","attachments":["asset"]}
       },"assets":{"asset":{"id":"asset","name":"资料.bin","mimeType":"application/octet-stream","data":"AP8B"}},
-      "settings":{"layout":"logic-right"},
+      "settings":{"layout":"logic-right","spatial":{"mode":"3d","yaw":0.4,"pitch":-0.2,"spacing":75}},
       "groups":[{"id":"range","kind":"summary","topicIds":["source"],"summaryTopicId":"child"}]
     }},
     {"id":"second","name":"第二页","document":{"format":"brainstorming","version":1,"id":"second",
@@ -85,7 +85,7 @@ fn modern_and_legacy_xmind_import_preserve_sheets_and_structure() {
 }
 
 #[test]
-fn xmind_extension_roundtrip_keeps_resources_width_summary_and_priority() {
+fn xmind_extension_roundtrip_keeps_resources_style_summary_and_priority() {
   let original = workbook();
   let exported = interchange::export(&original, "xmind", None).unwrap();
   assert!(exported.bytes.starts_with(b"PK"));
@@ -94,6 +94,10 @@ fn xmind_extension_roundtrip_keeps_resources_width_summary_and_priority() {
     .workbook;
   assert_eq!(imported["id"], original["id"]);
   assert_eq!(imported["title"], original["title"]);
+  assert_eq!(
+    imported["sheets"][0]["document"]["settings"],
+    original["sheets"][0]["document"]["settings"]
+  );
   assert_eq!(
     imported["sheets"][0]["document"]["groups"],
     original["sheets"][0]["document"]["groups"]
@@ -105,6 +109,10 @@ fn xmind_extension_roundtrip_keeps_resources_width_summary_and_priority() {
   assert_eq!(
     imported["sheets"][0]["document"]["topics"]["root"]["style"]["scale"],
     1.5
+  );
+  assert_eq!(
+    imported["sheets"][0]["document"]["topics"]["root"]["style"]["spatialDepth"],
+    125
   );
   assert_eq!(
     imported["sheets"][0]["document"]["topics"]["root"]["metadata"]["task"]["priority"],

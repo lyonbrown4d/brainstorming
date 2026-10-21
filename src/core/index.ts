@@ -56,6 +56,7 @@ export type {
   TaskPriority,
   TopicMetadata,
   DocumentSettings,
+  SpatialSettings,
   SheetVisualStyle,
   Relation,
   RelationPoint,

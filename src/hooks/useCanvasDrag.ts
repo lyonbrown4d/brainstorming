@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNodesState, useReactFlow, type OnNodeDrag, type ReactFlowProps } from '@xyflow/react'
-import { type MindMapDocument } from '@core'
+import { useNodesState, useReactFlow, type OnNodeDrag } from '@xyflow/react'
 import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
+import type { DragSession } from '@renderer/lib/canvasGestureSession'
 import { preserveMeasurement, synchronizeCanvasNodes } from '@renderer/lib/canvasDragNodes'
 import {
   canvasTopicRoots,
@@ -11,7 +11,10 @@ import {
 } from '@renderer/lib/canvasGesture'
 import { findCanvasDrop } from '@renderer/lib/canvasDrop'
 import { canvasDragPointer } from '@renderer/lib/canvasDragPointer'
+import { canvasDragSelection } from '@renderer/lib/canvasDragSelection'
+import { captureSpatialOrigins, type SpatialDepths } from '@renderer/lib/spatialProjection'
 import { useEditor } from '@renderer/state/editor'
+import { getSpatialView, useSpatialView } from '@renderer/state/spatialView'
 import {
   selectedTopicIds,
   selectedDrawingIds,
@@ -26,21 +29,13 @@ import {
   updateCanvasDrag,
 } from '@renderer/state/canvasInteraction'
 
-interface DragSession {
-  readonly token: symbol
-  readonly workbookId: string
-  readonly sheetId: string
-  readonly document: MindMapDocument
-  readonly roots: string[]
-  readonly drawings: string[]
-  readonly canDrop: boolean
-  readonly excluded: Set<string>
-  readonly origins: Map<string, { x: number; y: number }>
-  readonly anchorId: string
-}
-
 /** React Flow owns pointer/box selection; document commands are submitted only at gesture end. */
-export const useCanvasDrag = (projectedNodes: CanvasFlowNode[], canvasId: string) => {
+export const useCanvasDrag = (
+  projectedNodes: CanvasFlowNode[],
+  canvasId: string,
+  spatialDepths?: SpatialDepths,
+  interactionReady = true,
+) => {
   const workbookId = useEditor((state) => state.workbook.id)
   const scopeId = JSON.stringify([workbookId, canvasId])
   const { screenToFlowPosition, getNodes } = useReactFlow<CanvasFlowNode>()
@@ -86,6 +81,7 @@ export const useCanvasDrag = (projectedNodes: CanvasFlowNode[], canvasId: string
         (editor.workbook.id !== active.workbookId ||
           editor.activeSheetId !== active.sheetId ||
           editor.history.document !== active.document ||
+          getSpatialView(active.workbookId, active.sheetId) !== active.view ||
           usePresentation.getState().playing)
       )
         cancel()
@@ -97,6 +93,7 @@ export const useCanvasDrag = (projectedNodes: CanvasFlowNode[], canvasId: string
       cancel()
     }
     const unsubscribe = useEditor.subscribe(validate)
+    const unsubscribeView = useSpatialView.subscribe(validate)
     const unsubscribePresentation = usePresentation.subscribe(validate)
     window.addEventListener('keydown', key, true)
     window.addEventListener('pointercancel', cancel, true)
@@ -104,6 +101,7 @@ export const useCanvasDrag = (projectedNodes: CanvasFlowNode[], canvasId: string
     return () => {
       cancel()
       unsubscribe()
+      unsubscribeView()
       unsubscribePresentation()
       window.removeEventListener('keydown', key, true)
       window.removeEventListener('pointercancel', cancel, true)
@@ -129,7 +127,7 @@ export const useCanvasDrag = (projectedNodes: CanvasFlowNode[], canvasId: string
 
   const onDragStart: OnNodeDrag<CanvasFlowNode> = (_event, dragged, draggedNodes) => {
     cancelled.current = false
-    if (usePresentation.getState().playing) return
+    if (!interactionReady || usePresentation.getState().playing) return
     const editor = useEditor.getState()
     editor.commitDraft()
     const current = useEditor.getState()
@@ -152,6 +150,14 @@ export const useCanvasDrag = (projectedNodes: CanvasFlowNode[], canvasId: string
       ...canvasDescendants(document, roots),
       ...moving.filter((node) => node.type === 'ink').map((node) => node.id),
     ])
+    const view = getSpatialView(current.workbook.id, current.activeSheetId)
+    if (view.mode === '3d' && !spatialDepths) return
+    const { origins, nativeOrigins } = captureSpatialOrigins(
+      document,
+      view,
+      getNodes(),
+      spatialDepths,
+    )
     session.current = {
       token: beginCanvasDrag(document, current.activeSheetId, roots, ids.drawings.length),
       workbookId: current.workbook.id,
@@ -161,7 +167,9 @@ export const useCanvasDrag = (projectedNodes: CanvasFlowNode[], canvasId: string
       drawings: ids.drawings,
       canDrop: !ids.drawings.length && !roots.includes(document.rootId),
       excluded,
-      origins: new Map(getNodes().map((node) => [node.id, { ...node.position }])),
+      origins,
+      nativeOrigins,
+      view,
       anchorId: dragged.id,
     }
     setCanvasSelection(ids.topics, ids.drawings)
@@ -209,6 +217,7 @@ export const useCanvasDrag = (projectedNodes: CanvasFlowNode[], canvasId: string
       editor.workbook.id === active.workbookId &&
       editor.activeSheetId === active.sheetId &&
       editor.history.document === active.document &&
+      getSpatialView(active.workbookId, active.sheetId) === active.view &&
       !usePresentation.getState().playing
     ) {
       const pointer = canvasDragPointer(event)
@@ -225,7 +234,7 @@ export const useCanvasDrag = (projectedNodes: CanvasFlowNode[], canvasId: string
         active.document,
         active.roots,
         active.drawings,
-        active.origins,
+        active.nativeOrigins,
         {
           x: anchor.position.x - origin.x,
           y: anchor.position.y - origin.y,
@@ -269,20 +278,6 @@ export const useCanvasDrag = (projectedNodes: CanvasFlowNode[], canvasId: string
       })),
     )
   }
-  const selectionDrag: Pick<
-    ReactFlowProps<CanvasFlowNode>,
-    'onSelectionDragStart' | 'onSelectionDrag' | 'onSelectionDragStop'
-  > = {
-    onSelectionDragStart: (event, group) => {
-      if (group[0]) onDragStart(event.nativeEvent, group[0], group)
-    },
-    onSelectionDrag: (event, group) => {
-      if (group[0]) onDrag(event.nativeEvent, group[0], group)
-    },
-    onSelectionDragStop: (event, group) => {
-      if (group[0]) onDragStop(event.nativeEvent, group[0], group)
-    },
-  }
   return {
     nodes: nodesScope === scopeId ? nodes : projectedNodes,
     onNodesChange: (changes: Parameters<typeof onNodesChange>[0]) => {
@@ -293,6 +288,6 @@ export const useCanvasDrag = (projectedNodes: CanvasFlowNode[], canvasId: string
     onNodeDragStart: onDragStart,
     onNodeDrag: onDrag,
     onNodeDragStop: onDragStop,
-    ...selectionDrag,
+    ...canvasDragSelection(onDragStart, onDrag, onDragStop),
   }
 }

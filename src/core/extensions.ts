@@ -54,6 +54,12 @@ export interface TopicMetadata {
   readonly richTitle?: string
 }
 export type SheetVisualStyle = 'normal' | 'sketch'
+export interface SpatialSettings {
+  readonly mode: '2d' | '3d'
+  readonly yaw: number
+  readonly pitch: number
+  readonly spacing: number
+}
 export interface DocumentSettings {
   readonly visualStyle?: SheetVisualStyle
   readonly layout?: LayoutKind
@@ -63,6 +69,7 @@ export interface DocumentSettings {
   readonly background?: string
   readonly fontFamily?: string
   readonly lineWidth?: number
+  readonly spatial?: SpatialSettings
 }
 export interface DocumentPalette {
   readonly name: string

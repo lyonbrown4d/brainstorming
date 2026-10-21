@@ -5,6 +5,7 @@ import { layoutDocument, type MindMapLayout } from '@layout'
 import { createCanvasProjector } from '@renderer/lib/canvasProjection'
 import {
   completeCanvasFrame,
+  spatialFrameReady,
   type CanvasProjectionFrame,
 } from '@renderer/lib/canvasProjectionFrame'
 
@@ -162,4 +163,55 @@ it('reconciles cached undo geometry when an intermediate layout never completes'
   await Promise.resolve()
   expect(current()).toBe(restored)
   unsubscribe()
+})
+
+it('retains the matching native depth record when base geometry is unchanged', () => {
+  const document = createExampleDocument()
+  const layout = layoutDocument(document)
+  const project = createCanvasProjector()
+  const firstDepths = { [document.rootId]: 0 }
+  const first = completeCanvasFrame(
+    null,
+    {
+      scopeId: 'book/sheet',
+      document,
+      layout,
+      depths: firstDepths,
+      placeholder: false,
+      surface: undefined,
+    },
+    project,
+  )
+  const nextDepths = { [document.rootId]: 40 }
+  const next = completeCanvasFrame(
+    first,
+    {
+      scopeId: 'book/sheet',
+      document,
+      layout,
+      depths: nextDepths,
+      placeholder: false,
+      surface: undefined,
+    },
+    project,
+  )
+  expect(next).not.toBe(first)
+  expect(next?.projection).toBe(first?.projection)
+  expect(next?.depths).toBe(nextDepths)
+  expect(spatialFrameReady(next, false, false)).toBe(true)
+  expect(spatialFrameReady(next, true, false)).toBe(false)
+  expect(spatialFrameReady(next, false, true)).toBe(false)
+  const retained = completeCanvasFrame(
+    next,
+    {
+      scopeId: 'book/sheet',
+      document,
+      layout: undefined,
+      placeholder: true,
+      surface: undefined,
+    },
+    project,
+  )
+  expect(retained?.projection).toBe(next?.projection)
+  expect(spatialFrameReady(retained, true, false)).toBe(false)
 })

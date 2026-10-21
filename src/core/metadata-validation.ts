@@ -122,6 +122,7 @@ export const validateDocumentSettings: (value: unknown) => asserts value is Docu
     'background',
     'fontFamily',
     'lineWidth',
+    'spatial',
   ])
   v.optional(settings, 'layout', validateLayoutKind)
   v.optional(settings, 'visualStyle', (entry) => {
@@ -144,5 +145,12 @@ export const validateDocumentSettings: (value: unknown) => asserts value is Docu
   })
   v.optional(settings, 'lineWidth', (entry) => {
     v.number(entry, 1, 6)
+  })
+  v.optional(settings, 'spatial', (entry) => {
+    const spatial = v.record(entry, ['mode', 'yaw', 'pitch', 'spacing'])
+    v.oneOf(spatial.mode, ['2d', '3d'])
+    v.number(spatial.yaw, -1.2, 1.2)
+    v.number(spatial.pitch, -0.9, 0.9)
+    v.number(spatial.spacing, 0, 200)
   })
 }

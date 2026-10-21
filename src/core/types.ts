@@ -34,6 +34,8 @@ export interface TopicStyle {
   /** Manual subtree translation after automatic layout. */
   readonly offsetX?: number
   readonly offsetY?: number
+  /** Additive depth override for this topic and its subtree in spatial view. */
+  readonly spatialDepth?: number
   readonly fill?: string
   readonly color?: string
   readonly fontSize?: number

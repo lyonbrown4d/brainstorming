@@ -1,4 +1,5 @@
 import type { MindMapDocument, Topic } from '@core'
+import type { QueryKey } from '@tanstack/react-query'
 import { layoutDocument, measureTopic, type MindMapLayout } from '@layout'
 import type { NativeLayoutInput } from '@shared/compute'
 import { getPlatformAPI } from '@renderer/lib/desktop'
@@ -7,6 +8,9 @@ import { boundNativeLayoutCache, estimateLayoutSource } from '@renderer/lib/nati
 
 const layoutCache = boundNativeLayoutCache(queryClient)
 import.meta.hot?.dispose(layoutCache.dispose)
+export const touchNativeLayoutCache = (key: QueryKey): void => {
+  layoutCache.touch(key)
+}
 
 const measuredTopics = new WeakMap<Topic, { width: number; height: number; root: boolean }>()
 

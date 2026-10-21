@@ -2,6 +2,7 @@ import { LRUCache } from 'lru-cache'
 import type { Query, QueryClient, QueryKey } from '@tanstack/react-query'
 import type { MindMapDocument } from '@core'
 import type { MindMapLayout } from '@layout'
+import type { NativeSpatialLayout } from '@shared/compute'
 
 const sourceSizes = new WeakMap<MindMapDocument, number>()
 /** Estimate retained source objects without serializing notes or media into another copy. */
@@ -27,7 +28,8 @@ const retainedSize = (query: Query): number => {
   for (const part of query.queryKey) if (typeof part === 'string') bytes += part.length * 2
   const source = query.meta?.layoutSourceBytes
   if (typeof source === 'number' && Number.isFinite(source)) bytes += source
-  const layout = query.state.data as MindMapLayout | undefined
+  const data = query.state.data as MindMapLayout | NativeSpatialLayout | undefined
+  const layout = data && 'layout' in data ? data.layout : data
   if (layout) {
     for (const node of layout.nodes) bytes += 224 + node.id.length * 2
     for (const edge of layout.edges)
@@ -36,6 +38,7 @@ const retainedSize = (query: Query): number => {
         (edge.id.length + edge.source.length + edge.target.length) * 2 +
         (edge.waypoints?.length ?? 0) * 32
     for (const decoration of layout.decorations ?? []) bytes += 192 + decoration.id.length * 2
+    if (data && 'depths' in data) bytes += Object.keys(data.depths).length * 64
   }
   return Math.max(1, Math.ceil(bytes))
 }
@@ -60,7 +63,8 @@ export const boundNativeLayoutCache = (
     },
   })
   const track = (query: Query): void => {
-    if (query.queryKey[0] !== 'canvas-layout') return
+    if (query.queryKey[0] !== 'canvas-layout' && query.queryKey[0] !== 'canvas-spatial-layout')
+      return
     if (query.getObserversCount() > 0 || query.state.fetchStatus !== 'idle') {
       inactive.delete(query.queryHash)
       return

@@ -15,7 +15,7 @@ import type { TopicStyle } from '@core'
 describe('topic presentation commands', () => {
   it('replaces approved style fields atomically, isolates caller data and supports undo/redo', () => {
     const original = createHistory(createDocument('中心', 'styled'))
-    const style = { fill: '#aabbcc', fontSize: 24, bold: true, width: 360 }
+    const style = { fill: '#aabbcc', fontSize: 24, bold: true, width: 360, spatialDepth: 125 }
     const styled = executeCommand(original, { type: 'setTopicStyle', topicId: 'root', style })
     expect(styled.past).toEqual([original.document])
     expect(styled.document.topics.root?.style).toEqual(style)
@@ -27,7 +27,7 @@ describe('topic presentation commands', () => {
       executeCommand(styled, {
         type: 'setTopicStyle',
         topicId: 'root',
-        style: { bold: true, fontSize: 24, fill: '#aabbcc', width: 360 },
+        style: { bold: true, fontSize: 24, fill: '#aabbcc', width: 360, spatialDepth: 125 },
       }),
     ).toBe(styled)
     const cleared = applyCommand(styled.document, {
@@ -47,6 +47,7 @@ describe('topic presentation commands', () => {
       fontSize: 32,
       width: 1200,
       scale: 2.5,
+      spatialDepth: -1000,
       bold: false,
       italic: true,
       shape: 'ellipse',
@@ -148,6 +149,11 @@ describe('topic presentation commands', () => {
     { scale: 0.49 },
     { scale: 3.01 },
     { scale: Number.NaN },
+    { spatialDepth: -1000.1 },
+    { spatialDepth: 1000.1 },
+    { spatialDepth: Number.NaN },
+    { spatialDepth: Number.POSITIVE_INFINITY },
+    { spatialDepth: '125' },
     { lineWidth: 0 },
     { lineWidth: 7 },
     { bold: 1 },

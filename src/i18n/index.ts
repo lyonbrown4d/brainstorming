@@ -1,3 +1,4 @@
+import { spatialMessages } from '@renderer/i18n/spatialMessages'
 import { topicWidthMessages } from '@renderer/i18n/topicWidthMessages'
 import { shortcutCustomizationMessages } from '@renderer/i18n/shortcutCustomizationMessages'
 import { summaryMessages } from '@renderer/i18n/summaryMessages'
@@ -32,6 +33,7 @@ import { messages7 } from '@renderer/i18n/messages7'
 import { messages8 } from '@renderer/i18n/messages8'
 
 const messages = {
+  ...spatialMessages,
   ...topicWidthMessages,
   ...shortcutCustomizationMessages,
   ...summaryMessages,

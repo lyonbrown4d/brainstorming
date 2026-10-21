@@ -3,7 +3,7 @@ use tauri_specta::{Builder, ErrorHandlingMode, collect_commands};
 
 pub(crate) fn builder() -> Builder<tauri::Wry> {
   macro_rules! commands {
-    ($($extra:ident),*) => { collect_commands![crate::platform::wire::native_request, editor_open, editor_execute, editor_close, compute_layout, compute_find, compute_render, compute_export, compute_import_text, compute_previews, $(crate::platform::wire::$extra),*] };
+    ($($extra:ident),*) => { collect_commands![crate::platform::wire::native_request, editor_open, editor_execute, editor_close, compute_layout, compute_spatial_layout, compute_find, compute_render, compute_export, compute_import_text, compute_previews, $(crate::platform::wire::$extra),*] };
   }
   #[cfg(not(feature = "e2e"))]
   let commands = commands![];

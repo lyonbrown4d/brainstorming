@@ -19,6 +19,8 @@ pnpm dev
 
 新增计算命令时，在 `src-tauri/src/platform/compute.rs` 声明 Tauri / Specta 命令，加入 `bindings.rs` 的唯一命令清单，再通过 `src/lib/nativeComputeAPI.ts` 转为业务视图类型。修订号用十进制字符串传输，避免 Rust u64 在 JavaScript 中丢失精度。动态工作簿使用具名 JSON 类型并在原生边界校验，不开启全局大整数强转。计算接口处理会话与派生结果，不改变版本化 JSON 或 SQLite 文件表结构，无需新增 SQL 迁移。
 
+`compute_spatial_layout` 复用原生 2D 布局，并返回主题深度记录。主题深度由层级、`settings.spatial.spacing` 和沿祖先累加的 `style.spatialDepth` 计算；2D 布局与测量忽略这些空间字段。空间计算使用 Moka 缓存和有界工作任务；前端只根据结果、`yaw` 与 `pitch` 做斜视投影。3D 轮廓由 React Three Fiber / Three.js 绘制，主题选中、编辑、中文输入法、关联线和笔迹继续走共享画布交互。画布空白处的 Alt 拖动预览视角，结束后通过 `setDocumentSettings` 保存一次；主题深度通过 `setTopicStyle` 保存。二维、三维的平移与缩放按工作簿、Sheet 和模式保留在会话中，切换 Sheet 后仍分别恢复，不写入文档。原生深度尚未准备完成时保留旧画面并暂停画布编辑，避免把投影坐标写入主题位置。缺省模式为 2D，视图配置和主题深度的文件约束见 [单文件协议](file-format.md#主题表现笔迹与演示页面)。
+
 ## 常用命令
 
 | 命令                                             | 用途                                                                |

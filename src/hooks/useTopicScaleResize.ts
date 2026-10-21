@@ -1,26 +1,16 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useReactFlow, type NodeResizerProps } from '@xyflow/react'
-import { applyCommand, type MindMapDocument, type Topic } from '@core'
+import { applyCommand, type Topic } from '@core'
 import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
+import type { ScaleSession } from '@renderer/lib/canvasGestureSession'
 import { computeNativeLayout } from '@renderer/lib/nativeLayout'
+import { fetchNativeSpatialLayout } from '@renderer/lib/nativeSpatialLayout'
+import { projectSpatialLayout } from '@renderer/lib/spatialProjection'
 import { useEditor } from '@renderer/state/editor'
+import { getSpatialView, useSpatialView } from '@renderer/state/spatialView'
 import { usePresentation } from '@renderer/state/presentation'
 import { useTopicScalePreview } from '@renderer/state/topicScalePreview'
 import { hasNativeEditor } from '@renderer/state/nativeEditorQueue'
-
-interface ScaleSession {
-  document: MindMapDocument
-  workbookId: string
-  sheetId: string
-  position: { x: number; y: number }
-  width: number
-  height: number
-  style: NonNullable<CanvasFlowNode['style']>
-  baseWidth: number
-  baseHeight: number
-  topic: Topic
-  corner: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
-}
 
 /** React Flow supplies the proportional box; the document receives one style command. */
 export const useTopicScaleResize = (
@@ -114,6 +104,10 @@ export const useTopicScaleResize = (
     const stopPlaying = usePresentation.subscribe((state) => {
       if (state.playing) cancel()
     })
+    const stopView = useSpatialView.subscribe(() => {
+      const active = session.current ?? pending.current
+      if (active && getSpatialView(active.workbookId, active.sheetId) !== active.view) cancel()
+    })
     window.addEventListener('keydown', key, true)
     window.addEventListener('blur', cancel)
     window.addEventListener('pointercancel', cancel)
@@ -123,6 +117,7 @@ export const useTopicScaleResize = (
       useTopicScalePreview.getState().clear(id)
       unsubscribe()
       stopPlaying()
+      stopView()
       window.removeEventListener('keydown', key, true)
       window.removeEventListener('blur', cancel)
       window.removeEventListener('pointercancel', cancel)
@@ -164,6 +159,7 @@ export const useTopicScaleResize = (
           workbookId: current.workbook.id,
           sheetId: current.activeSheetId,
           topic,
+          view: getSpatialView(current.workbook.id, current.activeSheetId),
           corner: corner.current,
           position: node.position,
           width,
@@ -187,6 +183,7 @@ export const useTopicScaleResize = (
           editor.workbook.id !== active.workbookId ||
           editor.activeSheetId !== active.sheetId ||
           editor.history.document !== active.document ||
+          getSpatialView(active.workbookId, active.sheetId) !== active.view ||
           usePresentation.getState().playing
         ) {
           restore(active)
@@ -209,14 +206,19 @@ export const useTopicScaleResize = (
           topicId: id,
           style: { ...active.topic.style, scale },
         })
-        void computeNativeLayout(candidate)
-          .then((layout) => {
+        const nextLayout =
+          active.view.mode === '3d'
+            ? fetchNativeSpatialLayout(candidate, active.sheetId, active.view)
+            : computeNativeLayout(candidate).then((layout) => ({ layout, depths: undefined }))
+        void nextLayout
+          .then(({ layout, depths }) => {
             const current = useEditor.getState()
             if (pending.current !== active) return
             if (
               current.workbook.id !== active.workbookId ||
               current.activeSheetId !== active.sheetId ||
               current.history.document !== active.document ||
+              getSpatialView(active.workbookId, active.sheetId) !== active.view ||
               current.busy ||
               usePresentation.getState().playing
             ) {
@@ -224,7 +226,9 @@ export const useTopicScaleResize = (
               restore(active)
               return
             }
-            const next = layout.nodes.find((node) => node.id === id)
+            const next = projectSpatialLayout(candidate, layout, active.view, depths).nodes.find(
+              (node) => node.id === id,
+            )
             if (!next) {
               pending.current = null
               restore(active)

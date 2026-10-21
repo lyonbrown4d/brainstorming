@@ -1,8 +1,28 @@
 import { describe, expect, it } from 'vitest'
-import { applyCommand, validateDocument, type Command } from '@core'
+import { applyCommand, validateDocument, type Command, type SpatialSettings } from '@core'
 import { extensionFixture } from '@core/extension-test-fixture'
 
 describe('extension validation', () => {
+  it.each([
+    { mode: '3d', yaw: 0, pitch: 0 },
+    { mode: '4d', yaw: 0, pitch: 0, spacing: 0 },
+    { mode: '3d', yaw: -1.21, pitch: 0, spacing: 0 },
+    { mode: '3d', yaw: 0, pitch: 0.91, spacing: 0 },
+    { mode: '3d', yaw: 0, pitch: 0, spacing: 201 },
+    { mode: '3d', yaw: Number.POSITIVE_INFINITY, pitch: 0, spacing: 0 },
+    { mode: '3d', yaw: 0, pitch: Number.NaN, spacing: 0 },
+    { mode: '3d', yaw: 0, pitch: 0, spacing: 0, extra: true },
+  ])('rejects malformed spatial settings atomically: %j', (spatial) => {
+    const source = extensionFixture()
+    expect(() =>
+      applyCommand(source, {
+        type: 'setDocumentSettings',
+        settings: { spatial: spatial as SpatialSettings },
+      }),
+    ).toThrow()
+    expect(source.settings?.spatial).toBeUndefined()
+  })
+
   it.each<Command>([
     {
       type: 'setTopicMetadata',

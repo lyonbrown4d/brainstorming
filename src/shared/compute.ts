@@ -28,6 +28,11 @@ export interface NativeLayoutInput {
     readonly height: number
   }[]
 }
+export interface NativeSpatialLayout {
+  /** Physical native 2D geometry; the renderer applies only the view angle. */
+  readonly layout: MindMapLayout
+  readonly depths: Readonly<Record<string, number>>
+}
 export interface NativeSheetScene {
   readonly svg: string
   readonly width: number
@@ -54,6 +59,7 @@ export interface ComputeAPI {
   ): Promise<NativeEditorSnapshot>
   closeSession(sessionId: string): Promise<void>
   layout(input: NativeLayoutInput): Promise<MindMapLayout>
+  spatialLayout(input: NativeLayoutInput): Promise<NativeSpatialLayout>
   find(
     input: { readonly workbookId: string; readonly query: string } & SearchOptions,
   ): Promise<SearchMatch[]>
