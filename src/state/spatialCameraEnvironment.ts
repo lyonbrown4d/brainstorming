@@ -29,7 +29,7 @@ interface Environment {
   readonly size: () => CameraSize
   readonly distance: () => number
   readonly ready: () => boolean
-  readonly finishSession: () => void
+  readonly finishSession: (commit: boolean) => void
   readonly transition: boolean
   readonly onCommand: () => void
   readonly onView: () => void
@@ -56,7 +56,7 @@ export const bindSpatialCameraEnvironment = (input: Environment): (() => void) =
       input.workbookId,
       input.sheetId,
       () => {
-        if (input.session()?.pointerId === null) input.finishSession()
+        if (input.session()?.pointerId === null) input.finishSession(true)
         return input.ready()
       },
       (command) => {

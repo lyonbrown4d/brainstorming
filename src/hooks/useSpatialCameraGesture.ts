@@ -258,9 +258,7 @@ export const useSpatialCameraGesture = (
       size,
       distance: () => currentDistance,
       ready: () => !session,
-      finishSession: () => {
-        finish(true)
-      },
+      finishSession: finish,
       transition: !reducedMotion,
       onCommand: () => {
         preservePreview = true

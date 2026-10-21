@@ -135,6 +135,13 @@ test('direct blank-canvas orbit commits once, keeps selection, and Escape drops 
   await page.keyboard.press('ControlOrMeta+z')
   await expect.poll(async () => (await box(branch)).x).toBeCloseTo(original.x, 0)
   await expect.poll(async () => (await box(branch)).y).toBeCloseTo(original.y, 0)
+  await settledBox(branch)
+  await expect
+    .poll(async () => {
+      const current = await box(branch)
+      return Math.hypot(current.x - original.x, current.y - original.y)
+    })
+    .toBeLessThan(0.5)
 
   await page.mouse.move(point.x, point.y)
   await page.mouse.down()
