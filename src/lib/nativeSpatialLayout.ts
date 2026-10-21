@@ -70,9 +70,11 @@ export const computeNativeSpatialLayout = async (
         [...spatialTopicOffsets(document, view)].map(([id, offset]) => [id, offset.z]),
       ),
     }
+  const { mode, yaw, pitch, spacing, target } = view
+  const spatial = { mode, yaw, pitch, spacing, ...(target ? { target } : {}) }
   const inputDocument: MindMapDocument = {
     ...document,
-    settings: { ...document.settings, spatial: view },
+    settings: { ...document.settings, spatial },
   }
   return api.compute.spatialLayout({ document: inputDocument, measurements })
 }

@@ -1,10 +1,11 @@
 import { expect, it } from 'vitest'
-import { OrthographicCamera, Spherical, Vector3 } from 'three'
+import { OrthographicCamera, PerspectiveCamera, Spherical, Vector3 } from 'three'
 import {
   createSpatialCamera,
   projectSpatialPoint,
   spatialCameraDelta,
   spatialCameraQuaternion,
+  spatialPerspectiveScale,
   unprojectSpatialPoint,
   type SpatialPoint3,
 } from '@renderer/lib/spatialCamera'
@@ -71,4 +72,74 @@ it('keeps exact document coordinates in 2D', () => {
   expect(projectSpatialPoint(point, view)).toEqual(point)
   expect(unprojectSpatialPoint(point, view)).toEqual(point)
   expect(spatialCameraDelta(view, { x: 5, y: -3 })).toEqual({ x: 5, y: -3, z: 0 })
+})
+
+it('uses 42 degree perspective at camera-relative depth and inverts the projection', () => {
+  const view: SpatialView = {
+    mode: '3d',
+    yaw: 0.4,
+    pitch: 0.3,
+    spacing: 100,
+    target,
+    cameraDistance: 1200,
+  }
+  const center = { ...target }
+  const forward = new Vector3(0, 0, 1).applyQuaternion(spatialCameraQuaternion(view))
+  const near = {
+    x: center.x + forward.x * 300,
+    y: center.y - forward.y * 300,
+    z: center.z + forward.z * 300,
+  }
+  const far = {
+    x: center.x - forward.x * 300,
+    y: center.y + forward.y * 300,
+    z: center.z - forward.z * 300,
+  }
+  expect(spatialPerspectiveScale(view, projectSpatialPoint(near, view).z)).toBeCloseTo(4 / 3)
+  expect(spatialPerspectiveScale(view, projectSpatialPoint(far, view).z)).toBeCloseTo(0.8)
+  for (const candidate of [point, near, far]) {
+    expectPointClose(unprojectSpatialPoint(projectSpatialPoint(candidate, view), view), candidate)
+  }
+  const depth = projectSpatialPoint(point, view).z
+  const delta = spatialCameraDelta(view, { x: 90, y: -40 }, depth)
+  const before = projectSpatialPoint(point, view)
+  const after = projectSpatialPoint(
+    {
+      x: point.x + delta.x,
+      y: point.y + delta.y,
+      z: point.z + delta.z,
+    },
+    view,
+  )
+  expectPointClose(after, { x: before.x + 90, y: before.y - 40, z: before.z })
+})
+
+it('matches a real Three PerspectiveCamera with a 42 degree field of view', () => {
+  const view: SpatialView = {
+    mode: '3d',
+    yaw: 0.6,
+    pitch: -0.25,
+    spacing: 100,
+    cameraDistance: 1000,
+  }
+  const sample = { x: 140, y: -85, z: 220 }
+  const camera = new PerspectiveCamera(42, 1, 1, 5000)
+  const rotation = spatialCameraQuaternion(view)
+  camera.position.copy(new Vector3(0, 0, 1000).applyQuaternion(rotation))
+  camera.quaternion.copy(rotation)
+  camera.updateMatrixWorld()
+  const ndc = new Vector3(sample.x, -sample.y, sample.z).project(camera)
+  const halfHeight = 1000 * Math.tan((21 * Math.PI) / 180)
+  const projected = projectSpatialPoint(sample, view)
+  expect(projected.x).toBeCloseTo(ndc.x * halfHeight, 8)
+  expect(projected.y).toBeCloseTo(-ndc.y * halfHeight, 8)
+})
+
+it('clips invalid and eye-plane depths to finite rendering scales', () => {
+  const view: SpatialView = { mode: '3d', yaw: 0, pitch: 0, spacing: 100, cameraDistance: 1000 }
+  expect(spatialPerspectiveScale(view, 1000)).toBe(100)
+  expect(spatialPerspectiveScale(view, 1e30)).toBe(100)
+  expect(spatialPerspectiveScale(view, -1e30)).toBe(0.01)
+  expect(spatialPerspectiveScale(view, Number.NaN)).toBe(1)
+  expect(spatialPerspectiveScale({ ...view, cameraDistance: Number.NaN }, 100)).toBe(1)
 })

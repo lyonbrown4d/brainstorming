@@ -1,8 +1,10 @@
+import { getSpatialView } from '@renderer/state/spatialView'
 import { useEffect } from 'react'
 import { useReactFlow } from '@xyflow/react'
 import { useReducedMotion } from 'motion/react'
 import { useViewportRequest } from '@renderer/state/viewport'
 import { useEditor } from '@renderer/state/editor'
+import { requestSpatialCamera } from '@renderer/state/spatialCameraCommands'
 import type { TopicFlowNode } from '@renderer/components/TopicNode'
 
 export const useCanvasViewport = (): void => {
@@ -11,6 +13,12 @@ export const useCanvasViewport = (): void => {
   useEffect(
     () =>
       useViewportRequest.subscribe(({ action }) => {
+        const editor = useEditor.getState()
+        const spatial = getSpatialView(editor.workbook.id, editor.activeSheetId).mode === '3d'
+        if (spatial) {
+          if (action) requestSpatialCamera(action)
+          return
+        }
         const duration = reduced ? 0 : 160
         if (action === 'zoomIn') void flow.zoomIn({ duration })
         else if (action === 'zoomOut') void flow.zoomOut({ duration })

@@ -38,8 +38,9 @@ it('uses native whole-map measurement for 2D, 3D, and resize queries', async () 
     )
     await computeNativeLayout(document)
     await computeNativeSpatialLayout(document, view)
+    await computeNativeSpatialLayout(document, { ...view, cameraDistance: 1000 })
     expect(compute.layout).toHaveBeenCalledWith({ document, measurements: [] })
-    expect(compute.spatialLayout).toHaveBeenCalledWith({
+    expect(compute.spatialLayout).toHaveBeenLastCalledWith({
       document: { ...document, settings: { ...document.settings, spatial: view } },
       measurements: [],
     })

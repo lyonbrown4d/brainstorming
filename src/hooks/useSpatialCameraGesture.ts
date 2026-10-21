@@ -1,186 +1,299 @@
-import { useEffect, useRef, useState } from 'react'
-import { MOUSE, Vector3 } from 'three'
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import { createSpatialCamera } from '@renderer/lib/spatialCamera'
-import { isCompositionKey } from '@renderer/state/keyboard'
-import { useCanvasInk } from '@renderer/state/canvasInk'
-import { useEditor } from '@renderer/state/editor'
-import { usePresentation } from '@renderer/state/presentation'
-import { saveSpatialView } from '@renderer/state/spatialActions'
+import { useEffect, useRef } from 'react'
+import { useReactFlow, useStoreApi } from '@xyflow/react'
+import { useReducedMotion } from 'motion/react'
 import {
-  DEFAULT_SPATIAL_VIEW,
-  getSpatialView,
-  useSpatialView,
-  type SpatialView,
-} from '@renderer/state/spatialView'
+  cameraElementSize,
+  cameraPositionFor,
+  cameraViewChanged,
+  cameraViewportChanged,
+  externalSpatialCameraFrame,
+  type CameraWheelAction,
+} from '@renderer/lib/spatialCameraNavigation'
+import {
+  applySpatialCameraWheel,
+  createSpatialControls,
+  createSpatialPerspectiveCamera,
+  publishSpatialCameraSnapshot,
+  spatialCameraSnapshot,
+} from '@renderer/lib/spatialCameraController'
+import { bindSpatialCameraGestureInput } from '@renderer/lib/spatialCameraGestureInput'
+import {
+  setSpatialSceneDistanceLimits,
+  type SpatialCameraScene,
+} from '@renderer/lib/spatialCameraCommands'
+import { useEditor } from '@renderer/state/editor'
+import { bindSpatialCameraEnvironment } from '@renderer/state/spatialCameraEnvironment'
+import { saveSpatialView } from '@renderer/state/spatialActions'
+import { setSpatialLens } from '@renderer/state/spatialLens'
+import { getSpatialView, useSpatialView, type SpatialView } from '@renderer/state/spatialView'
+import { setSpatialViewport } from '@renderer/state/spatialViewports'
+import {
+  canNavigateSpatialCamera,
+  createSpatialCameraSession,
+  readSpatialNavigationStart,
+  restoreSpatialNavigationPreview,
+  saveSpatialNavigationSession,
+  type SpatialCameraSession,
+} from '@renderer/state/spatialNavigation'
 
-interface CameraSession {
-  readonly workbookId: string
-  readonly sheetId: string
-  readonly document: object
-  readonly original: SpatialView
-  readonly pointerId: number
-  latest: SpatialView
-  frame: number
-}
-
-/** Three OrbitControls owns rotation; this hook owns the editor preview/commit boundary. */
+/** One CameraControls instance owns input, the temporary view, lens and RF viewport. */
 export const useSpatialCameraGesture = (
   element: HTMLDivElement | null,
+  root: HTMLElement | null,
   active: boolean,
-): boolean => {
-  const [dragging, setDragging] = useState(false)
+  scene: SpatialCameraScene,
+): void => {
+  const flow = useReactFlow()
+  const flowStore = useStoreApi()
+  const reducedMotion = useReducedMotion()
   const activeRef = useRef(active)
   activeRef.current = active
+  const sceneRef = useRef(scene)
+  sceneRef.current = scene
+  const controlsRef = useRef<ReturnType<typeof createSpatialControls> | null>(null)
+  const sceneReady = Boolean(scene.layout && scene.depths)
   useEffect(() => {
-    if (!element) return
-    const camera = createSpatialCamera({ ...DEFAULT_SPATIAL_VIEW, mode: '3d' }, 1000)
-    const controls = new OrbitControls(camera, element)
-    controls.enabled = false
-    controls.enablePan = false
-    controls.enableZoom = false
-    controls.enableDamping = false
-    controls.mouseButtons = { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.ROTATE, RIGHT: MOUSE.ROTATE }
-    let session: CameraSession | null = null
-    const clear = (commit: boolean): void => {
-      const current = session
-      if (!current) return
-      session = null
-      cancelAnimationFrame(current.frame)
-      controls.enabled = false
-      setDragging(false)
-      if (commit && valid(current) && current.latest !== current.original) {
-        saveSpatialView({ yaw: current.latest.yaw, pitch: current.latest.pitch })
-      } else {
-        useSpatialView.getState().clearView(current.workbookId, current.sheetId)
-      }
+    if (controlsRef.current) setSpatialSceneDistanceLimits(controlsRef.current, sceneRef.current)
+  }, [scene.layout, scene.depths, scene.drawings])
+  useEffect(() => {
+    if (!element || !root || !sceneReady) return
+    const size = (): { width: number; height: number } => cameraElementSize(root)
+    const initialSize = size()
+    if (initialSize.width <= 0 || initialSize.height <= 0) return
+    const editor = useEditor.getState()
+    const workbookId = editor.workbook.id
+    const sheetId = editor.activeSheetId
+    const start = readSpatialNavigationStart(
+      workbookId,
+      sheetId,
+      initialSize,
+      flow.getViewport(),
+      sceneRef.current,
+    )
+    const { view: first, initial } = start
+    const { distance, target } = initial
+    const baseTarget = target
+    const camera = createSpatialPerspectiveCamera(initialSize)
+    const controls = createSpatialControls(camera, element, Boolean(reducedMotion))
+    controlsRef.current = controls
+    setSpatialSceneDistanceLimits(controls, sceneRef.current)
+    controls.enabled = activeRef.current
+    let currentView: SpatialView = { ...first, target }
+    let currentDistance = distance
+    let session: SpatialCameraSession | null = null
+    let frame = 0
+    let previousFrame = 0
+    let writing = false
+    let lastViewport = initial.viewport
+    void flow.setViewport(lastViewport)
+    setSpatialViewport(workbookId, sheetId, '3d', lastViewport)
+    let disposed = false
+    let preservePreview = true
+    let wheelTimer = 0
+    const apply = (view: SpatialView, nextDistance: number, transition: boolean): void => {
+      currentView = view
+      currentDistance = nextDistance
+      void controls.setLookAt(...cameraPositionFor(view, nextDistance), transition)
+      wake()
     }
-    const valid = (current: CameraSession): boolean => {
-      const editor = useEditor.getState()
-      return (
-        editor.workbook.id === current.workbookId &&
-        editor.activeSheetId === current.sheetId &&
-        editor.history.document === current.document &&
-        !editor.busy &&
-        !editor.editingId &&
-        !usePresentation.getState().playing &&
-        useCanvasInk.getState().mode === 'select' &&
-        getSpatialView(current.workbookId, current.sheetId).mode === '3d'
-      )
-    }
-    const preview = (): void => {
-      const current = session
-      if (!current || !valid(current)) {
-        clear(false)
-        return
-      }
-      current.frame = 0
-      useSpatialView.getState().setView(current.workbookId, current.sheetId, current.latest)
-    }
-    const changed = (): void => {
-      const current = session
-      if (!current || !valid(current)) {
-        clear(false)
-        return
-      }
-      const offset = camera.position.clone().sub(controls.target).normalize()
-      const yaw = Math.atan2(offset.x, offset.z)
-      const pitch = Math.asin(Math.max(-1, Math.min(1, offset.y)))
-      if (
-        Math.abs(yaw - current.original.yaw) < 1e-5 &&
-        Math.abs(pitch - current.original.pitch) < 1e-5
-      )
-        return
-      current.latest = { ...current.original, yaw, pitch }
-      if (!current.frame) current.frame = requestAnimationFrame(preview)
-    }
-    const start = (event: PointerEvent): void => {
-      const editor = useEditor.getState()
-      const workbookId = editor.workbook.id
-      const sheetId = editor.activeSheetId
-      const original = getSpatialView(workbookId, sheetId)
-      const allowed =
-        activeRef.current &&
-        original.mode === '3d' &&
-        event.button === 0 &&
-        !editor.busy &&
-        !editor.editingId &&
-        !usePresentation.getState().playing &&
-        useCanvasInk.getState().mode === 'select'
-      controls.enabled = allowed
-      if (!allowed) return
-      event.preventDefault()
-      clear(false)
-      controls.enabled = true
-      session = {
+    const publish = (): void => {
+      if (disposed) return
+      writing = true
+      const snapshot = publishSpatialCameraSnapshot(
+        controls,
+        currentView,
+        size(),
         workbookId,
         sheetId,
-        document: editor.history.document,
-        original,
-        pointerId: event.pointerId,
-        latest: original,
-        frame: 0,
+        (viewport) => {
+          void flow.setViewport(viewport)
+        },
+      )
+      currentDistance = snapshot.distance
+      currentView = snapshot.view
+      lastViewport = snapshot.viewport
+      writing = false
+    }
+    const tick = (time: number): void => {
+      frame = 0
+      if (disposed) return
+      const delta = previousFrame ? Math.min(0.05, (time - previousFrame) / 1000) : 1 / 60
+      previousFrame = time
+      if (controls.update(delta)) {
+        publish()
+        wake()
+      } else {
+        previousFrame = 0
+        if (session?.ended) finish(true)
+        else if (!session && !preservePreview)
+          useSpatialView.getState().clearView(workbookId, sheetId)
       }
-      const target = original.target ?? { x: 0, y: 0, z: 0 }
-      controls.target.set(target.x, -target.y, target.z)
-      camera.position
-        .copy(controls.target)
-        .add(
-          new Vector3(0, 0, 1000).applyQuaternion(createSpatialCamera(original, 1000).quaternion),
+    }
+    const wake = (): void => {
+      if (!frame && !disposed) frame = requestAnimationFrame(tick)
+    }
+    const finish = (commit: boolean): void => {
+      const ended = session
+      if (!ended) return
+      session = null
+      window.clearTimeout(wheelTimer)
+      if (!commit || !canNavigateSpatialCamera(ended.workbookId, ended.sheetId, ended.document)) {
+        apply(ended.original, ended.distance, false)
+        writing = true
+        const next = restoreSpatialNavigationPreview(
+          ended.workbookId,
+          ended.sheetId,
+          ended.original,
+          ended.distance,
+          size(),
         )
-      camera.quaternion.copy(createSpatialCamera(original, 1000).quaternion)
-      controls.update()
-      setDragging(true)
+        lastViewport = next
+        void flow.setViewport(next)
+        writing = false
+        return
+      }
+      if (
+        (ended.pointerId !== null || ended.wheelCommit) &&
+        cameraViewChanged(ended.original, currentView)
+      ) {
+        preservePreview = false
+        saveSpatialView({
+          yaw: currentView.yaw,
+          pitch: currentView.pitch,
+          ...(currentView.target ? { target: currentView.target } : {}),
+        })
+      } else if (ended.pointerId === null) preservePreview = true
     }
-    const ended = (): void => {
-      clear(true)
+    const makeSession = (pointerId: number | null): SpatialCameraSession =>
+      createSpatialCameraSession(workbookId, sheetId, currentView, currentDistance, pointerId)
+    const pointerDown = (event: PointerEvent): void => {
+      setSpatialSceneDistanceLimits(controls, sceneRef.current)
+      if (session?.pointerId === null) finish(true)
+      if (session) finish(false)
+      session = makeSession(event.pointerId)
     }
-    const canceled = (event: PointerEvent): void => {
-      if (session?.pointerId === event.pointerId) clear(false)
+    const pointerUp = (pointerId: number): void => {
+      if (session?.pointerId !== pointerId) return
+      currentView = spatialCameraSnapshot(controls, currentView, size(), true).view
+      finish(true)
+      wake()
     }
-    const key = (event: KeyboardEvent): void => {
-      if (event.key !== 'Escape' || isCompositionKey(event) || !session) return
-      event.preventDefault()
-      event.stopImmediatePropagation()
-      clear(false)
+    const wheel = (action: CameraWheelAction): void => {
+      if (session?.pointerId !== undefined && session.pointerId !== null) return
+      setSpatialSceneDistanceLimits(controls, sceneRef.current)
+      session ??= makeSession(null)
+      session.ended = false
+      session.wheelCommit ||= action.kind === 'rotate'
+      window.clearTimeout(wheelTimer)
+      wheelTimer = window.setTimeout(() => {
+        if (session?.pointerId === null) {
+          session.ended = true
+          wake()
+        }
+      }, 140)
+      applySpatialCameraWheel(controls, action, currentDistance, size().height)
+      wake()
     }
-    const validate = (): void => {
-      if (session && !valid(session)) clear(false)
+    const cancel = (pointerId?: number): boolean => {
+      if (!session || (pointerId !== undefined && session.pointerId !== pointerId)) return false
+      finish(false)
+      return true
     }
-    const stopBubble = (event: Event): void => {
-      event.stopPropagation()
+    const externalView = (): void => {
+      if (writing || session || disposed) return
+      const next = externalSpatialCameraFrame(
+        currentView,
+        currentDistance,
+        baseTarget,
+        getSpatialView(workbookId, sheetId),
+      )
+      if (next) apply(next.view, next.distance, !reducedMotion)
     }
-    element.addEventListener('pointerdown', start, true)
-    element.addEventListener('pointerdown', stopBubble)
-    element.addEventListener('click', stopBubble)
-    element.addEventListener('dblclick', stopBubble)
-    controls.addEventListener('change', changed)
-    controls.addEventListener('end', ended)
-    element.addEventListener('pointercancel', canceled, true)
-    const blur = (): void => {
-      clear(false)
+    const externalViewport = (): void => {
+      if (writing || disposed) return
+      const next = flow.getViewport()
+      if (!cameraViewportChanged(next, lastViewport)) return
+      // React Flow is only an editing projection in 3D. Its startup or restore
+      // transforms must never become camera pose commands.
+      writing = true
+      void flow.setViewport(lastViewport)
+      writing = false
     }
-    window.addEventListener('blur', blur)
-    window.addEventListener('keydown', key, true)
-    const unsubscribeEditor = useEditor.subscribe(validate)
-    const unsubscribePresentation = usePresentation.subscribe(validate)
-    const unsubscribeInk = useCanvasInk.subscribe(validate)
+    apply(currentView, currentDistance, false)
+    useSpatialView.getState().setView(workbookId, sheetId, { target })
+    setSpatialLens(workbookId, sheetId, currentDistance)
+    controls.addEventListener('wake', wake)
+    const detachInput = bindSpatialCameraGestureInput({
+      element,
+      root,
+      controls,
+      size,
+      canNavigate: () =>
+        activeRef.current &&
+        canNavigateSpatialCamera(workbookId, sheetId, useEditor.getState().history.document),
+      onStart: pointerDown,
+      onEnd: pointerUp,
+      onCancel: cancel,
+      onWheel: wheel,
+      distance: () => currentDistance,
+      view: () => currentView,
+      pendingMotion: () => Boolean(frame && !session),
+      onFrozen: (snapshot) => {
+        currentView = snapshot.view
+        currentDistance = snapshot.distance
+        preservePreview = true
+        cancelAnimationFrame(frame)
+        frame = 0
+        previousFrame = 0
+      },
+      wake,
+    })
+    const stopEnvironment = bindSpatialCameraEnvironment({
+      root,
+      camera,
+      controls,
+      workbookId,
+      sheetId,
+      scene: () => sceneRef.current,
+      size,
+      distance: () => currentDistance,
+      ready: () => !session,
+      transition: !reducedMotion,
+      onCommand: () => {
+        preservePreview = true
+        wake()
+      },
+      onView: externalView,
+      onViewport: externalViewport,
+      subscribeViewport: (callback) => flowStore.subscribe(callback),
+      initialSettings: start.persistedSpatial,
+      onSettingsChanged: () => {
+        preservePreview = false
+      },
+      session: () => session,
+      cancelSession: () => {
+        finish(false)
+      },
+      applyDistance: (distance) => {
+        apply(currentView, distance, false)
+      },
+      publish,
+    })
     return () => {
-      clear(false)
-      element.removeEventListener('pointerdown', start, true)
-      element.removeEventListener('pointerdown', stopBubble)
-      element.removeEventListener('click', stopBubble)
-      element.removeEventListener('dblclick', stopBubble)
-      controls.removeEventListener('change', changed)
-      controls.removeEventListener('end', ended)
-      element.removeEventListener('pointercancel', canceled, true)
-      window.removeEventListener('blur', blur)
-      window.removeEventListener('keydown', key, true)
-      unsubscribeEditor()
-      unsubscribePresentation()
-      unsubscribeInk()
+      finish(false)
+      saveSpatialNavigationSession(workbookId, sheetId, {
+        target: currentView.target ?? baseTarget,
+        distance: currentDistance,
+        viewport: lastViewport,
+      })
+      disposed = true
+      if (frame) cancelAnimationFrame(frame)
+      stopEnvironment()
+      controls.removeEventListener('wake', wake)
+      detachInput()
       controls.dispose()
+      if (controlsRef.current === controls) controlsRef.current = null
+      setSpatialLens(workbookId, sheetId, undefined)
     }
-  }, [element])
-  return dragging
+  }, [element, root, flow, flowStore, reducedMotion, sceneReady])
 }

@@ -16,9 +16,12 @@ export const useSpatialViewportRestore = (ready: boolean): boolean => {
     let cancelled = false
     const frame = requestAnimationFrame(() => {
       const viewport = getSpatialViewport(workbookId, sheetId, view.mode)
-      const restore = viewport
-        ? flow.setViewport(viewport)
-        : flow.fitView({ padding: canvasFitPadding(), maxZoom: 1.2 })
+      const restore =
+        view.mode === '3d'
+          ? Promise.resolve()
+          : viewport
+            ? flow.setViewport(viewport)
+            : flow.fitView({ padding: canvasFitPadding(), maxZoom: 1.2 })
       void restore.then(() => {
         if (cancelled) return
         setApplied(scope)

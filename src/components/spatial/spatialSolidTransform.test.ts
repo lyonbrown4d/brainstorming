@@ -2,7 +2,12 @@ import { expect, it } from 'vitest'
 import { Vector3 } from 'three'
 import { makeSpatialSolidGeometry } from '@renderer/components/spatial/spatialSolidGeometry'
 import { spatialSolidMatrix } from '@renderer/components/spatial/spatialSolidTransform'
-import { projectSpatialPoint, spatialCameraQuaternion } from '@renderer/lib/spatialCamera'
+import {
+  projectSpatialPoint,
+  spatialCameraQuaternion,
+  spatialPerspectiveScale,
+  unprojectSpatialPoint,
+} from '@renderer/lib/spatialCamera'
 import type { SpatialView } from '@renderer/state/spatialView'
 
 const worldPoint = (
@@ -86,4 +91,63 @@ it('has a finite back cap in front and rear polar views', () => {
     expect(Number.isFinite(back.x + back.y + back.z)).toBe(true)
     expect(Number.isFinite(front.x + front.y + front.z)).toBe(true)
   }
+})
+
+it('aligns the front silhouette with a perspective-scaled shared editor topic', () => {
+  const camera: SpatialView = { ...view(0.7, 0.5), cameraDistance: 1400 }
+  const canonicalCenter = { x: 320, y: 160, z: 120 }
+  const projectedCenter = projectSpatialPoint(canonicalCenter, camera)
+  const actualCenter = unprojectSpatialPoint(projectedCenter, camera)
+  const scale = spatialPerspectiveScale(camera, projectedCenter.z)
+  const width = 240
+  const height = 80
+  const projectedWidth = width * scale
+  const projectedHeight = height * scale
+  const thickness = 22
+  const matrix = spatialSolidMatrix(camera, {
+    x: -projectedWidth / (2 * scale),
+    y: -projectedHeight / (2 * scale),
+    z: 0,
+    scale: 1,
+    scaleX: projectedWidth / (width * scale),
+    scaleY: projectedHeight / (height * scale),
+    thickness,
+  })
+  const center = new Vector3(actualCenter.x, -actualCenter.y, actualCenter.z)
+  const projectCorner = (x: number, y: number) => {
+    const world = worldPoint(camera, matrix, x, y, thickness).add(center)
+    return projectSpatialPoint({ x: world.x, y: -world.y, z: world.z }, camera)
+  }
+  const topLeft = projectCorner(0, 0)
+  const bottomRight = projectCorner(width, height)
+  expect(topLeft.x).toBeCloseTo(projectedCenter.x - projectedWidth / 2, 8)
+  expect(topLeft.y).toBeCloseTo(projectedCenter.y - projectedHeight / 2, 8)
+  expect(bottomRight.x).toBeCloseTo(projectedCenter.x + projectedWidth / 2, 8)
+  expect(bottomRight.y).toBeCloseTo(projectedCenter.y + projectedHeight / 2, 8)
+})
+
+it('resizes a draft with a matrix while keeping the canonical geometry dimensions', () => {
+  const camera: SpatialView = { ...view(0.7, 0.5), cameraDistance: 1400 }
+  const width = 240
+  const height = 80
+  const projectedWidth = 315
+  const projectedHeight = 105
+  const perspectiveScale = 1.2
+  const geometry = makeSpatialSolidGeometry('rounded', width, height, 16)
+  const matrix = spatialSolidMatrix(camera, {
+    x: -projectedWidth / (2 * perspectiveScale),
+    y: -projectedHeight / (2 * perspectiveScale),
+    z: 0,
+    scale: 1,
+    scaleX: projectedWidth / (width * perspectiveScale),
+    scaleY: projectedHeight / (height * perspectiveScale),
+    thickness: 16,
+  })
+  const front = new Vector3(width, height, 16).applyMatrix4(matrix)
+  expect(front.x).toBeCloseTo(projectedWidth / (2 * perspectiveScale), 8)
+  expect(front.y).toBeCloseTo(-projectedHeight / (2 * perspectiveScale), 8)
+  geometry.computeBoundingBox()
+  expect(geometry.boundingBox?.max.x).toBeCloseTo(width, 8)
+  expect(geometry.boundingBox?.max.y).toBeCloseTo(height, 8)
+  geometry.dispose()
 })

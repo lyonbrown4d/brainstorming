@@ -1,6 +1,8 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { useMessages } from '@renderer/i18n/useMessages'
+import type { MindMapLayout } from '@layout'
+import type { CanvasStroke } from '@core'
 
 const Navigation = lazy(() =>
   import('@renderer/components/spatial/SpatialCameraNavigation').then((module) => ({
@@ -22,7 +24,13 @@ const Unavailable = ({ onReady }: { onReady: () => void }) => {
 }
 
 /** Load the gizmo/controls package only when entering 3D, behind the canvas loading mask. */
-export const SpatialNavigationLayer = (props: { disabled: boolean; onReady: () => void }) => (
+export const SpatialNavigationLayer = (props: {
+  disabled: boolean
+  onReady: () => void
+  layout?: MindMapLayout | undefined
+  depths?: Readonly<Record<string, number>> | null | undefined
+  drawings?: readonly CanvasStroke[] | undefined
+}) => (
   <ErrorBoundary fallbackRender={() => <Unavailable onReady={props.onReady} />}>
     <Suspense fallback={null}>
       <Navigation {...props} />

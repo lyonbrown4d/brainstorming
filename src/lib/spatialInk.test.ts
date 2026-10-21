@@ -77,3 +77,28 @@ it('keeps the original stroke and bounds in 2D', () => {
   expect(placeSpatialInk(stroke, view)).toBe(stroke)
   expect(projectedInkBounds(stroke, view)).toEqual(inkGeometry(stroke).bounds)
 })
+
+it('scales ink at depth while resize writes inverse world geometry', () => {
+  const view: SpatialView = {
+    mode: '3d',
+    yaw: 0,
+    pitch: 0,
+    spacing: 100,
+    cameraDistance: 1000,
+  }
+  const lifted: CanvasStroke = { ...stroke, spatialDepth: 250 }
+  const world = inkGeometry(lifted).bounds
+  const projected = projectedInkBounds(lifted, view)
+  expect(projected.width).toBeCloseTo((world.width * 4) / 3)
+  expect(projected.height).toBeCloseTo((world.height * 4) / 3)
+  const desired = {
+    x: projected.x - 30,
+    y: projected.y + 20,
+    width: projected.width * 1.5,
+    height: projected.height * 0.8,
+  }
+  const resized = resizeSpatialInk(lifted, desired, view)
+  expectBoundsClose(projectedInkBounds(resized, view), desired)
+  expect(inkGeometry(resized).bounds.width).toBeCloseTo(world.width * 1.5)
+  expect(resized.spatialDepth).toBe(250)
+})

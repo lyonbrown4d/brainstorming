@@ -36,6 +36,7 @@ export const InkNode = memo(({ id, data, selected }: NodeProps<InkFlowNode>) => 
         preserveAspectRatio="none"
         className="nopan block size-full overflow-visible"
         data-ink-node={stroke.id}
+        data-camera-scale={data.cameraScale ?? 1}
         aria-label={translate('inkStroke')}
         style={{ pointerEvents: selected && mode === 'select' ? 'auto' : 'none' }}
       >

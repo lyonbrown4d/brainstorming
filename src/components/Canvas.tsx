@@ -77,11 +77,12 @@ export const Canvas = () => {
     retry,
   } = useCanvasProjection(document, activeSheetId, colors.canvas)
   const viewportReady = useSpatialViewportRestore(layoutReady)
-  const interactionReady = layoutReady && viewportReady && spatialReady
+  const lensReady = view.mode === '2d' || view.cameraDistance !== undefined
+  const interactionReady = layoutReady && viewportReady && spatialReady && lensReady
   const projection = readyProjection ?? emptyProjection
   const fitted = useRef(false)
   useEffect(() => {
-    if (savedView || !readyProjection || fitted.current) return
+    if (view.mode === '3d' || savedView || !readyProjection || fitted.current) return
     fitted.current = true
     const frame = requestAnimationFrame(() => {
       void flow.fitView(initialFit)
@@ -89,7 +90,7 @@ export const Canvas = () => {
     return () => {
       cancelAnimationFrame(frame)
     }
-  }, [flow, initialFit, readyProjection, savedView])
+  }, [flow, initialFit, readyProjection, savedView, view.mode])
   const { reconnecting, ...relations } = useCanvasRelations(projection.edges)
   const drag = useCanvasDrag(
     projection.nodes,
@@ -129,7 +130,7 @@ export const Canvas = () => {
         animate={{ opacity: 1 }}
         transition={{ duration: reduceMotion ? 0 : 0.12 }}
       >
-        {view.mode === '3d' && depths && nativeLayout && (
+        {view.mode === '3d' && view.cameraDistance !== undefined && depths && nativeLayout && (
           <SpatialRenderingLayer
             nodes={drag.nodes}
             depths={depths}
@@ -212,14 +213,14 @@ export const Canvas = () => {
           }}
           onlyRenderVisibleElements
           defaultViewport={savedView ?? { x: 0, y: 0, zoom: 1 }}
-          fitView={!savedView}
+          fitView={!savedView && view.mode === '2d'}
           onMoveEnd={(_event, viewport) => {
-            if (useEditor.getState().activeSheetId === activeSheetId)
-              setSpatialViewport(workbookId, activeSheetId, view.mode, viewport)
+            if (view.mode === '2d' && useEditor.getState().activeSheetId === activeSheetId)
+              setSpatialViewport(workbookId, activeSheetId, '2d', viewport)
           }}
           fitViewOptions={initialFit}
-          minZoom={0.15}
-          maxZoom={2}
+          minZoom={view.mode === '3d' ? 0.000001 : 0.15}
+          maxZoom={view.mode === '3d' ? 10_000 : 2}
           deleteKeyCode={null}
           nodesConnectable={interactionReady && !playing && inkMode === 'select'}
           connectionMode={ConnectionMode.Loose}
@@ -231,17 +232,26 @@ export const Canvas = () => {
           selectNodesOnDrag
           elevateNodesOnSelect={view.mode === '2d'}
           nodeDragThreshold={4}
+          autoPanOnNodeDrag={view.mode === '2d'}
           selectionOnDrag={false}
-          panOnDrag={inkMode === 'select' ? [0, 1] : false}
+          panOnDrag={view.mode === '2d' && inkMode === 'select' ? [0, 1] : false}
           selectionKeyCode="Shift"
           multiSelectionKeyCode={['Meta', 'Control']}
-          panOnScroll
-          zoomActivationKeyCode={['Meta', 'Control']}
+          panOnScroll={view.mode === '2d'}
+          zoomOnScroll={view.mode === '2d'}
+          zoomOnPinch={view.mode === '2d'}
+          zoomActivationKeyCode={view.mode === '2d' ? ['Meta', 'Control'] : null}
           zoomOnDoubleClick={false}
         >
           {!playing && <SpatialCanvasControls layout={nativeLayout} depths={depths} />}
           {!playing && view.mode === '3d' && (
-            <SpatialNavigationLayer disabled={!interactionReady} onReady={onWidgetReady} />
+            <SpatialNavigationLayer
+              disabled={!interactionReady}
+              onReady={onWidgetReady}
+              layout={nativeLayout}
+              depths={depths}
+              drawings={document.drawings}
+            />
           )}
           <StructureGeometry document={document} decorations={projection.decorations} />
           <CanvasAnnotations document={document} nodes={projection.layoutNodes} />

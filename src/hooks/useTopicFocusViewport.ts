@@ -1,9 +1,11 @@
+import { getSpatialView } from '@renderer/state/spatialView'
 import { OUTLINE_WIDTH, INSPECTOR_WIDTH } from '@shared/workbench'
 import { useEffect, useRef } from 'react'
 import { useReactFlow, useStore } from '@xyflow/react'
 import { useReducedMotion } from 'motion/react'
 import { useEditor } from '@renderer/state/editor'
 import { clearTopicFocus, useTopicFocusRequest } from '@renderer/state/viewport'
+import { requestSpatialCamera } from '@renderer/state/spatialCameraCommands'
 import type { TopicFlowNode } from '@renderer/components/TopicNode'
 
 /** Consume explicit navigation only after the target sheet's node projection is ready. */
@@ -31,6 +33,7 @@ export const useTopicFocusViewport = (): void => {
   }, [document])
   useEffect(() => {
     if (!request) return
+    const spatial = getSpatialView(workbookId, sheetId).mode === '3d'
     if (
       request.workbookId !== workbookId ||
       request.sheetId !== sheetId ||
@@ -39,7 +42,7 @@ export const useTopicFocusViewport = (): void => {
       clearTopicFocus(request.sequence)
       return
     }
-    if (!ready || node?.data.topic !== document.topics[request.topicId]) return
+    if (!ready || (!spatial && node?.data.topic !== document.topics[request.topicId])) return
     const frame = requestAnimationFrame(() => {
       const current = useEditor.getState()
       if (
@@ -50,9 +53,16 @@ export const useTopicFocusViewport = (): void => {
       )
         return
       const target = flow.getNode(request.topicId)
-      if (!target || target.data.topic !== request.document.topics[request.topicId]) return
+      if (!spatial && (!target || target.data.topic !== request.document.topics[request.topicId]))
+        return
       clearTopicFocus(request.sequence)
       const zoom = flow.getZoom()
+      if (spatial) {
+        requestSpatialCamera({ kind: 'focusTopic', topicId: request.topicId })
+        window.document.getElementById('sheet-panel')?.focus({ preventScroll: true })
+        return
+      }
+      if (!target) return
       const safeLeft = width >= 768 && current.outlineOpen ? OUTLINE_WIDTH : 0
       const safeRight = width >= 768 && current.inspectorOpen ? INSPECTOR_WIDTH : 0
       void flow.setCenter(

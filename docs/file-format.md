@@ -82,7 +82,7 @@ XMind 不是本机存储格式。导入器识别 ZIP 内现代 `content.json` �
 
 主题的可选 `style.spatialDepth` 保存 3D 深度增量，必须为 −1,000,000–1,000,000 内的有限数，缺省为 0。当前主题及其后代继承该增量；游离主题从独立根开始。该字段不改变 2D 布局、节点尺寸或测量结果。它复用主题样式 JSON，随 SQLite、版本化 JSON、分支剪贴板和 Brainstorming 的 XMind 扩展保存。
 
-Sheet 的可选 `settings.spatial` 保存空间视图配置。存在时必须同时包含 `mode`、`yaw`、`pitch`、`spacing`：`mode` 为 `2d` 或 `3d`；`yaw` 为 −π–π、`pitch` 为 −π/2–π/2、`spacing` 为 0–200，三个数值均须有限。可选 `target` 须同时包含 `x`、`y`、`z`，各分量为 −1,000,000–1,000,000 内的有限数；缺省为原点。画布坐标的 `x` 向右、`y` 向下、`z` 朝向观察者。缺省按 2D 视图打开。视图模式、视角、相机目标和层距通过 `setDocumentSettings` 进入文档历史；拖动中的预览不写入文件。该对象复用 Sheet 设置 JSON，随 SQLite、版本化 JSON 和 Brainstorming 的 XMind 扩展保存，不增加 SQL 迁移，也不修改 JSON 或文件协议版本。第三方 XMind 不保证呈现这些扩展值。
+Sheet 的可选 `settings.spatial` 保存空间视图配置。存在时必须同时包含 `mode`、`yaw`、`pitch`、`spacing`：`mode` 为 `2d` 或 `3d`；`yaw` 为 −π–π、`pitch` 为 −π/2–π/2、`spacing` 为 0–200，三个数值均须有限。可选 `target` 须同时包含 `x`、`y`、`z`，各分量为 −1,000,000–1,000,000 内的有限数；缺省为原点。画布坐标的 `x` 向右、`y` 向下、`z` 朝向观察者。缺省按 2D 视图打开。视图模式、视角、相机目标和层距通过 `setDocumentSettings` 进入文档历史；拖动中的预览不写入文件。透视镜头距离仅属于渲染会话，不写入该对象。该对象复用 Sheet 设置 JSON，随 SQLite、版本化 JSON 和 Brainstorming 的 XMind 扩展保存，不增加 SQL 迁移，也不修改 JSON 或文件协议版本。第三方 XMind 不保证呈现这些扩展值。
 
 概要分组可包含 `summaryTopicId`，引用与源范围同级的真实主题，主题及后代仍使用普通主题树。源范围由有序 `topicIds` 表示；显式创建和调整范围时检查连续、同父、同侧。文件校验拒绝中心主题、重复关联和祖先自包含引用；结构移动可能解除不再安全的关联，原主题内容保留。删除源范围、概要或概要主题时清理关联，复制粘贴重映射 ID；旧的纯文字概要仍可显示。字段复用有序注解 JSON，不添加独立的概要子主题表。
 

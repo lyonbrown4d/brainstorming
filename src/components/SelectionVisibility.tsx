@@ -1,3 +1,4 @@
+import { getSpatialView } from '@renderer/state/spatialView'
 import { OUTLINE_WIDTH, INSPECTOR_WIDTH } from '@shared/workbench'
 import { canvasFitPadding } from '@renderer/hooks/useWorkbenchInsets'
 import { useEffect, useRef } from 'react'
@@ -9,6 +10,7 @@ import type { TopicFlowNode } from '@renderer/components/TopicNode'
 import { documentStructureKey } from '@shared/layout-geometry'
 import { useTopicFocusRequest } from '@renderer/state/viewport'
 import { useTopicFocusViewport } from '@renderer/hooks/useTopicFocusViewport'
+import { requestSpatialCamera } from '@renderer/state/spatialCameraCommands'
 
 /** Keep keyboard navigation and newly created editors inside the visible canvas. */
 export const SelectionVisibility = () => {
@@ -32,18 +34,26 @@ export const SelectionVisibility = () => {
     // Mounting a sheet restores its viewport; only subsequent navigation should reveal topics.
     if (prior.document === document && prior.selectedId === selectedId) return
     const frame = requestAnimationFrame(() => {
-      if (prior.structure !== structure) {
+      const editor = useEditor.getState()
+      const spatial = getSpatialView(editor.workbook.id, editor.activeSheetId).mode === '3d'
+      const immediate = Boolean(reduceMotion)
+      if (prior.structure !== structure && !spatial) {
         void flow.fitView({
           padding: canvasFitPadding(),
           maxZoom: 1.2,
-          duration: reduceMotion ? 0 : 220,
+          duration: immediate ? 0 : 220,
         })
         return
       }
       // Pointer placement and history must not reframe an unchanged selection.
       if (prior.selectedId === selectedId && prior.document.topics[selectedId]) return
       const node = flow.getNode(selectedId)
-      if (!node || width === 0 || height === 0) return
+      if (width === 0 || height === 0) return
+      if (!node) {
+        if (spatial && document.topics[selectedId])
+          requestSpatialCamera({ kind: 'focusTopic', topicId: selectedId })
+        return
+      }
       const viewport = flow.getViewport()
       const { outlineOpen, inspectorOpen } = useEditor.getState()
       const safeLeft = width >= 768 && outlineOpen ? OUTLINE_WIDTH : 0
@@ -57,15 +67,20 @@ export const SelectionVisibility = () => {
         top < 22 ||
         left + nodeWidth * viewport.zoom > width - safeRight - 22 ||
         top + nodeHeight * viewport.zoom > height - 80
-      )
+      ) {
+        if (spatial) {
+          requestSpatialCamera({ kind: 'focusTopic', topicId: selectedId })
+          return
+        }
         void flow.setCenter(
           node.position.x + nodeWidth / 2 + (safeRight - safeLeft) / (2 * viewport.zoom),
           node.position.y + nodeHeight / 2,
           {
             zoom: viewport.zoom,
-            duration: reduceMotion ? 0 : 180,
+            duration: immediate ? 0 : 180,
           },
         )
+      }
     })
     return () => {
       cancelAnimationFrame(frame)

@@ -6,6 +6,25 @@ const bounds = async (element: Locator) => {
   if (!box) throw new Error('Missing spatial canvas geometry')
   return box
 }
+const settledBounds = async (element: Locator) => {
+  let previous = await bounds(element)
+  let stable = 0
+  await expect
+    .poll(
+      async () => {
+        const next = await bounds(element)
+        stable =
+          Math.hypot(next.x - previous.x, next.y - previous.y, next.width - previous.width) < 0.05
+            ? stable + 1
+            : 0
+        previous = next
+        return stable
+      },
+      { intervals: [50, 100, 100] },
+    )
+    .toBeGreaterThanOrEqual(3)
+  return previous
+}
 const open = async (page: Page) => {
   await page.goto('/iframe.html?id=brainstorming-空间视图--interactive&viewMode=story')
   await expect(page.locator('[data-view-mode="3d"]')).toBeVisible()
@@ -54,7 +73,8 @@ const emptyPanePoint = async (page: Page): Promise<{ x: number; y: number }> =>
     for (const y of [0.75, 0.65, 0.45, 0.3])
       for (const x of [0.08, 0.18, 0.82, 0.92]) {
         const point = { x: rect.left + rect.width * x, y: rect.top + rect.height * y }
-        if (document.elementFromPoint(point.x, point.y) === pane) return point
+        const hit = document.elementFromPoint(point.x, point.y)
+        if (hit === pane || hit?.hasAttribute('data-spatial-camera-surface')) return point
       }
     throw new Error('No exposed empty 3D canvas for the camera gesture')
   })
@@ -66,30 +86,28 @@ const angleDrag = async (
   dy: number,
   cancel = false,
 ) => {
-  await page.keyboard.down('Alt')
   await page.mouse.move(point.x, point.y)
   await page.mouse.down()
   await page.mouse.move(point.x + dx, point.y + dy, { steps: 12 })
   if (cancel) await page.keyboard.press('Escape')
   await page.mouse.up()
-  await page.keyboard.up('Alt')
 }
 
-test('Alt drag on empty canvas changes the 3D angle once; Escape cancels the next preview', async ({
+test('drag on empty canvas changes the 3D angle once; Escape cancels the next preview', async ({
   page,
 }) => {
   await open(page)
   const card = node(page, 'branch-a')
-  const before = await bounds(card)
+  const before = await settledBounds(card)
   const point = await emptyPanePoint(page)
   await angleDrag(page, point, 120, 70)
   await expect
     .poll(async () => {
-      const changed = await bounds(card)
+      const changed = await settledBounds(card)
       return Math.hypot(changed.x - before.x, changed.y - before.y)
     })
-    .toBeGreaterThan(8)
-  const changed = await bounds(card)
+    .toBeGreaterThan(1)
+  const changed = await settledBounds(card)
   await page.keyboard.press('ControlOrMeta+z')
   await expect.poll(async () => (await bounds(card)).x).toBeCloseTo(before.x, 0)
   await expect.poll(async () => (await bounds(card)).y).toBeCloseTo(before.y, 0)

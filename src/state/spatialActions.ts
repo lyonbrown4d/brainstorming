@@ -1,5 +1,10 @@
 import { useEditor } from '@renderer/state/editor'
-import { getSpatialView, useSpatialView, type SpatialView } from '@renderer/state/spatialView'
+import {
+  DEFAULT_SPATIAL_VIEW,
+  getSpatialView,
+  useSpatialView,
+  type SpatialView,
+} from '@renderer/state/spatialView'
 import { hasNativeEditor } from '@renderer/state/nativeEditorQueue'
 
 /** A camera gesture or layout adjustment becomes one native, undoable document change. */
@@ -11,8 +16,21 @@ export const saveSpatialView = (patch: Partial<SpatialView>): boolean => {
   if (current.editingId) return false
   const workbookId = current.workbook.id
   const sheetId = current.activeSheetId
-  useSpatialView.getState().setView(workbookId, sheetId, patch)
-  const spatial = getSpatialView(workbookId, sheetId)
+  // Persist only explicit edits; the render preview may be between camera presets.
+  const saved = current.history.document.settings?.spatial ?? DEFAULT_SPATIAL_VIEW
+  useSpatialView.getState().setView(workbookId, sheetId, { ...saved, ...patch })
+  const {
+    mode,
+    yaw,
+    pitch,
+    spacing,
+    target: normalizedTarget,
+  } = getSpatialView(workbookId, sheetId)
+  const target =
+    patch.target === undefined
+      ? current.history.document.settings?.spatial?.target
+      : normalizedTarget
+  const spatial = { mode, yaw, pitch, spacing, ...(target ? { target } : {}) }
   const clear = () => {
     useSpatialView.getState().clearView(workbookId, sheetId)
   }

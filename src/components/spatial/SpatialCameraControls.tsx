@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { Compass, Focus, Orbit } from 'lucide-react'
-import { useReactFlow } from '@xyflow/react'
+import { Compass, Focus } from 'lucide-react'
 import type { MindMapLayout } from '@layout'
 import { isCompositionKey } from '@renderer/state/keyboard'
 import { useActiveSpatialView } from '@renderer/hooks/useActiveSpatialView'
 import { useMessages } from '@renderer/i18n/useMessages'
 import { useEditor } from '@renderer/state/editor'
 import { saveSpatialView } from '@renderer/state/spatialActions'
-import { useSpatialNavigation } from '@renderer/state/spatialNavigation'
 import { getSpatialView, useSpatialView, type SpatialView } from '@renderer/state/spatialView'
 import { Button } from '@renderer/components/ui/button'
 import { SpatialAngleControl } from '@renderer/components/spatial/SpatialAngleControl'
@@ -18,6 +16,7 @@ interface PreviewSession {
   readonly sheetId: string
   readonly document: object
   readonly original: SpatialView
+  desired: Pick<SpatialView, 'yaw' | 'pitch'>
 }
 
 const PRESETS = [
@@ -43,9 +42,6 @@ export const SpatialCameraControls = ({
 }) => {
   const { translate } = useMessages()
   const { view, workbookId, sheetId } = useActiveSpatialView()
-  const flow = useReactFlow()
-  const orbit = useSpatialNavigation((state) => state.orbit)
-  const setOrbit = useSpatialNavigation((state) => state.setOrbit)
   const busy = useEditor((state) => state.busy)
   const editing = useEditor((state) => Boolean(state.editingId))
   const [open, setOpen] = useState(false)
@@ -61,11 +57,13 @@ export const SpatialCameraControls = ({
   const start = (): PreviewSession => {
     if (preview.current) return preview.current
     const document = useEditor.getState().history.document
+    const original = getSpatialView(workbookId, sheetId)
     const session = {
       workbookId,
       sheetId,
       document,
-      original: getSpatialView(workbookId, sheetId),
+      original,
+      desired: { yaw: original.yaw, pitch: original.pitch },
     }
     preview.current = session
     return session
@@ -73,12 +71,13 @@ export const SpatialCameraControls = ({
   const change = (patch: Pick<SpatialView, 'yaw'> | Pick<SpatialView, 'pitch'>): void => {
     if (disabled) return
     const session = start()
+    session.desired = { ...session.desired, ...patch }
     useSpatialView.getState().setView(session.workbookId, session.sheetId, patch)
   }
   const commit = (): void => {
     const session = preview.current
     if (!session) return
-    const latest = getSpatialView(session.workbookId, session.sheetId)
+    const latest = session.desired
     preview.current = null
     const editor = useEditor.getState()
     if (
@@ -136,8 +135,6 @@ export const SpatialCameraControls = ({
       : { x: (minX + maxX) / 2, y: (minY + maxY) / 2, z: 0 }
     cancel()
     saveSpatialView({ target })
-    const { zoom } = flow.getViewport()
-    void flow.setCenter(target.x, target.y, { zoom })
   }
   if (view.mode !== '3d') return null
   return (
@@ -207,19 +204,6 @@ export const SpatialCameraControls = ({
         </div>
         <div className="flex gap-2 border-t pt-3">
           <Button
-            variant={orbit ? 'secondary' : 'outline'}
-            size="sm"
-            className="h-8 flex-1 gap-1.5 text-xs"
-            aria-pressed={orbit}
-            disabled={disabled}
-            onClick={() => {
-              setOrbit(!orbit)
-            }}
-          >
-            <Orbit className="size-3.5" />
-            {translate('spatialOrbit')}
-          </Button>
-          <Button
             variant="outline"
             size="sm"
             className="h-8 flex-1 gap-1.5 text-xs"
@@ -231,7 +215,7 @@ export const SpatialCameraControls = ({
           </Button>
         </div>
         <p className="text-[11px] leading-4 text-muted-foreground">
-          {translate('spatialOrbitHint')}
+          {translate('spatialCameraHint')}
         </p>
       </PopoverContent>
     </Popover>

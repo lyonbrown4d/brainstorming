@@ -1,3 +1,4 @@
+import { getSpatialView } from '@renderer/state/spatialView'
 import { useRef, useState, type MouseEvent } from 'react'
 import { useReactFlow } from '@xyflow/react'
 import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
@@ -31,6 +32,16 @@ export const useCanvasContextMenu = () => {
   const guard = (event: MouseEvent<HTMLDivElement>): void => {
     const element = event.target
     if (!(element instanceof Element)) return
+    const state = useEditor.getState()
+    if (
+      element.classList.contains('react-flow__pane') &&
+      getSpatialView(state.workbook.id, state.activeSheetId).mode === '3d'
+    ) {
+      // Blank-space right drag belongs to the 3D camera; topic menus remain available.
+      event.preventDefault()
+      event.stopPropagation()
+      return
+    }
     const editor = element.closest('[contenteditable="true"]')
     const inactiveTitle = editor?.matches('.topic-input') && !editor.closest('.is-editing')
     const annotation = element.closest('[data-annotation-kind][data-annotation-id]')

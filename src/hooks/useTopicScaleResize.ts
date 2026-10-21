@@ -12,7 +12,6 @@ import { getSpatialView, useSpatialView } from '@renderer/state/spatialView'
 import { usePresentation } from '@renderer/state/presentation'
 import { useTopicScalePreview } from '@renderer/state/topicScalePreview'
 import { hasNativeEditor } from '@renderer/state/nativeEditorQueue'
-
 /** React Flow supplies the proportional box; the document receives one style command. */
 export const useTopicScaleResize = (
   id: string,
@@ -239,7 +238,11 @@ export const useTopicScaleResize = (
             const anchorY = active.corner.startsWith('top') ? bounds.y + bounds.height : bounds.y
             const x = active.corner.includes('left') ? anchorX - next.width : anchorX
             const y = active.corner.startsWith('top') ? anchorY - next.height : anchorY
-            const delta = spatialCameraDelta(active.view, { x: x - next.x, y: y - next.y })
+            const delta = spatialCameraDelta(
+              active.view,
+              { x: x - next.x, y: y - next.y },
+              next.cameraDepth ?? 0,
+            )
             const offsetX = (active.topic.style?.offsetX ?? 0) + delta.x
             const offsetY = (active.topic.style?.offsetY ?? 0) + delta.y
             if (

@@ -1,8 +1,9 @@
 import { create } from 'zustand'
 import type { SpatialSettings } from '@core'
 import { useEditor } from '@renderer/state/editor'
+import { spatialLensKey, useSpatialLens, withSpatialLens } from '@renderer/state/spatialLens'
 
-export type SpatialView = SpatialSettings
+export type SpatialView = SpatialSettings & { readonly cameraDistance?: number }
 
 export const DEFAULT_SPATIAL_VIEW: SpatialView = Object.freeze({
   mode: '2d',
@@ -85,5 +86,8 @@ export const useSpatialView = create<SpatialViewState>((set) => ({
 }))
 
 export const getSpatialView = (workbookId: string, sheetId: string): SpatialView =>
-  useSpatialView.getState().views[viewKey(workbookId, sheetId)] ??
-  persistedView(workbookId, sheetId)
+  withSpatialLens(
+    useSpatialView.getState().views[viewKey(workbookId, sheetId)] ??
+      persistedView(workbookId, sheetId),
+    useSpatialLens.getState().distances[spatialLensKey(workbookId, sheetId)],
+  )

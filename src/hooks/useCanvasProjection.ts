@@ -8,6 +8,7 @@ import { queryClient } from '@renderer/lib/queryClient'
 import { setNavigationLayout } from '@renderer/state/keyboard'
 import { useEditor } from '@renderer/state/editor'
 import { DEFAULT_SPATIAL_VIEW, useSpatialView } from '@renderer/state/spatialView'
+import { spatialLensKey, useSpatialLens, withSpatialLens } from '@renderer/state/spatialLens'
 import { projectSpatialLayout } from '@renderer/lib/spatialProjection'
 import {
   completeCanvasFrame,
@@ -23,7 +24,11 @@ export const useCanvasProjection = (
 ) => {
   const workbookId = useEditor((state) => state.workbook.id)
   const preview = useSpatialView((state) => state.views[JSON.stringify([workbookId, sheetId])])
-  const view = preview ?? document.settings?.spatial ?? DEFAULT_SPATIAL_VIEW
+  const distance = useSpatialLens((state) => state.distances[spatialLensKey(workbookId, sheetId)])
+  const view = withSpatialLens(
+    preview ?? document.settings?.spatial ?? DEFAULT_SPATIAL_VIEW,
+    distance,
+  )
   const scopeId = JSON.stringify([workbookId, sheetId, document.id])
   const [completed, setCompleted] = useState<CanvasProjectionFrame | null>(null)
   const measurements = useMemo(() => nativeMeasurements(document), [document])

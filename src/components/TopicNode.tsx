@@ -32,6 +32,10 @@ export type TopicFlowNode = Node<
     textColor?: string
     fontFamily?: string
     direction?: LayoutDirection
+    cameraScale?: number
+    cameraDepth?: number
+    worldWidth?: number
+    worldHeight?: number
   },
   'topic'
 >
@@ -39,7 +43,7 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
   const { translate } = useMessages()
 
   // Pan and zoom frames only notify this node when the detail threshold changes.
-  const lowZoom = useFlowStore((state) => state.transform[2] < 0.35)
+  const lowZoom = useFlowStore((state) => state.transform[2] * (data.cameraScale ?? 1) < 0.35)
   const primary = useEditor((state) => state.selectedId === id)
   const selected = useTopicSelected(id)
   const dropTarget = useEditor((state) => state.dropTargetId === id)
@@ -68,8 +72,16 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
   const style = topic.style
   const previewScale = useTopicScalePreview((state) => (state.topicId === id ? state.scale : null))
   const scale = previewScale ?? style?.scale ?? 1
-  const baseWidth = (width ?? 100) / scale
-  const baseHeight = (height ?? 100) / scale
+  const renderScale = scale * (data.cameraScale ?? 1)
+  // Perspective and resize previews transform a stable content box, preserving cached SVG/text.
+  const baseWidth =
+    data.worldWidth === undefined
+      ? (width ?? 100) / renderScale
+      : data.worldWidth / (style?.scale ?? 1)
+  const baseHeight =
+    data.worldHeight === undefined
+      ? (height ?? 100) / renderScale
+      : data.worldHeight / (style?.scale ?? 1)
   const shape = style?.shape ?? 'rounded'
   const insets = topicShapeInsets(shape)
   const fill =
@@ -105,7 +117,7 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
             fontFamily: data.fontFamily,
             width: baseWidth,
             height: baseHeight,
-            transform: `scale(${scale})`,
+            transform: `scale(${renderScale})`,
             transformOrigin: 'top left',
             borderRadius:
               shape === 'capsule'
@@ -118,6 +130,7 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
           } as React.CSSProperties
         }
         data-appearance={shape}
+        data-camera-scale={data.cameraScale ?? 1}
         data-testid={`topic-${id}`}
       >
         <TopicShapeVisual

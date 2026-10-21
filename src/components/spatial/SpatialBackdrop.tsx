@@ -2,11 +2,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Canvas as ThreeCanvas, useFrame, useThree } from '@react-three/fiber'
 import { useViewport, type Viewport } from '@xyflow/react'
-import { OrthographicCamera } from 'three'
+import { OrthographicCamera, PerspectiveCamera, Vector3 } from 'three'
 import {
   createSpatialCamera,
   projectSpatialPoint,
   spatialCameraQuaternion,
+  spatialPerspectiveScale,
   unprojectSpatialPoint,
 } from '@renderer/lib/spatialCamera'
 import { SpatialStage } from '@renderer/components/spatial/SpatialStage'
@@ -50,16 +51,39 @@ const Solids = ({
     [layout, depths],
   )
   useLayoutEffect(() => {
-    if (!(camera instanceof OrthographicCamera)) return
-    const next = createSpatialCamera(view, range)
-    const { x, y, zoom } = viewport
     const target = view.target ?? { x: 0, y: 0, z: 0 }
-    next.left = -x / zoom - target.x
-    next.right = (size.width - x) / zoom - target.x
-    next.top = y / zoom + target.y
-    next.bottom = (y - size.height) / zoom + target.y
-    next.updateProjectionMatrix()
-    camera.copy(next)
+    if (camera instanceof PerspectiveCamera && view.cameraDistance !== undefined) {
+      const distance = view.cameraDistance
+      const next = new PerspectiveCamera(
+        42,
+        size.width / Math.max(size.height, 1),
+        1,
+        range + distance * 3,
+      )
+      const rotation = spatialCameraQuaternion(view)
+      next.position
+        .set(target.x, -target.y, target.z)
+        .add(new Vector3(0, 0, distance).applyQuaternion(rotation))
+      next.quaternion.copy(rotation)
+      next.setViewOffset(
+        size.width,
+        size.height,
+        size.width / 2 - (target.x * viewport.zoom + viewport.x),
+        size.height / 2 - (target.y * viewport.zoom + viewport.y),
+        size.width,
+        size.height,
+      )
+      camera.copy(next)
+    } else if (camera instanceof OrthographicCamera) {
+      const next = createSpatialCamera(view, range)
+      const { x, y, zoom } = viewport
+      next.left = -x / zoom - target.x
+      next.right = (size.width - x) / zoom - target.x
+      next.top = y / zoom + target.y
+      next.bottom = (y - size.height) / zoom + target.y
+      next.updateProjectionMatrix()
+      camera.copy(next)
+    } else return
     camera.updateMatrixWorld()
     invalidate()
   }, [camera, size, view, viewport, range, invalidate])
@@ -96,6 +120,7 @@ const Solids = ({
           { x: base.x + base.width / 2, y: base.y + base.height / 2, z: depths[node.id] ?? 0 },
           view,
         ).z
+        const perspectiveScale = spatialPerspectiveScale(view, depth)
         const center = unprojectSpatialPoint(
           { x: node.position.x + width / 2, y: node.position.y + height / 2, z: depth },
           view,
@@ -103,11 +128,12 @@ const Solids = ({
         return (
           <group key={node.id} position={[center.x, -center.y, center.z]} quaternion={rotation}>
             <SpatialSolid
-              x={-width / 2}
-              y={-height / 2}
               z={0}
-              width={width}
-              height={height}
+              width={base.width}
+              height={base.height}
+              projectedWidth={width}
+              projectedHeight={height}
+              perspectiveScale={perspectiveScale}
               view={view}
               shape={node.data.topic.style?.shape ?? 'rounded'}
               fill={node.data.fill ?? '#3b3e45'}
@@ -155,7 +181,8 @@ const SpatialBackdrop = ({
         </div>
       ) : (
         <ThreeCanvas
-          orthographic
+          key={view.cameraDistance === undefined ? 'orthographic' : 'perspective'}
+          orthographic={view.cameraDistance === undefined}
           frameloop="demand"
           dpr={[1, 1.5]}
           camera={{ near: 0.1, far: 10000000 }}
@@ -172,15 +199,11 @@ const SpatialBackdrop = ({
             )
           }}
         >
-          <SpatialStage
-            layout={layout}
-            depths={depths}
-            view={view}
-            nodes={nodes}
-            viewport={viewport}
-          />
-          <ambientLight intensity={1.1} />
-          <directionalLight position={[500, 600, 1000]} intensity={1.1} />
+          <SpatialStage layout={layout} viewport={viewport} />
+          <ambientLight intensity={1.15} />
+          <hemisphereLight args={['#ffffff', '#a5a8bb', 0.85]} />
+          <directionalLight position={[-500, 900, 1000]} intensity={1.45} />
+          <directionalLight position={[700, 200, -450]} intensity={0.35} color="#d9e3ff" />
           <Solids
             nodes={nodes}
             depths={depths}

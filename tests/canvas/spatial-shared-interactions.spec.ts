@@ -48,6 +48,11 @@ test('3D moves a selected topic subtree and ink together, then undoes both once'
     root: await bounds(root),
     stroke: await bounds(stroke),
   }
+  const scales = {
+    branch: Number(await branch.locator('.topic').getAttribute('data-camera-scale')),
+    child: Number(await child.locator('.topic').getAttribute('data-camera-scale')),
+    ink: Number(await stroke.locator('svg').getAttribute('data-camera-scale')),
+  }
   await branch.click()
   await page.locator('[data-drawing-id="spatial-ink"]').click({ modifiers: ['Meta'] })
   await expect(branch).toHaveClass(/selected/)
@@ -60,13 +65,17 @@ test('3D moves a selected topic subtree and ink together, then undoes both once'
   await page.mouse.move(grab.x + 5, grab.y)
   await page.mouse.move(grab.x + 75, grab.y + 40, { steps: 12 })
   await page.mouse.up()
-  for (const [target, original] of [
-    [branch, before.branch],
-    [child, before.child],
-    [stroke, before.stroke],
+  for (const [target, original, scale] of [
+    [branch, before.branch, scales.branch],
+    [child, before.child, scales.child],
+    [stroke, before.stroke, scales.ink],
   ] as const) {
-    await expect.poll(async () => (await bounds(target)).x).toBeCloseTo(original.x + 70, 0)
-    await expect.poll(async () => (await bounds(target)).y).toBeCloseTo(original.y + 40, 0)
+    await expect
+      .poll(async () => (await bounds(target)).x)
+      .toBeCloseTo(original.x + (70 * scale) / scales.branch, 0)
+    await expect
+      .poll(async () => (await bounds(target)).y)
+      .toBeCloseTo(original.y + (40 * scale) / scales.branch, 0)
   }
   await expect.poll(async () => (await bounds(root)).x).toBeCloseTo(before.root.x, 0)
 

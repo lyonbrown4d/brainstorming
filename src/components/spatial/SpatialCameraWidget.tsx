@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { GizmoHelper, GizmoViewport } from '@react-three/drei'
+import { GizmoHelper, GizmoViewcube } from '@react-three/drei'
 import { Vector3 } from 'three'
 import { useAppearanceColors } from '@renderer/hooks/useAppearanceColors'
 import { useActiveSpatialView } from '@renderer/hooks/useActiveSpatialView'
@@ -51,7 +51,7 @@ const WidgetUnavailable = ({ onReady }: { onReady: () => void }) => {
   )
 }
 
-/** Drei's standard viewport gizmo mirrors the saved orthographic camera. */
+/** Drei's direction cube mirrors the document camera and dispatches view presets. */
 export const SpatialCameraWidget = ({
   disabled = false,
   onReady,
@@ -96,20 +96,31 @@ export const SpatialCameraWidget = ({
         >
           <CameraSync view={view} onReady={onReady} />
           <GizmoHelper alignment="center-center" margin={[0, 0]}>
-            <GizmoViewport
-              disabled={disabled || busy || drawing || playing}
-              axisColors={[colors.primary, colors.dropTarget, colors.foreground]}
-              labelColor={colors.surface}
-              font="bold 18px system-ui, sans-serif"
+            <GizmoViewcube
+              faces={[
+                translate('spatialRight'),
+                translate('spatialLeft'),
+                translate('spatialTop'),
+                translate('spatialBottom'),
+                translate('spatialFront'),
+                translate('spatialBack'),
+              ]}
+              color={colors.surface}
+              hoverColor={colors.primary}
+              textColor={colors.foreground}
+              strokeColor={colors.foreground}
+              font="bold 16px system-ui, sans-serif"
               onClick={(event) => {
-                const point = event.object.position
-                const axis = [Math.abs(point.x), Math.abs(point.y), Math.abs(point.z)]
-                if ((axis[0] ?? 0) > 0.5)
-                  saveSpatialView({ yaw: point.x > 0 ? Math.PI / 2 : -Math.PI / 2, pitch: 0 })
-                else if ((axis[1] ?? 0) > 0.5)
-                  saveSpatialView({ yaw: 0, pitch: point.y > 0 ? Math.PI / 2 : -Math.PI / 2 })
-                else if ((axis[2] ?? 0) > 0.5)
-                  saveSpatialView({ yaw: point.z > 0 ? 0 : Math.PI, pitch: 0 })
+                event.stopPropagation()
+                if (disabled || busy || drawing || playing) return null
+                const direction = event.object.position.clone()
+                if (direction.lengthSq() < 0.01 && event.face) direction.copy(event.face.normal)
+                if (direction.lengthSq() < 0.01) return null
+                direction.normalize()
+                saveSpatialView({
+                  yaw: Math.atan2(direction.x, direction.z),
+                  pitch: Math.asin(Math.max(-1, Math.min(1, direction.y))),
+                })
                 return null
               }}
             />

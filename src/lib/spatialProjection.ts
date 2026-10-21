@@ -1,7 +1,11 @@
 import type { MindMapDocument } from '@core'
 import type { MindMapLayout } from '@layout'
 import { inkGeometry } from '@shared/ink-geometry'
-import { projectSpatialPoint } from '@renderer/lib/spatialCamera'
+import {
+  projectSpatialPoint,
+  spatialDepthVisible,
+  spatialPerspectiveScale,
+} from '@renderer/lib/spatialCamera'
 import type { SpatialView } from '@renderer/state/spatialView'
 
 export interface SpatialOffset {
@@ -142,7 +146,7 @@ export const captureSpatialOrigins = (
   return { origins, nativeOrigins }
 }
 
-/** Project anchors into the camera plane while keeping topic and decoration billboards full size. */
+/** Project camera-facing billboards around their canonical centers. */
 export const projectSpatialLayout = (
   document: MindMapDocument,
   layout: MindMapLayout,
@@ -152,40 +156,55 @@ export const projectSpatialLayout = (
   if (view.mode === '2d') return layout
   const offsets = offsetsForView(document, view, depths)
   const rootDepth = offsets.get(document.rootId)?.z ?? 0
-  return {
-    nodes: layout.nodes.map((node) => {
-      const center = projectSpatialPoint(
-        {
-          x: node.x + node.width / 2,
-          y: node.y + node.height / 2,
-          z: offsets.get(node.id)?.z ?? 0,
-        },
-        view,
-      )
-      return {
+  const nodes = layout.nodes.flatMap((node) => {
+    const center = projectSpatialPoint(
+      {
+        x: node.x + node.width / 2,
+        y: node.y + node.height / 2,
+        z: offsets.get(node.id)?.z ?? 0,
+      },
+      view,
+    )
+    if (!spatialDepthVisible(view, center.z)) return []
+    const cameraScale = spatialPerspectiveScale(view, center.z)
+    const width = node.width * cameraScale
+    const height = node.height * cameraScale
+    return [
+      {
         ...node,
-        x: center.x - node.width / 2,
-        y: center.y - node.height / 2,
+        x: center.x - width / 2,
+        y: center.y - height / 2,
+        width,
+        height,
         cameraDepth: center.z,
-      }
-    }),
-    edges: layout.edges.map((edge) => {
-      if (!edge.waypoints?.length) return edge
-      const source = offsets.get(edge.source)?.z ?? 0
-      const target = offsets.get(edge.target)?.z ?? 0
-      const last = edge.waypoints.length - 1
-      return {
-        ...edge,
-        waypoints: edge.waypoints.map((point, index) => {
-          const z = source + (target - source) * (last ? index / last : 0)
-          const projected = projectSpatialPoint({ ...point, z }, view)
-          return { x: projected.x, y: projected.y }
-        }),
-      }
-    }),
+        cameraScale,
+        worldWidth: node.width,
+        worldHeight: node.height,
+      },
+    ]
+  })
+  const visibleIds = new Set(nodes.map((node) => node.id))
+  return {
+    nodes,
+    edges: layout.edges
+      .filter((edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target))
+      .map((edge) => {
+        if (!edge.waypoints?.length) return edge
+        const source = offsets.get(edge.source)?.z ?? 0
+        const target = offsets.get(edge.target)?.z ?? 0
+        const last = edge.waypoints.length - 1
+        return {
+          ...edge,
+          waypoints: edge.waypoints.map((point, index) => {
+            const z = source + (target - source) * (last ? index / last : 0)
+            const projected = projectSpatialPoint({ ...point, z }, view)
+            return { x: projected.x, y: projected.y }
+          }),
+        }
+      }),
     ...(layout.decorations
       ? {
-          decorations: layout.decorations.map((decoration) => {
+          decorations: layout.decorations.flatMap((decoration) => {
             const z = decoration.topicId
               ? (offsets.get(decoration.topicId)?.z ?? rootDepth)
               : rootDepth
@@ -197,11 +216,19 @@ export const projectSpatialLayout = (
               },
               view,
             )
-            return {
-              ...decoration,
-              x: center.x - decoration.width / 2,
-              y: center.y - decoration.height / 2,
-            }
+            if (!spatialDepthVisible(view, center.z)) return []
+            const scale = spatialPerspectiveScale(view, center.z)
+            const width = decoration.width * scale
+            const height = decoration.height * scale
+            return [
+              {
+                ...decoration,
+                x: center.x - width / 2,
+                y: center.y - height / 2,
+                width,
+                height,
+              },
+            ]
           }),
         }
       : {}),

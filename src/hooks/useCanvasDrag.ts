@@ -1,5 +1,6 @@
 import type { MindMapLayout } from '@layout'
 import { spatialCameraDelta } from '@renderer/lib/spatialCamera'
+import { previewPerspectiveDrag } from '@renderer/lib/canvasPerspectiveDrag'
 import { useEffect, useRef, useState } from 'react'
 import { useNodesState, useReactFlow, type OnNodeDrag } from '@xyflow/react'
 import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
@@ -54,6 +55,7 @@ export const useCanvasDrag = (
     setNodesScope(scopeId)
   }, [nodesScope, projectedNodes, scopeId, setNodes])
   const session = useRef<DragSession | null>(null)
+  const dragDepths = useRef<ReadonlyMap<string, number>>(new Map())
   const latestProjected = useRef(projectedNodes)
   const cancelled = useRef(false)
   useEffect(() => {
@@ -61,6 +63,7 @@ export const useCanvasDrag = (
       const active = session.current
       if (!active) return
       session.current = null
+      dragDepths.current = new Map()
       cancelled.current = true
       clearCanvasDrag(active.token)
       useEditor.setState({ dropTargetId: null })
@@ -176,6 +179,7 @@ export const useCanvasDrag = (
       view,
       anchorId: dragged.id,
     }
+    dragDepths.current = new Map(getNodes().map((node) => [node.id, node.data.cameraDepth ?? 0]))
     setCanvasSelection(ids.topics, ids.drawings)
   }
   const onDrag: OnNodeDrag<CanvasFlowNode> = (event, dragged) => {
@@ -185,14 +189,7 @@ export const useCanvasDrag = (
     const dx = dragged.position.x - origin.x
     const dy = dragged.position.y - origin.y
     // Move visible descendants with their selected subtree instead of stretching its children.
-    setNodes((current) =>
-      current.map((node) => {
-        const start = active.origins.get(node.id)
-        return active.excluded.has(node.id) && start
-          ? { ...node, position: { x: start.x + dx, y: start.y + dy } }
-          : node
-      }),
-    )
+    setNodes((current) => previewPerspectiveDrag(current, active, dragDepths.current, dx, dy))
     const pointer = canvasDragPointer(event)
     const drop =
       active.canDrop && pointer
@@ -239,10 +236,14 @@ export const useCanvasDrag = (
         active.roots,
         active.drawings,
         active.nativeOrigins,
-        spatialCameraDelta(active.view, {
-          x: anchor.position.x - origin.x,
-          y: anchor.position.y - origin.y,
-        }),
+        spatialCameraDelta(
+          active.view,
+          {
+            x: anchor.position.x - origin.x,
+            y: anchor.position.y - origin.y,
+          },
+          dragDepths.current.get(anchor.id) ?? 0,
+        ),
         drop,
       )
       if (command) {
@@ -271,6 +272,7 @@ export const useCanvasDrag = (
       }
     }
     useEditor.setState({ dropTargetId: null })
+    dragDepths.current = new Map()
     const current = useEditor.getState()
     const selected = new Set(selectedTopicIds(current))
     const drawings = new Set(selectedDrawingIds(current))

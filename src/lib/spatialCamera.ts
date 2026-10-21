@@ -21,6 +21,39 @@ const WORLD_UP = new Vector3(0, 1, 0)
 const WORLD_RIGHT = new Vector3(1, 0, 0)
 const WORLD_FORWARD = new Vector3(0, 0, 1)
 const frames = new WeakMap<CameraView, CameraFrame>()
+const MAX_VISIBLE_SCALE = 8
+const MIN_VISIBLE_SCALE = 0.01
+const CAMERA_FAR = 10_000_000
+
+/** Cull billboards before they cross the near plane or cover the whole canvas. */
+export const spatialDepthVisible = (view: CameraView, cameraDepth: number): boolean =>
+  view.mode === '2d' ||
+  view.cameraDistance === undefined ||
+  !Number.isFinite(view.cameraDistance) ||
+  view.cameraDistance <= 0 ||
+  (Number.isFinite(cameraDepth) &&
+    view.cameraDistance - cameraDepth > Math.max(1, view.cameraDistance / MAX_VISIBLE_SCALE) &&
+    view.cameraDistance - cameraDepth <
+      Math.min(
+        Math.max(CAMERA_FAR, view.cameraDistance * 3),
+        view.cameraDistance / MIN_VISIBLE_SCALE,
+      ))
+
+/** A 42 degree perspective lens measured in React Flow canvas units. */
+export const spatialPerspectiveScale = (view: CameraView, cameraDepth: number): number => {
+  const distance = view.cameraDistance
+  if (
+    view.mode === '2d' ||
+    distance === undefined ||
+    !Number.isFinite(distance) ||
+    distance <= 0 ||
+    !Number.isFinite(cameraDepth)
+  )
+    return 1
+  // Clip geometry close to the eye so React Flow never receives infinite dimensions.
+  const denominator = Math.max(distance - cameraDepth, Math.max(distance * 0.01, 1))
+  return Math.max(MIN_VISIBLE_SCALE, Math.min(100, distance / denominator))
+}
 
 /** Camera local +Z points from the target toward the eye. */
 const frameFor = (view: CameraView): CameraFrame => {
@@ -62,10 +95,12 @@ export const projectSpatialPoint = (point: SpatialPoint3, view: CameraView): Spa
   const dx = point.x - target.x
   const dy = -point.y - target.y
   const dz = point.z - target.z
+  const depth = dx * forward.x + dy * forward.y + dz * forward.z
+  const scale = spatialPerspectiveScale(view, depth)
   return {
-    x: target.x + dx * right.x + dy * right.y + dz * right.z,
-    y: -target.y - (dx * up.x + dy * up.y + dz * up.z),
-    z: dx * forward.x + dy * forward.y + dz * forward.z,
+    x: target.x + (dx * right.x + dy * right.y + dz * right.z) * scale,
+    y: -target.y - (dx * up.x + dy * up.y + dz * up.z) * scale,
+    z: depth,
   }
 }
 
@@ -73,8 +108,9 @@ export const projectSpatialPoint = (point: SpatialPoint3, view: CameraView): Spa
 export const unprojectSpatialPoint = (point: SpatialPoint3, view: CameraView): SpatialPoint3 => {
   if (view.mode === '2d') return { ...point }
   const { target, right, up, forward } = frameFor(view)
-  const x = point.x - target.x
-  const y = -point.y - target.y
+  const scale = spatialPerspectiveScale(view, point.z)
+  const x = (point.x - target.x) / scale
+  const y = (-point.y - target.y) / scale
   const z = point.z
   return {
     x: target.x + x * right.x + y * up.x + z * forward.x,
@@ -87,12 +123,14 @@ export const unprojectSpatialPoint = (point: SpatialPoint3, view: CameraView): S
 export const spatialCameraDelta = (
   view: CameraView,
   delta: { readonly x: number; readonly y: number },
+  cameraDepth = 0,
 ): SpatialPoint3 => {
   if (view.mode === '2d') return { ...delta, z: 0 }
   const { right, up } = frameFor(view)
+  const scale = spatialPerspectiveScale(view, cameraDepth)
   return {
-    x: delta.x * right.x - delta.y * up.x,
-    y: -delta.x * right.y + delta.y * up.y,
-    z: delta.x * right.z - delta.y * up.z,
+    x: (delta.x * right.x - delta.y * up.x) / scale,
+    y: (-delta.x * right.y + delta.y * up.y) / scale,
+    z: (delta.x * right.z - delta.y * up.z) / scale,
   }
 }

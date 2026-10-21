@@ -9,6 +9,11 @@ export interface LayoutNode {
   readonly height: number
   /** Camera-relative render depth; absent from canonical native layout. */
   readonly cameraDepth?: number
+  /** Perspective billboard scale; absent from canonical native layout. */
+  readonly cameraScale?: number
+  /** Canonical billboard dimensions before camera projection; renderer-only. */
+  readonly worldWidth?: number
+  readonly worldHeight?: number
   readonly side: Side
   readonly direction?: LayoutDirection
 }

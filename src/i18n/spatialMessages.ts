@@ -19,12 +19,17 @@ export const spatialMessages = {
   spatialVerticalAngle: ['垂直角度', 'Vertical angle'],
   spatialOrbit: ['环绕', 'Orbit'],
   spatialFocusTarget: ['聚焦目标', 'Focus target'],
-  spatialOrbitHint: ['开启环绕后拖动画布旋转视角。', 'Drag the canvas to orbit when enabled.'],
+  spatialDistanceShort: ['视距', 'Distance'],
+  spatialResetDistance: ['重置视距', 'Reset camera distance'],
+  spatialOrbitHint: [
+    '拖动空白处旋转；按住 Shift 框选。',
+    'Drag empty canvas to orbit; hold Shift to select.',
+  ],
   spatialCameraWidget: ['视角方向', 'View orientation'],
   spatialCameraWidgetUnavailable: ['方向控件不可用', 'Orientation control unavailable'],
   spatialCameraHint: [
-    '拖动平移 · 捏合缩放 · Alt 拖动或开启环绕旋转视角',
-    'Drag to pan · Pinch to zoom · Alt-drag or enable Orbit to rotate',
+    '拖动旋转 · 双指平移 · 捏合缩放 · Shift 框选',
+    'Drag to orbit · Two fingers to pan · Pinch to zoom · Shift to select',
   ],
   spatialDepthHint: ['连同子主题调整，松手后保存', 'Adjust with descendants; save on release'],
   spatialFallback: [
