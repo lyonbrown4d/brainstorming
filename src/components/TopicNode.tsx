@@ -1,4 +1,3 @@
-import type { SpatialView } from '@renderer/state/spatialView'
 import { topicShapeInsets } from '@shared/topic-shapes'
 import { TopicShapeVisual } from '@renderer/components/TopicShapeVisual'
 import { TopicNodeBody } from '@renderer/components/TopicNodeBody'
@@ -34,7 +33,6 @@ export type TopicFlowNode = Node<
     fontFamily?: string
     direction?: LayoutDirection
     cameraScale?: number
-    cameraFrame?: SpatialView
     cameraDepth?: number
     worldWidth?: number
     worldHeight?: number

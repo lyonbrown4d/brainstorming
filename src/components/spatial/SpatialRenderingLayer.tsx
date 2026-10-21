@@ -2,7 +2,6 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { Button } from '@renderer/components/ui/button'
 import { useMessages } from '@renderer/i18n/useMessages'
-import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
 import type { MindMapLayout } from '@layout'
 
 const SpatialBackdrop = lazy(() => import('@renderer/components/spatial/SpatialBackdrop'))
@@ -24,12 +23,7 @@ const Fallback = ({ retry, onReady }: { retry: () => void; onReady: () => void }
   )
 }
 
-export const SpatialRenderingLayer = (props: {
-  nodes: CanvasFlowNode[]
-  depths: Readonly<Record<string, number>>
-  layout: MindMapLayout
-  onReady: () => void
-}) => {
+export const SpatialRenderingLayer = (props: { layout: MindMapLayout; onReady: () => void }) => {
   const [started, setStarted] = useState(false)
   useEffect(() => {
     let next = 0

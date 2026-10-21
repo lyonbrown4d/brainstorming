@@ -107,7 +107,7 @@ export const useSpatialCameraGesture = (
         workbookId,
         sheetId,
         (viewport) => {
-          void flow.setViewport(viewport)
+          if (cameraViewportChanged(viewport, flow.getViewport())) void flow.setViewport(viewport)
         },
       )
       currentDistance = snapshot.distance

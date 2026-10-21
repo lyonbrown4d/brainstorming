@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
-import { synchronizeCanvasNodes } from '@renderer/lib/canvasDragNodes'
+import { preserveMeasurement, synchronizeCanvasNodes } from '@renderer/lib/canvasDragNodes'
 
 const topic = (x: number): CanvasFlowNode => ({
   id: 'topic',
@@ -93,4 +93,21 @@ it('retains an active resize preview across selection-only notifications', () =>
   expect(next[0]?.width).toBe(220)
   expect(next[0]?.measured?.width).toBe(220)
   expect(next[0]?.resizing).toBe(true)
+})
+
+it('uses known projected bounds for the current frame instead of lagging behind the lens', () => {
+  const original = topic(0)
+  if (original.type === 'ink') throw new Error('Expected a topic')
+  const previous = {
+    ...original,
+    data: { ...original.data, cameraScale: 1, worldWidth: 100, worldHeight: 40 },
+  }
+  const measured = { width: 120, height: 48 }
+  const projected = {
+    ...previous,
+    measured,
+    style: { width: 120, height: 48 },
+    data: { ...previous.data, cameraScale: 1.2 },
+  }
+  expect(preserveMeasurement(projected, previous).measured).toBe(measured)
 })

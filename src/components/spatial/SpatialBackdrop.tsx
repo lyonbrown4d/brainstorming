@@ -1,90 +1,35 @@
 /* eslint react/no-unknown-property: "off" -- React Three Fiber uses Three.js JSX properties. */
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Canvas as ThreeCanvas, useFrame, useThree } from '@react-three/fiber'
+import { AdaptiveDpr } from '@react-three/drei'
 import { useViewport, type Viewport } from '@xyflow/react'
-import { OrthographicCamera, PerspectiveCamera, Vector3 } from 'three'
-import { createSpatialCamera, spatialCameraQuaternion } from '@renderer/lib/spatialCamera'
+import { synchronizeSpatialBackdropCamera } from '@renderer/components/spatial/spatialBackdropCamera'
 import { SpatialStage } from '@renderer/components/spatial/SpatialStage'
-import { SpatialSolid } from '@renderer/components/spatial/SpatialSolid'
-import { spatialSolidPose } from '@renderer/components/spatial/spatialSolidPose'
 import { useActiveSpatialView } from '@renderer/hooks/useActiveSpatialView'
 import { useMessages } from '@renderer/i18n/useMessages'
 import { Button } from '@renderer/components/ui/button'
-import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
 import type { SpatialView } from '@renderer/state/spatialView'
 import type { MindMapLayout } from '@layout'
 
-const Solids = ({
-  nodes,
-  depths,
-  layout,
+const CameraSync = ({
   view,
   viewport,
   onReady,
 }: {
-  nodes: CanvasFlowNode[]
-  depths: Readonly<Record<string, number>>
-  layout: MindMapLayout
   view: SpatialView
   viewport: Viewport
   onReady: () => void
 }) => {
   const { camera, size, invalidate } = useThree()
+  const regress = useThree((state) => state.performance.regress)
   const reported = useRef(false)
   const readyFrame = useRef(0)
-  const bases = useMemo(() => new Map(layout.nodes.map((node) => [node.id, node])), [layout])
-  const orientation = useMemo<SpatialView>(
-    () => ({ mode: view.mode, yaw: view.yaw, pitch: view.pitch, spacing: 0 }),
-    [view.mode, view.yaw, view.pitch],
-  )
-  const range = useMemo(
-    () =>
-      layout.nodes.reduce(
-        (max, node) =>
-          Math.max(max, Math.abs(node.x), Math.abs(node.y), Math.abs(depths[node.id] ?? 0)),
-        10000,
-      ) *
-        4 +
-      10000,
-    [layout, depths],
-  )
   useLayoutEffect(() => {
-    const target = view.target ?? { x: 0, y: 0, z: 0 }
-    if (camera instanceof PerspectiveCamera && view.cameraDistance !== undefined) {
-      const distance = view.cameraDistance
-      const next = new PerspectiveCamera(
-        42,
-        size.width / Math.max(size.height, 1),
-        1,
-        range + distance * 3,
-      )
-      const rotation = spatialCameraQuaternion(view)
-      next.position
-        .set(target.x, -target.y, target.z)
-        .add(new Vector3(0, 0, distance).applyQuaternion(rotation))
-      next.quaternion.copy(rotation)
-      next.setViewOffset(
-        size.width,
-        size.height,
-        size.width / 2 - (target.x * viewport.zoom + viewport.x),
-        size.height / 2 - (target.y * viewport.zoom + viewport.y),
-        size.width,
-        size.height,
-      )
-      camera.copy(next)
-    } else if (camera instanceof OrthographicCamera) {
-      const next = createSpatialCamera(view, range)
-      const { x, y, zoom } = viewport
-      next.left = -x / zoom - target.x
-      next.right = (size.width - x) / zoom - target.x
-      next.top = y / zoom + target.y
-      next.bottom = (y - size.height) / zoom + target.y
-      next.updateProjectionMatrix()
-      camera.copy(next)
-    } else return
-    camera.updateMatrixWorld()
+    synchronizeSpatialBackdropCamera(camera, view, viewport, size)
+    // Only the reference grid lowers resolution during motion; DOM topics remain crisp.
+    regress()
     invalidate()
-  }, [camera, size, view, viewport, range, invalidate])
+  }, [camera, size, view, viewport, invalidate, regress])
   useFrame(() => {
     if (reported.current) return
     reported.current = true
@@ -97,71 +42,10 @@ const Solids = ({
     },
     [],
   )
-  return (
-    <>
-      {nodes.map((node) => {
-        if (node.type !== 'topic' || node.data.topic.style?.shape === 'text') return null
-        const styledWidth = typeof node.style?.width === 'number' ? node.style.width : undefined
-        const styledHeight = typeof node.style?.height === 'number' ? node.style.height : undefined
-        // Match React Flow's NodeWrapper inline size, including a live resize override.
-        const width = node.width ?? styledWidth ?? node.initialWidth ?? node.measured?.width ?? 100
-        const height =
-          node.height ?? styledHeight ?? node.initialHeight ?? node.measured?.height ?? 50
-        const left = node.position.x * viewport.zoom + viewport.x
-        const top = node.position.y * viewport.zoom + viewport.y
-        if (
-          left + width * viewport.zoom < -40 ||
-          top + height * viewport.zoom < -40 ||
-          left > size.width + 40 ||
-          top > size.height + 40
-        )
-          return null
-        const base = bases.get(node.id)
-        if (!base) return null
-        const pose = spatialSolidPose(
-          base,
-          depths[node.id] ?? 0,
-          {
-            position: node.position,
-            width,
-            height,
-            widthTolerance: node.width === undefined ? 0 : 0.5,
-            heightTolerance: node.height === undefined ? 0 : 0.5,
-          },
-          node.data.cameraFrame ?? view,
-        )
-        return (
-          <SpatialSolid
-            key={node.id}
-            width={base.width}
-            height={base.height}
-            worldWidth={pose.width}
-            worldHeight={pose.height}
-            worldX={pose.x}
-            worldY={pose.y}
-            worldZ={pose.z}
-            orientation={orientation}
-            shape={node.data.topic.style?.shape ?? 'rounded'}
-            fill={node.data.fill ?? '#3b3e45'}
-            scale={node.data.topic.style?.scale ?? 1}
-          />
-        )
-      })}
-    </>
-  )
+  return null
 }
 
-const SpatialBackdrop = ({
-  nodes,
-  depths,
-  layout,
-  onReady,
-}: {
-  nodes: CanvasFlowNode[]
-  depths: Readonly<Record<string, number>>
-  layout: MindMapLayout
-  onReady: () => void
-}) => {
+const SpatialBackdrop = ({ layout, onReady }: { layout: MindMapLayout; onReady: () => void }) => {
   const { view } = useActiveSpatialView()
   const { translate } = useMessages()
   const viewport = useViewport()
@@ -190,6 +74,7 @@ const SpatialBackdrop = ({
           orthographic={view.cameraDistance === undefined}
           frameloop="demand"
           dpr={[1, 1.5]}
+          performance={{ min: 0.5, debounce: 200 }}
           camera={{ near: 0.1, far: 10000000 }}
           gl={{ antialias: true, alpha: true, powerPreference: 'default' }}
           fallback={<span className="sr-only">{translate('spatialFallback')}</span>}
@@ -204,19 +89,9 @@ const SpatialBackdrop = ({
             )
           }}
         >
+          <AdaptiveDpr />
           <SpatialStage layout={layout} viewport={viewport} />
-          <ambientLight intensity={1.15} />
-          <hemisphereLight args={['#ffffff', '#a5a8bb', 0.85]} />
-          <directionalLight position={[-500, 900, 1000]} intensity={1.45} />
-          <directionalLight position={[700, 200, -450]} intensity={0.35} color="#d9e3ff" />
-          <Solids
-            nodes={nodes}
-            depths={depths}
-            layout={layout}
-            view={view}
-            viewport={viewport}
-            onReady={onReady}
-          />
+          <CameraSync view={view} viewport={viewport} onReady={onReady} />
         </ThreeCanvas>
       )}
     </div>

@@ -43,6 +43,11 @@ export const projectInk = (document: MindMapDocument, spatial?: SpatialView): In
       {
         id,
         type: 'ink',
+        ...(spatial?.mode === '3d'
+          ? {
+              measured: { width: Math.round(bounds.width), height: Math.round(bounds.height) },
+            }
+          : {}),
         data: {
           stroke,
           ...(cameraDepth === undefined || !spatial

@@ -64,6 +64,13 @@ export const projectCanvas = (
       {
         id: node.id,
         type: 'topic' as const,
+        ...(node.cameraScale === undefined
+          ? {}
+          : {
+              className: '[contain:layout_style] [&>.topic]:will-change-transform',
+              // RF retains initialized ports while its observer updates their DOM bounds.
+              measured: { width: Math.round(node.width), height: Math.round(node.height) },
+            }),
         position: { x: node.x, y: node.y },
         ...(zIndex === undefined ? {} : { zIndex }),
         // Known layout dimensions keep fresh nodes visible when Lexical takes focus.
@@ -76,7 +83,6 @@ export const projectCanvas = (
         } as CSSProperties,
         data: {
           topic,
-          ...(spatial?.mode === '3d' ? { cameraFrame: spatial } : {}),
           visualStyle: document.settings?.visualStyle ?? 'normal',
           root: node.id === document.rootId,
           branch: document.topics[document.rootId]?.children.includes(node.id) ?? false,

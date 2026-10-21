@@ -131,12 +131,7 @@ export const Canvas = () => {
         transition={{ duration: reduceMotion ? 0 : 0.12 }}
       >
         {view.mode === '3d' && view.cameraDistance !== undefined && depths && nativeLayout && (
-          <SpatialRenderingLayer
-            nodes={drag.nodes}
-            depths={depths}
-            layout={nativeLayout}
-            onReady={onSceneReady}
-          />
+          <SpatialRenderingLayer layout={nativeLayout} onReady={onSceneReady} />
         )}
         <ReactFlow<CanvasFlowNode>
           key={document.id}

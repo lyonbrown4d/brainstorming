@@ -2,7 +2,8 @@ import type { MindMapLayout } from '@layout'
 import { spatialCameraDelta } from '@renderer/lib/spatialCamera'
 import { previewPerspectiveDrag } from '@renderer/lib/canvasPerspectiveDrag'
 import { useEffect, useRef, useState } from 'react'
-import { useNodesState, useReactFlow, type OnNodeDrag } from '@xyflow/react'
+import { useReactFlow, type OnNodeDrag } from '@xyflow/react'
+import { useCanvasNodeState } from '@renderer/hooks/useCanvasNodeState'
 import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
 import type { DragSession } from '@renderer/lib/canvasGestureSession'
 import { preserveMeasurement, synchronizeCanvasNodes } from '@renderer/lib/canvasDragNodes'
@@ -18,13 +19,7 @@ import { canvasDragSelection } from '@renderer/lib/canvasDragSelection'
 import { captureSpatialOrigins, type SpatialDepths } from '@renderer/lib/spatialProjection'
 import { useEditor } from '@renderer/state/editor'
 import { getSpatialView, useSpatialView } from '@renderer/state/spatialView'
-import {
-  selectedTopicIds,
-  selectedDrawingIds,
-  setCanvasSelection,
-  useSelectedDrawingIds,
-  useSelectedIds,
-} from '@renderer/state/selection'
+import { selectedTopicIds, selectedDrawingIds, setCanvasSelection } from '@renderer/state/selection'
 import { usePresentation } from '@renderer/state/presentation'
 import {
   beginCanvasDrag,
@@ -43,17 +38,8 @@ export const useCanvasDrag = (
   const workbookId = useEditor((state) => state.workbook.id)
   const scopeId = JSON.stringify([workbookId, canvasId])
   const { screenToFlowPosition, getNodes } = useReactFlow<CanvasFlowNode>()
-  const selectedIds = useSelectedIds()
-  const drawingIds = useSelectedDrawingIds()
-  const playing = usePresentation((state) => state.playing)
-  const primaryId = useEditor((state) => state.selectedId)
-  const [nodes, setNodes, onNodesChange] = useNodesState<CanvasFlowNode>(projectedNodes)
-  const [nodesScope, setNodesScope] = useState(scopeId)
-  useEffect(() => {
-    if (nodesScope === scopeId) return
-    setNodes(projectedNodes)
-    setNodesScope(scopeId)
-  }, [nodesScope, projectedNodes, scopeId, setNodes])
+  const [dragging, setDragging] = useState<ReadonlySet<string> | undefined>(undefined)
+  const { nodes, setNodes, onNodesChange } = useCanvasNodeState(projectedNodes, scopeId, dragging)
   const session = useRef<DragSession | null>(null)
   const dragDepths = useRef<ReadonlyMap<string, number>>(new Map())
   const latestProjected = useRef(projectedNodes)
@@ -63,6 +49,7 @@ export const useCanvasDrag = (
       const active = session.current
       if (!active) return
       session.current = null
+      setDragging(undefined)
       dragDepths.current = new Map()
       cancelled.current = true
       clearCanvasDrag(active.token)
@@ -115,21 +102,8 @@ export const useCanvasDrag = (
     }
   }, [setNodes])
   useEffect(() => {
-    const ids = new Set(selectedTopicIds(useEditor.getState()))
-    const drawings = new Set(drawingIds)
-    const geometryChanged = latestProjected.current !== projectedNodes
     latestProjected.current = projectedNodes
-    const dragging = session.current?.excluded
-    setNodes((previous) =>
-      synchronizeCanvasNodes(previous, projectedNodes, {
-        geometryChanged,
-        dragging,
-        topics: ids,
-        drawings,
-        playing,
-      }),
-    )
-  }, [projectedNodes, selectedIds, drawingIds, primaryId, playing, setNodes])
+  }, [projectedNodes])
 
   const onDragStart: OnNodeDrag<CanvasFlowNode> = (_event, dragged, draggedNodes) => {
     cancelled.current = false
@@ -179,6 +153,7 @@ export const useCanvasDrag = (
       view,
       anchorId: dragged.id,
     }
+    setDragging(excluded)
     dragDepths.current = new Map(getNodes().map((node) => [node.id, node.data.cameraDepth ?? 0]))
     setCanvasSelection(ids.topics, ids.drawings)
   }
@@ -208,6 +183,7 @@ export const useCanvasDrag = (
     cancelled.current = false
     const active = session.current
     session.current = null
+    setDragging(undefined)
     if (!active) return
     clearCanvasDrag(active.token)
     const editor = useEditor.getState()
@@ -285,7 +261,7 @@ export const useCanvasDrag = (
     )
   }
   return {
-    nodes: nodesScope === scopeId ? nodes : projectedNodes,
+    nodes,
     onNodesChange: (changes: Parameters<typeof onNodesChange>[0]) => {
       onNodesChange(
         cancelled.current ? changes.filter((change) => change.type !== 'position') : changes,

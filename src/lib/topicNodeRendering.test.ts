@@ -31,7 +31,7 @@ const props: NodeProps<TopicFlowNode> = {
   zIndex: 0,
 }
 
-it('keeps topic content cached while the camera changes projection, depth and frame', () => {
+it('keeps topic content cached while the camera changes projection and depth', () => {
   expect(
     sameTopicNodeContent(props, {
       ...props,
@@ -42,7 +42,6 @@ it('keeps topic content cached while the camera changes projection, depth and fr
         ...props.data,
         cameraScale: 2,
         cameraDepth: 75,
-        cameraFrame: { mode: '3d', yaw: 0.7, pitch: 0.5, spacing: 100, cameraDistance: 800 },
       },
     }),
   ).toBe(true)

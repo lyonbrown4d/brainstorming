@@ -23,7 +23,15 @@ export const useSpatialLens = create<SpatialLensState>((set) => ({
     if (distance !== undefined && (!Number.isFinite(distance) || distance <= 0)) return
     const key = spatialLensKey(workbookId, sheetId)
     set((state) => {
-      if (state.distances[key] === distance) return state
+      const previous = state.distances[key]
+      // Orbit math changes radius by machine epsilon; it is not an actual dolly.
+      if (
+        previous === distance ||
+        (previous !== undefined &&
+          distance !== undefined &&
+          Math.abs(previous - distance) <= Math.max(1e-7, previous * 1e-10))
+      )
+        return state
       if (distance === undefined) {
         const distances = Object.fromEntries(
           Object.entries(state.distances).filter(([entry]) => entry !== key),
