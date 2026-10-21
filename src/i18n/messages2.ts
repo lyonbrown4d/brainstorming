@@ -10,8 +10,8 @@ export const messages2 = {
   generateAndSaveSteps: ['生成并保存步骤', 'Generate and save steps'],
   editOutline: ['大纲编辑', 'Edit outline'],
   editTopicsDirectlyEnterAddsASibling: [
-    '直接编辑主题。Enter 添加同级，Tab 添加子主题；中文输入由 Lexical 处理。',
-    'Edit topics directly. Enter adds a sibling; Tab adds a child. Lexical handles text input.',
+    '编辑时 Enter 确认文字，选中时 Enter 添加同级；Tab 调整大纲层级。',
+    'Enter confirms an edit or adds a sibling when selected. Tab changes outline depth.',
   ],
   editableOutline: ['可编辑大纲', 'Editable outline'],
   thisMapHasUnsavedChangesDiscardThem: [

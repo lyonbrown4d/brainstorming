@@ -55,7 +55,11 @@ pub fn marker_size(metadata: &Value) -> (f64, f64, f64, f64) {
 }
 
 pub fn topic(topic: &Value, root: bool) -> NodeSize {
-  measured(topic, root).0
+  let mut size = measured(topic, root).0;
+  let scale = number(&topic["style"], "scale", 1.0);
+  size.width *= scale;
+  size.height *= scale;
+  size
 }
 
 pub fn content_height(topic: &Value, root: bool) -> f64 {

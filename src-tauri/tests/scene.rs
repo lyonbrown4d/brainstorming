@@ -25,6 +25,25 @@ fn renders_layout_shapes_and_escaped_text() {
 }
 
 #[test]
+fn topic_scale_expands_layout_once_and_scales_shape_and_content_together() {
+  let mut book = workbook();
+  book["sheets"][0]["document"]["topics"]["root"]["children"] = json!([]);
+  book["sheets"][0]["document"]["topics"]
+    .as_object_mut()
+    .unwrap()
+    .remove("child");
+  book["sheets"][0]["document"]["topics"]["root"]["style"] = json!({"shape":"ellipse","width":200});
+  let normal = scene::render(&book, "sheet", false).unwrap();
+  book["sheets"][0]["document"]["topics"]["root"]["style"]["scale"] = json!(2);
+  let scaled = scene::render(&book, "sheet", false).unwrap();
+  assert_eq!(scaled.width - normal.width, 200.0);
+  assert!(scaled.svg.contains("scale(2.00)"));
+  assert!(scaled.svg.contains("rx=\"100.00\""));
+  assert!(scaled.svg.contains("font-size=\"24.00\""));
+  assert!(!scaled.svg.contains("rx=\"200.00\""));
+}
+
+#[test]
 fn sketch_and_ink_require_shared_cached_geometry() {
   let mut book = workbook();
   book["sheets"][0]["document"]["settings"] = json!({"visualStyle":"sketch"});

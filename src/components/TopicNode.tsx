@@ -1,7 +1,8 @@
 import { topicShapeInsets } from '@shared/topic-shapes'
 import { TopicShapeVisual } from '@renderer/components/TopicShapeVisual'
 import { TopicNodeBody } from '@renderer/components/TopicNodeBody'
-import { TopicWidthHandles } from '@renderer/components/TopicWidthHandles'
+import { TopicScaleHandle } from '@renderer/components/TopicScaleHandle'
+import { useTopicScalePreview } from '@renderer/state/topicScalePreview'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { cn } from '@renderer/lib/utils'
@@ -65,16 +66,20 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
     Boolean(topic.attachments?.length) ||
     Boolean(topic.metadata)
   const style = topic.style
+  const previewScale = useTopicScalePreview((state) => (state.topicId === id ? state.scale : null))
+  const scale = previewScale ?? style?.scale ?? 1
+  const baseWidth = (width ?? 100) / scale
+  const baseHeight = (height ?? 100) / scale
   const shape = style?.shape ?? 'rounded'
   const insets = topicShapeInsets(shape)
   const fill =
     data.fill ?? style?.fill ?? (root ? 'var(--color-primary)' : 'var(--color-background)')
   return (
     <>
-      <TopicWidthHandles id={id} topic={topic} selected={selected} />
+      {selected && <TopicScaleHandle id={id} topic={topic} selected />}
       <div
         className={cn(
-          'topic group/topic nopan relative flex h-full w-full flex-col items-center rounded-lg border-[1.5px] transition-[box-shadow,border-color] duration-150 select-none',
+          'topic group/topic nopan relative flex flex-col items-center rounded-lg border-[1.5px] transition-[box-shadow,border-color] duration-150 select-none',
           root
             ? 'topic-root rounded-xl bg-primary text-primary-foreground'
             : branch
@@ -98,6 +103,10 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
             borderColor: 'transparent',
             color: data.textColor ?? style?.color,
             fontFamily: data.fontFamily,
+            width: baseWidth,
+            height: baseHeight,
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
             borderRadius:
               shape === 'capsule'
                 ? '9999px'
@@ -116,8 +125,8 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
           visualStyle={data.visualStyle}
           sketchFill={root || branch || Boolean(style?.fill) || shape === 'sticky'}
           seedKey={id}
-          width={width ?? 100}
-          height={height ?? 100}
+          width={baseWidth}
+          height={baseHeight}
           stroke={root ? (data.visualStyle === 'sketch' ? (data.textColor ?? color) : fill) : color}
           className="pointer-events-none absolute inset-0 h-full w-full"
         />

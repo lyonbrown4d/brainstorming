@@ -10,7 +10,9 @@ export const TopicWidthControl = ({ topic, isRoot }: { topic: Topic; isRoot: boo
   const { translate } = useMessages()
   const [draft, setDraft] = useState<string | null>(null)
   const suppressBlur = useRef(false)
-  const autoWidth = measureTopic(topic.title, isRoot, topic.style?.fontSize, topic).width
+  const autoWidth =
+    measureTopic(topic.title, isRoot, topic.style?.fontSize, topic).width /
+    (topic.style?.scale ?? 1)
   const width = topic.style?.width
   const circleExpanded = topic.style?.shape === 'circle' && width !== undefined && autoWidth > width
   const commit = (next: number | undefined): void => {

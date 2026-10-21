@@ -133,6 +133,64 @@ test('typing and native composition replace the selected inactive title without 
   await session.detach()
   await page.keyboard.press('Enter')
   await expect(node(page, 'branch')).toContainText('中文输入')
+  await expect(page.locator('.react-flow__node-topic')).toHaveCount(3)
+  await expect(editingTitle(page)).toHaveCount(0)
+  await expect(node(page, 'branch').locator('.topic-input')).toBeFocused()
+  await page.keyboard.press('Enter')
   await expect(page.locator('.react-flow__node-topic')).toHaveCount(4)
   await expect(editingTitle(page)).toBeFocused()
+})
+
+test('candidate keys leave the Lexical draft active until a separate Enter confirms it', async ({
+  page,
+}) => {
+  await open(page)
+  await page.keyboard.press('F2')
+  const editor = editingTitle(page)
+  await page.keyboard.insertText('中文草稿')
+  await editor.evaluate((element) => {
+    for (const key of ['Enter', 'Tab', 'Escape', 'n']) {
+      element.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key,
+          metaKey: key === 'n',
+          isComposing: true,
+          bubbles: true,
+        }),
+      )
+    }
+    const candidateEnter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })
+    Object.defineProperty(candidateEnter, 'keyCode', { value: 229 })
+    element.dispatchEvent(candidateEnter)
+  })
+  await expect(editor).toBeFocused()
+  await expect(editor).toHaveText('中文草稿')
+  await expect(page.locator('.react-flow__node-topic')).toHaveCount(3)
+  await page.keyboard.press('Enter')
+  await expect(editingTitle(page)).toHaveCount(0)
+  await expect(node(page, 'branch')).toContainText('中文草稿')
+  await expect(page.locator('.react-flow__node-topic')).toHaveCount(3)
+})
+
+test('blurring during composition commits the final candidate after composition ends', async ({
+  page,
+  context,
+}) => {
+  await open(page)
+  await page.keyboard.press('F2')
+  const editor = editingTitle(page)
+  const session = await context.newCDPSession(page)
+  await session.send('Input.imeSetComposition', {
+    text: '最后汉字',
+    selectionStart: 4,
+    selectionEnd: 4,
+  })
+  await expect(editor).toHaveText('最后汉字')
+  await editor.evaluate((element) => {
+    element.blur()
+  })
+  await expect(editingTitle(page)).toHaveCount(0)
+  await expect(node(page, 'branch')).toContainText('最后汉字')
+  await expect(page.locator('.react-flow__node-topic')).toHaveCount(3)
+  await session.detach()
 })

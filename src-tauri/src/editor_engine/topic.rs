@@ -89,6 +89,7 @@ fn apply_one(document: &mut Value, command: &Value) -> Result<(), String> {
         "color",
         "fontSize",
         "width",
+        "scale",
         "bold",
         "italic",
         "shape",

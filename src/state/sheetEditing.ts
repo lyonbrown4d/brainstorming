@@ -57,9 +57,11 @@ export const editSheets = (command: WorkbookCommand, nextId?: string): boolean =
   }
 }
 
-export const addDocumentSheet = (document: MindMapDocument): boolean => {
+export const addDocumentSheet = (
+  document: MindMapDocument,
+  id: string = crypto.randomUUID(),
+): boolean => {
   if (useEditor.getState().busy) return false
-  const id = crypto.randomUUID()
   const name =
     truncateSheetName(document.title.replace(/[\p{Cc}]/gu, ' ').trim()) ||
     translate('newSheetLabel402')

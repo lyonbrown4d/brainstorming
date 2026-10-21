@@ -126,13 +126,16 @@ export const renderSheetSvg = (document: MindMapDocument, includeCollapsed = fal
       bold: isRoot || branchIndex !== undefined,
       ...topic.style,
     }
-    const group = element('g', { transform: `translate(${node.x} ${node.y})` })
+    const scale = topic.style?.scale ?? 1
+    const baseWidth = node.width / scale
+    const baseHeight = node.height / scale
+    const group = element('g', { transform: `translate(${node.x} ${node.y}) scale(${scale})` })
     const content = drawTopicShape(
       element,
       group,
       topic,
-      node.width,
-      node.height,
+      baseWidth,
+      baseHeight,
       style.fill,
       isRoot
         ? source.settings?.visualStyle === 'sketch'

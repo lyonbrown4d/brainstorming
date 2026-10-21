@@ -4,6 +4,7 @@ import { getParentId } from '@core'
 import {
   artifact,
   create,
+  dockAction,
   editor,
   fillContentEditable,
   home,
@@ -22,6 +23,17 @@ describe('Xmind-style native topic editing', () => {
     await browser.keys(Key.Tab)
     await expect(editor()).toBeFocused()
     await fillContentEditable(editor(), '子主题 A')
+    const firstId = await browser.$('.react-flow__node-topic.selected').getAttribute('data-id')
+    if (!firstId) throw new Error('Missing first child topic')
+    const firstTopic = browser.$(`.react-flow__node[data-id="${firstId}"] .topic-title`)
+    await browser.keys(Key.Enter)
+    await expect(editor()).not.toBeExisting()
+    await expect(browser.$$('.react-flow__node-topic')).toBeElementsArrayOfSize(2)
+    await shortcut('z')
+    await expect(firstTopic).toHaveText('新主题')
+    await dockAction('重做')
+    await expect(firstTopic).toHaveText('子主题 A')
+    await firstTopic.click()
     await browser.keys(Key.Enter)
     await expect(editor()).toHaveText('新主题')
     await expect(editor()).toBeFocused()

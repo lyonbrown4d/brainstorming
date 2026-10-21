@@ -19,54 +19,29 @@ const drag = async (page: Page, grip: Locator, dx: number, dy: number, cancel = 
   await page.mouse.up()
 }
 
-test('topic width uses a real grip, commits once, cancels, and resets to Fit', async ({ page }) => {
+test('topic width input commits once, supports undo and redo, and resets to Fit', async ({
+  page,
+}) => {
   await open(page)
   await node(page, 'a').click()
+  await page.getByRole('button', { name: '属性面板', exact: true }).click()
   const before = await bounds(node(page, 'a'))
   const zoom = await node(page, 'a').evaluate(
     (element) =>
       element.getBoundingClientRect().width / Number.parseFloat(getComputedStyle(element).width),
   )
-  const grip = node(page, 'a').locator('.react-flow__resize-control.right')
-  await drag(page, grip, 120, 0)
-  await expect
-    .poll(async () => (await bounds(node(page, 'a'))).width)
-    .toBeCloseTo(before.width + 120, 0)
-  await page.keyboard.press('ControlOrMeta+z')
-  await expect.poll(async () => (await bounds(node(page, 'a'))).width).toBeCloseTo(before.width, 0)
-  await page.keyboard.press('ControlOrMeta+Shift+z')
-  const resized = await bounds(node(page, 'a'))
-  await drag(page, grip, 80, 0, true)
-  await expect.poll(async () => (await bounds(node(page, 'a'))).width).toBeCloseTo(resized.width, 0)
-  await page.getByRole('button', { name: '属性面板', exact: true }).click()
   const width = page.getByRole('spinbutton', { name: '主题宽度', exact: true })
-  await expect
-    .poll(async () => Number(await width.inputValue()))
-    .toBeCloseTo(resized.width / zoom, 0)
   await width.fill('240')
   await width.press('Enter')
   await expect(width).toHaveValue('240')
-  await page.getByRole('button', { name: '适应内容', exact: true }).click()
-  await expect.poll(async () => (await bounds(node(page, 'a'))).width).toBeCloseTo(before.width, 0)
-})
-
-test('left topic-width grip keeps the opposite edge in place', async ({ page }) => {
-  await open(page)
-  await node(page, 'a').click()
-  const before = await bounds(node(page, 'a'))
-  const grip = node(page, 'a').locator('.react-flow__resize-control.left')
-  await drag(page, grip, -60, 0)
-  const after = await bounds(node(page, 'a'))
-  expect(after.width).toBeGreaterThan(before.width + 40)
-  expect(after.x + after.width).toBeCloseTo(before.x + before.width, 0)
+  await expect.poll(async () => (await bounds(node(page, 'a'))).width).toBeCloseTo(240 * zoom, 0)
   await page.keyboard.press('ControlOrMeta+z')
   await expect.poll(async () => (await bounds(node(page, 'a'))).width).toBeCloseTo(before.width, 0)
-  await expect
-    .poll(async () => {
-      const restored = await bounds(node(page, 'a'))
-      return restored.x + restored.width
-    })
-    .toBeCloseTo(before.x + before.width, 0)
+  await page.keyboard.press('ControlOrMeta+Shift+z')
+  await expect.poll(async () => (await bounds(node(page, 'a'))).width).toBeCloseTo(240 * zoom, 0)
+  await expect(width).toHaveValue('240')
+  await page.getByRole('button', { name: '适应内容', exact: true }).click()
+  await expect.poll(async () => (await bounds(node(page, 'a'))).width).toBeCloseTo(before.width, 0)
 })
 
 for (const story of ['standard', 'horizontal-siblings'])

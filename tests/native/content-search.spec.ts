@@ -45,6 +45,7 @@ describe('native command palette and content index', () => {
     await named('下一步').click()
     await named('画布名称').setValue('跨表检索')
     await named('创建画布').click()
+    await expect(browser.$('.sheet-tab[aria-selected="true"]')).toHaveText('跨表检索')
     await renameRoot('跨画布星轨目标')
     await save(artifact('search-source'))
     await fileAction('新建导图')

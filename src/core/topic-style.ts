@@ -7,6 +7,7 @@ const styleKeys = [
   'color',
   'fontSize',
   'width',
+  'scale',
   'bold',
   'italic',
   'shape',
@@ -44,6 +45,9 @@ export const validateTopicStyle: (value: unknown) => asserts value is TopicStyle
         break
       case 'width':
         valid = typeof entry === 'number' && Number.isFinite(entry) && entry >= 80 && entry <= 1200
+        break
+      case 'scale':
+        valid = typeof entry === 'number' && Number.isFinite(entry) && entry >= 0.5 && entry <= 3
         break
       case 'lineWidth':
         valid = typeof entry === 'number' && Number.isFinite(entry) && entry >= 1 && entry <= 6

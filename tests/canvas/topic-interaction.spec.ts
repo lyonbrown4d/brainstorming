@@ -20,7 +20,7 @@ const startDrag = async (page: Page, box: { x: number; y: number; width: number 
   return point
 }
 
-test('Tab and Enter commit text and create the next level or a sibling without an extra Enter', async ({
+test('Enter confirms an edit; a new Enter creates a sibling while Tab continues into a child', async ({
   page,
 }) => {
   await open(page)
@@ -36,6 +36,23 @@ test('Tab and Enter commit text and create the next level or a sibling without a
   if (!first) throw new Error('Missing created topic')
   await page.keyboard.press('Enter')
   await expect(node(page, first)).toContainText('第一条想法')
+  await expect(page.locator('.react-flow__node-topic')).toHaveCount(4)
+  await expect(editor).toHaveCount(0)
+  await expect(node(page, first).locator('.topic-input')).toBeFocused()
+  await page.keyboard.press('ControlOrMeta+z')
+  await expect(node(page, first)).toContainText('新主题')
+  await page.keyboard.press('ControlOrMeta+Shift+z')
+  await expect(node(page, first)).toContainText('第一条想法')
+  await expect(editor).toHaveCount(0)
+  await node(page, first)
+    .locator('.topic-input')
+    .evaluate((element) =>
+      element.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', repeat: true, bubbles: true }),
+      ),
+    )
+  await expect(page.locator('.react-flow__node-topic')).toHaveCount(4)
+  await page.keyboard.press('Enter')
   await expect(page.locator('.react-flow__node-topic')).toHaveCount(5)
   await expect(editor).toBeFocused()
   const second = await page

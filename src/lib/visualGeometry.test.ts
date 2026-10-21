@@ -77,4 +77,26 @@ describe('native scene visual geometry', () => {
     expect(geometry.edgePaths).toEqual({})
     expect(geometry.drawingPaths.pen).toBeTruthy()
   })
+
+  it('builds sketch outlines in base coordinates for scaled topics', () => {
+    const plain = fixture()
+    const withScale = applyCommand(plain, {
+      type: 'setTopicStyle',
+      topicId: 'sticky',
+      style: { shape: 'sticky', scale: 2 },
+    })
+    const document = applyCommand(withScale, {
+      type: 'setDocumentSettings',
+      settings: { ...withScale.settings, visualStyle: 'sketch' },
+    })
+    const layout = layoutDocument(document)
+    const geometry = buildVisualGeometry(document, layout, [])
+    const baseDocument = applyCommand(plain, {
+      type: 'setDocumentSettings',
+      settings: { ...plain.settings, visualStyle: 'sketch' },
+    })
+    const base = buildVisualGeometry(baseDocument, layoutDocument(baseDocument), [])
+    expect(geometry.topicOutlines.sticky).toBe(base.topicOutlines.sticky)
+    expect(geometry.topicAccents['sticky:fold']).toBe(base.topicAccents['sticky:fold'])
+  })
 })

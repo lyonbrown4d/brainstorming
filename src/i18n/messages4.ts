@@ -41,8 +41,8 @@ export const messages4 = {
   ],
   targetTopicNoLongerExists: ['生成目标主题已不存在', 'Target topic no longer exists'],
   addChildSiblingEnterConfirmsWhileEditing: [
-    '添加子主题 / 同级主题（编辑时先保存文字再新增）',
-    'Add child / sibling (save current text, then add while editing)',
+    '选中时添加子主题 / 同级主题；编辑时 Enter 仅确认',
+    'Add child / sibling when selected; Enter only confirms an edit',
   ],
   spaceDoubleclick: ['Space / 双击', 'Space / double-click'],
   editSelectPlaceholderTextOrContinueExisting: [

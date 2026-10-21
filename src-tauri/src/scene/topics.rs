@@ -35,10 +35,14 @@ pub fn draw(svg: &mut Svg, layout: &Layout, context: &RenderContext<'_>) -> Resu
     };
     let font = number(style, "fontSize", if root_topic { 24.0 } else { 16.0 });
     let bold = root_topic || branch_ids.contains(&node.id.as_str()) || style["bold"] == true;
+    let scale = number(style, "scale", 1.0);
+    let width = node.width / scale;
+    let height = node.height / scale;
     svg.0.push_str(&format!(
-      "<g transform=\"translate({} {})\">",
+      "<g transform=\"translate({} {}) scale({})\">",
       fmt(node.x),
-      fmt(node.y)
+      fmt(node.y),
+      fmt(scale)
     ));
     let outline = if sketch && shape != "text" {
       Some(
@@ -60,8 +64,8 @@ pub fn draw(svg: &mut Svg, layout: &Layout, context: &RenderContext<'_>) -> Resu
     shapes::draw(
       svg,
       shape,
-      node.width,
-      node.height,
+      width,
+      height,
       &fill,
       &stroke,
       outline.map(|value| (value, shade)),
@@ -90,10 +94,10 @@ pub fn draw(svg: &mut Svg, layout: &Layout, context: &RenderContext<'_>) -> Resu
       );
     }
     let (inset_x, inset_y) = measure::insets(shape);
-    let content_x = node.width * inset_x;
-    let content_y = node.height * inset_y;
-    let content_w = node.width * (1.0 - 2.0 * inset_x);
-    let content_h = node.height * (1.0 - 2.0 * inset_y);
+    let content_x = width * inset_x;
+    let content_y = height * inset_y;
+    let content_w = width * (1.0 - 2.0 * inset_x);
+    let content_h = height * (1.0 - 2.0 * inset_y);
     svg.0.push_str(&format!(
       "<g transform=\"translate({} {})\">",
       fmt(content_x),

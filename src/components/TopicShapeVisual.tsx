@@ -43,7 +43,6 @@ export const TopicShapeVisual = ({
               strokeOpacity="0.1"
               strokeWidth="0.8"
               strokeLinecap="round"
-              vectorEffect="non-scaling-stroke"
             />
           )}
           <path
@@ -54,7 +53,6 @@ export const TopicShapeVisual = ({
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
-            vectorEffect="non-scaling-stroke"
           />
         </>
       ) : shape === 'ellipse' || shape === 'circle' ? (
@@ -66,7 +64,6 @@ export const TopicShapeVisual = ({
           fill={fill}
           stroke={stroke}
           strokeWidth="1.5"
-          vectorEffect="non-scaling-stroke"
         />
       ) : (
         <path
@@ -74,7 +71,6 @@ export const TopicShapeVisual = ({
           fill={fill}
           stroke={stroke}
           strokeWidth="1.5"
-          vectorEffect="non-scaling-stroke"
         />
       ))}
     {shape === 'sticky' && (
@@ -86,7 +82,6 @@ export const TopicShapeVisual = ({
         )}
         fill="none"
         stroke={stroke}
-        vectorEffect="non-scaling-stroke"
       />
     )}
     {shape === 'card' && (
@@ -99,7 +94,6 @@ export const TopicShapeVisual = ({
         fill="none"
         stroke={stroke}
         strokeWidth="3"
-        vectorEffect="non-scaling-stroke"
       />
     )}
   </svg>

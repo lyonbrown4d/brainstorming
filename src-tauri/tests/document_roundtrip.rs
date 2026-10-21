@@ -9,7 +9,8 @@ async fn relational_roundtrip_preserves_sheets_order_annotations_and_extensions(
   let folder = tempfile::tempdir().unwrap();
   let path = folder.path().join("map # % 图.brainstorming");
   let store = DocumentStore::new();
-  let workbook = fixture::workbook();
+  let mut workbook = fixture::workbook();
+  workbook["sheets"][0]["document"]["topics"]["a"]["style"]["scale"] = json!(1.75);
   store
     .write(&path, workbook.clone(), None, None, None)
     .await

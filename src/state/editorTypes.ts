@@ -79,7 +79,7 @@ export interface EditorState extends EditorData {
   setError: (error: string | null) => void
   switchSheet: (id: string) => void
   addSheet: () => void
-  addDocumentSheet: (document: MindMapDocument) => boolean
+  addDocumentSheet: (document: MindMapDocument, id?: string) => boolean
   renameSheet: (id: string, name: string) => void
   duplicateSheet: (id: string) => void
   deleteSheet: (id: string) => void

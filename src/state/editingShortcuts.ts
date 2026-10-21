@@ -32,6 +32,10 @@ import type { ShortcutId } from '@renderer/state/shortcutRegistry'
 /** Topic controls share the same structural keyboard actions. */
 export const handleTopicNavigation = (event: KeyboardEvent, topicId?: string): boolean => {
   if (isCompositionKey(event)) return false
+  if (event.repeat && (event.key === 'Enter' || event.key === 'Tab')) {
+    event.preventDefault()
+    return true
+  }
   if (
     event.altKey &&
     !event.metaKey &&

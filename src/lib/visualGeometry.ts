@@ -30,7 +30,10 @@ export const buildVisualGeometry = (
       if (!topic) continue
       const shape = topic.style?.shape ?? 'rounded'
       if (shape === 'text') continue
-      const path = topicOutlinePath(shape, node.width, node.height)
+      const scale = topic.style?.scale ?? 1
+      const width = node.width / scale
+      const height = node.height / scale
+      const path = topicOutlinePath(shape, width, height)
       topicOutlines[node.id] = visualPath(path, 'sketch', `topic:${node.id}`)
       if (
         node.id === document.rootId ||
@@ -41,13 +44,13 @@ export const buildVisualGeometry = (
         topicFills[node.id] = sketchFillPath(path, `topic:${node.id}`)
       if (shape === 'sticky')
         topicAccents[`${node.id}:fold`] = visualPath(
-          `M${node.width * 0.84} ${node.height} V${node.height * 0.84} H${node.width}`,
+          `M${width * 0.84} ${height} V${height * 0.84} H${width}`,
           'sketch',
           `topic:${node.id}:fold`,
         )
       if (shape === 'card')
         topicAccents[`${node.id}:header`] = visualPath(
-          `M${node.width * 0.08} ${node.height * 0.12} H${node.width * 0.92}`,
+          `M${width * 0.08} ${height * 0.12} H${width * 0.92}`,
           'sketch',
           `topic:${node.id}:header`,
         )

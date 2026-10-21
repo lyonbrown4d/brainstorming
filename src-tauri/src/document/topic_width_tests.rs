@@ -12,6 +12,21 @@ fn topic_width_is_optional_finite_and_bounded() {
 }
 
 #[test]
+fn topic_scale_is_optional_finite_and_bounded() {
+  for style in [
+    json!({}),
+    json!({"scale": 0.5}),
+    json!({"scale": 1}),
+    json!({"scale": 3}),
+  ] {
+    assert!(topic(&json!({"style": style})).is_ok());
+  }
+  for scale in [json!(0.49), json!(3.01), json!("2"), json!(null)] {
+    assert!(topic(&json!({"style": {"scale": scale}})).is_err());
+  }
+}
+
+#[test]
 fn only_summary_annotations_can_reference_a_real_topic() {
   let mut group =
     json!({"id":"summary","kind":"summary","topicIds":["a"],"summaryTopicId":"summary-topic"});

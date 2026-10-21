@@ -30,7 +30,7 @@ fn workbook() -> Value {
     {"id":"first","name":"第一页","document":{"format":"brainstorming","version":1,"id":"first",
       "title":"中心","rootId":"root","topics":{
         "root":{"id":"root","title":"中心","children":["source","child"],"collapsed":false,"side":"right",
-          "metadata":{"task":{"priority":2}},"style":{"width":240,"fill":"#112233"}},
+          "metadata":{"task":{"priority":2}},"style":{"width":240,"scale":1.5,"fill":"#112233"}},
         "source":{"id":"source","title":"范围","children":[],"collapsed":false,"side":"right"},
         "child":{"id":"child","title":"分支","children":[],"collapsed":false,"side":"left",
           "notes":"# Markdown\n正文","attachments":["asset"]}
@@ -101,6 +101,10 @@ fn xmind_extension_roundtrip_keeps_resources_width_summary_and_priority() {
   assert_eq!(
     imported["sheets"][0]["document"]["topics"]["root"]["style"]["width"],
     240
+  );
+  assert_eq!(
+    imported["sheets"][0]["document"]["topics"]["root"]["style"]["scale"],
+    1.5
   );
   assert_eq!(
     imported["sheets"][0]["document"]["topics"]["root"]["metadata"]["task"]["priority"],

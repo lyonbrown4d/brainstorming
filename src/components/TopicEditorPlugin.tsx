@@ -10,6 +10,8 @@ import {
   BLUR_COMMAND,
   CLEAR_HISTORY_COMMAND,
   COMMAND_PRIORITY_HIGH,
+  COMPOSITION_END_COMMAND,
+  FOCUS_COMMAND,
   KEY_DOWN_COMMAND,
   SKIP_DOM_SELECTION_TAG,
 } from 'lexical'
@@ -35,6 +37,8 @@ export const TopicEditorPlugin = ({
 }) => {
   const [editor] = useLexicalComposerContext()
   const nativeActivation = useRef(false)
+  const lastCommittedText = useRef<string | null>(null)
+  const pendingBlur = useRef(false)
   const playing = usePresentation((state) => state.playing)
   useEffect(() => {
     editor.setEditable(!playing)
@@ -56,7 +60,10 @@ export const TopicEditorPlugin = ({
   }, [active, editor, surface])
   useEffect(() => {
     if (active || editor.isComposing()) return
-    if (editor.read('latest', () => $getRoot().getTextContent()) !== title) {
+    const currentText = editor.read('latest', () => $getRoot().getTextContent())
+    if (currentText === title) lastCommittedText.current = null
+    if (currentText === lastCommittedText.current && currentText !== title) return
+    if (currentText !== title) {
       const focused = editor.getRootElement()?.contains(window.document.activeElement)
       editor.update(
         () => {
@@ -80,6 +87,7 @@ export const TopicEditorPlugin = ({
     const commit = (): void => {
       if (!ownsDraft() || editor.isComposing()) return
       const text = editor.read('latest', () => $getRoot().getTextContent())
+      lastCommittedText.current = text
       useEditor.getState().setDraft(text)
       useEditor.getState().commitDraft()
     }
@@ -92,16 +100,47 @@ export const TopicEditorPlugin = ({
         const committed = surface === 'notes' ? (topic?.notes ?? '') : topic?.title
         if (!ownsDraft() && text === committed) return
         if (!ownsDraft()) {
+          // A selection update after confirmation can precede the native command ack.
+          // Only changed text represents a new edit while the title stays focused.
+          if (text === lastCommittedText.current) return
+          lastCommittedText.current = null
           // The browser/Lexical already placed the caret (or owns an IME range).
           nativeActivation.current = true
           state.startEdit(id, text, surface, 'end')
         } else state.setDraft(text)
-        if (!editor.getRootElement()?.contains(window.document.activeElement)) commit()
+        if (!editor.getRootElement()?.contains(window.document.activeElement)) {
+          if (editor.isComposing()) pendingBlur.current = true
+          else {
+            pendingBlur.current = false
+            commit()
+          }
+        }
       }),
+      editor.registerCommand(
+        COMPOSITION_END_COMMAND,
+        () => {
+          queueMicrotask(() => {
+            if (!pendingBlur.current || editor.isComposing()) return
+            pendingBlur.current = false
+            commit()
+          })
+          return false
+        },
+        COMMAND_PRIORITY_HIGH,
+      ),
+      editor.registerCommand(
+        FOCUS_COMMAND,
+        () => {
+          pendingBlur.current = false
+          return false
+        },
+        COMMAND_PRIORITY_HIGH,
+      ),
       editor.registerCommand(
         BLUR_COMMAND,
         () => {
-          commit()
+          if (editor.isComposing()) pendingBlur.current = true
+          else commit()
           return false
         },
         COMMAND_PRIORITY_HIGH,
@@ -168,11 +207,17 @@ export const TopicEditorPlugin = ({
           }
           if (event.key === 'Escape') {
             event.preventDefault()
+            event.stopPropagation()
             if (ownsDraft()) state.cancelEdit()
             else if (mapSurface) handleTopicNavigation(event, id)
             return true
           }
           if (surface === 'notes') return false
+          if (mapSurface && event.repeat && (event.key === 'Enter' || event.key === 'Tab')) {
+            event.preventDefault()
+            event.stopPropagation()
+            return true
+          }
           if (
             surface === 'outline' &&
             event.key === 'Tab' &&
@@ -199,13 +244,15 @@ export const TopicEditorPlugin = ({
           if (event.key === 'Enter' || event.key === 'Tab') {
             if (surface === 'inspector' && event.key === 'Tab') return false
             event.preventDefault()
+            event.stopPropagation()
             commit()
             if (useEditor.getState().editingId) return true
             if (!mapSurface && event.key === 'Enter') {
               editor.getRootElement()?.blur()
               return true
             }
-            state.add(event.key === 'Tab' ? 'child' : 'sibling')
+            if (event.key === 'Enter') return true
+            state.add('child')
             if (surface === 'outline') {
               const next = useEditor.getState().editingId
               if (next) state.startEdit(next, undefined, 'outline')

@@ -1,5 +1,6 @@
 import { TopicAppearancePicker } from '@renderer/components/TopicAppearancePicker'
 import { TopicWidthControl } from '@renderer/components/TopicWidthControl'
+import { TopicScaleControl } from '@renderer/components/TopicScaleControl'
 import { useAppearanceColors } from '@renderer/hooks/useAppearanceColors'
 import { useMessages } from '@renderer/i18n/useMessages'
 import {
@@ -183,6 +184,7 @@ export const TopicFormatting = ({
       </section>
       <section className="format-group border-t border-border/60 py-3 first:border-0 [&_h3]:mb-2 [&_h3]:text-xs [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-3">
         <TopicWidthControl topic={topic} isRoot={topic.id === document.rootId} />
+        <TopicScaleControl topic={topic} />
       </section>
       <section className="format-group border-t border-border/60 py-3 first:border-0 [&_h3]:mb-2 [&_h3]:text-xs [&_h3]:font-medium [&_h3]:text-secondary-foreground [&_h3:not(:first-child)]:mt-3">
         <h3>{translate('text')}</h3>

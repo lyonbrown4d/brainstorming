@@ -81,6 +81,7 @@ pub(crate) fn topic(topic: &Value) -> Result<()> {
         "color",
         "fontSize",
         "width",
+        "scale",
         "bold",
         "italic",
         "shape",
@@ -99,6 +100,7 @@ pub(crate) fn topic(topic: &Value) -> Result<()> {
     }
     optional(style, "fontSize", |v| number(v, 12., 32.))?;
     optional(style, "width", |v| number(v, 80., 1200.))?;
+    optional(style, "scale", |v| number(v, 0.5, 3.))?;
     optional(style, "lineWidth", |v| number(v, 1., 6.))?;
     optional(style, "shape", |v| {
       choice(v, super::topic_shapes::TOPIC_SHAPES)

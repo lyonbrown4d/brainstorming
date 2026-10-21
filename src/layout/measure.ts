@@ -107,7 +107,10 @@ export const measureTopic = (
   const insets = topicShapeInsets(shape)
   const width = content?.style?.width ?? Math.ceil(size.width / (1 - insets.x * 2))
   const height = Math.ceil(size.height / (1 - insets.y * 2))
-  return shape === 'circle'
-    ? { width: Math.max(width, height), height: Math.max(width, height) }
-    : { width, height }
+  const base =
+    shape === 'circle'
+      ? { width: Math.max(width, height), height: Math.max(width, height) }
+      : { width, height }
+  const scale = content?.style?.scale ?? 1
+  return { width: base.width * scale, height: base.height * scale }
 }

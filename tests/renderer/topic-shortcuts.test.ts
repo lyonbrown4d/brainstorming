@@ -47,6 +47,22 @@ afterEach(() => {
 })
 
 describe('Xmind-style topic shortcut states', () => {
+  it('consumes held Enter and Tab without adding topics', () => {
+    useEditor.getState().select('vision-1')
+    const before = useEditor.getState().history
+    const preventEnter = vi.fn()
+    const preventTab = vi.fn()
+    const heldEnter = key('Enter', { repeat: true, preventDefault: preventEnter })
+    const heldTab = key('Tab', { repeat: true, preventDefault: preventTab })
+    expect(handleTopicNavigation(heldEnter)).toBe(true)
+    expect(handleTopicNavigation(heldTab)).toBe(true)
+    expect(preventEnter).toHaveBeenCalled()
+    expect(preventTab).toHaveBeenCalled()
+    expect(useEditor.getState().history).toBe(before)
+    expect(handleTopicNavigation(key('Enter'))).toBe(true)
+    expect(useEditor.getState().history.document.topics.vision?.children).toHaveLength(3)
+  })
+
   it('inserts a sibling before the selection with Shift+Enter and preserves its parent', () => {
     useEditor.getState().select('vision-1')
     const before = useEditor.getState().history.document
