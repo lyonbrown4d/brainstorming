@@ -75,7 +75,6 @@ export const useSpatialCameraGesture = (
     )
     const { view: first, initial } = start
     const { distance, target } = initial
-    const baseTarget = target
     controlsRef.current = controls
     setSpatialSceneDistanceLimits(controls, sceneRef.current)
     controls.enabled = activeRef.current
@@ -205,7 +204,7 @@ export const useSpatialCameraGesture = (
       const next = externalSpatialCameraFrame(
         currentView,
         currentDistance,
-        baseTarget,
+        target,
         getSpatialView(workbookId, sheetId),
       )
       if (next) apply(next.view, next.distance, !reducedMotion)
@@ -259,6 +258,9 @@ export const useSpatialCameraGesture = (
       size,
       distance: () => currentDistance,
       ready: () => !session,
+      finishSession: () => {
+        finish(true)
+      },
       transition: !reducedMotion,
       onCommand: () => {
         preservePreview = true
@@ -283,7 +285,7 @@ export const useSpatialCameraGesture = (
     return () => {
       finish(false)
       saveSpatialNavigationSession(workbookId, sheetId, {
-        target: currentView.target ?? baseTarget,
+        target: currentView.target ?? target,
         distance: currentDistance,
         viewport: lastViewport,
       })

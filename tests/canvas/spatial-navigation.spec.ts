@@ -1,4 +1,4 @@
-import { cameraScale } from '@tests/canvas/spatial-test-geometry'
+import { cameraScale, exposedTopicPoint } from '@tests/canvas/spatial-test-geometry'
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
 const story = '/iframe.html?id=brainstorming-空间视图--interactive&viewMode=story'
@@ -189,7 +189,8 @@ test('native 3D fit preserves the chosen angle and leaves topics editable', asyn
   await page.getByRole('button', { name: '视角', exact: true }).click()
   await expect(page.getByRole('slider').first()).toHaveAttribute('aria-valuenow', '90')
   await page.keyboard.press('Escape')
-  await topic(page, 'branch-a').click()
+  const point = await exposedTopicPoint(topic(page, 'branch-a'))
+  await page.mouse.click(point.x, point.y)
   await page.keyboard.press('F2')
   const editor = page.getByRole('textbox', { name: '编辑主题标题', exact: true })
   await expect(editor).toBeFocused()

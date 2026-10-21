@@ -29,6 +29,7 @@ interface Environment {
   readonly size: () => CameraSize
   readonly distance: () => number
   readonly ready: () => boolean
+  readonly finishSession: () => void
   readonly transition: boolean
   readonly onCommand: () => void
   readonly onView: () => void
@@ -51,18 +52,26 @@ export const bindSpatialCameraEnvironment = (input: Environment): (() => void) =
       input.cancelSession()
   }
   const unsubscribe = [
-    subscribeSpatialCameraCommands(input.workbookId, input.sheetId, input.ready, (command) => {
-      setSpatialSceneDistanceLimits(input.controls, input.scene())
-      const accepted = runSpatialCameraCommand(
-        input.controls,
-        command,
-        input.scene(),
-        input.size(),
-        input.transition,
-      )
-      if (accepted) input.onCommand()
-      return accepted
-    }),
+    subscribeSpatialCameraCommands(
+      input.workbookId,
+      input.sheetId,
+      () => {
+        if (input.session()?.pointerId === null) input.finishSession()
+        return input.ready()
+      },
+      (command) => {
+        setSpatialSceneDistanceLimits(input.controls, input.scene())
+        const accepted = runSpatialCameraCommand(
+          input.controls,
+          command,
+          input.scene(),
+          input.size(),
+          input.transition,
+        )
+        if (accepted) input.onCommand()
+        return accepted
+      },
+    ),
     useSpatialView.subscribe(input.onView),
     useEditor.subscribe((state) => {
       validate()

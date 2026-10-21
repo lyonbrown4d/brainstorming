@@ -1,4 +1,4 @@
-import { cameraScale } from '@tests/canvas/spatial-test-geometry'
+import { cameraScale, exposedTopicPoint } from '@tests/canvas/spatial-test-geometry'
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
 const story = '/iframe.html?id=brainstorming-空间视图--interactive&viewMode=story'
@@ -14,16 +14,6 @@ const emptyPanePoint = async (page: Page): Promise<{ x: number; y: number }> =>
         if (document.elementFromPoint(point.x, point.y) === pane) return point
       }
     throw new Error('No exposed empty pane point for camera orbit')
-  })
-const exposedTopicPoint = async (locator: Locator): Promise<{ x: number; y: number }> =>
-  locator.evaluate((node) => {
-    const rect = node.getBoundingClientRect()
-    for (const y of [3, 8, 16, rect.height * 0.4])
-      for (const x of [rect.width * 0.5, rect.width * 0.25, rect.width * 0.75]) {
-        const point = { x: rect.left + x, y: rect.top + y }
-        if (node.contains(document.elementFromPoint(point.x, point.y))) return point
-      }
-    throw new Error('No exposed topic point in the side view')
   })
 const box = async (locator: Locator) => {
   const value = await locator.boundingBox()
