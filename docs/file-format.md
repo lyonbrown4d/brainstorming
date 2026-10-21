@@ -80,9 +80,9 @@ XMind 不是本机存储格式。导入器识别 ZIP 内现代 `content.json` �
 
 主题整体比例存于可选 `style.scale`，为 0.5–3 之间的有限数，缺省为 1。文字、图标、图片与形态按此比例统一缩放，原有字号、图标大小与手动宽度不改写；布局尺寸和连线边界采用缩放后的值。该字段复用主题样式 JSON，随 SQLite、版本化 JSON、分支剪贴板和 Brainstorming 的 XMind 扩展保存，不增加数据库迁移或文件协议版本。第三方 XMind 不保证呈现此扩展比例。
 
-主题的可选 `style.spatialDepth` 保存 3D 深度增量，必须为 −1000–1000 内的有限数，缺省为 0。当前主题及其后代继承该增量；游离主题从独立根开始。该字段不改变 2D 布局、节点尺寸或测量结果。它复用主题样式 JSON，随 SQLite、版本化 JSON、分支剪贴板和 Brainstorming 的 XMind 扩展保存。
+主题的可选 `style.spatialDepth` 保存 3D 深度增量，必须为 −1,000,000–1,000,000 内的有限数，缺省为 0。当前主题及其后代继承该增量；游离主题从独立根开始。该字段不改变 2D 布局、节点尺寸或测量结果。它复用主题样式 JSON，随 SQLite、版本化 JSON、分支剪贴板和 Brainstorming 的 XMind 扩展保存。
 
-Sheet 的可选 `settings.spatial` 保存空间视图配置。存在时必须同时包含 `mode`、`yaw`、`pitch`、`spacing`：`mode` 为 `2d` 或 `3d`；`yaw` 为 −1.2–1.2、`pitch` 为 −0.9–0.9、`spacing` 为 0–200，三个数值均须有限。缺省按 2D 视图打开。视图模式、视角和层距通过 `setDocumentSettings` 进入文档历史；拖动中的预览不写入文件。该对象复用 Sheet 设置 JSON，随 SQLite、版本化 JSON 和 Brainstorming 的 XMind 扩展保存，不增加 SQL 迁移，也不修改 JSON 或文件协议版本。第三方 XMind 不保证呈现这些扩展值。
+Sheet 的可选 `settings.spatial` 保存空间视图配置。存在时必须同时包含 `mode`、`yaw`、`pitch`、`spacing`：`mode` 为 `2d` 或 `3d`；`yaw` 为 −π–π、`pitch` 为 −π/2–π/2、`spacing` 为 0–200，三个数值均须有限。可选 `target` 须同时包含 `x`、`y`、`z`，各分量为 −1,000,000–1,000,000 内的有限数；缺省为原点。画布坐标的 `x` 向右、`y` 向下、`z` 朝向观察者。缺省按 2D 视图打开。视图模式、视角、相机目标和层距通过 `setDocumentSettings` 进入文档历史；拖动中的预览不写入文件。该对象复用 Sheet 设置 JSON，随 SQLite、版本化 JSON 和 Brainstorming 的 XMind 扩展保存，不增加 SQL 迁移，也不修改 JSON 或文件协议版本。第三方 XMind 不保证呈现这些扩展值。
 
 概要分组可包含 `summaryTopicId`，引用与源范围同级的真实主题，主题及后代仍使用普通主题树。源范围由有序 `topicIds` 表示；显式创建和调整范围时检查连续、同父、同侧。文件校验拒绝中心主题、重复关联和祖先自包含引用；结构移动可能解除不再安全的关联，原主题内容保留。删除源范围、概要或概要主题时清理关联，复制粘贴重映射 ID；旧的纯文字概要仍可显示。字段复用有序注解 JSON，不添加独立的概要子主题表。
 
@@ -90,6 +90,6 @@ Sheet 的可选 `settings.spatial` 保存空间视图配置。存在时必须同
 
 关联线保存在 `annotations` 的 `relations` 类别中。`routing` 支持 `straight`、`curve`、`orthogonal`；可选的 `sourceAnchor` / `targetAnchor` 保存端点方向，`controlPoints` 保存两个曲线控制点，`waypoints` 保存 1–32 个折线路径点，`labelOffset` 保存标签偏移。几何坐标必须为 ±1,000,000 内有限数。画布、图形导出与原生读写使用同一组持久化字段，不保存拖动中的临时位置。
 
-每个 Sheet 的 `drawings` 存入 `annotations` 的 `drawings` 类别；每笔保存 ID、颜色、粗细和坐标 / 压力点。可选 `transform` 保存平移 `x/y` 与正数缩放 `scaleX/scaleY`，保留原始采样和压力；缩放限制为 0.001–1000，平移为 ±10^10，变换后每个采样点仍须落在 ±1,000,000 内。读取与写入均校验最多 2,000 笔、每笔 8,192 点和合计 262,144 点，坐标为 ±1,000,000 内有限数，压力为 0–1，宽度为 1–24。游离想法仍使用主题树及 `floatingPositions`，不转成笔迹。主题的 `style.offsetX/offsetY` 保存自动布局后的子树平移量，单轴限制 ±1,000,000；游离根不继承中心主题偏移。笔迹变换复用有序注解 JSON，主题偏移复用现有样式 JSON，不修改已发布迁移。
+每个 Sheet 的 `drawings` 存入 `annotations` 的 `drawings` 类别；每笔保存 ID、颜色、粗细和坐标 / 压力点。可选 `spatialDepth` 保存笔迹的空间深度，范围为 −1,000,000–1,000,000，缺省为 0。可选 `transform` 保存平移 `x/y` 与正数缩放 `scaleX/scaleY`，保留原始采样和压力；缩放限制为 0.001–1000，平移为 ±10^10，变换后每个采样点仍须落在 ±1,000,000 内。读取与写入均校验最多 2,000 笔、每笔 8,192 点和合计 262,144 点，坐标为 ±1,000,000 内有限数，压力为 0–1，宽度为 1–24。游离想法仍使用主题树及 `floatingPositions`，不转成笔迹。主题的 `style.offsetX/offsetY` 保存自动布局后的子树平移量，单轴限制 ±1,000,000；游离根不继承中心主题偏移。笔迹变换复用有序注解 JSON，主题偏移复用现有样式 JSON，不修改已发布迁移。
 
 演示的 `presentation` 有序数组保存主题 ID 与可选的 `layout`、`hidden`、`notes`、`reveal`；未保存编排时临时生成页面。播放页索引、逐项进度、计时、全屏和演讲者状态只留会话。旧 `presentation.camera` 字段可被读取，但不控制 3D 导图视角；导图视角由 `settings.spatial` 保存。

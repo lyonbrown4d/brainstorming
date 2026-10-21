@@ -1,7 +1,9 @@
+import { getSpatialView, useSpatialView, type SpatialView } from '@renderer/state/spatialView'
+import { projectedInkBounds, resizeSpatialInk } from '@renderer/lib/spatialInk'
 import { useCallback, useEffect, useRef } from 'react'
 import { useReactFlow, type NodeResizerProps } from '@xyflow/react'
 import type { CanvasStroke, MindMapDocument } from '@core'
-import { inkGeometry, transformInk, type InkBounds } from '@shared/ink-geometry'
+import { transformInk, type InkBounds } from '@shared/ink-geometry'
 import { useEditor } from '@renderer/state/editor'
 import { usePresentation } from '@renderer/state/presentation'
 import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
@@ -11,6 +13,8 @@ interface ResizeSession {
   bounds: InkBounds
   document: MindMapDocument
   sheetId: string
+  view: SpatialView
+  workbookId: string
 }
 
 /** React Flow owns resize preview. One pointer release produces one ordinary document command. */
@@ -51,11 +55,16 @@ export const useInkResize = (
       const active = session.current
       if (
         active &&
-        (state.activeSheetId !== active.sheetId ||
+        (state.workbook.id !== active.workbookId ||
+          state.activeSheetId !== active.sheetId ||
           state.history.document !== active.document ||
           state.busy)
       )
         cancel()
+    })
+    const stopView = useSpatialView.subscribe(() => {
+      const active = session.current
+      if (active && getSpatialView(active.workbookId, active.sheetId) !== active.view) cancel()
     })
     const stopPlaying = usePresentation.subscribe((state) => {
       if (state.playing) cancel()
@@ -68,6 +77,7 @@ export const useInkResize = (
       session.current = null
       unsubscribe()
       stopPlaying()
+      stopView()
       window.removeEventListener('keydown', key, true)
       window.removeEventListener('blur', cancel)
       window.removeEventListener('pointercancel', cancel)
@@ -99,7 +109,12 @@ export const useInkResize = (
       if (current.busy || current.editingId || usePresentation.getState().playing) return
       session.current = {
         stroke,
-        bounds: inkGeometry(stroke).bounds,
+        bounds: projectedInkBounds(
+          stroke,
+          getSpatialView(current.workbook.id, current.activeSheetId),
+        ),
+        view: getSpatialView(current.workbook.id, current.activeSheetId),
+        workbookId: current.workbook.id,
         document: current.history.document,
         sheetId: current.activeSheetId,
       }
@@ -109,10 +124,24 @@ export const useInkResize = (
       session.current = null
       if (!active || cancelled.current) return
       const editor = useEditor.getState()
-      if (editor.activeSheetId !== active.sheetId || editor.history.document !== active.document)
+      if (
+        editor.workbook.id !== active.workbookId ||
+        editor.activeSheetId !== active.sheetId ||
+        editor.history.document !== active.document ||
+        getSpatialView(active.workbookId, active.sheetId) !== active.view
+      )
         return
-      const next = transformInk(active.stroke, active.bounds, bounds)
-      if (!editor.command({ type: 'upsertDrawing', stroke: next })) restore(active.bounds)
+      const next = resizeSpatialInk(active.stroke, bounds, active.view)
+      const rollback = (): void => {
+        const current = useEditor.getState()
+        if (
+          current.workbook.id === active.workbookId &&
+          current.activeSheetId === active.sheetId &&
+          current.history.document === active.document
+        )
+          restore(active.bounds)
+      }
+      if (!editor.command({ type: 'upsertDrawing', stroke: next }, rollback)) rollback()
     },
   }
 }

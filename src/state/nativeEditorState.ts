@@ -15,7 +15,18 @@ const shareDocument = (
       old.topics[id] && isEqual(old.topics[id], topic) ? old.topics[id] : topic,
     ]),
   )
-  const shared = { ...next, topics }
+  const oldDrawings = new Map(old.drawings?.map((stroke) => [stroke.id, stroke]))
+  const mappedDrawings = next.drawings?.map((stroke) => {
+    const prior = oldDrawings.get(stroke.id)
+    return prior && isEqual(prior, stroke) ? prior : stroke
+  })
+  const drawings =
+    mappedDrawings &&
+    old.drawings?.length === mappedDrawings.length &&
+    mappedDrawings.every((stroke, index) => stroke === old.drawings?.[index])
+      ? old.drawings
+      : mappedDrawings
+  const shared = { ...next, topics, ...(drawings === undefined ? {} : { drawings }) }
   return isEqual(old, shared) ? old : shared
 }
 

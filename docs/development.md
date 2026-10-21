@@ -19,7 +19,9 @@ pnpm dev
 
 新增计算命令时，在 `src-tauri/src/platform/compute.rs` 声明 Tauri / Specta 命令，加入 `bindings.rs` 的唯一命令清单，再通过 `src/lib/nativeComputeAPI.ts` 转为业务视图类型。修订号用十进制字符串传输，避免 Rust u64 在 JavaScript 中丢失精度。动态工作簿使用具名 JSON 类型并在原生边界校验，不开启全局大整数强转。计算接口处理会话与派生结果，不改变版本化 JSON 或 SQLite 文件表结构，无需新增 SQL 迁移。
 
-`compute_spatial_layout` 复用原生 2D 布局，并返回主题深度记录。主题深度由层级、`settings.spatial.spacing` 和沿祖先累加的 `style.spatialDepth` 计算；2D 布局与测量忽略这些空间字段。空间计算使用 Moka 缓存和有界工作任务；前端只根据结果、`yaw` 与 `pitch` 做斜视投影。3D 轮廓由 React Three Fiber / Three.js 绘制，主题选中、编辑、中文输入法、关联线和笔迹继续走共享画布交互。画布空白处的 Alt 拖动预览视角，结束后通过 `setDocumentSettings` 保存一次；主题深度通过 `setTopicStyle` 保存。二维、三维的平移与缩放按工作簿、Sheet 和模式保留在会话中，切换 Sheet 后仍分别恢复，不写入文档。原生深度尚未准备完成时保留旧画面并暂停画布编辑，避免把投影坐标写入主题位置。缺省模式为 2D，视图配置和主题深度的文件约束见 [单文件协议](file-format.md#主题表现笔迹与演示页面)。
+正式画布向 `compute_layout` / `compute_spatial_layout` 发送空 `measurements`，由 Rust 在有界工作线程内估算全图尺寸；只在布局缓存未命中时执行。显式传入的尺寸仍用于预览和确定性几何比较；Storybook 保留 TypeScript 参考量测。前端缓存几何输入的身份，原生快照合并复用未变笔迹及其数组，避免重复运行 perfect-freehand；文本对比色使用有容量上限的 LRU Cache。
+
+`compute_spatial_layout` 复用原生 2D 布局，并返回主题深度记录。主题深度由层级、`settings.spatial.spacing` 和沿祖先累加的 `style.spatialDepth` 计算；2D 布局与测量忽略这些空间字段。空间计算使用 Moka 缓存和有界工作任务；前端根据结果、`yaw`、`pitch` 与可选 `target` 做正交轨道相机投影。主题与笔迹面向相机，笔迹深度使用可选 `drawings[].spatialDepth`。3D 实体由 React Three Fiber / Three.js 绘制，卡片正面朝向相机，背面沿世界 Z 轴偏移，保持可见侧面；Drei Grid 提供世界底板，深度参照线按可见主题合并成一次 LineSegments 绘制，并限制为 128 条。主题选中、编辑、中文输入法、关联线和笔迹继续走共享画布交互。画布空白处的 Alt 拖动预览视角，结束后通过 `setDocumentSettings` 保存一次；主题深度通过 `setTopicStyle` 保存。二维、三维的平移与缩放按工作簿、Sheet 和模式保留在会话中，切换 Sheet 后仍分别恢复，不写入文档。原生深度尚未准备完成时保留旧画面并暂停画布编辑，避免把投影坐标写入主题位置。首次进入三维时先绘制统一加载蒙版，按需加载空间渲染与方向控件；原生布局、空间首帧和方向控件首帧均就绪后再开放编辑。WebGL 不可用时解除蒙版并保留共享编辑层。相机变化复用已缓存的原生布局，几何体直接通过 Three.js Shape 构建，避免逐节点解析 SVG。缺省模式为 2D，视图配置和主题深度的文件约束见 [单文件协议](file-format.md#主题表现笔迹与演示页面)。
 
 ## 常用命令
 

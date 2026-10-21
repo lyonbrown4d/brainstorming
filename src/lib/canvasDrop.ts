@@ -129,7 +129,7 @@ export const canvasDropCommand = (
   document: MindMapDocument,
   roots: readonly string[],
   origins: ReadonlyMap<string, Point>,
-  delta: Point,
+  delta: Point & { z?: number },
   drop: CanvasDrop | undefined,
 ): Command | undefined => {
   if (drop) {
@@ -150,7 +150,7 @@ export const canvasDropCommand = (
     }
     return resetOffsets.length ? { type: 'batch', commands: [move, ...resetOffsets] } : move
   }
-  if (!delta.x && !delta.y) return undefined
+  if (!delta.x && !delta.y && !delta.z) return undefined
   const commands: Command[] = roots.flatMap<Command>((topicId) => {
     const position = origins.get(topicId)
     return document.floatingIds?.includes(topicId) && position
@@ -165,6 +165,18 @@ export const canvasDropCommand = (
               (document.floatingPositions?.[topicId]?.y ??
                 position.y - (document.topics[topicId]?.style?.offsetY ?? 0)) + delta.y,
           },
+          ...(delta.z
+            ? [
+                {
+                  type: 'setTopicStyle' as const,
+                  topicId,
+                  style: {
+                    ...document.topics[topicId]?.style,
+                    spatialDepth: (document.topics[topicId]?.style?.spatialDepth ?? 0) + delta.z,
+                  },
+                },
+              ]
+            : []),
         ]
       : position
         ? [
@@ -175,6 +187,9 @@ export const canvasDropCommand = (
                 ...document.topics[topicId]?.style,
                 offsetX: (document.topics[topicId]?.style?.offsetX ?? 0) + delta.x,
                 offsetY: (document.topics[topicId]?.style?.offsetY ?? 0) + delta.y,
+                ...(delta.z
+                  ? { spatialDepth: (document.topics[topicId]?.style?.spatialDepth ?? 0) + delta.z }
+                  : {}),
               },
             },
           ]

@@ -42,7 +42,7 @@ export const validateTopicStyle: (value: unknown) => asserts value is TopicStyle
         valid = typeof entry === 'number' && Number.isFinite(entry) && Math.abs(entry) <= 1_000_000
         break
       case 'spatialDepth':
-        valid = typeof entry === 'number' && Number.isFinite(entry) && Math.abs(entry) <= 1_000
+        valid = typeof entry === 'number' && Number.isFinite(entry) && Math.abs(entry) <= 1_000_000
         break
       case 'fontSize':
         valid = typeof entry === 'number' && Number.isFinite(entry) && entry >= 12 && entry <= 32

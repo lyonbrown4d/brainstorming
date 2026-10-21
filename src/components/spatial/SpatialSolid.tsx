@@ -1,28 +1,10 @@
 /* eslint react/no-unknown-property: "off" -- React Three Fiber uses Three.js JSX properties. */
 import { memo, useEffect, useMemo } from 'react'
-import { ExtrudeGeometry, Shape } from 'three'
-import { SVGLoader } from 'three/addons/loaders/SVGLoader.js'
+import { Color, DoubleSide } from 'three'
 import type { TopicShape } from '@core'
-import { topicShapePath } from '@shared/topic-shapes'
-
-const makeGeometry = (shape: TopicShape, width: number, height: number, depth: number) => {
-  let shapes: Shape[]
-  if (shape === 'ellipse' || shape === 'circle') {
-    const ellipse = new Shape()
-    ellipse.absellipse(width / 2, height / 2, width / 2, height / 2, 0, Math.PI * 2, false, 0)
-    shapes = [ellipse]
-  } else {
-    const source = `<svg xmlns="http://www.w3.org/2000/svg"><path d="${topicShapePath(shape, width, height)}"/></svg>`
-    shapes = new SVGLoader().parse(source).paths.flatMap((path) => path.toShapes())
-  }
-  const geometry = new ExtrudeGeometry(shapes, {
-    depth,
-    bevelEnabled: false,
-    curveSegments: 10,
-    steps: 1,
-  })
-  return geometry
-}
+import { makeSpatialSolidGeometry } from '@renderer/components/spatial/spatialSolidGeometry'
+import { spatialSolidMatrix } from '@renderer/components/spatial/spatialSolidTransform'
+import type { SpatialView } from '@renderer/state/spatialView'
 
 export const SpatialSolid = memo(
   ({
@@ -34,6 +16,7 @@ export const SpatialSolid = memo(
     shape,
     fill,
     scale,
+    view,
   }: {
     x: number
     y: number
@@ -43,10 +26,11 @@ export const SpatialSolid = memo(
     shape: TopicShape
     fill: string
     scale: number
+    view: SpatialView
   }) => {
-    const thickness = 9
+    const thickness = 22
     const geometry = useMemo(
-      () => makeGeometry(shape, width / scale, height / scale, thickness),
+      () => makeSpatialSolidGeometry(shape, width / scale, height / scale, thickness),
       [shape, width, height, scale],
     )
     useEffect(
@@ -55,9 +39,20 @@ export const SpatialSolid = memo(
       },
       [geometry],
     )
+    const matrix = useMemo(
+      () => spatialSolidMatrix(view, { x, y, z, scale, thickness }),
+      [view, x, y, z, scale],
+    )
+    const sideFill = useMemo(() => new Color(fill).multiplyScalar(0.64), [fill])
     return (
-      <mesh geometry={geometry} position={[x, -y, z - thickness]} scale={[scale, -scale, 1]}>
-        <meshStandardMaterial color={fill} roughness={0.85} metalness={0} />
+      <mesh geometry={geometry} matrix={matrix} matrixAutoUpdate={false}>
+        <meshStandardMaterial attach="material-0" color={fill} roughness={0.85} side={DoubleSide} />
+        <meshStandardMaterial
+          attach="material-1"
+          color={sideFill}
+          roughness={0.95}
+          side={DoubleSide}
+        />
       </mesh>
     )
   },

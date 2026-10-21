@@ -147,10 +147,16 @@ export const validateDocumentSettings: (value: unknown) => asserts value is Docu
     v.number(entry, 1, 6)
   })
   v.optional(settings, 'spatial', (entry) => {
-    const spatial = v.record(entry, ['mode', 'yaw', 'pitch', 'spacing'])
+    const spatial = v.record(entry, ['mode', 'yaw', 'pitch', 'spacing', 'target'])
     v.oneOf(spatial.mode, ['2d', '3d'])
-    v.number(spatial.yaw, -1.2, 1.2)
-    v.number(spatial.pitch, -0.9, 0.9)
+    v.number(spatial.yaw, -Math.PI, Math.PI)
+    v.number(spatial.pitch, -Math.PI / 2, Math.PI / 2)
     v.number(spatial.spacing, 0, 200)
+    v.optional(spatial, 'target', (entry) => {
+      const target = v.record(entry, ['x', 'y', 'z'])
+      v.number(target.x, -1_000_000, 1_000_000)
+      v.number(target.y, -1_000_000, 1_000_000)
+      v.number(target.z, -1_000_000, 1_000_000)
+    })
   })
 }

@@ -1,3 +1,5 @@
+import type { MindMapLayout } from '@layout'
+import { spatialCameraDelta } from '@renderer/lib/spatialCamera'
 import { useEffect, useRef, useState } from 'react'
 import { useNodesState, useReactFlow, type OnNodeDrag } from '@xyflow/react'
 import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
@@ -35,6 +37,7 @@ export const useCanvasDrag = (
   canvasId: string,
   spatialDepths?: SpatialDepths,
   interactionReady = true,
+  nativeLayout?: MindMapLayout,
 ) => {
   const workbookId = useEditor((state) => state.workbook.id)
   const scopeId = JSON.stringify([workbookId, canvasId])
@@ -151,12 +154,13 @@ export const useCanvasDrag = (
       ...moving.filter((node) => node.type === 'ink').map((node) => node.id),
     ])
     const view = getSpatialView(current.workbook.id, current.activeSheetId)
-    if (view.mode === '3d' && !spatialDepths) return
+    if (view.mode === '3d' && (!spatialDepths || !nativeLayout)) return
     const { origins, nativeOrigins } = captureSpatialOrigins(
       document,
       view,
       getNodes(),
       spatialDepths,
+      nativeLayout,
     )
     session.current = {
       token: beginCanvasDrag(document, current.activeSheetId, roots, ids.drawings.length),
@@ -235,10 +239,10 @@ export const useCanvasDrag = (
         active.roots,
         active.drawings,
         active.nativeOrigins,
-        {
+        spatialCameraDelta(active.view, {
           x: anchor.position.x - origin.x,
           y: anchor.position.y - origin.y,
-        },
+        }),
         drop,
       )
       if (command) {

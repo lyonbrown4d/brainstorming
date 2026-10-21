@@ -12,7 +12,9 @@ import { SpatialRenderingLayer } from '@renderer/components/spatial/SpatialRende
 import { getSpatialViewport, setSpatialViewport } from '@renderer/state/spatialViewports'
 import { useActiveSpatialView } from '@renderer/hooks/useActiveSpatialView'
 import { useSpatialViewportRestore } from '@renderer/hooks/useSpatialViewportRestore'
-import { useSpatialCameraGesture } from '@renderer/hooks/useSpatialCameraGesture'
+import { SpatialNavigationLayer } from '@renderer/components/spatial/SpatialNavigationLayer'
+import { useSpatialReadiness } from '@renderer/hooks/useSpatialReadiness'
+import { CanvasLoading } from '@renderer/components/workbench/CanvasLoading'
 import { SpatialCanvasControls } from '@renderer/components/spatial/SpatialCanvasControls'
 import { motion, useReducedMotion } from 'motion/react'
 import { ConnectionMode, ReactFlow, useReactFlow } from '@xyflow/react'
@@ -56,7 +58,7 @@ export const Canvas = () => {
 
   const colors = useAppearanceColors()
   const { view, workbookId } = useActiveSpatialView()
-  useSpatialCameraGesture()
+  const { ready: spatialReady, onSceneReady, onWidgetReady } = useSpatialReadiness(view.mode)
   const flow = useReactFlow<CanvasFlowNode>()
   useCanvasViewport()
   const reduceMotion = useReducedMotion()
@@ -69,12 +71,13 @@ export const Canvas = () => {
   const {
     projection: readyProjection,
     depths,
-    interactionReady,
-    loading,
+    interactionReady: layoutReady,
+    nativeLayout,
     error,
     retry,
   } = useCanvasProjection(document, activeSheetId, colors.canvas)
-  useSpatialViewportRestore(interactionReady)
+  const viewportReady = useSpatialViewportRestore(layoutReady)
+  const interactionReady = layoutReady && viewportReady && spatialReady
   const projection = readyProjection ?? emptyProjection
   const fitted = useRef(false)
   useEffect(() => {
@@ -93,6 +96,7 @@ export const Canvas = () => {
     `${activeSheetId}:${document.id}`,
     depths ?? undefined,
     interactionReady,
+    nativeLayout,
   )
   useEffect(() => {
     if (interactionReady) return
@@ -111,7 +115,7 @@ export const Canvas = () => {
   return (
     <CanvasContextMenu>
       <motion.section
-        className="canvas relative min-w-0 flex-1 [container-name:mindmap] [container-type:inline-size]"
+        className={`canvas relative min-w-0 flex-1 [container-name:mindmap] [container-type:inline-size] ${view.mode === '3d' ? '[&_.react-flow__node-topic:has(.is-editing)]:!z-[1000]' : ''}`}
         style={{
           backgroundColor: documentAppearance(document, colors.canvas).background,
           fontFamily: documentAppearance(document).fontFamily,
@@ -125,8 +129,13 @@ export const Canvas = () => {
         animate={{ opacity: 1 }}
         transition={{ duration: reduceMotion ? 0 : 0.12 }}
       >
-        {view.mode === '3d' && depths && (
-          <SpatialRenderingLayer nodes={drag.nodes} depths={depths} />
+        {view.mode === '3d' && depths && nativeLayout && (
+          <SpatialRenderingLayer
+            nodes={drag.nodes}
+            depths={depths}
+            layout={nativeLayout}
+            onReady={onSceneReady}
+          />
         )}
         <ReactFlow<CanvasFlowNode>
           key={document.id}
@@ -220,6 +229,7 @@ export const Canvas = () => {
           nodesDraggable={interactionReady && !playing && inkMode === 'select'}
           elementsSelectable={interactionReady && !playing && inkMode === 'select'}
           selectNodesOnDrag
+          elevateNodesOnSelect={view.mode === '2d'}
           nodeDragThreshold={4}
           selectionOnDrag={false}
           panOnDrag={inkMode === 'select' ? [0, 1] : false}
@@ -229,7 +239,10 @@ export const Canvas = () => {
           zoomActivationKeyCode={['Meta', 'Control']}
           zoomOnDoubleClick={false}
         >
-          {!playing && <SpatialCanvasControls />}
+          {!playing && <SpatialCanvasControls layout={nativeLayout} depths={depths} />}
+          {!playing && view.mode === '3d' && (
+            <SpatialNavigationLayer disabled={!interactionReady} onReady={onWidgetReady} />
+          )}
           <StructureGeometry document={document} decorations={projection.decorations} />
           <CanvasAnnotations document={document} nodes={projection.layoutNodes} />
           <SelectionVisibility />
@@ -237,31 +250,7 @@ export const Canvas = () => {
           {!playing && <CanvasInk />}
           {!playing && <CanvasMinimap />}
         </ReactFlow>
-        {!interactionReady && (
-          <div className="absolute inset-0 z-20 grid place-items-center bg-background/15">
-            {error ? (
-              <div
-                className="pointer-events-auto flex items-center gap-3 rounded-lg border bg-background px-4 py-3 text-sm shadow-sm"
-                role="alert"
-              >
-                <span>{translate('operationFailedPleaseRetry')}</span>
-                <button
-                  type="button"
-                  className="text-primary underline"
-                  onClick={() => {
-                    void retry()
-                  }}
-                >
-                  {translate('retry')}
-                </button>
-              </div>
-            ) : loading ? (
-              <span className="rounded-lg bg-background/90 px-4 py-2 text-sm" role="status">
-                {translate('loading')}
-              </span>
-            ) : null}
-          </div>
-        )}
+        {!interactionReady && <CanvasLoading error={Boolean(error)} retry={retry} />}
         {!playing && (
           <CanvasOverlay>
             <DragFeedback />

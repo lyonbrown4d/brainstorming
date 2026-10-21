@@ -2,11 +2,11 @@ import { expect, it } from 'vitest'
 import { createFixtureDocument, type MindMapDocument } from '@core'
 import type { MindMapLayout } from '@layout'
 import { projectCanvas } from '@renderer/components/documents/projectCanvas'
+import { projectSpatialPoint } from '@renderer/lib/spatialCamera'
 import { canvasMoveCommand } from '@renderer/lib/canvasGesture'
 import {
   captureSpatialOrigins,
   projectSpatialLayout,
-  spatialProjectionSlope,
   spatialTopicOffset,
   spatialTopicOffsets,
 } from '@renderer/lib/spatialProjection'
@@ -36,13 +36,11 @@ const documentWithDepth = (): MindMapDocument => {
 it('uses one inherited depth per topic and centers first-level branches', () => {
   const document = documentWithDepth()
   const offsets = spatialTopicOffsets(document, view)
-  const slope = spatialProjectionSlope(view)
   expect(offsets.get('root')?.z).toBe(20)
   expect(offsets.get('topic-1')?.z).toBe(30)
   expect(offsets.get('topic-5')?.z).toBe(130)
   expect(offsets.get('topic-2')?.z).toBe(85)
-  expect(offsets.get('topic-5')?.x).toBeCloseTo(130 * slope.x)
-  expect(offsets.get('topic-5')?.y).toBeCloseTo(130 * slope.y)
+  expect(offsets.get('topic-5')).toEqual({ x: 0, y: 0, z: 130 })
   expect(spatialTopicOffset(document, 'missing', view)).toEqual({ x: 0, y: 0, z: 0 })
 })
 
@@ -106,26 +104,26 @@ it('translates centers, edge waypoints, and decorations without changing sizes o
     ],
   }
   const projected = projectSpatialLayout(document, layout, view)
-  const rootOffset = spatialTopicOffset(document, 'root', view)
-  const branchOffset = spatialTopicOffset(document, 'topic-1', view)
+  const rootDepth = spatialTopicOffset(document, 'root', view).z
+  const branchDepth = spatialTopicOffset(document, 'topic-1', view).z
+  const branchCenter = projectSpatialPoint({ x: 350, y: 125, z: branchDepth }, view)
   expect(projected.nodes[1]).toMatchObject({
-    x: 300 + branchOffset.x,
-    y: 100 + branchOffset.y,
+    x: branchCenter.x - 50,
+    y: branchCenter.y - 25,
     width: 100,
     height: 50,
   })
-  expect(projected.edges[0]?.waypoints?.[0]).toEqual({
-    x: 100 + rootOffset.x,
-    y: 40 + rootOffset.y,
+  const expectedWaypoints = [
+    projectSpatialPoint({ x: 100, y: 40, z: rootDepth }, view),
+    projectSpatialPoint({ x: 200, y: 100, z: (rootDepth + branchDepth) / 2 }, view),
+    projectSpatialPoint({ x: 350, y: 125, z: branchDepth }, view),
+  ]
+  projected.edges[0]?.waypoints?.forEach((point, index) => {
+    expect(point.x).toBeCloseTo(expectedWaypoints[index]?.x ?? Number.NaN)
+    expect(point.y).toBeCloseTo(expectedWaypoints[index]?.y ?? Number.NaN)
   })
-  expect(projected.edges[0]?.waypoints?.[1]?.x).toBeCloseTo(
-    200 + (rootOffset.x + branchOffset.x) / 2,
-  )
-  expect(projected.edges[0]?.waypoints?.[2]).toEqual({
-    x: 350 + branchOffset.x,
-    y: 125 + branchOffset.y,
-  })
-  expect(projected.decorations?.[0]?.x).toBe(300 + branchOffset.x)
+  expect(projected.decorations?.[0]?.x).toBeCloseTo(branchCenter.x - 50)
+  expect(projected.decorations?.[0]?.y).toBeCloseTo(branchCenter.y - 25)
   const nativeInk = projectCanvas(document, undefined, layout).nodes.find(
     (node) => node.type === 'ink',
   )
@@ -143,9 +141,9 @@ it('uses native depth records without traversing the topic tree', () => {
     edges: [],
   }
   const projected = projectSpatialLayout(document, layout, view, { 'topic-1': 300 })
-  const slope = spatialProjectionSlope(view)
-  expect(projected.nodes[0]?.x).toBeCloseTo(300 + 300 * slope.x)
-  expect(projected.nodes[0]?.y).toBeCloseTo(100 + 300 * slope.y)
+  const center = projectSpatialPoint({ x: 350, y: 125, z: 300 }, view)
+  expect(projected.nodes[0]?.x).toBeCloseTo(center.x - 50)
+  expect(projected.nodes[0]?.y).toBeCloseTo(center.y - 25)
   expect(spatialTopicOffset(document, 'topic-1', view, { 'topic-1': 300 }).z).toBe(300)
 })
 
@@ -164,15 +162,26 @@ it('keeps native origins for mixed topic and ink movement', () => {
       },
     ],
   }
-  const offset = spatialTopicOffset(document, 'topic-1', view)
-  const { origins, nativeOrigins } = captureSpatialOrigins(document, view, [
-    { id: 'topic-1', position: { x: 300 + offset.x, y: 100 + offset.y } },
-    { id: 'ink-stroke-1', position: { x: 10, y: 20 } },
-  ])
-  expect(origins.get('topic-1')).toEqual({ x: 300 + offset.x, y: 100 + offset.y })
+  const layout: MindMapLayout = {
+    nodes: [{ id: 'topic-1', x: 300, y: 100, width: 100, height: 50, side: 'right' }],
+    edges: [],
+  }
+  const projected = projectSpatialLayout(document, layout, view)
+  const node = projected.nodes[0]
+  if (!node) throw new Error('missing projected topic')
+  const ink = projectCanvas(document, undefined, layout).nodes.find((item) => item.type === 'ink')
+  if (!ink) throw new Error('missing ink node')
+  const { origins, nativeOrigins } = captureSpatialOrigins(
+    document,
+    view,
+    [{ id: 'topic-1', position: { x: node.x, y: node.y } }, ink],
+    undefined,
+    layout,
+  )
+  expect(origins.get('topic-1')).toEqual({ x: node.x, y: node.y })
   expect(nativeOrigins.get('topic-1')?.x).toBeCloseTo(300)
   expect(nativeOrigins.get('topic-1')?.y).toBeCloseTo(100)
-  expect(nativeOrigins.get('ink-stroke-1')).toEqual({ x: 10, y: 20 })
+  expect(nativeOrigins.get(ink.id)).toEqual(ink.position)
   const command = canvasMoveCommand(document, ['topic-1'], ['stroke-1'], nativeOrigins, {
     x: 40,
     y: -20,
@@ -197,10 +206,20 @@ it('uses a native floating origin for a depth-shifted floating topic', () => {
     floatingIds: ['topic-1'],
     floatingPositions: { 'topic-1': { x: 300, y: 100 } },
   }
-  const offset = spatialTopicOffset(document, 'topic-1', view)
-  const { nativeOrigins } = captureSpatialOrigins(document, view, [
-    { id: 'topic-1', position: { x: 300 + offset.x, y: 100 + offset.y } },
-  ])
+  const layout: MindMapLayout = {
+    nodes: [{ id: 'topic-1', x: 300, y: 100, width: 100, height: 50, side: 'right' }],
+    edges: [],
+  }
+  const projected = projectSpatialLayout(document, layout, view)
+  const node = projected.nodes[0]
+  if (!node) throw new Error('missing projected topic')
+  const { nativeOrigins } = captureSpatialOrigins(
+    document,
+    view,
+    [{ id: 'topic-1', position: { x: node.x, y: node.y } }],
+    undefined,
+    layout,
+  )
   const command = canvasMoveCommand(document, ['topic-1'], [], nativeOrigins, { x: 40, y: -20 })
   expect(command).toMatchObject({
     type: 'batch',
@@ -232,8 +251,8 @@ it('returns the exact native layout in 2D and scopes bounded view state', () => 
   })
   expect(getSpatialView('book-a', 'sheet-a')).toEqual({
     mode: '3d',
-    yaw: 1.2,
-    pitch: -0.9,
+    yaw: Math.PI,
+    pitch: -Math.PI / 2,
     spacing: 200,
   })
   const bounded = getSpatialView('book-a', 'sheet-a')

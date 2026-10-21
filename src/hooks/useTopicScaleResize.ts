@@ -5,6 +5,7 @@ import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
 import type { ScaleSession } from '@renderer/lib/canvasGestureSession'
 import { computeNativeLayout } from '@renderer/lib/nativeLayout'
 import { fetchNativeSpatialLayout } from '@renderer/lib/nativeSpatialLayout'
+import { spatialCameraDelta } from '@renderer/lib/spatialCamera'
 import { projectSpatialLayout } from '@renderer/lib/spatialProjection'
 import { useEditor } from '@renderer/state/editor'
 import { getSpatialView, useSpatialView } from '@renderer/state/spatialView'
@@ -238,8 +239,9 @@ export const useTopicScaleResize = (
             const anchorY = active.corner.startsWith('top') ? bounds.y + bounds.height : bounds.y
             const x = active.corner.includes('left') ? anchorX - next.width : anchorX
             const y = active.corner.startsWith('top') ? anchorY - next.height : anchorY
-            const offsetX = (active.topic.style?.offsetX ?? 0) + x - next.x
-            const offsetY = (active.topic.style?.offsetY ?? 0) + y - next.y
+            const delta = spatialCameraDelta(active.view, { x: x - next.x, y: y - next.y })
+            const offsetX = (active.topic.style?.offsetX ?? 0) + delta.x
+            const offsetY = (active.topic.style?.offsetY ?? 0) + delta.y
             if (
               !Number.isFinite(offsetX) ||
               !Number.isFinite(offsetY) ||
@@ -255,7 +257,15 @@ export const useTopicScaleResize = (
               {
                 type: 'setTopicStyle',
                 topicId: id,
-                style: { ...active.topic.style, scale, offsetX, offsetY },
+                style: {
+                  ...active.topic.style,
+                  scale,
+                  offsetX,
+                  offsetY,
+                  ...(delta.z
+                    ? { spatialDepth: (active.topic.style?.spatialDepth ?? 0) + delta.z }
+                    : {}),
+                },
               },
               () => {
                 if (pending.current !== active) return

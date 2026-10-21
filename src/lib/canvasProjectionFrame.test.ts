@@ -13,6 +13,10 @@ const clients: QueryClient[] = []
 afterEach(() => {
   for (const client of clients.splice(0)) client.clear()
 })
+const projectionOf = (frame: CanvasProjectionFrame) => {
+  if (frame.phase !== '2d') throw new Error('expected a 2D frame')
+  return frame.projection
+}
 const deferred = () => {
   let resolve!: (layout: MindMapLayout) => void
   const promise = new Promise<MindMapLayout>((done) => {
@@ -68,15 +72,15 @@ it('retains a completed frame while native geometry changes and isolates other w
   })
   observer.setOptions(query(1, next))
   expect(observer.getCurrentResult().isPlaceholderData).toBe(true)
-  expect(current().projection).toBe(completed.projection)
-  expect(current().projection.nodes).toBe(completed.projection.nodes)
+  expect(projectionOf(current())).toBe(projectionOf(completed))
+  expect(projectionOf(current()).nodes).toBe(projectionOf(completed).nodes)
   next.resolve(layoutDocument(document))
   await vi.waitFor(() => {
-    expect(current().projection).not.toBe(completed.projection)
+    expect(projectionOf(current())).not.toBe(projectionOf(completed))
   })
-  const moved = current().projection.nodes.find((node) => node.id === movedId)
+  const moved = projectionOf(current()).nodes.find((node) => node.id === movedId)
   expect(moved?.position).not.toEqual(
-    completed.projection.nodes.find((node) => node.id === movedId)?.position,
+    projectionOf(completed).nodes.find((node) => node.id === movedId)?.position,
   )
   const other = deferred()
   scopeId = 'workbook-b/sheet/document'
@@ -133,7 +137,7 @@ it('reconciles cached undo geometry when an intermediate layout never completes'
     placeholderData: (previous) => previous,
   })
   expect(current().pending).toBe(true)
-  expect(current().projection.nodes).toBe(before.projection.nodes)
+  expect(projectionOf(current()).nodes).toBe(projectionOf(before).nodes)
   document = original
   observer.setOptions({
     queryKey: ['cached-undo', 0],
@@ -142,9 +146,9 @@ it('reconciles cached undo geometry when an intermediate layout never completes'
   })
   const restored = current()
   expect(restored.pending).toBe(false)
-  expect(restored.projection.nodes).not.toBe(before.projection.nodes)
-  expect(restored.projection.nodes.map((node) => node.position)).toEqual(
-    before.projection.nodes.map((node) => node.position),
+  expect(projectionOf(restored).nodes).not.toBe(projectionOf(before).nodes)
+  expect(projectionOf(restored).nodes.map((node) => node.position)).toEqual(
+    projectionOf(before).nodes.map((node) => node.position),
   )
   expect(
     completeCanvasFrame(
@@ -168,7 +172,7 @@ it('reconciles cached undo geometry when an intermediate layout never completes'
 it('retains the matching native depth record when base geometry is unchanged', () => {
   const document = createExampleDocument()
   const layout = layoutDocument(document)
-  const project = createCanvasProjector()
+  const project = vi.fn(createCanvasProjector())
   const firstDepths = { [document.rootId]: 0 }
   const first = completeCanvasFrame(
     null,
@@ -177,6 +181,7 @@ it('retains the matching native depth record when base geometry is unchanged', (
       document,
       layout,
       depths: firstDepths,
+      deferProjection: true,
       placeholder: false,
       surface: undefined,
     },
@@ -190,13 +195,16 @@ it('retains the matching native depth record when base geometry is unchanged', (
       document,
       layout,
       depths: nextDepths,
+      deferProjection: true,
       placeholder: false,
       surface: undefined,
     },
     project,
   )
   expect(next).not.toBe(first)
-  expect(next?.projection).toBe(first?.projection)
+  expect(first?.phase).toBe('3d')
+  expect(next?.phase).toBe('3d')
+  expect(project).not.toHaveBeenCalled()
   expect(next?.depths).toBe(nextDepths)
   expect(spatialFrameReady(next, false, false)).toBe(true)
   expect(spatialFrameReady(next, true, false)).toBe(false)
@@ -207,11 +215,51 @@ it('retains the matching native depth record when base geometry is unchanged', (
       scopeId: 'book/sheet',
       document,
       layout: undefined,
+      deferProjection: true,
       placeholder: true,
       surface: undefined,
     },
     project,
   )
-  expect(retained?.projection).toBe(next?.projection)
+  expect(retained?.layout).toBe(layout)
   expect(spatialFrameReady(retained, true, false)).toBe(false)
+})
+
+it('does not reuse a canonical 3D frame across document, layout, or phase changes', () => {
+  const document = createExampleDocument()
+  const layout = layoutDocument(document)
+  const project = vi.fn(createCanvasProjector())
+  const source = {
+    scopeId: 'book/sheet',
+    document,
+    layout,
+    depths: { [document.rootId]: 30 },
+    deferProjection: true,
+    placeholder: false,
+    surface: undefined,
+  }
+  const first = completeCanvasFrame(null, source, project)
+  expect(completeCanvasFrame(first, source, project)).toBe(first)
+  const changedDocument = completeCanvasFrame(
+    first,
+    { ...source, document: { ...document, title: 'Changed' } },
+    project,
+  )
+  expect(changedDocument).not.toBe(first)
+  expect(changedDocument?.document.title).toBe('Changed')
+  const changedLayout = completeCanvasFrame(
+    first,
+    { ...source, layout: { ...layout, nodes: [...layout.nodes] } },
+    project,
+  )
+  expect(changedLayout).not.toBe(first)
+  expect(
+    completeCanvasFrame(first, { ...source, deferProjection: false, layout: undefined }, project),
+  ).toBeNull()
+  expect(project).not.toHaveBeenCalled()
+  const twoD = completeCanvasFrame(first, { ...source, deferProjection: false }, project)
+  expect(twoD?.phase).toBe('2d')
+  expect(project).toHaveBeenCalledTimes(1)
+  if (twoD?.phase !== '2d') throw new Error('missing projected 2D frame')
+  expect(twoD.projection.nodes).toHaveLength(layout.nodes.length)
 })

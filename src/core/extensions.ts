@@ -59,6 +59,7 @@ export interface SpatialSettings {
   readonly yaw: number
   readonly pitch: number
   readonly spacing: number
+  readonly target?: { readonly x: number; readonly y: number; readonly z: number }
 }
 export interface DocumentSettings {
   readonly visualStyle?: SheetVisualStyle

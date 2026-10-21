@@ -22,6 +22,7 @@ export interface NativeEditorSnapshot {
 }
 export interface NativeLayoutInput {
   readonly document: MindMapDocument
+  /** Empty delegates full-map measurement to the native worker; explicit sizes override it. */
   readonly measurements: readonly {
     readonly id: string
     readonly width: number

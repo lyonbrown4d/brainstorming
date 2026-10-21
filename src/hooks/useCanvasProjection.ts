@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { MindMapDocument } from '@core'
 import { createCanvasProjector } from '@renderer/lib/canvasProjection'
-import { layoutMeasurements, nativeLayoutQuery } from '@renderer/lib/nativeLayout'
+import { nativeMeasurements, nativeLayoutQuery } from '@renderer/lib/nativeLayout'
 import { nativeSpatialLayoutQuery } from '@renderer/lib/nativeSpatialLayout'
-import { getPlatformAPI } from '@renderer/lib/desktop'
 import { queryClient } from '@renderer/lib/queryClient'
 import { setNavigationLayout } from '@renderer/state/keyboard'
 import { useEditor } from '@renderer/state/editor'
@@ -27,7 +26,7 @@ export const useCanvasProjection = (
   const view = preview ?? document.settings?.spatial ?? DEFAULT_SPATIAL_VIEW
   const scopeId = JSON.stringify([workbookId, sheetId, document.id])
   const [completed, setCompleted] = useState<CanvasProjectionFrame | null>(null)
-  const measurements = useMemo(() => layoutMeasurements(document), [document])
+  const measurements = useMemo(() => nativeMeasurements(document), [document])
   const layoutQuery = useMemo(
     () => nativeLayoutQuery(document, sheetId, measurements),
     [document, sheetId, measurements],
@@ -81,26 +80,41 @@ export const useCanvasProjection = (
           depths,
           placeholder: query.isPlaceholderData,
           surface,
+          deferProjection: view.mode === '3d',
         },
         project,
       ),
-    [completed, scopeId, document, layout, depths, query.isPlaceholderData, surface, project],
+    [
+      completed,
+      scopeId,
+      document,
+      layout,
+      depths,
+      query.isPlaceholderData,
+      surface,
+      view.mode,
+      project,
+    ],
   )
   // React's conditional state adjustment retains the complete frame without an effect-frame flash.
   if (frame !== completed) setCompleted(frame)
   const projection = useMemo(
     () =>
-      frame
-        ? view.mode === '2d'
-          ? frame.projection
-          : !frame.depths && getPlatformAPI()?.compute
+      !frame
+        ? null
+        : view.mode === '2d'
+          ? frame.phase === '2d'
             ? frame.projection
-            : projectSpatial(
+            : null
+          : frame.phase === '3d' && frame.depths
+            ? projectSpatial(
                 frame.document,
                 projectSpatialLayout(frame.document, frame.layout, view, frame.depths),
                 surface,
+                frame.refreshGeometry,
+                view,
               )
-        : null,
+            : null,
     [frame, view, projectSpatial, surface],
   )
   useEffect(() => {
@@ -110,6 +124,7 @@ export const useCanvasProjection = (
     view.mode === '3d' && !spatialFrameReady(frame, query.isPlaceholderData, query.isPending)
   return {
     projection,
+    nativeLayout: frame?.layout,
     depths: view.mode === '3d' ? (frame?.depths ?? null) : null,
     interactionReady: Boolean(frame) && !spatialPending,
     spatialPending,

@@ -18,7 +18,13 @@ const TopicDepth = ({ topicId, depth }: { topicId: string; depth: number }) => {
   const commit = (value: number): void => {
     setDraft(null)
     const editor = useEditor.getState()
-    if (editor.busy || editor.editingId || !Number.isFinite(value) || value < -1000 || value > 1000)
+    if (
+      editor.busy ||
+      editor.editingId ||
+      !Number.isFinite(value) ||
+      value < -1000000 ||
+      value > 1000000
+    )
       return
     const ids = selectedTopicIds(editor)
     const roots = canvasTopicRoots(editor.history.document, ids.includes(topicId) ? ids : [topicId])
@@ -45,8 +51,8 @@ const TopicDepth = ({ topicId, depth }: { topicId: string; depth: number }) => {
         <Input
           id="spatial-topic-depth"
           type="number"
-          min={-1000}
-          max={1000}
+          min={-1000000}
+          max={1000000}
           step={10}
           aria-label={translate('spatialDepthValue')}
           className="h-8 w-24 text-xs"
@@ -69,8 +75,8 @@ const TopicDepth = ({ topicId, depth }: { topicId: string; depth: number }) => {
       </div>
       <Slider
         aria-label={translate('spatialTopicDepth')}
-        min={-1000}
-        max={1000}
+        min={Math.max(-1000000, Math.min(-1000, Math.floor(depth / 1000) * 1000 - 1000))}
+        max={Math.min(1000000, Math.max(1000, Math.ceil(depth / 1000) * 1000 + 1000))}
         step={10}
         value={[draft ?? depth]}
         onValueChange={([value]) => {

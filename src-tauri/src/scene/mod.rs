@@ -56,6 +56,18 @@ pub(super) struct RenderContext<'a> {
   pub include_collapsed: bool,
 }
 
+/** The canvas and export renderer use the same deterministic topic measurements. */
+pub(crate) fn measure_document(document: &Value) -> Result<Vec<NodeSize>, String> {
+  let topics = document["topics"].as_object().ok_or("画布主题无效")?;
+  let root = field(document, "rootId");
+  Ok(
+    topics
+      .values()
+      .map(|topic| measure::topic(topic, field(topic, "id") == root))
+      .collect(),
+  )
+}
+
 pub fn render(workbook: &Value, sheet_id: &str, include_collapsed: bool) -> Result<Scene, String> {
   render_with_geometry(workbook, sheet_id, include_collapsed, None)
 }
@@ -77,18 +89,11 @@ pub fn render_with_geometry(
       item["collapsed"] = Value::Bool(false)
     }
   }
-  let root = field(&document, "rootId").to_owned();
-  let sizes = visual
-    .filter(|item| !item.measurements.is_empty())
-    .map(|item| item.measurements.clone())
-    .unwrap_or_else(|| {
-      document["topics"]
-        .as_object()
-        .into_iter()
-        .flat_map(|items| items.values())
-        .map(|topic| measure::topic(topic, field(topic, "id") == root))
-        .collect::<Vec<NodeSize>>()
-    });
+  let sizes = if let Some(visual) = visual.filter(|item| !item.measurements.is_empty()) {
+    visual.measurements.clone()
+  } else {
+    measure_document(&document)?
+  };
   let layout = crate::layout_engine::compute(&document, &sizes)?;
   let palette = appearance::palette(&document);
   let colors = appearance::all(&document, &palette);

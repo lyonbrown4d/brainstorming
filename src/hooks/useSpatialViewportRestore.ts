@@ -1,29 +1,37 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useReactFlow } from '@xyflow/react'
 import { useActiveSpatialView } from '@renderer/hooks/useActiveSpatialView'
 import { getSpatialViewport } from '@renderer/state/spatialViewports'
 import { useEditor } from '@renderer/state/editor'
 import { canvasFitPadding } from '@renderer/hooks/useWorkbenchInsets'
 
-/** Restore only when the target mode's complete native frame has reached React Flow. */
-export const useSpatialViewportRestore = (ready: boolean): void => {
+/** Keep mode changes covered until their matching geometry and viewport are both applied. */
+export const useSpatialViewportRestore = (ready: boolean): boolean => {
   const { view, workbookId, sheetId } = useActiveSpatialView()
   const flow = useReactFlow()
-  const applied = useRef(view.mode)
+  const scope = JSON.stringify([workbookId, sheetId, view.mode])
+  const [applied, setApplied] = useState(scope)
   useEffect(() => {
-    if (!ready || applied.current === view.mode) return
+    if (!ready || applied === scope) return
+    let cancelled = false
     const frame = requestAnimationFrame(() => {
-      applied.current = view.mode
       const viewport = getSpatialViewport(workbookId, sheetId, view.mode)
-      if (viewport) void flow.setViewport(viewport)
-      else void flow.fitView({ padding: canvasFitPadding(), maxZoom: 1.2 })
-      const id = useEditor.getState().selectedId
-      document
-        .querySelector<HTMLElement>(`.topic-input[data-topic-id="${CSS.escape(id)}"]`)
-        ?.focus({ preventScroll: true })
+      const restore = viewport
+        ? flow.setViewport(viewport)
+        : flow.fitView({ padding: canvasFitPadding(), maxZoom: 1.2 })
+      void restore.then(() => {
+        if (cancelled) return
+        setApplied(scope)
+        const id = useEditor.getState().selectedId
+        document
+          .querySelector<HTMLElement>(`.topic-input[data-topic-id="${CSS.escape(id)}"]`)
+          ?.focus({ preventScroll: true })
+      })
     })
     return () => {
+      cancelled = true
       cancelAnimationFrame(frame)
     }
-  }, [flow, ready, view.mode, workbookId, sheetId])
+  }, [flow, ready, view.mode, workbookId, sheetId, scope, applied])
+  return applied === scope
 }

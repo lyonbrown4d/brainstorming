@@ -1,3 +1,5 @@
+import { getSpatialView, useSpatialView, type SpatialView } from '@renderer/state/spatialView'
+import { placeSpatialInk } from '@renderer/lib/spatialInk'
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react'
 import { useReactFlow } from '@xyflow/react'
 import { INK_LIMITS, type CanvasPoint, type CanvasStroke } from '@core/ink'
@@ -15,6 +17,7 @@ interface InkGesture {
   stroke: CanvasStroke
   points: CanvasPoint[]
   maximum: number
+  view: SpatialView
   history: HistoryState
 }
 
@@ -52,6 +55,9 @@ export const useInkDrawing = () => {
         setInkMode('select')
       }
     })
+    const stopView = useSpatialView.subscribe(() => {
+      if (gesture.current && gesture.current.view !== getSpatialView(workbookId, sheetId)) cancel()
+    })
     const keyboard = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape' || event.isComposing || useCanvasInk.getState().mode === 'select')
         return
@@ -66,6 +72,7 @@ export const useInkDrawing = () => {
       cancel()
       unsubscribe()
       unsubscribeAnnotation()
+      stopView()
       window.removeEventListener('blur', cancel)
       window.removeEventListener('keydown', keyboard, true)
     }
@@ -109,6 +116,7 @@ export const useInkDrawing = () => {
       stroke: { id: crypto.randomUUID(), color: settings.color, width: settings.width, points },
       points,
       maximum: Math.min(remaining, INK_LIMITS.pointsPerStroke),
+      view: getSpatialView(useEditor.getState().workbook.id, sheetId),
       history: useEditor.getState().history,
     }
     event.currentTarget.setPointerCapture(event.pointerId)
@@ -128,7 +136,7 @@ export const useInkDrawing = () => {
     const active = gesture.current
     if (active?.pointerId !== event.pointerId) return
     onPointerMove(event)
-    const stroke = { ...active.stroke, points: active.points }
+    const stroke = placeSpatialInk({ ...active.stroke, points: active.points }, active.view)
     cancel()
     useEditor.getState().command({ type: 'upsertDrawing', stroke })
   }

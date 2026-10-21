@@ -18,6 +18,7 @@ export interface CanvasStroke {
   readonly color: string
   readonly width: number
   readonly points: readonly CanvasPoint[]
+  readonly spatialDepth?: number
   readonly transform?: {
     readonly x: number
     readonly y: number
@@ -32,11 +33,14 @@ export type DrawingCommand =
 export const validateCanvasStroke: (value: unknown) => asserts value is CanvasStroke = (
   value: unknown,
 ): asserts value is CanvasStroke => {
-  const stroke = v.record(value, ['id', 'color', 'width', 'points', 'transform'])
+  const stroke = v.record(value, ['id', 'color', 'width', 'points', 'transform', 'spatialDepth'])
   assertId(stroke.id)
   v.text(stroke.id, 128)
   v.color(stroke.color)
   v.number(stroke.width, 1, 24)
+  v.optional(stroke, 'spatialDepth', (value) => {
+    v.number(value, -1_000_000, 1_000_000)
+  })
   v.optional(stroke, 'transform', (value) => {
     const transform = v.record(value, ['x', 'y', 'scaleX', 'scaleY'])
     v.number(transform.x, -1e10, 1e10)

@@ -4,7 +4,7 @@ import type { NativeLayoutInput, NativeSpatialLayout } from '@shared/compute'
 import { getPlatformAPI } from '@renderer/lib/desktop'
 import {
   layoutIdentity,
-  layoutMeasurements,
+  nativeMeasurements,
   touchNativeLayoutCache,
 } from '@renderer/lib/nativeLayout'
 import { estimateLayoutSource } from '@renderer/lib/nativeLayoutCache'
@@ -12,20 +12,23 @@ import { queryClient } from '@renderer/lib/queryClient'
 import { spatialTopicOffsets } from '@renderer/lib/spatialProjection'
 import type { SpatialView } from '@renderer/state/spatialView'
 
-const spatialIdentity = (document: MindMapDocument, view: SpatialView): string =>
-  JSON.stringify({
-    spacing: view.spacing,
-    depths: Object.values(document.topics).map((topic) => [
-      topic.id,
-      topic.style?.spatialDepth ?? 0,
-    ]),
-  })
+const depthIdentityCache = new WeakMap<MindMapDocument, string>()
+const spatialIdentity = (document: MindMapDocument, view: SpatialView): string => {
+  let depths = depthIdentityCache.get(document)
+  if (!depths) {
+    depths = JSON.stringify(
+      Object.values(document.topics).map((topic) => [topic.id, topic.style?.spatialDepth ?? 0]),
+    )
+    depthIdentityCache.set(document, depths)
+  }
+  return `${view.spacing}:${depths}`
+}
 
 export const nativeSpatialLayoutQuery = (
   document: MindMapDocument,
   sheetId: string,
   view: SpatialView,
-  measurements: NativeLayoutInput['measurements'] = layoutMeasurements(document),
+  measurements: NativeLayoutInput['measurements'] = nativeMeasurements(document),
 ) => ({
   queryKey: [
     'canvas-spatial-layout',
@@ -44,7 +47,7 @@ export const fetchNativeSpatialLayout = async (
   document: MindMapDocument,
   sheetId: string,
   view: SpatialView,
-  measurements: NativeLayoutInput['measurements'] = layoutMeasurements(document),
+  measurements: NativeLayoutInput['measurements'] = nativeMeasurements(document),
 ): Promise<NativeSpatialLayout> => {
   const options = nativeSpatialLayoutQuery(document, sheetId, view, measurements)
   const result = await queryClient.query(options)
@@ -55,7 +58,7 @@ export const fetchNativeSpatialLayout = async (
 export const computeNativeSpatialLayout = async (
   document: MindMapDocument,
   view: SpatialView,
-  measurements: NativeLayoutInput['measurements'] = layoutMeasurements(document),
+  measurements: NativeLayoutInput['measurements'] = nativeMeasurements(document),
 ): Promise<NativeSpatialLayout> => {
   const api = getPlatformAPI()
   if (!api) throw new Error('Brainstorming 原生平台尚未初始化。')

@@ -1,5 +1,7 @@
 #[path = "relation_validation.rs"]
 mod relation_validation;
+#[path = "spatial_validation.rs"]
+mod spatial_validation;
 use super::{Result, error::invalid, validation::*};
 use serde_json::Value;
 
@@ -99,7 +101,7 @@ pub(crate) fn topic(topic: &Value) -> Result<()> {
     for key in ["offsetX", "offsetY"] {
       optional(style, key, |v| number(v, -1_000_000., 1_000_000.))?;
     }
-    optional(style, "spatialDepth", |v| number(v, -1_000., 1_000.))?;
+    optional(style, "spatialDepth", spatial_validation::validate_depth)?;
     optional(style, "fontSize", |v| number(v, 12., 32.))?;
     optional(style, "width", |v| number(v, 80., 1200.))?;
     optional(style, "scale", |v| number(v, 0.5, 3.))?;
@@ -183,13 +185,7 @@ pub(crate) fn settings(doc: &Value) -> Result<()> {
     })?;
     optional(settings, "background", color)?;
     optional(settings, "lineWidth", |v| number(v, 1., 6.))?;
-    optional(settings, "spatial", |spatial| {
-      keys(spatial, &["mode", "yaw", "pitch", "spacing"])?;
-      choice(&spatial["mode"], &["2d", "3d"])?;
-      number(&spatial["yaw"], -1.2, 1.2)?;
-      number(&spatial["pitch"], -0.9, 0.9)?;
-      number(&spatial["spacing"], 0., 200.)
-    })?;
+    optional(settings, "spatial", spatial_validation::validate)?;
     optional(settings, "fontFamily", |v| {
       bounded_text(v, 128, false)?;
       if text(v)?.chars().any(char::is_control) {

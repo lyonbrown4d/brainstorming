@@ -1,3 +1,4 @@
+import { LRUCache } from 'lru-cache'
 import { formatHex, interpolate, wcagContrast } from 'culori'
 import type { DocumentPalette, DocumentSettings } from '@core/extensions'
 
@@ -63,12 +64,21 @@ export const mapPalettes = [
     branches: ['#ca8f9f', '#83b8a4', '#d9ba7d', '#87abcf', '#ad9bd8'],
   },
 ] as const satisfies readonly MapPalette[]
-export const readableText = (background: string): string =>
-  wcagContrast(background, '#242731') >= 4.5
-    ? '#242731'
-    : wcagContrast(background, '#ffffff') >= wcagContrast(background, '#000000')
-      ? '#ffffff'
-      : '#000000'
+const textColors = new LRUCache<string, string>({ max: 256 })
+
+/** Palettes repeat a small set of fills across thousands of cards. */
+export const readableText = (background: string): string => {
+  const cached = textColors.get(background)
+  if (cached) return cached
+  const color =
+    wcagContrast(background, '#242731') >= 4.5
+      ? '#242731'
+      : wcagContrast(background, '#ffffff') >= wcagContrast(background, '#000000')
+        ? '#ffffff'
+        : '#000000'
+  textColors.set(background, color)
+  return color
+}
 
 /** Resolve to portable hex colors for the canvas and standalone exports. */
 export const paletteAppearance = (palette: DocumentPalette) => ({

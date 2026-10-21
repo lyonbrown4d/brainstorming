@@ -66,7 +66,9 @@ describe('Xmind-style native topic editing', () => {
       expect.stringContaining('同级 B'),
     )
     await shortcut('0')
-    await expect(browser.$('[aria-label="画布视图"]')).toHaveText(expect.stringContaining('100%'))
+    await expect(browser.$('.canvas-controls .zoom-value')).toHaveText(
+      expect.stringContaining('100%'),
+    )
     await shortcut('r')
     await expect(root()).toHaveElementClass('is-selected')
   })

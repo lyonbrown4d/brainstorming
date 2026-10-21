@@ -38,10 +38,10 @@ export const canvasMoveCommand = (
   roots: readonly string[],
   drawings: readonly string[],
   origins: ReadonlyMap<string, { x: number; y: number }>,
-  delta: { x: number; y: number },
+  delta: { x: number; y: number; z?: number },
   drop?: CanvasDrop,
 ): Command | undefined => {
-  if (!delta.x && !delta.y) return undefined
+  if (!delta.x && !delta.y && !delta.z) return undefined
   const commands: Command[] = []
   const topics = roots.length ? canvasDropCommand(document, roots, origins, delta, drop) : undefined
   if (topics) commands.push(topics)
@@ -50,11 +50,14 @@ export const canvasMoveCommand = (
     const bounds = inkGeometry(stroke).bounds
     commands.push({
       type: 'upsertDrawing',
-      stroke: transformInk(stroke, bounds, {
-        ...bounds,
-        x: bounds.x + delta.x,
-        y: bounds.y + delta.y,
-      }),
+      stroke: {
+        ...transformInk(stroke, bounds, {
+          ...bounds,
+          x: bounds.x + delta.x,
+          y: bounds.y + delta.y,
+        }),
+        ...(delta.z ? { spatialDepth: (stroke.spatialDepth ?? 0) + delta.z } : {}),
+      },
     })
   }
   return commands.length ? { type: 'batch', commands } : undefined

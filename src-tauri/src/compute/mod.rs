@@ -81,6 +81,7 @@ impl ComputeService {
           spatial.remove("mode");
           spatial.remove("yaw");
           spatial.remove("pitch");
+          spatial.remove("target");
         }
         let key = cache_key(&(&key_document, &input.measurements))?;
         Ok((input, key))
@@ -115,7 +116,12 @@ impl ComputeService {
       .try_get_with(
         key,
         self.run(move || {
-          crate::layout_engine::compute(&input.document, &input.measurements).map(Arc::new)
+          let measurements = if input.measurements.is_empty() {
+            crate::scene::measure_document(&input.document)?
+          } else {
+            input.measurements
+          };
+          crate::layout_engine::compute(&input.document, &measurements).map(Arc::new)
         }),
       )
       .await

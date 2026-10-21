@@ -32,7 +32,9 @@ export const synchronizeCanvasNodes = (
   state: NodeSynchronization,
 ): CanvasFlowNode[] => {
   const existing = new Map(previous.map((node) => [node.id, node]))
-  let changed = previous.length !== projected.length
+  let changed =
+    previous.length !== projected.length ||
+    previous.some((node, index) => node.id !== projected[index]?.id)
   const next = projected.map((node) => {
     const old = existing.get(node.id)
     const measured = state.geometryChanged ? preserveMeasurement(node, old) : (old ?? node)
@@ -55,11 +57,15 @@ export const synchronizeCanvasNodes = (
       old.position.x === position.x &&
       old.position.y === position.y &&
       old.selected === selected &&
-      old.draggable === draggable
+      old.draggable === draggable &&
+      old.zIndex === node.zIndex
     )
       return old
     changed = true
-    return { ...measured, position, selected, draggable }
+    const updated: CanvasFlowNode = { ...measured, position, selected, draggable }
+    if (node.zIndex === undefined) delete updated.zIndex
+    else updated.zIndex = node.zIndex
+    return updated
   })
   return changed ? next : previous
 }

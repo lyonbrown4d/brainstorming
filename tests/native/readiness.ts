@@ -48,6 +48,7 @@ export const editorReady = async (title?: string): Promise<void> => {
         return (
           window.location.hash.startsWith('#/documents/') &&
           document.visibilityState === 'visible' &&
+          !document.querySelector('[data-canvas-loading]') &&
           !document.querySelector(
             'section[aria-label="新建文档"], section[aria-label="新建画布"]',
           ) &&

@@ -5,6 +5,8 @@ import { useEditor } from '@renderer/state/editor'
 import { selectedTopicIds } from '@renderer/state/selection'
 import { runAnnotationCommand } from '@renderer/components/annotations/commands'
 import { isCompositionKey } from '@renderer/state/keyboard'
+import { spatialFloatingCommand } from '@renderer/lib/spatialFloating'
+import { getSpatialView } from '@renderer/state/spatialView'
 import { summarySelectionRanges, topicParents } from '@core/summary'
 import type { Command } from '@core'
 
@@ -154,13 +156,12 @@ export const createRelationFloatingAt = (x: number, y: number): boolean => {
     return false
   }
   const id = crypto.randomUUID()
-  const floating = {
-    type: 'addFloatingTopic' as const,
+  const floating = spatialFloatingCommand(
     id,
-    title: translate('floatingTopic'),
-    x,
-    y,
-  }
+    translate('floatingTopic'),
+    { x, y },
+    getSpatialView(state.workbook.id, state.activeSheetId),
+  )
   if (!interaction.fromId) {
     const created = runAnnotationCommand(floating)
     if (created) useAnnotationInteraction.setState({ fromId: id })
@@ -270,8 +271,10 @@ export const armFloatingTopic = (): void => {
 export const createFloatingAt = (x: number, y: number): boolean => {
   if (!useAnnotationInteraction.getState().floating) return false
   const id = crypto.randomUUID()
+  const state = useEditor.getState()
+  const view = getSpatialView(state.workbook.id, state.activeSheetId)
   if (
-    runAnnotationCommand({ type: 'addFloatingTopic', id, title: translate('floatingTopic'), x, y })
+    runAnnotationCommand(spatialFloatingCommand(id, translate('floatingTopic'), { x, y }, view))
   ) {
     useAnnotationInteraction.setState({ floating: false })
     useEditor.getState().startEdit(id)

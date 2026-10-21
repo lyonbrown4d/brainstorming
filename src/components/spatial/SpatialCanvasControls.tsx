@@ -1,3 +1,5 @@
+import type { MindMapLayout } from '@layout'
+import { SpatialCameraControls } from '@renderer/components/spatial/SpatialCameraControls'
 import { Panel } from '@xyflow/react'
 import { RotateCcw } from 'lucide-react'
 import { useActiveSpatialView } from '@renderer/hooks/useActiveSpatialView'
@@ -9,7 +11,13 @@ import { saveSpatialView } from '@renderer/state/spatialActions'
 import { SpatialDepthControl } from '@renderer/components/spatial/SpatialDepthControl'
 import { Button } from '@renderer/components/ui/button'
 
-export const SpatialCanvasControls = () => {
+export const SpatialCanvasControls = ({
+  layout,
+  depths,
+}: {
+  layout?: MindMapLayout | undefined
+  depths?: Readonly<Record<string, number>> | null | undefined
+}) => {
   const { translate } = useMessages()
   const { view } = useActiveSpatialView()
   const busy = useEditor((state) => state.busy)
@@ -28,6 +36,7 @@ export const SpatialCanvasControls = () => {
         className="!m-3 flex items-center gap-1 rounded-lg border border-border/80 bg-background p-1 shadow-sm"
       >
         <SpatialDepthControl />
+        <SpatialCameraControls layout={layout} depths={depths} />
         <Button
           variant="ghost"
           size="icon"
@@ -39,6 +48,7 @@ export const SpatialCanvasControls = () => {
             saveSpatialView({
               yaw: DEFAULT_SPATIAL_VIEW.yaw,
               pitch: DEFAULT_SPATIAL_VIEW.pitch,
+              target: { x: 0, y: 0, z: 0 },
             })
             focus()
           }}

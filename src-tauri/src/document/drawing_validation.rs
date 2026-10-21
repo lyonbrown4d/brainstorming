@@ -11,7 +11,17 @@ pub(super) fn validate(value: &Value) -> Result<()> {
   let mut ids = HashSet::new();
   let mut total = 0;
   for stroke in list(value, 2000)? {
-    keys(stroke, &["id", "color", "width", "points", "transform"])?;
+    keys(
+      stroke,
+      &[
+        "id",
+        "color",
+        "width",
+        "points",
+        "transform",
+        "spatialDepth",
+      ],
+    )?;
     let stroke_id = id(&stroke["id"])?;
     bounded_text(&stroke["id"], 128, false)?;
     if !ids.insert(stroke_id) {
@@ -25,6 +35,9 @@ pub(super) fn validate(value: &Value) -> Result<()> {
       return Err(invalid("画笔颜色须为六位十六进制值"));
     }
     number(&stroke["width"], 1., 24.)?;
+    if let Some(depth) = stroke.get("spatialDepth") {
+      number(depth, -1_000_000., 1_000_000.)?;
+    }
     let transform = stroke.get("transform");
     if let Some(transform) = transform {
       keys(transform, &["x", "y", "scaleX", "scaleY"])?;

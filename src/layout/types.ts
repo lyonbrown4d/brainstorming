@@ -7,6 +7,8 @@ export interface LayoutNode {
   readonly y: number
   readonly width: number
   readonly height: number
+  /** Camera-relative render depth; absent from canonical native layout. */
+  readonly cameraDepth?: number
   readonly side: Side
   readonly direction?: LayoutDirection
 }

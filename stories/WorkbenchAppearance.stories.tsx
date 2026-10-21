@@ -116,8 +116,10 @@ const meta = {
         await userEvent.click(control)
         await expect(action).toHaveBeenCalledOnce()
       }
-      const actions = header.querySelector('.toolbar-actions')?.getBoundingClientRect()
-      await expect(actions?.right).toBeLessThanOrEqual(bounds.right - 120)
+      // The actions wrapper reserves controls with padding; compare the actual clickable edges.
+      const action = canvas.getByRole('button', { name: '属性面板' }).getBoundingClientRect()
+      const controls = canvas.getByRole('button', { name: '最小化窗口' }).getBoundingClientRect()
+      await expect(action.right).toBeLessThanOrEqual(controls.left)
     }
     const node = canvas.getByTestId('topic-design')
     await expect(node).toBeVisible()

@@ -85,7 +85,7 @@ export const RelationEdge = (props: EdgeProps) => {
       />
       <EdgeLabelRenderer>
         <div
-          className="nodrag nopan nowheel pointer-events-auto absolute"
+          className="nodrag nopan nowheel pointer-events-auto absolute z-[1001]"
           style={{
             transform: `translate(-50%, -50%) translate(${geometry.label.x}px, ${geometry.label.y}px)`,
           }}
@@ -116,7 +116,7 @@ export const RelationEdge = (props: EdgeProps) => {
               type="button"
               size="icon"
               variant="outline"
-              className="nodrag nopan pointer-events-auto absolute size-4 cursor-move rounded-full border-2 border-primary bg-background shadow-sm transition-none"
+              className="nodrag nopan pointer-events-auto absolute z-[1002] size-4 cursor-move rounded-full border-2 border-primary bg-background shadow-sm transition-none"
               style={{ transform: `translate(-50%, -50%) translate(${point.x}px, ${point.y}px)` }}
               aria-label={`${translate('relationshipControlPoint')} ${index + 1}`}
               data-testid={`relation-control-${relation.id}-${index}`}

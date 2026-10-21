@@ -1,3 +1,4 @@
+import type { SpatialView } from '@renderer/state/spatialView'
 import { relationAnchors } from '@shared/relation-geometry'
 import { visualPath } from '@shared/sketch'
 import { layoutDocument, type LayoutNode, type MindMapLayout } from '@layout'
@@ -34,20 +35,36 @@ export const projectCanvas = (
   document: MindMapDocument,
   surface?: string,
   layout: MindMapLayout = layoutDocument(document),
+  spatial?: SpatialView,
 ) => {
   const byId = new Map(layout.nodes.map((node) => [node.id, node]))
+  const orderedDepths = layout.nodes
+    .filter((node) => node.cameraDepth !== undefined)
+    .sort(
+      (a, b) =>
+        (a.cameraDepth ?? 0) - (b.cameraDepth ?? 0) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+    )
+  const layers = new Map(
+    orderedDepths.map((node, index) => [
+      node.id,
+      orderedDepths.length === 1 ? 250 : Math.round((index * 500) / (orderedDepths.length - 1)),
+    ]),
+  )
   const relationsById = new Map(
     (document.relations ?? []).map((relation) => [`relation-${relation.id}`, relation]),
   )
-  const nodes: TopicFlowNode[] = layout.nodes.flatMap((node) => {
+  const orderedNodes = orderedDepths.length === layout.nodes.length ? orderedDepths : layout.nodes
+  const nodes: TopicFlowNode[] = orderedNodes.flatMap((node) => {
     const topic = document.topics[node.id]
     if (!topic) return []
     const appearance = topicAppearance(document, node.id, surface)
+    const zIndex = layers.get(node.id)
     return [
       {
         id: node.id,
         type: 'topic' as const,
         position: { x: node.x, y: node.y },
+        ...(zIndex === undefined ? {} : { zIndex }),
         // Known layout dimensions keep fresh nodes visible when Lexical takes focus.
         initialWidth: node.width,
         initialHeight: node.height,
@@ -116,7 +133,7 @@ export const projectCanvas = (
       }
     })
   return {
-    nodes: [...nodes, ...projectInk(document)] as CanvasFlowNode[],
+    nodes: [...nodes, ...projectInk(document, spatial)] as CanvasFlowNode[],
     edges: [
       ...edges,
       ...relationEdges(document, new Set(byId.keys())).map((edge) => {

@@ -52,8 +52,12 @@ describe('same-sheet drawing document commands', () => {
   })
 
   it('preserves drawings in native snapshot protocol and sheet duplication while topic clipboard stays scoped', () => {
-    const document = applyCommand(createDocument('Map'), { type: 'upsertDrawing', stroke })
-    expect(deserializeDocument(serializeDocument(document)).drawings).toEqual([stroke])
+    const spatialStroke = { ...stroke, spatialDepth: -1_000_000 }
+    const document = applyCommand(createDocument('Map'), {
+      type: 'upsertDrawing',
+      stroke: spatialStroke,
+    })
+    expect(deserializeDocument(serializeDocument(document)).drawings).toEqual([spatialStroke])
     const workbook = applyWorkbookCommand(createWorkbook(document), {
       type: 'duplicateSheet',
       sheetId: document.id,
@@ -63,7 +67,7 @@ describe('same-sheet drawing document commands', () => {
       deserializeWorkbook(serializeWorkbook(workbook)).sheets.map(
         (sheet) => sheet.document.drawings,
       ),
-    ).toEqual([[stroke], [stroke]])
+    ).toEqual([[spatialStroke], [spatialStroke]])
     expect(workbook.sheets[1]?.document.drawings).not.toBe(workbook.sheets[0]?.document.drawings)
     expect(createTopicClipboard(document, ['root'])).not.toHaveProperty('drawings')
   })
@@ -77,6 +81,8 @@ describe('same-sheet drawing document commands', () => {
       { points: [{ x: Infinity, y: 0, pressure: 0.5 }] },
       { points: [{ x: 0, y: 0, pressure: 1.1 }] },
       { points: [{ x: 1_000_001, y: 0, pressure: 0.5 }] },
+      { spatialDepth: -1_000_001 },
+      { spatialDepth: Number.NaN },
       { unknown: true },
     ])
       expect(() => {

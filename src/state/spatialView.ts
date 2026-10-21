@@ -45,21 +45,38 @@ export const useSpatialView = create<SpatialViewState>((set) => ({
     set((state) => {
       const key = viewKey(workbookId, sheetId)
       const before = state.views[key] ?? persistedView(workbookId, sheetId)
+      const previousTarget = before.target
+      const target =
+        patch.target === undefined
+          ? previousTarget
+          : {
+              x: bounded(patch.target.x, -1_000_000, 1_000_000, previousTarget?.x ?? 0),
+              y: bounded(patch.target.y, -1_000_000, 1_000_000, previousTarget?.y ?? 0),
+              z: bounded(patch.target.z, -1_000_000, 1_000_000, previousTarget?.z ?? 0),
+            }
       const after: SpatialView = {
         mode: patch.mode === '2d' || patch.mode === '3d' ? patch.mode : before.mode,
-        yaw: patch.yaw === undefined ? before.yaw : bounded(patch.yaw, -1.2, 1.2, before.yaw),
+        yaw:
+          patch.yaw === undefined ? before.yaw : bounded(patch.yaw, -Math.PI, Math.PI, before.yaw),
         pitch:
-          patch.pitch === undefined ? before.pitch : bounded(patch.pitch, -0.9, 0.9, before.pitch),
+          patch.pitch === undefined
+            ? before.pitch
+            : bounded(patch.pitch, -Math.PI / 2, Math.PI / 2, before.pitch),
         spacing:
           patch.spacing === undefined
             ? before.spacing
             : bounded(patch.spacing, 0, 200, before.spacing),
+        ...(target === undefined ? {} : { target }),
       }
       if (
         after.mode === before.mode &&
         after.yaw === before.yaw &&
         after.pitch === before.pitch &&
-        after.spacing === before.spacing
+        after.spacing === before.spacing &&
+        (after.target === before.target ||
+          (after.target?.x === before.target?.x &&
+            after.target?.y === before.target?.y &&
+            after.target?.z === before.target?.z))
       )
         return state
       return { views: { ...state.views, [key]: after } }

@@ -1,5 +1,7 @@
 import type { MindMapDocument } from '@core'
 import type { MindMapLayout } from '@layout'
+import { inkGeometry } from '@shared/ink-geometry'
+import { projectSpatialPoint } from '@renderer/lib/spatialCamera'
 import type { SpatialView } from '@renderer/state/spatialView'
 
 export interface SpatialOffset {
@@ -14,22 +16,14 @@ const isDepthMap = (depths: SpatialDepths): depths is ReadonlyMap<string, number
 interface PositionedNode {
   readonly id: string
   readonly position: { readonly x: number; readonly y: number }
+  readonly type?: string
+  readonly data?: unknown
 }
 
 const ZERO_OFFSET: SpatialOffset = Object.freeze({ x: 0, y: 0, z: 0 })
 const readDepth = (depths: SpatialDepths, id: string): number | undefined =>
   isDepthMap(depths) ? depths.get(id) : depths[id]
-const offsetAtDepth = (z: number, slope: { x: number; y: number }): SpatialOffset => ({
-  x: z * slope.x,
-  y: z * slope.y,
-  z,
-})
-
-/** Oblique view keeps the canvas axes and billboard topic dimensions unchanged. */
-export const spatialProjectionSlope = (view: SpatialView): { x: number; y: number } => ({
-  x: Math.sin(view.yaw) * Math.cos(view.pitch),
-  y: -Math.sin(view.pitch),
-})
+const offsetAtDepth = (z: number): SpatialOffset => ({ x: 0, y: 0, z })
 
 /** One traversal also handles malformed or disconnected trees without recursion. */
 export const spatialTopicOffsets = (
@@ -38,7 +32,6 @@ export const spatialTopicOffsets = (
 ): ReadonlyMap<string, SpatialOffset> => {
   const offsets = new Map<string, SpatialOffset>()
   if (view.mode === '2d') return offsets
-  const slope = spatialProjectionSlope(view)
   const floating = new Set(document.floatingIds ?? [])
   const visited = new Set<string>()
   const roots = [document.rootId, ...floating, ...Object.keys(document.topics)]
@@ -57,7 +50,7 @@ export const spatialTopicOffsets = (
         entry.branch +
         entry.inherited +
         (Number.isFinite(local) ? local : 0)
-      offsets.set(entry.id, offsetAtDepth(z, slope))
+      offsets.set(entry.id, offsetAtDepth(z))
       const children = topic.children.filter((id) => !floating.has(id) && !!document.topics[id])
       for (let index = children.length - 1; index >= 0; index--) {
         const child = children[index]
@@ -87,7 +80,7 @@ export const spatialTopicOffset = (
   if (view.mode === '2d') return ZERO_OFFSET
   if (depths) {
     const z = readDepth(depths, topicId)
-    return z === undefined ? ZERO_OFFSET : offsetAtDepth(z, spatialProjectionSlope(view))
+    return z === undefined ? ZERO_OFFSET : offsetAtDepth(z)
   }
   return spatialTopicOffsets(document, view).get(topicId) ?? ZERO_OFFSET
 }
@@ -98,33 +91,58 @@ const offsetsForView = (
   depths?: SpatialDepths,
 ): ReadonlyMap<string, SpatialOffset> => {
   if (!depths) return spatialTopicOffsets(document, view)
-  const slope = spatialProjectionSlope(view)
   const entries = isDepthMap(depths) ? depths.entries() : Object.entries(depths)
-  return new Map([...entries].map(([id, z]) => [id, offsetAtDepth(z, slope)]))
+  return new Map([...entries].map(([id, z]) => [id, offsetAtDepth(z)]))
 }
 
-/** Pointer delta stays projected; commands receive native origins. */
+/** Native origins come from canonical geometry because a rotated plane cannot be inverted from x/y alone. */
 export const captureSpatialOrigins = (
   document: MindMapDocument,
   view: SpatialView,
   nodes: readonly PositionedNode[],
-  depths?: SpatialDepths,
+  _depths?: SpatialDepths,
+  nativeLayout?: MindMapLayout,
 ): {
   origins: Map<string, { x: number; y: number }>
   nativeOrigins: Map<string, { x: number; y: number }>
 } => {
-  const offsets = offsetsForView(document, view, depths)
   const origins = new Map(nodes.map((node) => [node.id, { ...node.position }]))
+  if (view.mode === '2d') return { origins, nativeOrigins: new Map(origins) }
+  if (!nativeLayout) throw new Error('3D drag requires the canonical native layout')
+  const topicOrigins = new Map(
+    nativeLayout.nodes.map((node) => [node.id, { x: node.x, y: node.y }]),
+  )
+  const inkOrigins = new Map(
+    (document.drawings ?? []).map((stroke) => {
+      const { x, y } = inkGeometry(stroke).bounds
+      return [stroke.id, { x, y }] as const
+    }),
+  )
   const nativeOrigins = new Map(
-    [...origins].map(([id, position]) => {
-      const offset = offsets.get(id)
-      return [id, { x: position.x - (offset?.x ?? 0), y: position.y - (offset?.y ?? 0) }] as const
+    nodes.map((node) => {
+      let position: { x: number; y: number } | undefined
+      if (node.type === 'ink') {
+        const data = node.data
+        if (typeof data !== 'object' || data === null || !('stroke' in data))
+          throw new Error(`Missing stroke data for ${node.id}`)
+        const stroke = data.stroke
+        if (
+          typeof stroke !== 'object' ||
+          stroke === null ||
+          !('id' in stroke) ||
+          typeof stroke.id !== 'string'
+        )
+          throw new Error(`Missing stroke ID for ${node.id}`)
+        position = inkOrigins.get(stroke.id)
+      } else position = topicOrigins.get(node.id)
+      if (!position) throw new Error(`Missing native origin for ${node.id}`)
+      return [node.id, position] as const
     }),
   )
   return { origins, nativeOrigins }
 }
 
-/** Move absolute geometry by its topic depth; ink stays on the canvas plane. */
+/** Project anchors into the camera plane while keeping topic and decoration billboards full size. */
 export const projectSpatialLayout = (
   document: MindMapDocument,
   layout: MindMapLayout,
@@ -133,35 +151,57 @@ export const projectSpatialLayout = (
 ): MindMapLayout => {
   if (view.mode === '2d') return layout
   const offsets = offsetsForView(document, view, depths)
-  const rootOffset = offsets.get(document.rootId) ?? ZERO_OFFSET
+  const rootDepth = offsets.get(document.rootId)?.z ?? 0
   return {
     nodes: layout.nodes.map((node) => {
-      const offset = offsets.get(node.id) ?? ZERO_OFFSET
-      return { ...node, x: node.x + offset.x, y: node.y + offset.y }
+      const center = projectSpatialPoint(
+        {
+          x: node.x + node.width / 2,
+          y: node.y + node.height / 2,
+          z: offsets.get(node.id)?.z ?? 0,
+        },
+        view,
+      )
+      return {
+        ...node,
+        x: center.x - node.width / 2,
+        y: center.y - node.height / 2,
+        cameraDepth: center.z,
+      }
     }),
     edges: layout.edges.map((edge) => {
       if (!edge.waypoints?.length) return edge
-      const source = offsets.get(edge.source) ?? ZERO_OFFSET
-      const target = offsets.get(edge.target) ?? ZERO_OFFSET
+      const source = offsets.get(edge.source)?.z ?? 0
+      const target = offsets.get(edge.target)?.z ?? 0
       const last = edge.waypoints.length - 1
       return {
         ...edge,
         waypoints: edge.waypoints.map((point, index) => {
-          const t = last ? index / last : 0
-          return {
-            x: point.x + source.x + (target.x - source.x) * t,
-            y: point.y + source.y + (target.y - source.y) * t,
-          }
+          const z = source + (target - source) * (last ? index / last : 0)
+          const projected = projectSpatialPoint({ ...point, z }, view)
+          return { x: projected.x, y: projected.y }
         }),
       }
     }),
     ...(layout.decorations
       ? {
           decorations: layout.decorations.map((decoration) => {
-            const offset = decoration.topicId
-              ? (offsets.get(decoration.topicId) ?? rootOffset)
-              : rootOffset
-            return { ...decoration, x: decoration.x + offset.x, y: decoration.y + offset.y }
+            const z = decoration.topicId
+              ? (offsets.get(decoration.topicId)?.z ?? rootDepth)
+              : rootDepth
+            const center = projectSpatialPoint(
+              {
+                x: decoration.x + decoration.width / 2,
+                y: decoration.y + decoration.height / 2,
+                z,
+              },
+              view,
+            )
+            return {
+              ...decoration,
+              x: center.x - decoration.width / 2,
+              y: center.y - decoration.height / 2,
+            }
           }),
         }
       : {}),

@@ -9,6 +9,7 @@ const bounds = async (element: Locator) => {
 const open = async (page: Page) => {
   await page.goto('/iframe.html?id=brainstorming-空间视图--interactive&viewMode=story')
   await expect(page.locator('[data-view-mode="3d"]')).toBeVisible()
+  await expect(page.locator('[data-canvas-loading]')).toHaveCount(0)
   await expect(page.locator('[data-spatial-renderer]')).toBeVisible()
   await expect(node(page, 'branch-a')).toBeVisible()
 }

@@ -9,6 +9,7 @@ const bounds = async (element: Locator) => {
 const open = async (page: Page) => {
   await page.goto('/iframe.html?id=brainstorming-空间视图--interactive&viewMode=story')
   await expect(page.locator('[data-view-mode="3d"]')).toBeVisible()
+  await expect(page.locator('[data-canvas-loading]')).toHaveCount(0)
   await expect(node(page, 'branch-a')).toBeVisible()
 }
 const drag = async (page: Page, handle: Locator, dx: number, dy: number) => {
@@ -35,8 +36,8 @@ for (const corner of corners) {
     await card.click()
     const before = await bounds(card)
     await drag(page, card.locator(`.topic-scale-${corner.name}`), corner.dx, corner.dy)
+    await expect.poll(async () => (await bounds(card)).width).toBeGreaterThan(before.width + 25)
     const after = await bounds(card)
-    expect(after.width, `${corner.name} width`).toBeGreaterThan(before.width + 25)
     expect(after.height / before.height, `${corner.name} aspect ratio`).toBeCloseTo(
       after.width / before.width,
       1,

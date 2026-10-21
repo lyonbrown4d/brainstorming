@@ -28,6 +28,27 @@ async fn repeated_layout_reuses_result_and_invalidation_recomputes() {
 }
 
 #[tokio::test]
+async fn spatial_layout_cache_ignores_camera_rotation_and_target() {
+  let compute = ComputeService::default();
+  let mut original = input();
+  original.document["settings"] = json!({
+    "spatial": {"mode":"3d","yaw":0.4,"pitch":0.2,"spacing":100,
+      "target":{"x":10,"y":20,"z":30}}
+  });
+  let first = compute.spatial_layout(original.clone()).await.unwrap();
+  let mut camera_only = original.clone();
+  camera_only.document["settings"]["spatial"]["yaw"] = json!(-1.1);
+  camera_only.document["settings"]["spatial"]["pitch"] = json!(0.6);
+  camera_only.document["settings"]["spatial"]["target"] = json!({"x":-500,"y":450,"z":1_000_000});
+  let cached = compute.spatial_layout(camera_only.clone()).await.unwrap();
+  assert!(Arc::ptr_eq(&first, &cached));
+
+  camera_only.document["settings"]["spatial"]["spacing"] = json!(120);
+  let changed = compute.spatial_layout(camera_only).await.unwrap();
+  assert!(!Arc::ptr_eq(&first, &changed));
+}
+
+#[tokio::test]
 async fn single_canvas_layout_accepts_a_link_to_another_sheet() {
   let compute = ComputeService::default();
   let mut value = input();

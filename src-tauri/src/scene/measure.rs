@@ -75,6 +75,7 @@ fn measured(topic: &Value, root: bool) -> (NodeSize, f64) {
   let fixed = style["width"].as_f64();
   let (inset_x, inset_y) = insets(shape);
   let (marker_width, marker_height, extra_width, extra_height) = marker_size(&topic["metadata"]);
+  let vertical_padding = if extra_height > 0.0 { 12.0 } else { 0.0 };
   let max_text = fixed
     .map(|width| (width * (1.0 - inset_x * 2.0) - padding - extra_width).max(font))
     .unwrap_or(maximum - padding);
@@ -120,13 +121,17 @@ fn measured(topic: &Value, root: bool) -> (NodeSize, f64) {
   let content_width = fixed
     .map(|width| width * (1.0 - inset_x * 2.0))
     .unwrap_or_else(|| {
-      ((if root { 180.0_f64 } else { 112.0_f64 }) + if extra_height > 0.0 { 12.0 } else { 0.0 })
+      ((if root { 180.0_f64 } else { 112.0_f64 }) + vertical_padding)
         .max(
-          (longest + padding + if extra_height > 0.0 { 12.0 } else { 0.0 })
+          (longest + padding + vertical_padding)
             .ceil()
-            .min(maximum + if extra_height > 0.0 { 12.0 } else { 0.0 }),
+            .min(maximum + vertical_padding),
         )
-        .max(image.map(|(width, _)| width + padding).unwrap_or(0.0))
+        .max(
+          image
+            .map(|(width, _)| width + padding + vertical_padding)
+            .unwrap_or(0.0),
+        )
         .max(if extra_height > 0.0 {
           marker_width + 24.0
         } else {
