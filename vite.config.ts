@@ -21,7 +21,7 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     target: ['es2022', 'chrome111', 'safari16.4'],
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         index: fileURLToPath(new URL('./index.html', import.meta.url)),
         splash: fileURLToPath(new URL('./splash.html', import.meta.url)),

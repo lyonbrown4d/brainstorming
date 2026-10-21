@@ -89,16 +89,6 @@ export const spatialTopicOffset = (
   return spatialTopicOffsets(document, view).get(topicId) ?? ZERO_OFFSET
 }
 
-const offsetsForView = (
-  document: MindMapDocument,
-  view: SpatialView,
-  depths?: SpatialDepths,
-): ReadonlyMap<string, SpatialOffset> => {
-  if (!depths) return spatialTopicOffsets(document, view)
-  const entries = isDepthMap(depths) ? depths.entries() : Object.entries(depths)
-  return new Map([...entries].map(([id, z]) => [id, offsetAtDepth(z)]))
-}
-
 /** Native origins come from canonical geometry because a rotated plane cannot be inverted from x/y alone. */
 export const captureSpatialOrigins = (
   document: MindMapDocument,
@@ -154,14 +144,17 @@ export const projectSpatialLayout = (
   depths?: SpatialDepths,
 ): MindMapLayout => {
   if (view.mode === '2d') return layout
-  const offsets = offsetsForView(document, view, depths)
-  const rootDepth = offsets.get(document.rootId)?.z ?? 0
+  // Reuse the native query's cached depths; camera motion does not rebuild an offset map.
+  const offsets = depths ? undefined : spatialTopicOffsets(document, view)
+  const depth = (id: string): number =>
+    depths ? (readDepth(depths, id) ?? 0) : (offsets?.get(id)?.z ?? 0)
+  const rootDepth = depth(document.rootId)
   const nodes = layout.nodes.flatMap((node) => {
     const center = projectSpatialPoint(
       {
         x: node.x + node.width / 2,
         y: node.y + node.height / 2,
-        z: offsets.get(node.id)?.z ?? 0,
+        z: depth(node.id),
       },
       view,
     )
@@ -190,8 +183,8 @@ export const projectSpatialLayout = (
       .filter((edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target))
       .map((edge) => {
         if (!edge.waypoints?.length) return edge
-        const source = offsets.get(edge.source)?.z ?? 0
-        const target = offsets.get(edge.target)?.z ?? 0
+        const source = depth(edge.source)
+        const target = depth(edge.target)
         const last = edge.waypoints.length - 1
         return {
           ...edge,
@@ -206,7 +199,9 @@ export const projectSpatialLayout = (
       ? {
           decorations: layout.decorations.flatMap((decoration) => {
             const z = decoration.topicId
-              ? (offsets.get(decoration.topicId)?.z ?? rootDepth)
+              ? depths
+                ? (readDepth(depths, decoration.topicId) ?? rootDepth)
+                : (offsets?.get(decoration.topicId)?.z ?? rootDepth)
               : rootDepth
             const center = projectSpatialPoint(
               {

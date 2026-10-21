@@ -1,4 +1,4 @@
-import { useActiveSpatialView } from '@renderer/hooks/useActiveSpatialView'
+import { useActiveSpatialSetting } from '@renderer/hooks/useActiveSpatialView'
 import { useMessages } from '@renderer/i18n/useMessages'
 import { useEditor } from '@renderer/state/editor'
 import { useCanvasInteraction } from '@renderer/state/canvasInteraction'
@@ -9,14 +9,14 @@ import { ToggleGroup, ToggleGroupItem } from '@renderer/components/ui/toggle-gro
 /** The titlebar selects the persisted mode; the mounted canvas restores its own viewport. */
 export const SpatialModeSwitch = () => {
   const { translate } = useMessages()
-  const { view } = useActiveSpatialView(false)
+  const { value: modeValue } = useActiveSpatialSetting((view) => view.mode)
   const busy = useEditor((state) => state.busy)
   const dragging = useCanvasInteraction((state) => Boolean(state.drag))
   const presenting = usePresentation((state) => state.workspaceMode !== null)
   return (
     <ToggleGroup
       type="single"
-      value={view.mode}
+      value={modeValue}
       size="sm"
       disabled={busy || dragging || presenting}
       aria-label={translate('canvasView')}

@@ -1,3 +1,4 @@
+import { isEqual } from 'lodash-es'
 import type { CameraControlsImpl } from '@react-three/drei'
 import type { PerspectiveCamera } from 'three'
 import type { SpatialSettings } from '@core'
@@ -77,7 +78,8 @@ export const bindSpatialCameraEnvironment = (input: Environment): (() => void) =
     useEditor.subscribe((state) => {
       validate()
       const next = state.history.document.settings?.spatial
-      if (next !== persistedSettings) {
+      // Native command responses deserialize settings into fresh objects.
+      if (!isEqual(next, persistedSettings)) {
         persistedSettings = next
         input.onSettingsChanged()
         if (!input.session())

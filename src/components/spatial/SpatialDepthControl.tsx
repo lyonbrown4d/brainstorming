@@ -5,7 +5,7 @@ import { isCompositionKey } from '@renderer/state/keyboard'
 import { selectedTopicIds } from '@renderer/state/selection'
 import { useEditor } from '@renderer/state/editor'
 import { saveSpatialView } from '@renderer/state/spatialActions'
-import { useActiveSpatialView } from '@renderer/hooks/useActiveSpatialView'
+import { useActiveSpatialSetting } from '@renderer/hooks/useActiveSpatialView'
 import { useMessages } from '@renderer/i18n/useMessages'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
@@ -105,7 +105,7 @@ const TopicDepth = ({ topicId, depth }: { topicId: string; depth: number }) => {
 
 export const SpatialDepthControl = () => {
   const { translate } = useMessages()
-  const { view } = useActiveSpatialView(false)
+  const { value: spacingValue } = useActiveSpatialSetting((view) => view.spacing)
   const id = useEditor((state) => state.selectedId)
   const topic = useEditor((state) => state.history.document.topics[id])
   const busy = useEditor((state) => state.busy)
@@ -123,20 +123,20 @@ export const SpatialDepthControl = () => {
         <div className="space-y-3 border-t pt-4">
           <div className="flex justify-between text-xs">
             <span>{translate('spatialSpacing')}</span>
-            <span className="tabular-nums text-muted-foreground">{spacing ?? view.spacing}</span>
+            <span className="tabular-nums text-muted-foreground">{spacing ?? spacingValue}</span>
           </div>
           <Slider
             aria-label={translate('spatialSpacing')}
             min={0}
             max={200}
             step={10}
-            value={[spacing ?? view.spacing]}
+            value={[spacing ?? spacingValue]}
             onValueChange={([value]) => {
-              setSpacing(value ?? view.spacing)
+              setSpacing(value ?? spacingValue)
             }}
             onValueCommit={([value]) => {
               setSpacing(null)
-              saveSpatialView({ spacing: value ?? view.spacing })
+              saveSpatialView({ spacing: value ?? spacingValue })
             }}
           />
         </div>

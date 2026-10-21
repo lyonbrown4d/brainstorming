@@ -32,6 +32,7 @@ export const bindSpatialCameraGestureInput = (input: GestureInput): (() => void)
     controls: input.controls,
     canStart: input.canNavigate,
     canWheel: input.canNavigate,
+    size: input.size,
     onStart: input.onStart,
     onEnd: input.onEnd,
     onCancel: input.onCancel,

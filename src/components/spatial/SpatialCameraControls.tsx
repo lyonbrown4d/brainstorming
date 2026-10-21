@@ -41,10 +41,10 @@ export const SpatialCameraControls = ({
   depths?: Readonly<Record<string, number>> | null | undefined
 }) => {
   const { translate } = useMessages()
-  const { view, workbookId, sheetId } = useActiveSpatialView(false)
+  const [open, setOpen] = useState(false)
+  const { view, workbookId, sheetId } = useActiveSpatialView(false, open)
   const busy = useEditor((state) => state.busy)
   const editing = useEditor((state) => Boolean(state.editingId))
-  const [open, setOpen] = useState(false)
   const preview = useRef<PreviewSession | null>(null)
   const disabled = busy || editing
 

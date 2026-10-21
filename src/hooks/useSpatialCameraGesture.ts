@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react'
 import { useReactFlow, useStoreApi } from '@xyflow/react'
 import { useReducedMotion } from 'motion/react'
 import {
-  cameraElementSize,
   cameraPositionFor,
   cameraViewChanged,
   cameraViewportChanged,
@@ -14,6 +13,7 @@ import {
   createSpatialControls,
   createSpatialPerspectiveCamera,
   publishSpatialCameraSnapshot,
+  observeSpatialCameraBounds,
   spatialCameraSnapshot,
 } from '@renderer/lib/spatialCameraController'
 import { bindSpatialCameraGestureInput } from '@renderer/lib/spatialCameraGestureInput'
@@ -58,12 +58,11 @@ export const useSpatialCameraGesture = (
   }, [scene.layout, scene.depths, scene.drawings])
   useEffect(() => {
     if (!element || !root || !sceneReady) return
-    const size = (): { width: number; height: number } => cameraElementSize(root)
-    const initialSize = size()
-    if (initialSize.width <= 0 || initialSize.height <= 0) return
-    const editor = useEditor.getState()
-    const workbookId = editor.workbook.id
-    const sheetId = editor.activeSheetId
+    const bounds = observeSpatialCameraBounds(root)
+    if (!bounds) return
+    const { read: size, initial: initialSize } = bounds
+    const { workbook, activeSheetId: sheetId } = useEditor.getState()
+    const workbookId = workbook.id
     const camera = createSpatialPerspectiveCamera(initialSize)
     const controls = createSpatialControls(camera, element, Boolean(reducedMotion))
     const start = readSpatialNavigationStart(
@@ -290,6 +289,7 @@ export const useSpatialCameraGesture = (
       disposed = true
       if (frame) cancelAnimationFrame(frame)
       stopEnvironment()
+      bounds.dispose()
       controls.removeEventListener('wake', wake)
       detachInput()
       controls.dispose()

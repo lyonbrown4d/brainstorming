@@ -17,6 +17,7 @@ import {
   type SpatialCameraScene,
 } from '@renderer/lib/spatialCameraCommands'
 import {
+  cameraElementSize,
   cameraOrientation,
   cameraPositionFor,
   cameraViewport,
@@ -181,5 +182,24 @@ export const observeSpatialCameraSize = (
   observer.observe(root)
   return () => {
     observer.disconnect()
+  }
+}
+
+/** Read pane geometry once, then refresh it only when the native observer reports a resize. */
+export const observeSpatialCameraBounds = (root: HTMLElement) => {
+  let size = cameraElementSize(root)
+  if (size.width <= 0 || size.height <= 0) return null
+  const initial = size
+  const observer = new ResizeObserver(() => {
+    const next = cameraElementSize(root)
+    if (next.width > 0 && next.height > 0) size = next
+  })
+  observer.observe(root)
+  return {
+    initial,
+    read: (): CameraSize => size,
+    dispose: (): void => {
+      observer.disconnect()
+    },
   }
 }

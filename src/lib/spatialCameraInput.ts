@@ -1,5 +1,10 @@
 import type { CameraControlsImpl } from '@react-three/drei'
-import { spatialCameraWheel, type CameraWheelAction } from '@renderer/lib/spatialCameraNavigation'
+import {
+  cameraElementSize,
+  spatialCameraWheel,
+  type CameraSize,
+  type CameraWheelAction,
+} from '@renderer/lib/spatialCameraNavigation'
 import { isCompositionKey } from '@renderer/state/keyboard'
 
 interface SpatialCameraInput {
@@ -8,6 +13,7 @@ interface SpatialCameraInput {
   readonly controls: CameraControlsImpl
   readonly canStart: (event: PointerEvent) => boolean
   readonly canWheel: () => boolean
+  readonly size?: () => CameraSize
   readonly onStart: (event: PointerEvent) => void
   readonly onEnd: (pointerId: number) => void
   readonly onCancel: (pointerId?: number) => boolean
@@ -113,7 +119,7 @@ export const bindSpatialCameraInput = (input: SpatialCameraInput): (() => void) 
   }
   const wheel = (event: WheelEvent): void => {
     if (!input.canWheel() || overControl(event.target)) return
-    const action = spatialCameraWheel(event, { width: root.clientWidth, height: root.clientHeight })
+    const action = spatialCameraWheel(event, input.size?.() ?? cameraElementSize(root))
     if (!action) return
     event.preventDefault()
     event.stopImmediatePropagation()

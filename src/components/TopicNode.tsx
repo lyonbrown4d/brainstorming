@@ -88,7 +88,6 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
     data.fill ?? style?.fill ?? (root ? 'var(--color-primary)' : 'var(--color-background)')
   return (
     <>
-      {selected && <TopicScaleHandle id={id} topic={topic} selected />}
       <div
         className={cn(
           'topic group/topic nopan relative flex flex-col items-center rounded-lg border-[1.5px] transition-[box-shadow,border-color] duration-150 select-none',
@@ -117,7 +116,7 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
             fontFamily: data.fontFamily,
             width: baseWidth,
             height: baseHeight,
-            transform: `scale(calc(var(--canvas-camera-scale, 1) * ${scale}))`,
+            transform: `scale(${scale})`,
             transformOrigin: 'top left',
             borderRadius:
               shape === 'capsule'
@@ -217,7 +216,24 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
   )
 }
 
-// React Flow updates its wrapper's projection and inherited CSS scale; content stays stable.
-export const TopicNode = memo(TopicNodeContent, sameTopicNodeContent)
+const StableTopicContent = memo(TopicNodeContent, sameTopicNodeContent)
+
+/** Transform only this billboard; changing an inherited variable restyles every text descendant. */
+export const TopicNode = (props: NodeProps<TopicFlowNode>) => (
+  <>
+    {props.selected && <TopicScaleHandle id={props.id} topic={props.data.topic} selected />}
+    <div
+      className="topic-projection"
+      style={{
+        width: props.data.worldWidth ?? '100%',
+        height: props.data.worldHeight ?? '100%',
+        transform: `scale(${props.data.cameraScale ?? 1})`,
+        transformOrigin: 'top left',
+      }}
+    >
+      <StableTopicContent {...props} />
+    </div>
+  </>
+)
 
 TopicNode.displayName = 'TopicNode'

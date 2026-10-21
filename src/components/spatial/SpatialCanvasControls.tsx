@@ -2,7 +2,7 @@ import type { MindMapLayout } from '@layout'
 import { SpatialCameraControls } from '@renderer/components/spatial/SpatialCameraControls'
 import { Panel } from '@xyflow/react'
 import { RotateCcw } from 'lucide-react'
-import { useActiveSpatialView } from '@renderer/hooks/useActiveSpatialView'
+import { useActiveSpatialSetting } from '@renderer/hooks/useActiveSpatialView'
 import { useMessages } from '@renderer/i18n/useMessages'
 import { useEditor } from '@renderer/state/editor'
 import { useCanvasInteraction } from '@renderer/state/canvasInteraction'
@@ -19,7 +19,7 @@ export const SpatialCanvasControls = ({
   depths?: Readonly<Record<string, number>> | null | undefined
 }) => {
   const { translate } = useMessages()
-  const { view } = useActiveSpatialView(false)
+  const { value: modeValue } = useActiveSpatialSetting((view) => view.mode)
   const busy = useEditor((state) => state.busy)
   const dragging = useCanvasInteraction((state) => Boolean(state.drag))
   const focus = (): void => {
@@ -28,7 +28,7 @@ export const SpatialCanvasControls = ({
       .querySelector<HTMLElement>(`.topic-input[data-topic-id="${CSS.escape(id)}"]`)
       ?.focus({ preventScroll: true })
   }
-  if (view.mode !== '3d') return null
+  if (modeValue !== '3d') return null
   return (
     <>
       <Panel

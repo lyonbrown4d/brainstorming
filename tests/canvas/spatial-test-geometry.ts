@@ -1,9 +1,16 @@
 import type { Locator } from '@playwright/test'
 
-/** Read the actual inherited projection scale applied by React Flow's wrapper. */
+/** Read the actual billboard transform; ink uses its projected SVG box. */
 export const cameraScale = async (locator: Locator): Promise<number> =>
   locator.evaluate((element) =>
-    Number(getComputedStyle(element).getPropertyValue('--canvas-camera-scale') || 1),
+    (() => {
+      const billboard = element.querySelector('.topic-projection')
+      if (billboard) return new DOMMatrixReadOnly(getComputedStyle(billboard).transform).a
+      const svg = element.querySelector('svg')
+      return svg instanceof SVGSVGElement
+        ? Number.parseFloat(getComputedStyle(element).width) / svg.viewBox.baseVal.width
+        : 1
+    })(),
   )
 
 export const exposedTopicPoint = async (locator: Locator): Promise<{ x: number; y: number }> =>

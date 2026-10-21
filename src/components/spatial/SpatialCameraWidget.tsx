@@ -2,28 +2,50 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { GizmoHelper, GizmoViewcube } from '@react-three/drei'
-import { Vector3 } from 'three'
 import { useAppearanceColors } from '@renderer/hooks/useAppearanceColors'
-import { useActiveSpatialView } from '@renderer/hooks/useActiveSpatialView'
+import { useActiveSpatialSetting } from '@renderer/hooks/useActiveSpatialView'
 import { useMessages } from '@renderer/i18n/useMessages'
 import { useCanvasInk } from '@renderer/state/canvasInk'
 import { useEditor } from '@renderer/state/editor'
 import { usePresentation } from '@renderer/state/presentation'
 import { spatialCameraQuaternion } from '@renderer/lib/spatialCamera'
 import { saveSpatialView } from '@renderer/state/spatialActions'
-import type { SpatialView } from '@renderer/state/spatialView'
+import { getSpatialView, useSpatialView } from '@renderer/state/spatialView'
 
-const CameraSync = ({ view, onReady }: { view: SpatialView; onReady: () => void }) => {
+const CameraSync = ({
+  workbookId,
+  sheetId,
+  onReady,
+}: {
+  workbookId: string
+  sheetId: string
+  onReady: () => void
+}) => {
   const { camera, invalidate } = useThree()
   const reported = useRef(false)
   const readyFrame = useRef(0)
   useLayoutEffect(() => {
-    const rotation = spatialCameraQuaternion(view)
-    camera.position.copy(new Vector3(0, 0, 5).applyQuaternion(rotation))
-    camera.quaternion.copy(rotation)
-    camera.updateMatrixWorld()
-    invalidate()
-  }, [camera, invalidate, view])
+    let yaw: number | undefined
+    let pitch: number | undefined
+    const update = (): void => {
+      const view = getSpatialView(workbookId, sheetId)
+      if (view.yaw === yaw && view.pitch === pitch) return
+      yaw = view.yaw
+      pitch = view.pitch
+      const rotation = spatialCameraQuaternion(view)
+      camera.position.set(0, 0, 5).applyQuaternion(rotation)
+      camera.quaternion.copy(rotation)
+      camera.updateMatrixWorld()
+      invalidate()
+    }
+    update()
+    const stopView = useSpatialView.subscribe(update)
+    const stopEditor = useEditor.subscribe(update)
+    return () => {
+      stopView()
+      stopEditor()
+    }
+  }, [camera, invalidate, workbookId, sheetId])
   useFrame(() => {
     if (reported.current) return
     reported.current = true
@@ -60,13 +82,13 @@ export const SpatialCameraWidget = ({
   onReady: () => void
 }) => {
   const { translate } = useMessages()
-  const { view } = useActiveSpatialView(false)
+  const { workbookId, sheetId, value: mode } = useActiveSpatialSetting((view) => view.mode)
   const colors = useAppearanceColors()
   const busy = useEditor((state) => state.busy || Boolean(state.editingId))
   const drawing = useCanvasInk((state) => state.mode !== 'select')
   const playing = usePresentation((state) => state.playing)
   const [lost, setLost] = useState(false)
-  if (view.mode !== '3d') return null
+  if (mode !== '3d') return null
   if (lost) return <WidgetUnavailable onReady={onReady} />
   return (
     <ErrorBoundary fallbackRender={() => <WidgetUnavailable onReady={onReady} />}>
@@ -94,7 +116,7 @@ export const SpatialCameraWidget = ({
             )
           }}
         >
-          <CameraSync view={view} onReady={onReady} />
+          <CameraSync workbookId={workbookId} sheetId={sheetId} onReady={onReady} />
           <GizmoHelper alignment="center-center" margin={[0, 0]}>
             <GizmoViewcube
               faces={[

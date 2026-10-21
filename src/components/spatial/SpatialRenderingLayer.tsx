@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, memo, Suspense, useEffect, useState } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { Button } from '@renderer/components/ui/button'
 import { useMessages } from '@renderer/i18n/useMessages'
@@ -23,32 +23,35 @@ const Fallback = ({ retry, onReady }: { retry: () => void; onReady: () => void }
   )
 }
 
-export const SpatialRenderingLayer = (props: { layout: MindMapLayout; onReady: () => void }) => {
-  const [started, setStarted] = useState(false)
-  useEffect(() => {
-    let next = 0
-    // Paint the loading mask before creating a WebGL context or compiling shaders.
-    const first = requestAnimationFrame(() => {
-      next = requestAnimationFrame(() => {
-        setStarted(true)
+export const SpatialRenderingLayer = memo(
+  (props: { layout: MindMapLayout; onReady: () => void }) => {
+    const [started, setStarted] = useState(false)
+    useEffect(() => {
+      let next = 0
+      // Paint the loading mask before creating a WebGL context or compiling shaders.
+      const first = requestAnimationFrame(() => {
+        next = requestAnimationFrame(() => {
+          setStarted(true)
+        })
       })
-    })
-    return () => {
-      cancelAnimationFrame(first)
-      cancelAnimationFrame(next)
-    }
-  }, [])
-  return (
-    <ErrorBoundary
-      fallbackRender={({ resetErrorBoundary }) => (
-        <Fallback retry={resetErrorBoundary} onReady={props.onReady} />
-      )}
-    >
-      {started && (
-        <Suspense fallback={null}>
-          <SpatialBackdrop {...props} />
-        </Suspense>
-      )}
-    </ErrorBoundary>
-  )
-}
+      return () => {
+        cancelAnimationFrame(first)
+        cancelAnimationFrame(next)
+      }
+    }, [])
+    return (
+      <ErrorBoundary
+        fallbackRender={({ resetErrorBoundary }) => (
+          <Fallback retry={resetErrorBoundary} onReady={props.onReady} />
+        )}
+      >
+        {started && (
+          <Suspense fallback={null}>
+            <SpatialBackdrop {...props} />
+          </Suspense>
+        )}
+      </ErrorBoundary>
+    )
+  },
+)
+SpatialRenderingLayer.displayName = 'SpatialRenderingLayer'

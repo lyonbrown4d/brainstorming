@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react'
 import type { SpatialView } from '@renderer/state/spatialView'
 import { relationAnchors } from '@shared/relation-geometry'
 import { visualPath } from '@shared/sketch'
@@ -67,7 +66,7 @@ export const projectCanvas = (
         ...(node.cameraScale === undefined
           ? {}
           : {
-              className: '[contain:layout_style] [&>.topic]:will-change-transform',
+              className: '[contain:layout_style] [&>.topic-projection]:will-change-transform',
               // RF retains initialized ports while its observer updates their DOM bounds.
               measured: { width: Math.round(node.width), height: Math.round(node.height) },
             }),
@@ -79,8 +78,7 @@ export const projectCanvas = (
         style: {
           width: node.width,
           height: node.height,
-          '--canvas-camera-scale': node.cameraScale ?? 1,
-        } as CSSProperties,
+        },
         data: {
           topic,
           visualStyle: document.settings?.visualStyle ?? 'normal',

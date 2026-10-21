@@ -127,6 +127,8 @@ test('direct blank-canvas orbit commits once, keeps selection, and Escape drops 
       return Math.hypot(current.x - original.x, current.y - original.y)
     })
     .toBeGreaterThan(2)
+  // Read the completed pose, rather than an intermediate damping frame.
+  await settledBox(branch)
   await openCamera(page)
   const orbitedYaw = await page.getByRole('slider').first().getAttribute('aria-valuenow')
   expect(orbitedYaw).not.toBe('40')

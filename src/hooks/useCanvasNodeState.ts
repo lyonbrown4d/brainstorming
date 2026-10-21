@@ -1,12 +1,13 @@
-import { useState } from 'react'
-import { useNodesState } from '@xyflow/react'
+import { useState, type SetStateAction } from 'react'
+import { applyNodeChanges, type NodeChange } from '@xyflow/react'
+import { useMemoizedFn } from 'ahooks'
 import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
 import { synchronizeCanvasNodes } from '@renderer/lib/canvasDragNodes'
 import { useEditor } from '@renderer/state/editor'
 import { useSelection, useSelectedDrawingIds } from '@renderer/state/selection'
 import { usePresentation } from '@renderer/state/presentation'
 
-/** Reconcile controlled nodes before painting, rather than replaying each camera frame in an effect. */
+/** Derive camera frames directly; retain state only for RF measurements and pointer previews. */
 export const useCanvasNodeState = (
   projected: CanvasFlowNode[],
   scope: string,
@@ -17,27 +18,46 @@ export const useCanvasNodeState = (
   const topics = useSelection((state) => state.sheets[sheetId])
   const drawings = useSelectedDrawingIds()
   const playing = usePresentation((state) => state.playing)
-  const [nodes, setNodes, onNodesChange] = useNodesState<CanvasFlowNode>(projected)
-  const incoming = { projected, scope, topics, drawings, primary, playing }
-  const [source, setSource] = useState<typeof incoming | null>(null)
-  let current = nodes
-  if (
-    source?.projected !== projected ||
-    source.scope !== scope ||
-    source.topics !== topics ||
-    source.drawings !== drawings ||
-    source.primary !== primary ||
-    source.playing !== playing
-  ) {
-    current = synchronizeCanvasNodes(source?.scope === scope ? nodes : projected, projected, {
-      geometryChanged: source?.projected !== projected || source.scope !== scope,
-      dragging: source?.scope === scope ? dragging : undefined,
-      topics: new Set(topics ?? [primary]),
-      drawings: new Set(drawings),
-      playing,
-    })
-    setSource(incoming)
-    setNodes(current)
+  const source = { projected, scope, topics, drawings, primary, playing }
+  const [retained, setRetained] = useState<{
+    source: typeof source | null
+    nodes: CanvasFlowNode[]
+  }>(() => ({ source: null, nodes: projected }))
+  const reconcile = (previous: typeof retained) => {
+    const before = previous.source
+    // RF's temporary marquee selection must survive until onSelectionEnd commits it.
+    if (
+      before?.projected === projected &&
+      before.scope === scope &&
+      before.topics === topics &&
+      before.drawings === drawings &&
+      before.primary === primary &&
+      before.playing === playing
+    )
+      return previous.nodes
+    return synchronizeCanvasNodes(
+      previous.source?.scope === scope ? previous.nodes : projected,
+      projected,
+      {
+        geometryChanged:
+          previous.source?.projected !== projected || previous.source.scope !== scope,
+        dragging: previous.source?.scope === scope ? dragging : undefined,
+        topics: new Set(topics ?? [primary]),
+        drawings: new Set(drawings),
+        playing,
+      },
+    )
   }
-  return { nodes: current, setNodes, onNodesChange }
+  const nodes = reconcile(retained)
+  // Stable callbacks preserve the drag cancellation subscriptions while the camera moves.
+  const setNodes = useMemoizedFn((update: SetStateAction<CanvasFlowNode[]>) => {
+    setRetained((previous) => {
+      const current = reconcile(previous)
+      return { source, nodes: typeof update === 'function' ? update(current) : update }
+    })
+  })
+  const onNodesChange = useMemoizedFn((changes: NodeChange<CanvasFlowNode>[]) => {
+    setNodes((current) => applyNodeChanges(changes, current))
+  })
+  return { nodes, setNodes, onNodesChange }
 }
