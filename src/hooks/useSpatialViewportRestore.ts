@@ -7,7 +7,7 @@ import { canvasFitPadding } from '@renderer/hooks/useWorkbenchInsets'
 
 /** Keep mode changes covered until their matching geometry and viewport are both applied. */
 export const useSpatialViewportRestore = (ready: boolean): boolean => {
-  const { view, workbookId, sheetId } = useActiveSpatialView()
+  const { view, workbookId, sheetId } = useActiveSpatialView(false)
   const flow = useReactFlow()
   const scope = JSON.stringify([workbookId, sheetId, view.mode])
   const [applied, setApplied] = useState(scope)

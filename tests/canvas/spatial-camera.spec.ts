@@ -1,3 +1,4 @@
+import { cameraScale } from '@tests/canvas/spatial-test-geometry'
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
 const story = '/iframe.html?id=brainstorming-空间视图--interactive&viewMode=story'
@@ -176,8 +177,8 @@ test('side view preserves mixed topic and ink moves, title editing, resize, and 
   await expect(branch).toHaveClass(/selected/)
   await expect(stroke).toHaveClass(/selected/)
   const before = { branch: await box(branch), stroke: await box(stroke) }
-  const branchScale = Number(await branch.locator('.topic').getAttribute('data-camera-scale'))
-  const inkScale = Number(await stroke.locator('svg').getAttribute('data-camera-scale'))
+  const branchScale = await cameraScale(branch)
+  const inkScale = await cameraScale(stroke)
   await drag(page, await exposedTopicPoint(branch), 65, 35, 5)
   await expect.poll(async () => (await box(branch)).x).toBeCloseTo(before.branch.x + 65, 0)
   await expect

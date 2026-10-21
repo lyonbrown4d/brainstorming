@@ -41,7 +41,7 @@ export const SpatialCameraControls = ({
   depths?: Readonly<Record<string, number>> | null | undefined
 }) => {
   const { translate } = useMessages()
-  const { view, workbookId, sheetId } = useActiveSpatialView()
+  const { view, workbookId, sheetId } = useActiveSpatialView(false)
   const busy = useEditor((state) => state.busy)
   const editing = useEditor((state) => Boolean(state.editingId))
   const [open, setOpen] = useState(false)

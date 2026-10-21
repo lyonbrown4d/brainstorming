@@ -3,15 +3,10 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Canvas as ThreeCanvas, useFrame, useThree } from '@react-three/fiber'
 import { useViewport, type Viewport } from '@xyflow/react'
 import { OrthographicCamera, PerspectiveCamera, Vector3 } from 'three'
-import {
-  createSpatialCamera,
-  projectSpatialPoint,
-  spatialCameraQuaternion,
-  spatialPerspectiveScale,
-  unprojectSpatialPoint,
-} from '@renderer/lib/spatialCamera'
+import { createSpatialCamera, spatialCameraQuaternion } from '@renderer/lib/spatialCamera'
 import { SpatialStage } from '@renderer/components/spatial/SpatialStage'
 import { SpatialSolid } from '@renderer/components/spatial/SpatialSolid'
+import { spatialSolidPose } from '@renderer/components/spatial/spatialSolidPose'
 import { useActiveSpatialView } from '@renderer/hooks/useActiveSpatialView'
 import { useMessages } from '@renderer/i18n/useMessages'
 import { Button } from '@renderer/components/ui/button'
@@ -38,7 +33,10 @@ const Solids = ({
   const reported = useRef(false)
   const readyFrame = useRef(0)
   const bases = useMemo(() => new Map(layout.nodes.map((node) => [node.id, node])), [layout])
-  const rotation = useMemo(() => spatialCameraQuaternion(view), [view])
+  const orientation = useMemo<SpatialView>(
+    () => ({ mode: view.mode, yaw: view.yaw, pitch: view.pitch, spacing: 0 }),
+    [view.mode, view.yaw, view.pitch],
+  )
   const range = useMemo(
     () =>
       layout.nodes.reduce(
@@ -103,8 +101,12 @@ const Solids = ({
     <>
       {nodes.map((node) => {
         if (node.type !== 'topic' || node.data.topic.style?.shape === 'text') return null
-        const width = node.measured?.width ?? node.initialWidth ?? 100
-        const height = node.measured?.height ?? node.initialHeight ?? 50
+        const styledWidth = typeof node.style?.width === 'number' ? node.style.width : undefined
+        const styledHeight = typeof node.style?.height === 'number' ? node.style.height : undefined
+        // Match React Flow's NodeWrapper inline size, including a live resize override.
+        const width = node.width ?? styledWidth ?? node.initialWidth ?? node.measured?.width ?? 100
+        const height =
+          node.height ?? styledHeight ?? node.initialHeight ?? node.measured?.height ?? 50
         const left = node.position.x * viewport.zoom + viewport.x
         const top = node.position.y * viewport.zoom + viewport.y
         if (
@@ -116,30 +118,33 @@ const Solids = ({
           return null
         const base = bases.get(node.id)
         if (!base) return null
-        const depth = projectSpatialPoint(
-          { x: base.x + base.width / 2, y: base.y + base.height / 2, z: depths[node.id] ?? 0 },
-          view,
-        ).z
-        const perspectiveScale = spatialPerspectiveScale(view, depth)
-        const center = unprojectSpatialPoint(
-          { x: node.position.x + width / 2, y: node.position.y + height / 2, z: depth },
-          view,
+        const pose = spatialSolidPose(
+          base,
+          depths[node.id] ?? 0,
+          {
+            position: node.position,
+            width,
+            height,
+            widthTolerance: node.width === undefined ? 0 : 0.5,
+            heightTolerance: node.height === undefined ? 0 : 0.5,
+          },
+          node.data.cameraFrame ?? view,
         )
         return (
-          <group key={node.id} position={[center.x, -center.y, center.z]} quaternion={rotation}>
-            <SpatialSolid
-              z={0}
-              width={base.width}
-              height={base.height}
-              projectedWidth={width}
-              projectedHeight={height}
-              perspectiveScale={perspectiveScale}
-              view={view}
-              shape={node.data.topic.style?.shape ?? 'rounded'}
-              fill={node.data.fill ?? '#3b3e45'}
-              scale={node.data.topic.style?.scale ?? 1}
-            />
-          </group>
+          <SpatialSolid
+            key={node.id}
+            width={base.width}
+            height={base.height}
+            worldWidth={pose.width}
+            worldHeight={pose.height}
+            worldX={pose.x}
+            worldY={pose.y}
+            worldZ={pose.z}
+            orientation={orientation}
+            shape={node.data.topic.style?.shape ?? 'rounded'}
+            fill={node.data.fill ?? '#3b3e45'}
+            scale={node.data.topic.style?.scale ?? 1}
+          />
         )
       })}
     </>

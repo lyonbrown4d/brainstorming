@@ -19,7 +19,7 @@ export const SpatialCanvasControls = ({
   depths?: Readonly<Record<string, number>> | null | undefined
 }) => {
   const { translate } = useMessages()
-  const { view } = useActiveSpatialView()
+  const { view } = useActiveSpatialView(false)
   const busy = useEditor((state) => state.busy)
   const dragging = useCanvasInteraction((state) => Boolean(state.drag))
   const focus = (): void => {

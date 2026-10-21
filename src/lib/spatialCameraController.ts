@@ -90,8 +90,12 @@ export const spatialCameraSnapshot = (
   const physicalTarget = controls.getTarget(new Vector3(), end)
   const target = { x: physicalTarget.x, y: -physicalTarget.y, z: physicalTarget.z }
   const distance = position.distanceTo(physicalTarget)
+  const orientation = cameraOrientation(position, physicalTarget)
+  // Radius changes introduce inverse-trig roundoff, not an actual orbit.
+  const yaw = Math.abs(orientation.yaw - view.yaw) < 1e-10 ? view.yaw : orientation.yaw
+  const pitch = Math.abs(orientation.pitch - view.pitch) < 1e-10 ? view.pitch : orientation.pitch
   return {
-    view: { ...view, ...cameraOrientation(position, physicalTarget), target },
+    view: { ...view, yaw, pitch, target },
     distance,
     viewport: cameraViewport(size, target, distance),
   }

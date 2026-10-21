@@ -1,3 +1,4 @@
+import { cameraScale } from '@tests/canvas/spatial-test-geometry'
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
 const story = '/iframe.html?id=brainstorming-空间视图--interactive&viewMode=story'
@@ -41,7 +42,7 @@ test('right drag on empty canvas trucks the scene without changing its angle or 
   await open(page)
   const branch = topic(page, 'branch-a')
   const before = await bounds(branch)
-  const beforeScale = await branch.locator('.topic').getAttribute('data-camera-scale')
+  const beforeScale = await cameraScale(branch)
   const point = await emptyPanePoint(page)
 
   await page.mouse.move(point.x, point.y)
@@ -50,9 +51,7 @@ test('right drag on empty canvas trucks the scene without changing its angle or 
   await page.mouse.up({ button: 'right' })
 
   await expect.poll(() => moved(branch, before)).toBeGreaterThan(25)
-  await expect
-    .poll(async () => Number(await branch.locator('.topic').getAttribute('data-camera-scale')))
-    .toBeCloseTo(Number(beforeScale), 4)
+  await expect.poll(async () => await cameraScale(branch)).toBeCloseTo(beforeScale, 4)
   await expect(page.getByRole('menu')).toHaveCount(0)
 })
 

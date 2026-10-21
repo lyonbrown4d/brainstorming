@@ -1,3 +1,4 @@
+import type { SpatialView } from '@renderer/state/spatialView'
 import { topicShapeInsets } from '@shared/topic-shapes'
 import { TopicShapeVisual } from '@renderer/components/TopicShapeVisual'
 import { TopicNodeBody } from '@renderer/components/TopicNodeBody'
@@ -7,7 +8,7 @@ import { useMessages } from '@renderer/i18n/useMessages'
 
 import { cn } from '@renderer/lib/utils'
 import { memo } from 'react'
-import { shallow } from 'zustand/shallow'
+import { sameTopicNodeContent } from '@renderer/lib/topicNodeRendering'
 import {
   Handle,
   Position,
@@ -33,6 +34,7 @@ export type TopicFlowNode = Node<
     fontFamily?: string
     direction?: LayoutDirection
     cameraScale?: number
+    cameraFrame?: SpatialView
     cameraDepth?: number
     worldWidth?: number
     worldHeight?: number
@@ -43,7 +45,10 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
   const { translate } = useMessages()
 
   // Pan and zoom frames only notify this node when the detail threshold changes.
-  const lowZoom = useFlowStore((state) => state.transform[2] * (data.cameraScale ?? 1) < 0.35)
+  const lowZoom = useFlowStore((state) => {
+    const cameraScale = state.nodeLookup.get(id)?.data.cameraScale
+    return state.transform[2] * (typeof cameraScale === 'number' ? cameraScale : 1) < 0.35
+  })
   const primary = useEditor((state) => state.selectedId === id)
   const selected = useTopicSelected(id)
   const dropTarget = useEditor((state) => state.dropTargetId === id)
@@ -72,15 +77,12 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
   const style = topic.style
   const previewScale = useTopicScalePreview((state) => (state.topicId === id ? state.scale : null))
   const scale = previewScale ?? style?.scale ?? 1
-  const renderScale = scale * (data.cameraScale ?? 1)
   // Perspective and resize previews transform a stable content box, preserving cached SVG/text.
   const baseWidth =
-    data.worldWidth === undefined
-      ? (width ?? 100) / renderScale
-      : data.worldWidth / (style?.scale ?? 1)
+    data.worldWidth === undefined ? (width ?? 100) / scale : data.worldWidth / (style?.scale ?? 1)
   const baseHeight =
     data.worldHeight === undefined
-      ? (height ?? 100) / renderScale
+      ? (height ?? 100) / scale
       : data.worldHeight / (style?.scale ?? 1)
   const shape = style?.shape ?? 'rounded'
   const insets = topicShapeInsets(shape)
@@ -117,7 +119,7 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
             fontFamily: data.fontFamily,
             width: baseWidth,
             height: baseHeight,
-            transform: `scale(${renderScale})`,
+            transform: `scale(calc(var(--canvas-camera-scale, 1) * ${scale}))`,
             transformOrigin: 'top left',
             borderRadius:
               shape === 'capsule'
@@ -130,7 +132,6 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
           } as React.CSSProperties
         }
         data-appearance={shape}
-        data-camera-scale={data.cameraScale ?? 1}
         data-testid={`topic-${id}`}
       >
         <TopicShapeVisual
@@ -218,14 +219,7 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
   )
 }
 
-// React Flow owns positioning; this content only consumes identity and node data.
-export const TopicNode = memo(
-  TopicNodeContent,
-  (previous, next) =>
-    previous.id === next.id &&
-    previous.width === next.width &&
-    previous.height === next.height &&
-    shallow(previous.data, next.data),
-)
+// React Flow updates its wrapper's projection and inherited CSS scale; content stays stable.
+export const TopicNode = memo(TopicNodeContent, sameTopicNodeContent)
 
 TopicNode.displayName = 'TopicNode'

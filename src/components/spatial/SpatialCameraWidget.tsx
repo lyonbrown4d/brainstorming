@@ -60,7 +60,7 @@ export const SpatialCameraWidget = ({
   onReady: () => void
 }) => {
   const { translate } = useMessages()
-  const { view } = useActiveSpatialView()
+  const { view } = useActiveSpatialView(false)
   const colors = useAppearanceColors()
   const busy = useEditor((state) => state.busy || Boolean(state.editingId))
   const drawing = useCanvasInk((state) => state.mode !== 'select')

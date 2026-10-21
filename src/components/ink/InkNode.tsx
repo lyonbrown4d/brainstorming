@@ -8,7 +8,7 @@ import { useCanvasInk } from '@renderer/state/canvasInk'
 import { useEditor } from '@renderer/state/editor'
 import { usePresentation } from '@renderer/state/presentation'
 
-export const InkNode = memo(({ id, data, selected }: NodeProps<InkFlowNode>) => {
+const InkNodeContent = ({ id, data, selected }: NodeProps<InkFlowNode>) => {
   const { translate } = useMessages()
   const { stroke } = data
   const { path, bounds } = inkGeometry(stroke)
@@ -36,7 +36,6 @@ export const InkNode = memo(({ id, data, selected }: NodeProps<InkFlowNode>) => 
         preserveAspectRatio="none"
         className="nopan block size-full overflow-visible"
         data-ink-node={stroke.id}
-        data-camera-scale={data.cameraScale ?? 1}
         aria-label={translate('inkStroke')}
         style={{ pointerEvents: selected && mode === 'select' ? 'auto' : 'none' }}
       >
@@ -62,5 +61,14 @@ export const InkNode = memo(({ id, data, selected }: NodeProps<InkFlowNode>) => 
       </svg>
     </>
   )
-})
+}
+
+// The SVG fills React Flow's box; camera-only projection never changes the stroke content.
+export const InkNode = memo(
+  InkNodeContent,
+  (previous, next) =>
+    previous.id === next.id &&
+    previous.selected === next.selected &&
+    previous.data.stroke === next.data.stroke,
+)
 InkNode.displayName = 'InkNode'

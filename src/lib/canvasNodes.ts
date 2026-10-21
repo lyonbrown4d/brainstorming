@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { projectedInkBounds } from '@renderer/lib/spatialInk'
 import type { SpatialView } from '@renderer/state/spatialView'
 import type { Node } from '@xyflow/react'
@@ -51,7 +52,15 @@ export const projectInk = (document: MindMapDocument, spatial?: SpatialView): In
         position: { x: bounds.x, y: bounds.y },
         initialWidth: bounds.width,
         initialHeight: bounds.height,
-        style: { width: bounds.width, height: bounds.height, pointerEvents: 'none' },
+        style: {
+          width: bounds.width,
+          height: bounds.height,
+          pointerEvents: 'none',
+          '--canvas-camera-scale':
+            spatial && cameraDepth !== undefined
+              ? spatialPerspectiveScale(spatial, cameraDepth)
+              : 1,
+        } as CSSProperties,
         draggable: true,
         selectable: true,
         connectable: false,

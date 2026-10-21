@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import type { SpatialView } from '@renderer/state/spatialView'
 import { relationAnchors } from '@shared/relation-geometry'
 import { visualPath } from '@shared/sketch'
@@ -68,9 +69,14 @@ export const projectCanvas = (
         // Known layout dimensions keep fresh nodes visible when Lexical takes focus.
         initialWidth: node.width,
         initialHeight: node.height,
-        style: { width: node.width, height: node.height },
+        style: {
+          width: node.width,
+          height: node.height,
+          '--canvas-camera-scale': node.cameraScale ?? 1,
+        } as CSSProperties,
         data: {
           topic,
+          ...(spatial?.mode === '3d' ? { cameraFrame: spatial } : {}),
           visualStyle: document.settings?.visualStyle ?? 'normal',
           root: node.id === document.rootId,
           branch: document.topics[document.rootId]?.children.includes(node.id) ?? false,

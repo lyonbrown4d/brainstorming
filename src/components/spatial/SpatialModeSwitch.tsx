@@ -9,7 +9,7 @@ import { ToggleGroup, ToggleGroupItem } from '@renderer/components/ui/toggle-gro
 /** The titlebar selects the persisted mode; the mounted canvas restores its own viewport. */
 export const SpatialModeSwitch = () => {
   const { translate } = useMessages()
-  const { view } = useActiveSpatialView()
+  const { view } = useActiveSpatialView(false)
   const busy = useEditor((state) => state.busy)
   const dragging = useCanvasInteraction((state) => Boolean(state.drag))
   const presenting = usePresentation((state) => state.workspaceMode !== null)

@@ -105,7 +105,7 @@ const TopicDepth = ({ topicId, depth }: { topicId: string; depth: number }) => {
 
 export const SpatialDepthControl = () => {
   const { translate } = useMessages()
-  const { view } = useActiveSpatialView()
+  const { view } = useActiveSpatialView(false)
   const id = useEditor((state) => state.selectedId)
   const topic = useEditor((state) => state.history.document.topics[id])
   const busy = useEditor((state) => state.busy)

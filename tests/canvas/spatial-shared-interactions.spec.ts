@@ -1,3 +1,4 @@
+import { cameraScale } from '@tests/canvas/spatial-test-geometry'
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
 const node = (page: Page, id: string) => page.locator(`.react-flow__node[data-id="${id}"]`)
@@ -49,9 +50,9 @@ test('3D moves a selected topic subtree and ink together, then undoes both once'
     stroke: await bounds(stroke),
   }
   const scales = {
-    branch: Number(await branch.locator('.topic').getAttribute('data-camera-scale')),
-    child: Number(await child.locator('.topic').getAttribute('data-camera-scale')),
-    ink: Number(await stroke.locator('svg').getAttribute('data-camera-scale')),
+    branch: await cameraScale(branch),
+    child: await cameraScale(child),
+    ink: await cameraScale(stroke),
   }
   await branch.click()
   await page.locator('[data-drawing-id="spatial-ink"]').click({ modifiers: ['Meta'] })
