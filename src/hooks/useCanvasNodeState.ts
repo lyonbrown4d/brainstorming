@@ -56,8 +56,16 @@ export const useCanvasNodeState = (
       return { source, nodes: typeof update === 'function' ? update(current) : update }
     })
   })
-  const onNodesChange = useMemoizedFn((changes: NodeChange<CanvasFlowNode>[]) => {
-    setNodes((current) => applyNodeChanges(changes, current))
-  })
+  const onNodesChange = useMemoizedFn(
+    (
+      changes: NodeChange<CanvasFlowNode>[],
+      preview?: (nodes: CanvasFlowNode[]) => CanvasFlowNode[],
+    ) => {
+      setNodes((current) => {
+        const next = applyNodeChanges(changes, current)
+        return preview ? preview(next) : next
+      })
+    },
+  )
   return { nodes, setNodes, onNodesChange }
 }

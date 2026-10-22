@@ -134,3 +134,25 @@ it('keeps renderer lens scoped and merged views referentially stable', () => {
   setSpatialLens('perspective-book', 'sheet-a', undefined)
   expect(getSpatialView('perspective-book', 'sheet-a').cameraDistance).toBeUndefined()
 })
+
+it('preserves pointer-owned positions and unchanged node identities during a subtree preview', () => {
+  const nodes = [
+    { id: 'anchor', position: { x: 100, y: 40 } },
+    { id: 'child', position: { x: 20, y: 20 } },
+    { id: 'unrelated', position: { x: 50, y: 50 } },
+  ] as CanvasFlowNode[]
+  const session = {
+    excluded: new Set(['anchor', 'child']),
+    origins: new Map([
+      ['anchor', { x: 0, y: 0 }],
+      ['child', { x: 20, y: 20 }],
+    ]),
+    view: { ...view, mode: '2d' as const },
+    anchorId: 'anchor',
+  }
+  const moved = previewPerspectiveDrag(nodes, session, new Map(), 100, 40)
+  expect(moved[0]).toBe(nodes[0])
+  expect(moved[1]?.position).toEqual({ x: 120, y: 60 })
+  expect(moved[2]).toBe(nodes[2])
+  expect(previewPerspectiveDrag(moved, session, new Map(), 100, 40)).toBe(moved)
+})

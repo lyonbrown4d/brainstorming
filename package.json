@@ -81,6 +81,7 @@
     "dotenv": "18.0.8",
     "fast-xml-parser": "5.11.2",
     "fflate": "0.8.3",
+    "flatbush": "4.6.2",
     "i18next": "26.5.3",
     "image-size": "2.0.4",
     "jspdf": "4.2.1",

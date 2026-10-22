@@ -21,6 +21,12 @@ pnpm dev
 
 正式画布向 `compute_layout` / `compute_spatial_layout` 发送空 `measurements`，由 Rust 在有界工作线程内估算全图尺寸；只在布局缓存未命中时执行。显式传入的尺寸仍用于预览和确定性几何比较；Storybook 保留 TypeScript 参考量测。前端缓存几何输入的身份，原生快照合并复用未变笔迹及其数组，避免重复运行 perfect-freehand；文本对比色使用有容量上限的 LRU Cache。
 
+2D 平移与缩放由 React Flow 更新视口，不触发原生重布局；画布继续复用 TanStack Query 的布局缓存和现有低倍率细节层级。缩放读数只订阅取整后的百分比，平移不重绘缩放按钮。父子分支线关闭改接端点与透明交互副本，手动关联线仍保留选中、拖动与改接能力；主题容器使用布局与样式 containment，避免内部变化扩散到其他主题。
+
+拖动开始时按当前 React Flow 节点快照建立 [Flatbush](https://github.com/mourner/flatbush) 静态空间索引，并缓存父节点、剩余同级顺序和排列轴。指针移动只查询附近目标，不再逐次转换全图、查找父节点和计算同级范围；保持主题正文优先于插入提示区的规则，等距重叠保持原投影顺序。索引只属于当前手势，结束、取消、切换 Sheet 或卸载后释放。拖动回调复用 ahooks 的稳定函数，关联线事件处理器按挂载周期缓存，避免指针帧反复更新 React Flow 的事件配置。拖动中的节点临时使用 Tailwind `will-change-transform` 合成层提示，结束或取消后释放，不为整张导图常驻创建图层。React Flow 的位置变更和子树跟随在一次状态更新内完成，未发生位移的节点和数组保留原引用；2D、3D 与混合笔迹选区共用此流程。全图测量和布局继续交给 Rust，指针命中保留在前端，避免每帧跨进程往返。
+
+千节点检查复用 `createFixtureDocument(1000)`，组件预览为 `Canvas Performance / Thousand Topics`，原生回归为 `tests/native/canvas-performance.spec.ts`；原生用例记录导航帧间隔，并验证拖动中的连线、保存与单次撤销。React Scan 用于开发环境的重渲染检查；原生指针契约用例补全固定版本 WebDriver 缺少的 `MouseEvent.view` 与按键状态，真实指针命中由 `tests/canvas` 验证。WebView 的 requestAnimationFrame 采样和合成滚轮、拖动事件不能代表物理触控板或 GPU 实际呈现帧率。
+
 3D 镜头推拉时，React Flow 继续更新节点位置、命中范围及连线，轻量投影包装层通过 `transform` 缩放稳定的主题内容。相机比例不通过继承的 CSS 变量传到富文本、图片和 SVG 子树，避免逐帧重新计算整棵主题子树的样式。正文只在低倍率细节阈值、编辑、选区或内容变化时更新。受控节点直接从当前投影派生，React Flow 的测量、指针预览和框选中的临时选区单独保留，直到对应操作提交；镜头帧不再通过状态调整重复渲染画布。三维投影保留已知尺寸，连接点仍由 React Flow 的 ResizeObserver 更新。
 
 地面与方向控件按 [React Three Fiber 的高频更新建议](https://r3f.docs.pmnd.rs/advanced/pitfalls) 直接同步相机对象，不把每帧姿态送入整个 React Three Fiber 组件树。方向控件只响应角度变化，模式与深度控件只订阅所需字段，关闭的角度面板不订阅姿态预览。地面复用 Drei Grid 与 AdaptiveDpr，运动时降低该 WebGL 层分辨率，停止后恢复；网格着色器负责线条抗锯齿，不创建额外 MSAA、深度或模板缓冲，主题文字和图片保持原有清晰度。相机输入尺寸由 ResizeObserver 更新，滚轮和镜头帧只读缓存，避免同步读取布局；原生查询缓存的主题深度直接用于投影，不逐帧重建深度映射。相机距离忽略浮点舍入噪声，纯旋转不重复提交相同的 React Flow 视口。普通原生命令返回新的设置对象时按值比较空间配置，内容编辑和拖动不会因此重置临时镜头；真正的相机配置变更及其撤销仍同步应用。上述优化不设置 60 FPS 上限，实际帧率仍取决于导图规模、系统和显示器。

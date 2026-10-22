@@ -11,10 +11,18 @@ export const previewPerspectiveDrag = (
   dy: number,
 ): CanvasFlowNode[] => {
   const anchorScale = spatialPerspectiveScale(session.view, depths.get(session.anchorId) ?? 0)
-  return nodes.map((node) => {
+  let next: CanvasFlowNode[] | undefined
+  for (let index = 0; index < nodes.length; index += 1) {
+    const node = nodes[index]
+    if (!node) continue
     const start = session.origins.get(node.id)
-    if (!session.excluded.has(node.id) || !start) return node
+    if (!session.excluded.has(node.id) || !start) continue
     const ratio = spatialPerspectiveScale(session.view, depths.get(node.id) ?? 0) / anchorScale
-    return { ...node, position: { x: start.x + dx * ratio, y: start.y + dy * ratio } }
-  })
+    const x = start.x + dx * ratio,
+      y = start.y + dy * ratio
+    if (node.position.x === x && node.position.y === y) continue
+    next ??= nodes.slice()
+    next[index] = { ...node, position: { x, y } }
+  }
+  return next ?? nodes
 }

@@ -21,6 +21,27 @@ type RelationHandlers = Pick<
   | 'isValidConnection'
 >
 
+const anchor = (handle: string | null | undefined): RelationAnchor | undefined => {
+  const side = handle?.split('-').at(-1)
+  return side === 'top' || side === 'right' || side === 'bottom' || side === 'left'
+    ? side
+    : undefined
+}
+const valid = (source: string | null, target: string | null) => {
+  const state = useEditor.getState()
+  return (
+    !usePresentation.getState().playing &&
+    !state.busy &&
+    Boolean(
+      source &&
+      target &&
+      source !== target &&
+      state.history.document.topics[source] &&
+      state.history.document.topics[target],
+    )
+  )
+}
+
 /** React Flow owns the drag preview; only a valid completed reconnection changes the document. */
 export const useCanvasRelations = (
   projectedEdges: Edge[],
@@ -51,26 +72,6 @@ export const useCanvasRelations = (
       window.removeEventListener('blur', cancel)
     }
   }, [sheetId])
-  const anchor = (handle: string | null | undefined): RelationAnchor | undefined => {
-    const side = handle?.split('-').at(-1)
-    return side === 'top' || side === 'right' || side === 'bottom' || side === 'left'
-      ? side
-      : undefined
-  }
-  const valid = (source: string | null, target: string | null) => {
-    const state = useEditor.getState()
-    return (
-      !usePresentation.getState().playing &&
-      !state.busy &&
-      Boolean(
-        source &&
-        target &&
-        source !== target &&
-        state.history.document.topics[source] &&
-        state.history.document.topics[target],
-      )
-    )
-  }
   const edges = useMemo(
     () =>
       projectedEdges.map((edge) => {
@@ -84,122 +85,125 @@ export const useCanvasRelations = (
       }),
     [projectedEdges, selected, sheetId, playing],
   )
-  return {
-    edges,
-    reconnecting,
-    isValidConnection: ({ source, target }) => valid(source, target),
-    onConnectStart: () => {
-      if (session.current?.edgeId) return
-      const state = useEditor.getState()
-      state.commitDraft()
-      if (state.busy || useEditor.getState().editingId || usePresentation.getState().playing) return
-      session.current = {
-        sheetId: state.activeSheetId,
-        document: useEditor.getState().history.document,
-      }
-      setReconnecting(true)
-    },
-    onConnect: (connection) => {
-      const state = useEditor.getState(),
-        started = session.current
-      if (
-        !started ||
-        started.edgeId ||
-        started.sheetId !== state.activeSheetId ||
-        started.document !== state.history.document ||
-        !valid(connection.source, connection.target)
-      )
-        return
-      const sourceAnchor = anchor(connection.sourceHandle),
-        targetAnchor = anchor(connection.targetHandle)
-      const id = crypto.randomUUID()
-      if (
+  const handlers = useMemo<RelationHandlers>(
+    () => ({
+      isValidConnection: ({ source, target }) => valid(source, target),
+      onConnectStart: () => {
+        if (session.current?.edgeId) return
+        const state = useEditor.getState()
+        state.commitDraft()
+        if (state.busy || useEditor.getState().editingId || usePresentation.getState().playing)
+          return
+        session.current = {
+          sheetId: state.activeSheetId,
+          document: useEditor.getState().history.document,
+        }
+        setReconnecting(true)
+      },
+      onConnect: (connection) => {
+        const state = useEditor.getState(),
+          started = session.current
+        if (
+          !started ||
+          started.edgeId ||
+          started.sheetId !== state.activeSheetId ||
+          started.document !== state.history.document ||
+          !valid(connection.source, connection.target)
+        )
+          return
+        const sourceAnchor = anchor(connection.sourceHandle),
+          targetAnchor = anchor(connection.targetHandle)
+        const id = crypto.randomUUID()
+        if (
+          runAnnotationCommand({
+            type: 'upsertRelation',
+            relation: {
+              id,
+              from: connection.source,
+              to: connection.target,
+              title: translate('relationship'),
+              arrow: 'end',
+              ...(sourceAnchor ? { sourceAnchor } : {}),
+              ...(targetAnchor ? { targetAnchor } : {}),
+            },
+          })
+        )
+          selectAnnotation('relation', id)
+      },
+      onConnectEnd: () => {
+        session.current = null
+        setReconnecting(false)
+      },
+      onEdgeClick: (event, edge) => {
+        if (edge.type !== 'relation') return
+        event.stopPropagation()
+        selectAnnotation('relation', edge.id.slice('relation-'.length))
+      },
+      onEdgeDoubleClick: (event, edge) => {
+        if (edge.type !== 'relation') return
+        event.stopPropagation()
+        selectAnnotation('relation', edge.id.slice('relation-'.length), true)
+      },
+      onReconnectStart: (event, edge) => {
+        if (edge.type !== 'relation' || usePresentation.getState().playing) return
+        event.stopPropagation()
+        const state = useEditor.getState()
+        state.commitDraft()
+        if (useEditor.getState().editingId || state.busy) return
+        session.current = {
+          sheetId: state.activeSheetId,
+          document: useEditor.getState().history.document,
+          edgeId: edge.id,
+        }
+        setReconnecting(true)
+      },
+      onReconnect: (edge, connection) => {
+        const started = session.current
+        const state = useEditor.getState()
+        const document = state.history.document
+        if (
+          started?.sheetId !== state.activeSheetId ||
+          started.document !== document ||
+          started.edgeId !== edge.id
+        )
+          return
+        const { source, target } = connection
+        if (
+          !source ||
+          !target ||
+          source === target ||
+          !document.topics[source] ||
+          !document.topics[target]
+        )
+          return
+        const relation = document.relations?.find((item) => `relation-${item.id}` === edge.id)
+        if (!relation || !valid(source, target)) return
+        const sourceAnchor = anchor(connection.sourceHandle),
+          targetAnchor = anchor(connection.targetHandle)
+        if (
+          relation.from === source &&
+          relation.to === target &&
+          relation.sourceAnchor === sourceAnchor &&
+          relation.targetAnchor === targetAnchor
+        )
+          return
         runAnnotationCommand({
           type: 'upsertRelation',
           relation: {
-            id,
-            from: connection.source,
-            to: connection.target,
-            title: translate('relationship'),
-            arrow: 'end',
+            ...relation,
+            from: source,
+            to: target,
             ...(sourceAnchor ? { sourceAnchor } : {}),
             ...(targetAnchor ? { targetAnchor } : {}),
           },
         })
-      )
-        selectAnnotation('relation', id)
-    },
-    onConnectEnd: () => {
-      session.current = null
-      setReconnecting(false)
-    },
-    onEdgeClick: (event, edge) => {
-      if (edge.type !== 'relation') return
-      event.stopPropagation()
-      selectAnnotation('relation', edge.id.slice('relation-'.length))
-    },
-    onEdgeDoubleClick: (event, edge) => {
-      if (edge.type !== 'relation') return
-      event.stopPropagation()
-      selectAnnotation('relation', edge.id.slice('relation-'.length), true)
-    },
-    onReconnectStart: (event, edge) => {
-      if (edge.type !== 'relation' || usePresentation.getState().playing) return
-      event.stopPropagation()
-      const state = useEditor.getState()
-      state.commitDraft()
-      if (useEditor.getState().editingId || state.busy) return
-      session.current = {
-        sheetId: state.activeSheetId,
-        document: useEditor.getState().history.document,
-        edgeId: edge.id,
-      }
-      setReconnecting(true)
-    },
-    onReconnect: (edge, connection) => {
-      const started = session.current
-      const state = useEditor.getState()
-      const document = state.history.document
-      if (
-        started?.sheetId !== state.activeSheetId ||
-        started.document !== document ||
-        started.edgeId !== edge.id
-      )
-        return
-      const { source, target } = connection
-      if (
-        !source ||
-        !target ||
-        source === target ||
-        !document.topics[source] ||
-        !document.topics[target]
-      )
-        return
-      const relation = document.relations?.find((item) => `relation-${item.id}` === edge.id)
-      if (!relation || !valid(source, target)) return
-      const sourceAnchor = anchor(connection.sourceHandle),
-        targetAnchor = anchor(connection.targetHandle)
-      if (
-        relation.from === source &&
-        relation.to === target &&
-        relation.sourceAnchor === sourceAnchor &&
-        relation.targetAnchor === targetAnchor
-      )
-        return
-      runAnnotationCommand({
-        type: 'upsertRelation',
-        relation: {
-          ...relation,
-          from: source,
-          to: target,
-          ...(sourceAnchor ? { sourceAnchor } : {}),
-          ...(targetAnchor ? { targetAnchor } : {}),
-        },
-      })
-    },
-    onReconnectEnd: () => {
-      session.current = null
-      setReconnecting(false)
-    },
-  }
+      },
+      onReconnectEnd: () => {
+        session.current = null
+        setReconnecting(false)
+      },
+    }),
+    [],
+  )
+  return { ...handlers, edges, reconnecting }
 }

@@ -3,19 +3,23 @@ import { useMessages } from '@renderer/i18n/useMessages'
 
 import { canvasFitPadding } from '@renderer/hooks/useWorkbenchInsets'
 import { useReducedMotion } from 'motion/react'
-import { useReactFlow, useViewport } from '@xyflow/react'
+import { useReactFlow, useStore } from '@xyflow/react'
 import { Focus, Minus, Plus, Maximize2 } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
 import { useEditor } from '@renderer/state/editor'
 import { requestSpatialCamera } from '@renderer/state/spatialCameraCommands'
 import type { TopicFlowNode } from '@renderer/components/TopicNode'
 
+const ZoomPercentage = () => {
+  const percent = useStore((state) => Math.round(state.transform[2] * 100))
+  return <span className="zoom-value w-11 text-center text-[11px] tabular-nums">{percent}%</span>
+}
+
 export const ZoomControls = () => {
   const { translate } = useMessages()
 
   const reduceMotion = useReducedMotion()
   const flow = useReactFlow<TopicFlowNode>()
-  const { zoom } = useViewport()
   const { view } = useActiveSpatialView()
   const spatial = view.mode === '3d'
   const immediate = Boolean(reduceMotion)
@@ -51,9 +55,7 @@ export const ZoomControls = () => {
           {Math.round(view.cameraDistance ?? 0).toLocaleString()}
         </Button>
       ) : (
-        <span className="zoom-value w-11 text-center text-[11px] tabular-nums">
-          {Math.round(zoom * 100)}%
-        </span>
+        <ZoomPercentage />
       )}
       <Button
         variant="ghost"

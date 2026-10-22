@@ -63,6 +63,7 @@ export const projectCanvas = (
       {
         id: node.id,
         type: 'topic' as const,
+        className: '[contain:layout_style]',
         ...(node.cameraScale === undefined
           ? {}
           : {
@@ -144,6 +145,8 @@ export const projectCanvas = (
           strokeWidth: topicAppearance(document, edge.target, surface).lineWidth,
         },
         selectable: false,
+        reconnectable: false,
+        interactionWidth: 0,
       }
     })
   return {

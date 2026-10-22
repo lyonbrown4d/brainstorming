@@ -1,7 +1,8 @@
 import type { MindMapLayout } from '@layout'
 import { spatialCameraDelta } from '@renderer/lib/spatialCamera'
 import { previewPerspectiveDrag } from '@renderer/lib/canvasPerspectiveDrag'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemoizedFn } from 'ahooks'
 import { useReactFlow, type OnNodeDrag } from '@xyflow/react'
 import { useCanvasNodeState } from '@renderer/hooks/useCanvasNodeState'
 import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
@@ -13,7 +14,8 @@ import {
   canvasMoveCommand,
   canvasSelection,
 } from '@renderer/lib/canvasGesture'
-import { findCanvasDrop } from '@renderer/lib/canvasDrop'
+import { createCanvasDropFinder } from '@renderer/lib/canvasDropIndex'
+import { canvasDragLayers } from '@renderer/lib/canvasDragLayers'
 import { canvasDragPointer } from '@renderer/lib/canvasDragPointer'
 import { canvasDragSelection } from '@renderer/lib/canvasDragSelection'
 import { captureSpatialOrigins, type SpatialDepths } from '@renderer/lib/spatialProjection'
@@ -41,6 +43,7 @@ export const useCanvasDrag = (
   const [dragging, setDragging] = useState<ReadonlySet<string> | undefined>(undefined)
   const { nodes, setNodes, onNodesChange } = useCanvasNodeState(projectedNodes, scopeId, dragging)
   const session = useRef<DragSession | null>(null)
+  const findDrop = useRef<ReturnType<typeof createCanvasDropFinder> | null>(null)
   const dragDepths = useRef<ReadonlyMap<string, number>>(new Map())
   const latestProjected = useRef(projectedNodes)
   const cancelled = useRef(false)
@@ -49,6 +52,7 @@ export const useCanvasDrag = (
       const active = session.current
       if (!active) return
       session.current = null
+      findDrop.current = null
       setDragging(undefined)
       dragDepths.current = new Map()
       cancelled.current = true
@@ -105,7 +109,7 @@ export const useCanvasDrag = (
     latestProjected.current = projectedNodes
   }, [projectedNodes])
 
-  const onDragStart: OnNodeDrag<CanvasFlowNode> = (_event, dragged, draggedNodes) => {
+  const onDragStart = useMemoizedFn<OnNodeDrag<CanvasFlowNode>>((_event, dragged, draggedNodes) => {
     cancelled.current = false
     if (!interactionReady || usePresentation.getState().playing) return
     const editor = useEditor.getState()
@@ -113,10 +117,10 @@ export const useCanvasDrag = (
     const current = useEditor.getState()
     if (current.editingId || current.busy) return
     const document = current.history.document
-    const topics = selectedTopicIds(current)
-    const drawings = selectedDrawingIds(current)
+    const topics = new Set(selectedTopicIds(current))
+    const drawings = new Set(selectedDrawingIds(current))
     const selected = projectedNodes.filter((node) =>
-      node.type === 'ink' ? drawings.includes(node.data.stroke.id) : topics.includes(node.id),
+      node.type === 'ink' ? drawings.has(node.data.stroke.id) : topics.has(node.id),
     )
     const moving = selected.some((node) => node.id === dragged.id)
       ? selected
@@ -132,10 +136,11 @@ export const useCanvasDrag = (
     ])
     const view = getSpatialView(current.workbook.id, current.activeSheetId)
     if (view.mode === '3d' && (!spatialDepths || !nativeLayout)) return
+    const currentNodes = getNodes()
     const { origins, nativeOrigins } = captureSpatialOrigins(
       document,
       view,
-      getNodes(),
+      currentNodes,
       spatialDepths,
       nativeLayout,
     )
@@ -153,33 +158,25 @@ export const useCanvasDrag = (
       view,
       anchorId: dragged.id,
     }
+    findDrop.current = session.current.canDrop
+      ? createCanvasDropFinder(document, currentNodes, excluded)
+      : null
     setDragging(excluded)
-    dragDepths.current = new Map(getNodes().map((node) => [node.id, node.data.cameraDepth ?? 0]))
+    setNodes((current) => canvasDragLayers(current, excluded))
+    dragDepths.current = new Map(currentNodes.map((node) => [node.id, node.data.cameraDepth ?? 0]))
     setCanvasSelection(ids.topics, ids.drawings)
-  }
-  const onDrag: OnNodeDrag<CanvasFlowNode> = (event, dragged) => {
+  })
+  const onDrag = useMemoizedFn<OnNodeDrag<CanvasFlowNode>>((event) => {
     const active = session.current
-    const origin = active?.origins.get(dragged.id)
-    if (!active || !origin) return
-    const dx = dragged.position.x - origin.x
-    const dy = dragged.position.y - origin.y
-    // Move visible descendants with their selected subtree instead of stretching its children.
-    setNodes((current) => previewPerspectiveDrag(current, active, dragDepths.current, dx, dy))
+    if (!active) return
     const pointer = canvasDragPointer(event)
     const drop =
-      active.canDrop && pointer
-        ? findCanvasDrop(
-            active.document,
-            projectedNodes.filter((node) => node.type !== 'ink'),
-            active.excluded,
-            screenToFlowPosition(pointer),
-          )
-        : undefined
+      active.canDrop && pointer ? findDrop.current?.(screenToFlowPosition(pointer)) : undefined
     updateCanvasDrag(active.token, drop)
     const dropTargetId = drop?.targetId ?? null
     if (dropTargetId !== useEditor.getState().dropTargetId) useEditor.setState({ dropTargetId })
-  }
-  const onDragStop: OnNodeDrag<CanvasFlowNode> = (event, dragged, draggedNodes) => {
+  })
+  const onDragStop = useMemoizedFn<OnNodeDrag<CanvasFlowNode>>((event, dragged, draggedNodes) => {
     cancelled.current = false
     const active = session.current
     session.current = null
@@ -199,14 +196,7 @@ export const useCanvasDrag = (
     ) {
       const pointer = canvasDragPointer(event)
       const drop =
-        active.canDrop && pointer
-          ? findCanvasDrop(
-              active.document,
-              projectedNodes.filter((node) => node.type !== 'ink'),
-              active.excluded,
-              screenToFlowPosition(pointer),
-            )
-          : undefined
+        active.canDrop && pointer ? findDrop.current?.(screenToFlowPosition(pointer)) : undefined
       const command = canvasMoveCommand(
         active.document,
         active.roots,
@@ -247,6 +237,7 @@ export const useCanvasDrag = (
         if (!editor.command(command, restore)) restore()
       }
     }
+    findDrop.current = null
     useEditor.setState({ dropTargetId: null })
     dragDepths.current = new Map()
     const current = useEditor.getState()
@@ -254,22 +245,49 @@ export const useCanvasDrag = (
     const drawings = new Set(selectedDrawingIds(current))
     // Keep the pointer's final position until the matching native layout resolves.
     setNodes((previous) =>
-      previous.map((node) => ({
+      canvasDragLayers(previous).map((node) => ({
         ...node,
         selected: node.type === 'ink' ? drawings.has(node.data.stroke.id) : selected.has(node.id),
       })),
     )
-  }
+  })
+  const handleNodesChange = useMemoizedFn((changes: Parameters<typeof onNodesChange>[0]) => {
+    const accepted = cancelled.current
+      ? changes.filter((change) => change.type !== 'position')
+      : changes
+    const active = session.current
+    const anchor =
+      active &&
+      accepted.find((change) => change.type === 'position' && change.id === active.anchorId)
+    const origin = active?.origins.get(active.anchorId)
+    // Apply RF's positions and the subtree preview atomically, rather than two state updates.
+    const preview =
+      active && origin && anchor?.type === 'position' && anchor.position
+        ? {
+            active,
+            depths: dragDepths.current,
+            dx: anchor.position.x - origin.x,
+            dy: anchor.position.y - origin.y,
+          }
+        : null
+    onNodesChange(
+      accepted,
+      preview
+        ? (current) =>
+            previewPerspectiveDrag(current, preview.active, preview.depths, preview.dx, preview.dy)
+        : undefined,
+    )
+  })
+  const selectionHandlers = useMemo(
+    () => canvasDragSelection(onDragStart, onDrag, onDragStop),
+    [onDragStart, onDrag, onDragStop],
+  )
   return {
     nodes,
-    onNodesChange: (changes: Parameters<typeof onNodesChange>[0]) => {
-      onNodesChange(
-        cancelled.current ? changes.filter((change) => change.type !== 'position') : changes,
-      )
-    },
+    onNodesChange: handleNodesChange,
     onNodeDragStart: onDragStart,
     onNodeDrag: onDrag,
     onNodeDragStop: onDragStop,
-    ...canvasDragSelection(onDragStart, onDrag, onDragStop),
+    ...selectionHandlers,
   }
 }

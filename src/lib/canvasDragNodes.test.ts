@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest'
 import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
 import { preserveMeasurement, synchronizeCanvasNodes } from '@renderer/lib/canvasDragNodes'
+import { canvasDragLayers } from '@renderer/lib/canvasDragLayers'
 
 const topic = (x: number): CanvasFlowNode => ({
   id: 'topic',
@@ -110,4 +111,20 @@ it('uses known projected bounds for the current frame instead of lagging behind 
     data: { ...previous.data, cameraScale: 1.2 },
   }
   expect(preserveMeasurement(projected, previous).measured).toBe(measured)
+})
+
+it('scopes composition layers to a gesture and preserves unrelated classes and node references', () => {
+  const original = { ...topic(0), className: '[contain:layout_style] custom-topic' }
+  const untouched = { ...topic(50), id: 'other' }
+  const nodes = [original, untouched]
+  const preview = canvasDragLayers(nodes, new Set(['topic']))
+  expect(preview[0]?.className).toContain('will-change-transform')
+  expect(preview[1]).toBe(untouched)
+  expect(canvasDragLayers(preview, new Set(['topic']))).toBe(preview)
+  const released = canvasDragLayers(preview)
+  expect(released[0]?.className).toBe(original.className)
+  expect(released[0]?.data).toBe(original.data)
+  expect(released[0]?.position).toBe(original.position)
+  expect(released[1]).toBe(untouched)
+  expect(canvasDragLayers(released)).toBe(released)
 })
