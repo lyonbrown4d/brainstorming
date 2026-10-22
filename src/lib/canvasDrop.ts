@@ -14,12 +14,14 @@ export interface DropNode {
   readonly width: number
   readonly height: number
   readonly direction: LayoutDirection
+  readonly zIndex?: number
 }
 export interface CanvasDrop {
   readonly targetId: string
   readonly parentId: string
   readonly index?: number
   readonly side: Side
+  readonly predicted?: true
   readonly indicator?: { readonly axis: 'x' | 'y'; readonly edge: 'before' | 'after' }
 }
 export const nodeCenter = (
@@ -48,6 +50,7 @@ export const findCanvasDrop = (
         width: Number(node.style?.width ?? node.width ?? 160),
         height: Number(node.style?.height ?? node.height ?? 48),
         direction: node.data.direction ?? 'right',
+        zIndex: node.zIndex ?? 0,
       })),
     excluded,
     point,

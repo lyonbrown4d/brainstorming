@@ -39,6 +39,7 @@ export const updateCanvasDrag = (token: symbol, drop: CanvasDrop | undefined): v
     previous?.parentId === drop?.parentId &&
     previous?.index === drop?.index &&
     previous?.side === drop?.side &&
+    previous?.predicted === drop?.predicted &&
     previous?.indicator?.axis === drop?.indicator?.axis &&
     previous?.indicator?.edge === drop?.indicator?.edge
   )

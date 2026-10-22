@@ -69,7 +69,11 @@ export const createTopicDropResolver = (
       if (dx > node.width / 2 + 12 || dy > node.height / 2 + 12) continue
       const next = Math.hypot(dx, dy)
       const inside = dx <= node.width / 2 && dy <= node.height / 2
-      if ((inside && !bodyHit) || (inside === bodyHit && next < distance)) {
+      const front = (node.zIndex ?? 0) - (closest?.zIndex ?? 0)
+      if (
+        (inside && !bodyHit) ||
+        (inside === bodyHit && (inside && front !== 0 ? front > 0 : next < distance))
+      ) {
         closest = node
         distance = next
         bodyHit = inside

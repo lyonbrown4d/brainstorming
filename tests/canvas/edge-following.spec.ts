@@ -43,7 +43,8 @@ for (const variant of ['orthogonal', 'waypoints', 'sketch']) {
     await page.mouse.move(start.x, start.y)
     await page.mouse.down()
     await page.mouse.move(start.x + 5, start.y)
-    await page.mouse.move(start.x + 155, start.y + 130, { steps: 12 })
+    // Stay beyond the magnetic attachment area, including the compact fishbone layout.
+    await page.mouse.move(start.x + 235, start.y + 210, { steps: 12 })
     await expect(edge(page)).not.toHaveAttribute('d', before)
     await expect(page.getByTestId('drop-preview')).toHaveCount(0)
     await expect
@@ -52,7 +53,7 @@ for (const variant of ['orthogonal', 'waypoints', 'sketch']) {
     const preview = await edge(page).getAttribute('d')
     await page.screenshot({ path: `test-results/canvas/live-edge-${variant}.png` })
     await page.mouse.up()
-    await expect.poll(async () => (await bounds(topic(page))).x).toBeCloseTo(box.x + 150, 0)
+    await expect.poll(async () => (await bounds(topic(page))).x).toBeCloseTo(box.x + 230, 0)
     await expect
       .poll(async () => handleDistance(topic(page), await endpoint(edge(page))))
       .toBeLessThan(4)

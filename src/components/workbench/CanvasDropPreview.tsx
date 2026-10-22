@@ -1,5 +1,6 @@
 import { CornerDownRight, ListPlus } from 'lucide-react'
 import { NodeToolbar, Position, useInternalNode, ViewportPortal } from '@xyflow/react'
+import { CanvasDropConnection } from '@renderer/components/workbench/CanvasDropConnection'
 import type { CanvasDrop } from '@renderer/lib/canvasDrop'
 import type { TopicFlowNode } from '@renderer/components/TopicNode'
 import {
@@ -27,11 +28,15 @@ const DropTargetPreview = ({ drag, drop }: { drag: CanvasDragInteraction; drop: 
   return (
     <>
       <ViewportPortal>
+        {drag.roots.slice(0, 24).map((id) => (
+          <CanvasDropConnection key={id} rootId={id} parentId={drop.parentId} />
+        ))}
         <div
           aria-hidden="true"
           data-testid="drop-preview"
           data-drop-mode={sibling ? 'sibling' : 'child'}
           data-parent-id={drop.parentId}
+          data-drop-predicted={drop.predicted ? 'true' : 'false'}
           className="pointer-events-none absolute z-[1001] rounded-xl border-2 border-dashed border-drop-target bg-drop-target/10"
           style={{ left: x - 5, top: y - 5, width: width + 10, height: height + 10 }}
         />

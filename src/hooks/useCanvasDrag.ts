@@ -14,9 +14,8 @@ import {
   canvasMoveCommand,
   canvasSelection,
 } from '@renderer/lib/canvasGesture'
-import { createCanvasDropFinder } from '@renderer/lib/canvasDropIndex'
+import { useCanvasDropFinder } from '@renderer/hooks/useCanvasDropFinder'
 import { canvasDragLayers } from '@renderer/lib/canvasDragLayers'
-import { canvasDragPointer } from '@renderer/lib/canvasDragPointer'
 import { canvasDragSelection } from '@renderer/lib/canvasDragSelection'
 import { captureSpatialOrigins, type SpatialDepths } from '@renderer/lib/spatialProjection'
 import { useEditor } from '@renderer/state/editor'
@@ -39,11 +38,11 @@ export const useCanvasDrag = (
 ) => {
   const workbookId = useEditor((state) => state.workbook.id)
   const scopeId = JSON.stringify([workbookId, canvasId])
-  const { screenToFlowPosition, getNodes } = useReactFlow<CanvasFlowNode>()
+  const { getNodes } = useReactFlow<CanvasFlowNode>()
   const [dragging, setDragging] = useState<ReadonlySet<string> | undefined>(undefined)
   const { nodes, setNodes, onNodesChange } = useCanvasNodeState(projectedNodes, scopeId, dragging)
   const session = useRef<DragSession | null>(null)
-  const findDrop = useRef<ReturnType<typeof createCanvasDropFinder> | null>(null)
+  const dropFinder = useCanvasDropFinder()
   const dragDepths = useRef<ReadonlyMap<string, number>>(new Map())
   const latestProjected = useRef(projectedNodes)
   const cancelled = useRef(false)
@@ -52,7 +51,7 @@ export const useCanvasDrag = (
       const active = session.current
       if (!active) return
       session.current = null
-      findDrop.current = null
+      dropFinder.clear()
       setDragging(undefined)
       dragDepths.current = new Map()
       cancelled.current = true
@@ -104,7 +103,7 @@ export const useCanvasDrag = (
       window.removeEventListener('pointercancel', cancel, true)
       window.removeEventListener('blur', cancel)
     }
-  }, [setNodes])
+  }, [setNodes, dropFinder])
   useEffect(() => {
     latestProjected.current = projectedNodes
   }, [projectedNodes])
@@ -158,20 +157,17 @@ export const useCanvasDrag = (
       view,
       anchorId: dragged.id,
     }
-    findDrop.current = session.current.canDrop
-      ? createCanvasDropFinder(document, currentNodes, excluded)
-      : null
+    dropFinder.clear()
+    if (session.current.canDrop) dropFinder.start(document, currentNodes, excluded)
     setDragging(excluded)
     setNodes((current) => canvasDragLayers(current, excluded))
     dragDepths.current = new Map(currentNodes.map((node) => [node.id, node.data.cameraDepth ?? 0]))
     setCanvasSelection(ids.topics, ids.drawings)
   })
-  const onDrag = useMemoizedFn<OnNodeDrag<CanvasFlowNode>>((event) => {
+  const onDrag = useMemoizedFn<OnNodeDrag<CanvasFlowNode>>((event, dragged) => {
     const active = session.current
     if (!active) return
-    const pointer = canvasDragPointer(event)
-    const drop =
-      active.canDrop && pointer ? findDrop.current?.(screenToFlowPosition(pointer)) : undefined
+    const drop = active.canDrop ? dropFinder.find(event, dragged) : undefined
     updateCanvasDrag(active.token, drop)
     const dropTargetId = drop?.targetId ?? null
     if (dropTargetId !== useEditor.getState().dropTargetId) useEditor.setState({ dropTargetId })
@@ -194,9 +190,7 @@ export const useCanvasDrag = (
       getSpatialView(active.workbookId, active.sheetId) === active.view &&
       !usePresentation.getState().playing
     ) {
-      const pointer = canvasDragPointer(event)
-      const drop =
-        active.canDrop && pointer ? findDrop.current?.(screenToFlowPosition(pointer)) : undefined
+      const drop = active.canDrop ? dropFinder.find(event, anchor) : undefined
       const command = canvasMoveCommand(
         active.document,
         active.roots,
@@ -237,7 +231,7 @@ export const useCanvasDrag = (
         if (!editor.command(command, restore)) restore()
       }
     }
-    findDrop.current = null
+    dropFinder.clear()
     useEditor.setState({ dropTargetId: null })
     dragDepths.current = new Map()
     const current = useEditor.getState()

@@ -29,6 +29,23 @@ export const previewNativeCanvasDrag = async (start: Point, end: Point, id = 'ro
           clientY: start.y,
         }),
       )
+      // Cross D3's activation threshold before the long path, preserving the grab offset.
+      window.dispatchEvent(
+        new MouseEvent('mousemove', {
+          view: window,
+          bubbles: true,
+          cancelable: true,
+          button: 0,
+          buttons: 1,
+          clientX: start.x + 5,
+          clientY: start.y,
+        }),
+      )
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => {
+          resolve()
+        }),
+      )
       const frames: number[] = []
       let previous = performance.now()
       for (let index = 1; index <= 30; index += 1) {
