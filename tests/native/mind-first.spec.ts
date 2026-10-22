@@ -16,6 +16,18 @@ import {
   openSaved,
 } from '@tests/native/driver'
 
+// The embedded driver's aria selector does not resolve names through aria-labelledby.
+const chooseOption = async (label: string): Promise<void> => {
+  await expect(browser.$('[role="listbox"]')).toBeDisplayed()
+  for await (const option of browser.$$('[role="option"]')) {
+    if ((await option.getText()).trim() === label) {
+      await option.click()
+      return
+    }
+  }
+  throw new Error(`Missing visible select option: ${label}`)
+}
+
 describe('mind-first native workflow', () => {
   it('preserves node appearance and slide notes through native SQLite save and reopen', async () => {
     await home()
@@ -35,9 +47,32 @@ describe('mind-first native workflow', () => {
 
     await browser.$('button[aria-label="演示编排"]').click()
     await expect(browser.$('[data-presentation-composer]')).toBeDisplayed()
+    await named('标题').click()
+    await named('字号比例').click()
+    await chooseOption('125%')
+    await named('对齐').click()
+    await chooseOption('居中')
+    await expect(browser.$('[data-presentation-composer] main h2')).toHaveAttribute(
+      'style',
+      expect.stringContaining('text-align: center'),
+    )
+    await browser.saveScreenshot(await nativeArtifact('presentation-composer.png'))
     await fillContentEditable(browser.$('#presentation-notes'), '按时间说明这次出行安排')
     await named('从头播放').click()
     await expect(browser.$('[aria-label="观众画面"]')).toBeDisplayed()
+    await expect(browser.$('[aria-label="观众画面"] h2')).toHaveAttribute(
+      'style',
+      expect.stringContaining('text-align: center'),
+    )
+    await browser.waitUntil(() =>
+      browser.execute(() => {
+        const stage = window.document.querySelector(
+          '[aria-label="观众画面"] [data-presentation-slide]',
+        )?.parentElement
+        return stage !== null && stage !== undefined && getComputedStyle(stage).opacity === '1'
+      }),
+    )
+    await browser.saveScreenshot(await nativeArtifact('presentation-audience.png'))
     await browser.keys(Key.Space)
     await browser.keys(Key.Escape)
     await expect(browser.$('[data-presentation-composer]')).toBeDisplayed()
@@ -49,11 +84,18 @@ describe('mind-first native workflow', () => {
     const workbook = await save(name)
     const document = workbook.sheets[0]?.document
     expect(document?.topics[document.rootId]?.style?.shape).toBe('sticky')
+    expect(document?.presentation?.[0]?.appearance?.title).toEqual({ scale: 1.25, align: 'center' })
     expect(document?.presentation?.[0]?.notes).toBe('按时间说明这次出行安排')
     expect(Object.values(document?.topics ?? {}).map((topic) => topic.title)).toContain('海边散步')
     await closeSaved()
     await openSaved(name)
     await expect(root()).toHaveAttribute('data-appearance', 'sticky')
+    await browser.$('button[aria-label="演示编排"]').click()
+    await expect(browser.$('[data-presentation-composer] main h2')).toHaveAttribute(
+      'style',
+      expect.stringContaining('text-align: center'),
+    )
+    await named('返回画布').click()
   })
 
   it('opens route-based settings and returns to the same canvas without discarding content', async () => {

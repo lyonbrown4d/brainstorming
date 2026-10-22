@@ -11,6 +11,10 @@ async fn relational_roundtrip_preserves_sheets_order_annotations_and_extensions(
   let store = DocumentStore::new();
   let mut workbook = fixture::workbook();
   workbook["sheets"][0]["document"]["topics"]["a"]["style"]["scale"] = json!(1.75);
+  workbook["sheets"][0]["document"]["presentation"][0]["appearance"] = json!({
+    "background":"#faf8f2", "title":{"scale":1.25,"color":"#234567","align":"center"},
+    "body":{"bold":false,"scale":0.9}, "image":{"fit":"cover","position":"right"}
+  });
   store
     .write(&path, workbook.clone(), None, None, None)
     .await

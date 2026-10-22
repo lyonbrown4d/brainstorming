@@ -44,7 +44,7 @@ pub(super) fn bounded_text(value: &Value, max: usize, empty: bool) -> Result<()>
   }
   Ok(())
 }
-fn color(value: &Value) -> Result<()> {
+pub(super) fn color(value: &Value) -> Result<()> {
   let color = text(value)?;
   if color.len() != 7
     || !color.starts_with('#')

@@ -63,10 +63,10 @@ export const PresentationComposer = () => {
           selected={index}
           onSelect={selectPresentationPage}
         />
-        <main className="flex min-w-0 flex-1 flex-col gap-4 overflow-auto p-6 max-lg:flex-[1_0_calc(100%-10rem)] max-sm:flex-[1_0_100%] max-sm:p-4">
+        <main className="flex min-w-0 flex-1 flex-col gap-4 overflow-auto p-5 max-lg:flex-[1_0_calc(100%-10rem)] max-sm:flex-[1_0_100%] max-sm:p-4">
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <span className="font-semibold">{translate('presentation')}</span>
-            <span className="flex items-center gap-1 rounded-lg border bg-background px-2 py-1 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground">
               <Check className="size-3" />
               {translate('presentationFromMap')}
             </span>
@@ -106,7 +106,7 @@ export const PresentationComposer = () => {
               </SelectContent>
             </Select>
           </div>
-          <div className="m-auto w-full max-w-5xl">
+          <div className="m-auto w-full max-w-5xl shrink-0">
             <PresentationSlide
               document={document}
               slide={slide}
@@ -145,11 +145,23 @@ export const PresentationComposer = () => {
           )}
         </main>
         <PresentationPageSettings
+          key={`${workbookId}:${sheetId}:${index}`}
+          document={document}
           step={step}
           title={slide.topic.title}
           index={index}
           total={steps.length}
           busy={busy}
+          onResetStyle={() => {
+            editPresentationPages((current) =>
+              current.map((entry, row) => {
+                if (row !== index) return entry
+                const next = { ...entry }
+                delete next.appearance
+                return next
+              }),
+            )
+          }}
           onChange={change}
           onMove={move}
         />

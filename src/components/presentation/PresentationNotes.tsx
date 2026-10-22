@@ -19,17 +19,17 @@ export const PresentationNotes = ({ notes, disabled, target }: PresentationNotes
   const { translate } = useMessages()
   const draft = useEditor((state) => (isPresentationNoteDraft(state, target) ? state.draft : notes))
   return (
-    <div className="rounded-xl border bg-background p-4 shadow-sm">
+    <div className="rounded-lg border border-border bg-background p-3">
       <label
         htmlFor="presentation-notes"
-        className="mb-3 flex items-center gap-2 text-sm font-medium"
+        className="mb-2 flex items-center gap-2 text-sm font-medium"
       >
         <MessageSquareText className="size-4" />
         {translate('presentationNotes')}
       </label>
       <PlainTextInput
         id="presentation-notes"
-        className="min-h-20 resize-y border-0 p-0 shadow-none focus-visible:ring-0"
+        className="min-h-14 resize-y border-0 p-0 shadow-none focus-visible:ring-0"
         label={translate('presentationNotes')}
         value={draft}
         disabled={disabled}

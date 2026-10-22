@@ -118,9 +118,25 @@ export interface FloatingPosition {
   readonly x: number
   readonly y: number
 }
+export interface PresentationTextStyle {
+  readonly scale?: number
+  readonly color?: string
+  readonly bold?: boolean
+  readonly align?: 'left' | 'center' | 'right'
+}
+export interface PresentationAppearance {
+  readonly background?: string
+  readonly title?: PresentationTextStyle
+  readonly body?: PresentationTextStyle
+  readonly image?: {
+    readonly fit?: 'contain' | 'cover'
+    readonly position?: 'left' | 'right'
+  }
+}
 export interface PresentationStep {
   readonly topicId: string
   readonly layout?: 'auto' | 'list' | 'image' | 'structure'
+  readonly appearance?: PresentationAppearance
   readonly hidden?: boolean
   readonly notes?: string
   readonly reveal?: 'all' | 'items'

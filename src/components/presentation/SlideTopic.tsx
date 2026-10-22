@@ -1,7 +1,9 @@
-import type { MindMapDocument, Topic } from '@core'
+import type { MindMapDocument, Topic, PresentationTextStyle } from '@core'
 import { TopicShapeVisual } from '@renderer/components/TopicShapeVisual'
+import { MarkerIcon } from '@renderer/components/metadata/MarkerIcon'
+import { RichTitleDisplay } from '@renderer/components/metadata/RichTitleDisplay'
 import { getAssetUrl } from '@renderer/lib/resource'
-import { topicShapeInsets } from '@shared/topic-shapes'
+import { slideTextAppearance } from '@renderer/components/presentation/slideAppearance'
 import { topicAppearance } from '@shared/appearance'
 
 interface SlideTopicProps {
@@ -9,62 +11,97 @@ interface SlideTopicProps {
   topic: Topic
   image: boolean
   compact?: boolean
+  agenda?: boolean
+  textStyle?: PresentationTextStyle | undefined
+  imageFit?: 'contain' | 'cover'
 }
 
-export const SlideTopic = ({ document, topic, image, compact = false }: SlideTopicProps) => {
+/** Topic shapes become small branch identifiers, rather than stretched slide-sized containers. */
+export const SlideTopic = ({
+  document,
+  topic,
+  image,
+  compact = false,
+  agenda = false,
+  textStyle,
+  imageFit = 'contain',
+}: SlideTopicProps) => {
   const asset = topic.image ? document.assets?.[topic.image.assetId] : undefined
   const shape = topic.style?.shape ?? 'rounded'
-  const inset = topicShapeInsets(shape)
   const appearance = topicAppearance(document, topic.id)
   const children = topic.children.flatMap((id) =>
     document.topics[id] ? [document.topics[id]] : [],
   )
   return (
-    <article className="relative flex min-h-0 min-w-0 flex-col gap-3 p-5" data-topic-shape={shape}>
-      <TopicShapeVisual
-        shape={shape}
-        fill={appearance.fill}
-        stroke={topic.id === document.rootId ? appearance.fill : appearance.stroke}
-        className="pointer-events-none absolute inset-0 size-full"
-      />
-      <div
-        className="absolute flex min-h-0 flex-col gap-2 overflow-hidden"
-        style={{
-          color: appearance.color,
-          fontFamily: appearance.fontFamily,
-          fontStyle: topic.style?.italic ? 'italic' : undefined,
-          top: `${Math.max(5, inset.y * 100)}%`,
-          bottom: `${Math.max(5, inset.y * 100)}%`,
-          left: `${Math.max(5, inset.x * 100)}%`,
-          right: `${Math.max(5, inset.x * 100)}%`,
-        }}
-      >
+    <article
+      className={`flex min-h-0 min-w-0 gap-[1.5cqw] ${agenda || compact ? 'flex-row items-start border-b border-[var(--slide-line)] py-[1.1cqw] last:border-b-0' : 'flex-col border-t border-[var(--slide-line)] pt-[1.4cqw]'}`}
+      data-topic-shape={shape}
+    >
+      <div className="relative mt-[0.3cqw] flex h-[2.5cqw] w-[3.4cqw] shrink-0 items-center justify-center">
+        <TopicShapeVisual
+          shape={shape === 'text' || shape === 'image' ? 'rounded' : shape}
+          fill={appearance.fill}
+          stroke={appearance.stroke}
+          width={68}
+          height={50}
+          className="absolute inset-0 size-full"
+        />
+        {topic.metadata?.markers?.[0] && (
+          <span className="relative" style={{ color: appearance.color }}>
+            <MarkerIcon marker={topic.metadata.markers[0]} className="size-[1.5cqw]" />
+          </span>
+        )}
+      </div>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-[0.85cqw] overflow-hidden">
         <h3
-          className="line-clamp-3 break-words text-[1.8cqw] font-semibold leading-snug"
-          style={{ fontWeight: topic.style?.bold === false ? 400 : 600 }}
+          className={`${agenda ? 'line-clamp-2 text-[2.15cqw]' : compact ? 'line-clamp-2 text-[2.05cqw]' : 'line-clamp-3 text-[2.3cqw]'} break-words font-semibold leading-[1.35] tracking-[-0.02em] text-[var(--slide-fg)]`}
+          style={{
+            fontStyle: topic.style?.italic ? 'italic' : undefined,
+            ...slideTextAppearance(textStyle, agenda ? 2.15 : compact ? 2.05 : 2.3),
+            fontWeight:
+              textStyle?.bold === false ||
+              (textStyle?.bold === undefined && topic.style?.bold === false)
+                ? 400
+                : 600,
+          }}
         >
-          {topic.title}
+          {topic.metadata?.richTitle ? (
+            <RichTitleDisplay source={topic.metadata.richTitle} />
+          ) : (
+            topic.title
+          )}
         </h3>
         {image && asset && (
           <img
-            className="min-h-0 w-full flex-1 rounded-lg object-cover"
+            className="min-h-0 w-full flex-1 object-left"
+            style={{ objectFit: imageFit }}
             src={getAssetUrl(asset)}
             alt={topic.title}
             loading="lazy"
           />
         )}
-        {!compact && children.length > 0 && (
-          <ul className="space-y-1 text-[1.3cqw] leading-snug text-slate-600">
+        {!agenda && !compact && children.length > 0 && (
+          <ul
+            style={{ ...slideTextAppearance(textStyle, 1.55), fontWeight: 400 }}
+            className="space-y-[0.6cqw] text-[1.55cqw] leading-relaxed text-[var(--slide-muted)]"
+          >
             {children.slice(0, 3).map((child) => (
-              <li key={child.id} className="line-clamp-2 break-words">
-                {child.title}
+              <li key={child.id} className="flex items-start gap-[0.7cqw]">
+                <span
+                  aria-hidden
+                  className="mt-[0.65em] size-[0.3cqw] shrink-0 rounded-full bg-current"
+                />
+                <span className="line-clamp-2 break-words">{child.title}</span>
               </li>
             ))}
             {children.length > 3 && <li>+{children.length - 3}</li>}
           </ul>
         )}
-        {!compact && topic.notes && (
-          <p className="line-clamp-3 whitespace-pre-line break-words text-[1.2cqw] leading-relaxed text-slate-500">
+        {!agenda && topic.notes && children.length === 0 && !asset && (
+          <p
+            style={{ ...slideTextAppearance(textStyle, 1.5), fontWeight: 400 }}
+            className={`${compact ? 'line-clamp-1' : 'line-clamp-3'} whitespace-pre-line break-words text-[1.5cqw] leading-relaxed text-[var(--slide-muted)]`}
+          >
             {topic.notes}
           </p>
         )}

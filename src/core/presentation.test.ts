@@ -27,6 +27,12 @@ describe('saved slide arrangements', () => {
         hidden: true,
         reveal: 'items' as const,
         notes: '先介绍背景',
+        appearance: {
+          background: '#faf8f2',
+          title: { scale: 1.25, color: '#234567', align: 'center' as const },
+          body: { bold: false, scale: 0.9 },
+          image: { fit: 'cover' as const, position: 'right' as const },
+        },
       },
       { topicId: 'root', layout: 'structure' as const },
     ]
@@ -45,6 +51,16 @@ describe('saved slide arrangements', () => {
       { reveal: 'zoom' },
       { notes: '长'.repeat(10_001) },
       { privatePath: '/tmp/file' },
+      { appearance: { background: 'url(file:///private)' } },
+      { appearance: { title: { scale: 0.74 } } },
+      { appearance: { body: { scale: 1.51 } } },
+      { appearance: { title: { scale: NaN } } },
+      { appearance: { title: { align: 'justify' } } },
+      { appearance: { title: { bold: 'yes' } } },
+      { appearance: { image: { fit: 'stretch' } } },
+      { appearance: { image: { position: 'bottom' } } },
+      { appearance: { title: { fontFile: '/private/font.ttf' } } },
+      { appearance: null },
     ]) {
       expect(() => {
         validatePresentationStep({ topicId: 'root', ...patch })

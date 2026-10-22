@@ -6,7 +6,10 @@ import {
   Network,
   PanelsTopLeft,
 } from 'lucide-react'
-import type { PresentationStep } from '@core'
+import type { PresentationStep, MindMapDocument } from '@core'
+import { PresentationStyleSettings } from '@renderer/components/presentation/PresentationStyleSettings'
+import { documentAppearance } from '@shared/appearance'
+import { readableText } from '@shared/palettes'
 import { useMessages } from '@renderer/i18n/useMessages'
 import { Button } from '@renderer/components/ui/button'
 import { Checkbox } from '@renderer/components/ui/checkbox'
@@ -19,16 +22,19 @@ import {
 } from '@renderer/components/ui/select'
 
 interface PresentationPageSettingsProps {
+  document: MindMapDocument
   step: PresentationStep
   title: string
   index: number
   total: number
   busy: boolean
   onChange: (patch: Partial<PresentationStep>) => void
+  onResetStyle: () => void
   onMove: (offset: 1 | -1) => void
 }
 
 export const PresentationPageSettings = ({
+  document,
   step,
   title,
   index,
@@ -36,8 +42,14 @@ export const PresentationPageSettings = ({
   busy,
   onChange,
   onMove,
+  onResetStyle,
 }: PresentationPageSettingsProps) => {
   const { translate } = useMessages()
+  const appearance = documentAppearance(document)
+  const cover =
+    !document.topics[step.topicId]?.image &&
+    step.topicId === document.rootId &&
+    (!step.layout || step.layout === 'auto')
   const layouts = [
     { value: 'auto', label: translate('presentationLayoutAuto'), icon: PanelsTopLeft },
     { value: 'list', label: translate('presentationLayoutList'), icon: List },
@@ -46,10 +58,10 @@ export const PresentationPageSettings = ({
   ] as const
   return (
     <aside
-      className="w-64 shrink-0 space-y-6 overflow-auto border-l bg-background p-5 max-lg:w-full max-lg:border-t max-lg:border-l-0"
+      className="w-64 shrink-0 space-y-5 overflow-auto border-l border-border bg-background p-4 max-lg:w-full max-lg:border-t max-lg:border-l-0"
       aria-label={translate('presentationSettings')}
     >
-      <h2 className="break-words border-b pb-5 text-lg font-semibold">{title}</h2>
+      <h2 className="break-words border-b border-border pb-4 text-base font-semibold">{title}</h2>
       <fieldset disabled={busy} className="space-y-3">
         <legend className="mb-3 text-sm font-medium">{translate('presentationLayout')}</legend>
         <div className="grid grid-cols-2 gap-2">
@@ -61,7 +73,7 @@ export const PresentationPageSettings = ({
                   ? 'secondary'
                   : 'outline'
               }
-              className="h-16 flex-col gap-1 text-xs"
+              className="h-16 flex-col gap-1 border-border text-xs"
               aria-pressed={step.layout === value || (!step.layout && value === 'auto')}
               onClick={() => {
                 onChange({ layout: value })
@@ -73,7 +85,7 @@ export const PresentationPageSettings = ({
           ))}
         </div>
       </fieldset>
-      <div className="space-y-3 border-t pt-5">
+      <div className="space-y-3 border-t border-border pt-4">
         <p className="text-sm font-medium" id="presentation-reveal-label">
           {translate('presentationReveal')}
         </p>
@@ -103,10 +115,25 @@ export const PresentationPageSettings = ({
           {translate('presentationHidePage')}
         </label>
       </div>
-      <div className="flex gap-2 border-t pt-5">
+      <PresentationStyleSettings
+        value={step.appearance}
+        defaults={{
+          background: step.appearance?.background ?? appearance.background,
+          title: cover
+            ? readableText(step.appearance?.background ?? appearance.root)
+            : readableText(step.appearance?.background ?? appearance.background),
+          body: readableText(step.appearance?.background ?? appearance.background),
+        }}
+        disabled={busy}
+        onChange={(appearance) => {
+          onChange({ appearance })
+        }}
+        onReset={onResetStyle}
+      />
+      <div className="flex gap-2 border-t border-border pt-4">
         <Button
           variant="outline"
-          className="flex-1"
+          className="flex-1 border-border"
           size="sm"
           disabled={busy || index === 0}
           onClick={() => {
@@ -118,7 +145,7 @@ export const PresentationPageSettings = ({
         </Button>
         <Button
           variant="outline"
-          className="flex-1"
+          className="flex-1 border-border"
           size="sm"
           disabled={busy || index === total - 1}
           onClick={() => {

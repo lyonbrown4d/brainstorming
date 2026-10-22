@@ -1,3 +1,5 @@
+import '@renderer/styles/ui.css'
+import '@renderer/styles/base.scss'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within, waitFor } from 'storybook/test'
 import { applyCommand, createDocument } from '@core'
@@ -111,5 +113,37 @@ export const ArrangeAndPlay: Story = {
     await expect(usePresentation.getState().index).toBe(2)
     await userEvent.keyboard('{Escape}')
     await expect(canvas.getByRole('region', { name: '演示编排' })).toBeVisible()
+  },
+}
+
+export const StyleAndPlay: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const topics = useEditor.getState().history.document.topics
+    await userEvent.click(canvas.getByRole('tab', { name: '标题' }))
+    await userEvent.click(canvas.getByRole('combobox', { name: '字号比例' }))
+    await userEvent.click(within(document.body).getByRole('option', { name: '125%' }))
+    await userEvent.click(canvas.getByRole('combobox', { name: '对齐' }))
+    await userEvent.click(within(document.body).getByRole('option', { name: '居中' }))
+    await expect(
+      useEditor.getState().history.document.presentation?.[0]?.appearance?.title,
+    ).toEqual({ scale: 1.25, align: 'center' })
+    await expect(useEditor.getState().history.document.topics).toBe(topics)
+    await userEvent.click(canvas.getByRole('button', { name: '预览当前页' }))
+    const audience = await canvas.findByRole('region', { name: '观众画面' })
+    await expect(within(audience).getByRole('heading', { name: '周末出行' })).toHaveStyle({
+      textAlign: 'center',
+    })
+    await userEvent.keyboard('{Escape}')
+    await userEvent.click(canvas.getByRole('button', { name: '恢复本页默认样式' }))
+    await expect(
+      useEditor.getState().history.document.presentation?.[0]?.appearance,
+    ).toBeUndefined()
+    useEditor.getState().undo()
+    await waitFor(() =>
+      expect(
+        useEditor.getState().history.document.presentation?.[0]?.appearance?.title?.scale,
+      ).toBe(1.25),
+    )
   },
 }

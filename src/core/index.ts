@@ -65,6 +65,8 @@ export type {
   TopicCallout,
   FloatingPosition,
   PresentationStep,
+  PresentationTextStyle,
+  PresentationAppearance,
   DocumentAnnotations,
   DocumentExtensions,
   ExtensionCommand,
