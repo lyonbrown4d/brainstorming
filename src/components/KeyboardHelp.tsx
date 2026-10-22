@@ -23,12 +23,24 @@ export const KeyboardHelp = () => {
           {translate('shortcuts')}
         </Button>
       </DialogTrigger>
-      <DialogContent closeLabel={translate('closeShortcuts')}>
-        <DialogHeader>
+      <DialogContent
+        closeLabel={translate('closeShortcuts')}
+        className="flex h-[min(40rem,calc(100dvh-2rem))] max-h-[calc(100dvh-2rem)] min-h-0 flex-col overflow-hidden"
+        onEscapeKeyDown={(event) => {
+          if (
+            event.target instanceof Element &&
+            event.target.closest('[data-shortcut-recording="true"]')
+          )
+            event.preventDefault()
+        }}
+      >
+        <DialogHeader className="shrink-0 pr-7">
           <DialogTitle>{translate('keyboardShortcuts')}</DialogTitle>
           <DialogDescription>{translate('clickToSelectATopicWhileEditing')}</DialogDescription>
         </DialogHeader>
-        <KeyboardShortcutsContent />
+        <div className="min-h-0 flex-1">
+          <KeyboardShortcutsContent />
+        </div>
       </DialogContent>
     </Dialog>
   )

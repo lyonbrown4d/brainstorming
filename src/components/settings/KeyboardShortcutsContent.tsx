@@ -135,7 +135,9 @@ export const KeyboardShortcutsContent = () => {
                           aria-label={`${translate('shortcutRecord')}: ${translate(label)}`}
                           aria-pressed={recording === id}
                           data-shortcut-recording={recording === id ? 'true' : undefined}
-                          onClick={() => {
+                          onClick={(event) => {
+                            // macOS WebKit does not focus a button on pointer activation.
+                            event.currentTarget.focus()
                             setRecording(id)
                             setError(null)
                             setErrorId(null)
