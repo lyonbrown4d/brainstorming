@@ -11,6 +11,53 @@
 .react-flow__node-topic {
   cursor: pointer;
 }
+.topic {
+  outline: 0 solid transparent;
+  outline-offset: 3px;
+
+  &.is-selected,
+  &.is-editing {
+    outline: 2px solid var(--ui-ring);
+  }
+
+  &.drop-target {
+    outline: 2px dashed var(--ui-drop-target);
+  }
+
+  .topic-connect-handle {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &:hover .topic-connect-handle,
+  &:focus-within .topic-connect-handle {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  &.is-editing .topic-connect-handle {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &:not(.is-selected):not(:hover):not(:focus-within) .fold-button:not([data-collapsed='true']) {
+    opacity: 0;
+  }
+}
+@media (hover: none) {
+  .topic.is-selected:not(.is-editing) .topic-connect-handle {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+.topic:not(.is-selected, .is-editing, .drop-target):focus-within {
+  outline: 1px solid var(--ui-ring);
+}
+@media (hover: hover) {
+  .topic:not(.is-selected, .is-editing, .drop-target):hover {
+    outline: 1px solid var(--ui-ring);
+  }
+}
 .topic:not(.is-editing) .topic-input ::selection {
   background: transparent;
 }

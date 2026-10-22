@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from '@renderer/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@renderer/components/ui/tabs'
+import { ScrollArea } from '@renderer/components/ui/scroll-area'
 import { Button } from '@renderer/components/ui/button'
 import { SettingsGeneral } from '@renderer/components/settings/SettingsGeneral'
 import { SettingsCanvas } from '@renderer/components/settings/SettingsCanvas'
@@ -34,13 +35,20 @@ const SettingsDialog = ({ onClose }: SettingsDialogProps) => {
     >
       <DialogContent
         closeLabel={translate('closeApplicationSettings')}
-        className="flex max-h-[calc(100dvh-2rem)] flex-col gap-5 overflow-hidden p-5 sm:max-w-2xl sm:p-6"
+        className="flex h-[min(40rem,calc(100dvh-2rem))] max-h-[calc(100dvh-2rem)] min-h-0 flex-col gap-4 overflow-hidden p-5 sm:max-w-2xl sm:gap-5 sm:p-6"
+        onEscapeKeyDown={(event) => {
+          if (
+            event.target instanceof Element &&
+            event.target.closest('[data-shortcut-recording="true"]')
+          )
+            event.preventDefault()
+        }}
         onCloseAutoFocus={(event) => {
           event.preventDefault()
           document.querySelector<HTMLButtonElement>('[data-settings-trigger]')?.focus()
         }}
       >
-        <DialogHeader className="gap-1.5 pr-8 text-left">
+        <DialogHeader className="shrink-0 gap-1.5 pr-8 text-left">
           <DialogTitle className="text-lg tracking-tight">
             {translate('applicationSettings')}
           </DialogTitle>
@@ -59,18 +67,24 @@ const SettingsDialog = ({ onClose }: SettingsDialogProps) => {
               </TabsTrigger>
             ))}
           </TabsList>
-          <div className="max-h-[min(55dvh,28rem)] min-h-40 overflow-y-auto overscroll-contain px-0.5">
-            <TabsContent value="general">
-              <SettingsGeneral />
+          <div className="min-h-0 flex-1 px-0.5">
+            <TabsContent value="general" className="h-full min-h-0">
+              <ScrollArea className="h-full">
+                <SettingsGeneral />
+              </ScrollArea>
             </TabsContent>
-            <TabsContent value="canvas">
-              <SettingsCanvas />
+            <TabsContent value="canvas" className="h-full min-h-0">
+              <ScrollArea className="h-full">
+                <SettingsCanvas />
+              </ScrollArea>
             </TabsContent>
-            <TabsContent value="shortcuts">
+            <TabsContent value="shortcuts" className="h-full min-h-0">
               <KeyboardShortcutsContent />
             </TabsContent>
-            <TabsContent value="about">
-              <SettingsAbout />
+            <TabsContent value="about" className="h-full min-h-0">
+              <ScrollArea className="h-full">
+                <SettingsAbout />
+              </ScrollArea>
             </TabsContent>
           </div>
         </Tabs>

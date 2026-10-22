@@ -38,6 +38,14 @@ describe('warm white and graphite native UI', () => {
       }),
     )
     await named('展开浮动工具栏').click()
+    await browser.waitUntil(() =>
+      browser.execute(() => {
+        const dock = document.getElementById('floating-map-actions')
+        return (
+          dock?.getAttribute('aria-hidden') === 'false' && getComputedStyle(dock).opacity === '1'
+        )
+      }),
+    )
     await browser.saveScreenshot(await nativeArtifact('native-light.png'))
     await chooseAppearance('深色')
     await expect(browser.$('html')).toHaveAttribute('data-theme', 'dark')

@@ -34,7 +34,7 @@ export const SlideTopic = ({
   )
   return (
     <article
-      className={`flex min-h-0 min-w-0 gap-[1.5cqw] ${agenda || compact ? 'flex-row items-start border-b border-[var(--slide-line)] py-[1.1cqw] last:border-b-0' : 'flex-col border-t border-[var(--slide-line)] pt-[1.4cqw]'}`}
+      className={`flex min-h-0 min-w-0 gap-[1.5cqw] ${agenda || compact ? `flex-row ${agenda ? 'items-center' : 'items-start'} border-b border-[var(--slide-line)] py-[1.1cqw] last:border-b-0` : 'flex-col border-t border-[var(--slide-line)] pt-[1.8cqw]'}`}
       data-topic-shape={shape}
     >
       <div className="relative mt-[0.3cqw] flex h-[2.5cqw] w-[3.4cqw] shrink-0 items-center justify-center">
@@ -54,10 +54,10 @@ export const SlideTopic = ({
       </div>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-[0.85cqw] overflow-hidden">
         <h3
-          className={`${agenda ? 'line-clamp-2 text-[2.15cqw]' : compact ? 'line-clamp-2 text-[2.05cqw]' : 'line-clamp-3 text-[2.3cqw]'} break-words font-semibold leading-[1.35] tracking-[-0.02em] text-[var(--slide-fg)]`}
+          className={`${agenda ? 'line-clamp-2 text-[2.15cqw]' : compact ? 'line-clamp-2 text-[2.05cqw]' : 'line-clamp-3 text-[2.5cqw]'} break-words font-semibold leading-[1.35] tracking-[-0.02em] text-[var(--slide-fg)]`}
           style={{
             fontStyle: topic.style?.italic ? 'italic' : undefined,
-            ...slideTextAppearance(textStyle, agenda ? 2.15 : compact ? 2.05 : 2.3),
+            ...slideTextAppearance(textStyle, agenda ? 2.15 : compact ? 2.05 : 2.5),
             fontWeight:
               textStyle?.bold === false ||
               (textStyle?.bold === undefined && topic.style?.bold === false)

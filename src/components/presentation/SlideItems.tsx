@@ -29,13 +29,22 @@ export const SlideItems = ({
         gridTemplateRows: `repeat(${rows ? slots : Math.ceil(slots / columns)}, minmax(0, 1fr))`,
       }}
     >
-      {slideItemWindow(slide, revealed).map((topic) => (
+      {slideItemWindow(slide, revealed).map((topic, index) => (
         <motion.div
           key={topic.id}
           className="min-h-0 min-w-0 [&>article]:h-full"
-          initial={animate && !reduced ? { opacity: 0, y: 8 } : false}
-          animate={{ opacity: 1, y: 0 }}
-          transition={reduced ? noMotion : workbenchMotion.item}
+          initial={
+            animate && !reduced ? { opacity: 0, x: agenda ? 14 : 0, y: agenda ? 0 : 10 } : false
+          }
+          animate={{ opacity: 1, x: 0, y: 0 }}
+          transition={
+            reduced || !animate
+              ? noMotion
+              : {
+                  ...workbenchMotion.item,
+                  delay: revealed === undefined ? Math.min(index, 4) * 0.03 : 0,
+                }
+          }
         >
           <SlideTopic
             document={document}

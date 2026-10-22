@@ -65,7 +65,7 @@ const WidgetUnavailable = ({ onReady }: { onReady: () => void }) => {
   useEffect(onReady, [onReady])
   return (
     <div
-      className="grid size-28 place-items-center rounded-xl border border-border/80 bg-background p-2 text-center text-[11px] leading-4 text-muted-foreground"
+      className="grid size-28 place-items-center rounded-xl border border-border/80 bg-background p-2 text-center text-[11px] leading-4 text-secondary-foreground shadow-floating"
       role="status"
     >
       {translate('spatialCameraWidgetUnavailable')}
@@ -93,7 +93,7 @@ export const SpatialCameraWidget = ({
   return (
     <ErrorBoundary fallbackRender={() => <WidgetUnavailable onReady={onReady} />}>
       <div
-        className="size-28 overflow-hidden rounded-xl border border-border/80 bg-background shadow-sm"
+        className="size-28 overflow-hidden rounded-xl border border-border/80 bg-background shadow-floating transition-[border-color,box-shadow] duration-150 hover:border-ring/60 focus-within:ring-2 focus-within:ring-ring/50"
         aria-label={translate('spatialCameraWidget')}
         title={translate('spatialCameraWidget')}
         aria-disabled={disabled}

@@ -1,4 +1,4 @@
-import { Check, Play, Save } from 'lucide-react'
+import { Play, Save } from 'lucide-react'
 import type { PresentationStep } from '@core'
 import { useEditor } from '@renderer/state/editor'
 import {
@@ -66,10 +66,6 @@ export const PresentationComposer = () => {
         <main className="flex min-w-0 flex-1 flex-col gap-4 overflow-auto p-5 max-lg:flex-[1_0_calc(100%-10rem)] max-sm:flex-[1_0_100%] max-sm:p-4">
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <span className="font-semibold">{translate('presentation')}</span>
-            <span className="flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground">
-              <Check className="size-3" />
-              {translate('presentationFromMap')}
-            </span>
             <span className="text-xs text-muted-foreground">
               {translate('presentationPageCount', { count: steps.length })}
             </span>
@@ -86,6 +82,18 @@ export const PresentationComposer = () => {
                 {translate('presentationSavePages')}
               </Button>
             )}
+            <div className="ml-auto flex items-center">
+              <Button
+                size="sm"
+                disabled={busy || (step.hidden ?? false) || !playable}
+                onClick={() => {
+                  showPresentationStep(steps.slice(0, index).filter((item) => !item.hidden).length)
+                }}
+              >
+                <Play className="size-4" />
+                {translate('presentationPreviewPage')}
+              </Button>
+            </div>
           </div>
           <div className="sm:hidden">
             <Select
@@ -106,7 +114,7 @@ export const PresentationComposer = () => {
               </SelectContent>
             </Select>
           </div>
-          <div className="m-auto w-full max-w-5xl shrink-0">
+          <div className="m-auto w-[min(100%,calc((var(--app-height,100dvh)-16rem)*16/9))] max-w-5xl shrink-0">
             <PresentationSlide
               document={document}
               slide={slide}
@@ -126,18 +134,6 @@ export const PresentationComposer = () => {
               topicId: step.topicId,
             }}
           />
-          <div className="flex justify-center">
-            <Button
-              variant="outline"
-              disabled={busy || (step.hidden ?? false) || !playable}
-              onClick={() => {
-                showPresentationStep(steps.slice(0, index).filter((item) => !item.hidden).length)
-              }}
-            >
-              <Play className="size-4" />
-              {translate('presentationPreviewPage')}
-            </Button>
-          </div>
           {!playable && (
             <p role="status" className="text-center text-sm text-muted-foreground">
               {translate('presentationAllHidden')}

@@ -40,7 +40,7 @@ export const TopicScaleHandle = ({
           }}
           position={corner}
           keepAspectRatio
-          className={`topic-scale-control topic-scale-${corner} nodrag nopan !z-20 !size-4 !rounded-sm !border-2 !border-background !bg-primary shadow-sm`}
+          className={`topic-scale-control topic-scale-${corner} nodrag nopan !z-20 !size-4 !rounded-[5px] !border-2 !border-background !bg-ring shadow-sm hover:!bg-primary motion-reduce:transition-none`}
           style={{ pointerEvents: 'all' }}
         >
           <span className="sr-only" title={labels[corner]}>

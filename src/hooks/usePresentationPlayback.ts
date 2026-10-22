@@ -72,6 +72,8 @@ export const usePresentationPlayback = () => {
         event.target.closest('input, textarea, select, [contenteditable="true"]')
       )
         return
+      // Radix owns keyboard navigation and Escape while a playback overlay is open.
+      if (document.querySelector('[data-presentation-page-jump][data-state="open"]')) return
       if (event.key === 'Tab') return
       const button = event.target instanceof Element && event.target.closest('button')
       if (button && (event.key === 'Enter' || event.key === ' ')) return

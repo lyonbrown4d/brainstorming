@@ -19,7 +19,7 @@ export const AnimatedPanel = ({
     <motion.div
       ref={root}
       {...focus}
-      className={`absolute inset-y-0 z-30 flex min-h-0 overflow-hidden bg-background [&>aside]:h-full ${side === 'left' ? 'left-0' : 'right-0'}`}
+      className={`absolute inset-y-0 z-30 flex min-h-0 overflow-hidden bg-background shadow-floating [&>aside]:h-full ${side === 'left' ? 'left-0' : 'right-0'}`}
       style={{ width: side === 'left' ? OUTLINE_WIDTH : INSPECTOR_WIDTH }}
       initial={reduceMotion ? false : { x: offset, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}

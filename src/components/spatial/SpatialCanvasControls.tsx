@@ -33,7 +33,7 @@ export const SpatialCanvasControls = ({
     <>
       <Panel
         position="top-left"
-        className="!m-3 flex items-center gap-1 rounded-lg border border-border/80 bg-background p-1 shadow-sm"
+        className="!m-3 flex items-center gap-1 rounded-lg border border-border/80 bg-background p-1 shadow-floating [&_button]:transition-[background-color,color,transform] [&_button]:duration-150 [&_button]:active:scale-[0.96]"
       >
         <SpatialDepthControl />
         <SpatialCameraControls layout={layout} depths={depths} />
@@ -58,7 +58,7 @@ export const SpatialCanvasControls = ({
       </Panel>
       <Panel
         position="bottom-right"
-        className="!m-3 pointer-events-none max-w-[70%] rounded bg-background/90 px-2 py-1 text-[10px] text-muted-foreground"
+        className="!m-3 pointer-events-none max-w-[70%] rounded-md border border-border/70 bg-background px-2 py-1 text-[10px] text-secondary-foreground shadow-floating"
       >
         {translate('spatialCameraHint')}
       </Panel>

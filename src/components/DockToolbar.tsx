@@ -61,7 +61,7 @@ export const DockToolbar = ({
         ref={handle}
         variant="ghost"
         size="sm"
-        className="pointer-events-auto h-10 shrink-0 gap-1.5 sm:h-7 rounded-full border border-border/70 bg-background/95 px-3 text-[11px] text-muted-foreground shadow-sm backdrop-blur-md hover:bg-accent hover:text-accent-foreground"
+        className="pointer-events-auto h-10 shrink-0 gap-1.5 rounded-full border border-border/80 bg-background px-3 text-[11px] font-medium text-secondary-foreground shadow-floating transition-[background-color,color,border-color,box-shadow] duration-150 hover:border-border hover:bg-accent hover:text-foreground active:bg-secondary focus-visible:text-foreground sm:h-7"
         aria-label={label ?? translate('expandFloatingToolbar')}
         aria-expanded={open}
         aria-controls={id}
@@ -86,7 +86,7 @@ export const DockToolbar = ({
         id={id}
         aria-hidden={!open}
         inert={!open}
-        className={`absolute ${edge === 'top' ? 'top-[calc(100%+0.5rem)]' : 'bottom-[calc(100%+0.5rem)]'} w-full rounded-xl border border-border/80 bg-background/95 p-1 shadow-floating backdrop-blur-md ${open ? 'pointer-events-auto' : 'pointer-events-none'}`}
+        className={`absolute ${edge === 'top' ? 'top-[calc(100%+0.5rem)]' : 'bottom-[calc(100%+0.5rem)]'} w-full rounded-xl border border-border/80 bg-background p-1 shadow-floating ${open ? 'pointer-events-auto' : 'pointer-events-none'}`}
       >
         <ScrollArea type="auto" className={edge === 'top' ? 'h-10 w-full' : 'h-[3.25rem] w-full'}>
           <div className="w-max pb-1">{children}</div>

@@ -25,7 +25,7 @@ export const ZoomControls = () => {
   const immediate = Boolean(reduceMotion)
   return (
     <div
-      className="canvas-controls flex shrink-0 items-center rounded-md bg-muted/50 p-0.5 text-secondary-foreground [&_button]:size-7"
+      className="canvas-controls flex shrink-0 items-center rounded-lg border border-border/80 bg-background p-0.5 text-secondary-foreground shadow-floating [&_button]:size-7 [&_button]:transition-[background-color,color,transform] [&_button]:duration-150 [&_button]:hover:bg-accent [&_button]:hover:text-foreground [&_button]:active:scale-[0.94]"
       aria-label={translate('canvasView')}
     >
       <Button

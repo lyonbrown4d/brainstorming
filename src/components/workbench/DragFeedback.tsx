@@ -29,7 +29,7 @@ export const DragFeedback = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: reduced ? 0 : 3 }}
             transition={{ duration: reduced ? 0 : 0.12, ease: 'easeOut' }}
-            className={`flex max-w-full items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium shadow-md ${visible.drop ? 'border-drop-target bg-background text-foreground' : 'border-border bg-background/95 text-foreground'}`}
+            className={`flex max-w-full items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-medium leading-snug shadow-floating ${visible.drop ? 'border-drop-target bg-background text-foreground' : 'border-border bg-background/95 text-foreground'}`}
           >
             <MoveRight className="size-3.5 shrink-0" aria-hidden="true" />
             <span className="truncate">{canvasDragMessage(visible, translate)}</span>

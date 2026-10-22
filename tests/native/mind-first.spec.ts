@@ -69,10 +69,34 @@ describe('mind-first native workflow', () => {
         const stage = window.document.querySelector(
           '[aria-label="观众画面"] [data-presentation-slide]',
         )?.parentElement
-        return stage !== null && stage !== undefined && getComputedStyle(stage).opacity === '1'
+        const title = stage?.querySelector('header')
+        const clip = title ? getComputedStyle(title).clipPath.match(/[\d.]+/g) : null
+        return Boolean(
+          stage &&
+          title &&
+          getComputedStyle(stage).opacity === '1' &&
+          getComputedStyle(title).opacity === '1' &&
+          (!clip || clip.every((value) => Number(value) === 0)),
+        )
       }),
     )
     await browser.saveScreenshot(await nativeArtifact('presentation-audience.png'))
+    await named('跳转到页面').click()
+    const search = () => browser.$('input[aria-label="跳转到页面"]')
+    await expect(search()).toBeFocused()
+    await search().setValue('海边')
+    await browser.keys(Key.Escape)
+    await expect(search()).not.toExist()
+    await expect(browser.$('[aria-label="观众画面"]')).toBeDisplayed()
+    await named('跳转到页面').click()
+    await search().setValue('海边')
+    for await (const option of browser.$$('[cmdk-item]')) {
+      if ((await option.getText()).includes('海边散步')) {
+        await option.click()
+        break
+      }
+    }
+    await expect(browser.$('[aria-label="观众画面"] h2')).toHaveText('海边散步')
     await browser.keys(Key.Space)
     await browser.keys(Key.Escape)
     await expect(browser.$('[data-presentation-composer]')).toBeDisplayed()
@@ -108,6 +132,13 @@ describe('mind-first native workflow', () => {
     await named('画布').click()
     await expect(named('画布缩略图')).toBeDisplayed()
     await browser.saveScreenshot(await nativeArtifact('mind-first-settings.png'))
+    await named('快捷键').click()
+    const record = browser.$('button[aria-label^="录制快捷键:"]')
+    await record.click()
+    await expect(record).toHaveAttribute('aria-pressed', 'true')
+    await browser.keys(Key.Escape)
+    await expect(browser.$('[role="dialog"]')).toBeDisplayed()
+    await expect(record).toHaveAttribute('aria-pressed', 'false')
     await browser.keys(Key.Escape)
     await expect(browser.$('[role="dialog"]')).not.toExist()
     expect(await browser.getUrl()).toBe(before)

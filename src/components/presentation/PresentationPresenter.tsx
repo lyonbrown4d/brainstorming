@@ -53,7 +53,7 @@ export const PresentationPresenter = (props: PresentationPresenterProps) => {
           <h2 className="text-sm text-muted-foreground">
             {translate('presentationCurrentPage')} · {index + 1} / {steps.length}
           </h2>
-          <PresentationStage pageKey={`${index}:${step?.topicId}`}>
+          <PresentationStage pageKey={`${index}:${step?.topicId}`} index={index}>
             <PresentationSlide
               document={document}
               slide={slide}

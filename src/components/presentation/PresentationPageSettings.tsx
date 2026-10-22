@@ -7,6 +7,7 @@ import {
   PanelsTopLeft,
 } from 'lucide-react'
 import type { PresentationStep, MindMapDocument } from '@core'
+import { buildPresentationSlide } from '@renderer/components/presentation/slideModel'
 import { PresentationStyleSettings } from '@renderer/components/presentation/PresentationStyleSettings'
 import { documentAppearance } from '@shared/appearance'
 import { readableText } from '@shared/palettes'
@@ -50,6 +51,10 @@ export const PresentationPageSettings = ({
     !document.topics[step.topicId]?.image &&
     step.topicId === document.rootId &&
     (!step.layout || step.layout === 'auto')
+  const slide = buildPresentationSlide(document, step)
+  const focus =
+    slide?.items.length === 0 &&
+    !(slide.layout === 'image' && document.assets?.[slide.topic.image?.assetId ?? ''])
   const layouts = [
     { value: 'auto', label: translate('presentationLayoutAuto'), icon: PanelsTopLeft },
     { value: 'list', label: translate('presentationLayoutList'), icon: List },
@@ -119,10 +124,13 @@ export const PresentationPageSettings = ({
         value={step.appearance}
         defaults={{
           background: step.appearance?.background ?? appearance.background,
-          title: cover
-            ? readableText(step.appearance?.background ?? appearance.root)
-            : readableText(step.appearance?.background ?? appearance.background),
-          body: readableText(step.appearance?.background ?? appearance.background),
+          title:
+            cover || focus
+              ? readableText(step.appearance?.background ?? appearance.root)
+              : readableText(step.appearance?.background ?? appearance.background),
+          body: readableText(
+            step.appearance?.background ?? (focus ? appearance.root : appearance.background),
+          ),
         }}
         disabled={busy}
         onChange={(appearance) => {

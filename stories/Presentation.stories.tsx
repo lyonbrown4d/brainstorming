@@ -12,6 +12,7 @@ import {
   usePresentation,
 } from '@renderer/state/presentation'
 import { useEditor } from '@renderer/state/editor'
+import { initializeI18n } from '@renderer/i18n'
 import { serializedDocumentSnapshot } from '@renderer/state/documentSnapshot'
 import { deserializeWorkbook } from '@core'
 
@@ -26,7 +27,8 @@ const meta = {
       </div>
     ),
   ],
-  beforeEach: () => {
+  beforeEach: async () => {
+    await initializeI18n('zh-CN')
     closePresentationWorkspace()
     useEditor.getState().replace(
       applyCommand(createDocument('周末出行'), {
@@ -55,8 +57,8 @@ const meta = {
       }),
     )
     openPresentationComposer()
+    return closePresentationWorkspace
   },
-  afterEach: closePresentationWorkspace,
 } satisfies Meta<typeof PresentationWorkspace>
 export default meta
 type Story = StoryObj<typeof meta>
@@ -65,6 +67,12 @@ export const Composer: Story = {}
 export const Audience: Story = {
   beforeEach: () => {
     showPresentationStep(1)
+  },
+}
+export const EnglishAudience: Story = {
+  beforeEach: async () => {
+    await initializeI18n('en')
+    showPresentationStep(0)
   },
 }
 export const Presenter: Story = {

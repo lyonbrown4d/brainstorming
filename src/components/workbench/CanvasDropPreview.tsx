@@ -37,7 +37,7 @@ const DropTargetPreview = ({ drag, drop }: { drag: CanvasDragInteraction; drop: 
           data-drop-mode={sibling ? 'sibling' : 'child'}
           data-parent-id={drop.parentId}
           data-drop-predicted={drop.predicted ? 'true' : 'false'}
-          className="pointer-events-none absolute z-[1001] rounded-xl border-2 border-dashed border-drop-target bg-drop-target/10"
+          className={`pointer-events-none absolute z-[1001] rounded-xl border-2 border-drop-target bg-drop-target/10 ${drop.predicted ? 'border-dashed' : 'border-solid'}`}
           style={{ left: x - 5, top: y - 5, width: width + 10, height: height + 10 }}
         />
         {sibling && parent && parent.id !== target.id && (
@@ -72,7 +72,7 @@ const DropTargetPreview = ({ drag, drop }: { drag: CanvasDragInteraction; drop: 
         position={Position.Top}
         align="start"
         offset={20}
-        className="pointer-events-none z-[1003] flex max-w-80 items-center gap-2 rounded-lg bg-foreground px-3 py-2 text-xs font-medium text-background shadow-md"
+        className="pointer-events-none z-[1003] flex max-w-80 items-center gap-2 rounded-lg bg-foreground px-3 py-2 text-xs font-medium leading-snug text-background shadow-floating"
       >
         <Icon className="size-4 shrink-0" aria-hidden="true" />
         <span className="truncate">{canvasDragMessage(drag, translate)}</span>

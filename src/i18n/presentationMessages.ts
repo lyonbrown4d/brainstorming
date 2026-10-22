@@ -18,6 +18,8 @@ export const presentationMessages = {
   presentationImageCover: ['填满区域', 'Fill area'],
   presentationImagePosition: ['图片位置', 'Image position'],
   presentationComposer: ['演示编排', 'Compose presentation'],
+  presentationJumpToPage: ['跳转到页面', 'Jump to slide'],
+  presentationNoMatchingPages: ['没有匹配的页面', 'No matching slides'],
   presentationPages: ['页面', 'Slides'],
   presentationFromMap: ['从导图生成', 'Generated from map'],
   presentationBackToMap: ['返回画布', 'Return to canvas'],

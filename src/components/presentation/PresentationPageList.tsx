@@ -1,6 +1,6 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { EyeOff } from 'lucide-react'
+import { Check, EyeOff } from 'lucide-react'
 import type { MindMapDocument, PresentationStep } from '@core'
 import { useMessages } from '@renderer/i18n/useMessages'
 import { buildPresentationSlide } from '@renderer/components/presentation/slideModel'
@@ -28,6 +28,9 @@ export const PresentationPageList = ({
     estimateSize: () => 160,
     overscan: 2,
   })
+  useEffect(() => {
+    virtual.scrollToIndex(selected, { align: 'auto' })
+  }, [selected, virtual])
   return (
     <aside
       className="flex w-52 shrink-0 flex-col border-r border-border bg-background max-lg:w-40 max-sm:hidden"
@@ -52,12 +55,15 @@ export const PresentationPageList = ({
                   onSelect(row.index)
                 }}
                 aria-current={row.index === selected ? 'page' : undefined}
-                className={`absolute left-0 top-0 flex w-full flex-col items-stretch justify-start gap-2 rounded-lg border p-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-ring ${row.index === selected ? 'border-primary bg-muted ring-1 ring-primary' : 'border-border bg-background hover:bg-muted/50'} ${step.hidden ? 'opacity-55' : ''}`}
+                className={`absolute left-0 top-0 flex w-full flex-col items-stretch justify-start gap-2 rounded-lg border p-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-ring ${row.index === selected ? 'border-transparent bg-accent text-accent-foreground' : 'border-transparent bg-background hover:bg-muted/60'} ${step.hidden ? 'opacity-55' : ''}`}
                 style={{ height: row.size - 10, transform: `translateY(${row.start}px)` }}
               >
                 <div className="flex min-w-0 shrink-0 items-center gap-2 text-xs font-medium">
                   <span className="text-muted-foreground">{row.index + 1}</span>
                   <span className="min-w-0 flex-1 truncate">{slide.topic.title}</span>
+                  {row.index === selected && (
+                    <Check className="size-3 shrink-0" aria-hidden="true" />
+                  )}
                   {step.hidden && (
                     <EyeOff
                       className="size-3 shrink-0"

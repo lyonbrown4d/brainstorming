@@ -90,19 +90,15 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
     <>
       <div
         className={cn(
-          'topic group/topic nopan relative flex flex-col items-center rounded-lg border-[1.5px] transition-[box-shadow,border-color] duration-150 select-none',
+          'topic group/topic nopan relative flex flex-col items-center rounded-lg border-[1.5px] select-none',
           root
             ? 'topic-root rounded-xl bg-primary text-primary-foreground'
             : branch
               ? 'topic-branch'
               : 'topic-leaf',
-          selected
-            ? 'is-selected border-primary ring-2 ring-primary/15'
-            : root || branch
-              ? 'border-transparent'
-              : 'border-[color-mix(in_srgb,var(--branch-color)_28%,transparent)]',
+          selected && 'is-selected',
           editingHere && 'is-editing',
-          dropTarget && 'drop-target border-dashed border-drop-target ring-4 ring-drop-target/15',
+          dropTarget && 'drop-target',
           `side-${side}`,
           hasContent && 'has-content',
         )}
@@ -161,7 +157,7 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
             key={`source-${position}`}
             id={`source-${position}`}
             type="source"
-            className="!size-3 !border-2 !border-primary !bg-background hover:!opacity-100 group-hover/topic:!pointer-events-auto group-hover/topic:!opacity-100 group-focus-within/topic:!pointer-events-auto group-focus-within/topic:!opacity-100"
+            className="topic-connect-handle !size-3 !border-2 !border-primary !bg-background hover:!border-background hover:!bg-primary"
             position={position}
           />
         ))}
@@ -200,7 +196,8 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
             variant="ghost"
             size="icon"
             type="button"
-            className={`fold-button nodrag absolute z-[2] size-[18px] rounded-full border border-border bg-background p-0 text-[9px] ${root ? 'text-primary' : 'text-[var(--branch-color)]'} ${foldPosition}`}
+            className={`fold-button nodrag absolute z-[2] size-[18px] rounded-full border border-border bg-background p-0 text-[9px] shadow-sm hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none ${root ? 'text-primary' : 'text-[var(--branch-color)]'} ${foldPosition}`}
+            data-collapsed={topic.collapsed ? 'true' : 'false'}
             aria-label={`${topic.collapsed ? translate('expand') : translate('collapse')} ${topic.title}`}
             onClick={(event) => {
               event.stopPropagation()
