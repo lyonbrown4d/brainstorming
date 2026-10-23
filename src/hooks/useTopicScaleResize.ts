@@ -4,9 +4,6 @@ import { applyCommand, type Topic } from '@core'
 import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
 import type { ScaleSession } from '@renderer/lib/canvasGestureSession'
 import { computeNativeLayout } from '@renderer/lib/nativeLayout'
-import { fetchNativeSpatialLayout } from '@renderer/lib/nativeSpatialLayout'
-import { spatialCameraDelta } from '@renderer/lib/spatialCamera'
-import { projectSpatialLayout } from '@renderer/lib/spatialProjection'
 import { useEditor } from '@renderer/state/editor'
 import { getSpatialView, useSpatialView } from '@renderer/state/spatialView'
 import { usePresentation } from '@renderer/state/presentation'
@@ -206,12 +203,8 @@ export const useTopicScaleResize = (
           topicId: id,
           style: { ...active.topic.style, scale },
         })
-        const nextLayout =
-          active.view.mode === '3d'
-            ? fetchNativeSpatialLayout(candidate, active.sheetId, active.view)
-            : computeNativeLayout(candidate).then((layout) => ({ layout, depths: undefined }))
-        void nextLayout
-          .then(({ layout, depths }) => {
+        void computeNativeLayout(candidate)
+          .then((layout) => {
             const current = useEditor.getState()
             if (pending.current !== active) return
             if (
@@ -226,9 +219,7 @@ export const useTopicScaleResize = (
               restore(active)
               return
             }
-            const next = projectSpatialLayout(candidate, layout, active.view, depths).nodes.find(
-              (node) => node.id === id,
-            )
+            const next = layout.nodes.find((node) => node.id === id)
             if (!next) {
               pending.current = null
               restore(active)
@@ -238,11 +229,7 @@ export const useTopicScaleResize = (
             const anchorY = active.corner.startsWith('top') ? bounds.y + bounds.height : bounds.y
             const x = active.corner.includes('left') ? anchorX - next.width : anchorX
             const y = active.corner.startsWith('top') ? anchorY - next.height : anchorY
-            const delta = spatialCameraDelta(
-              active.view,
-              { x: x - next.x, y: y - next.y },
-              next.cameraDepth ?? 0,
-            )
+            const delta = { x: x - next.x, y: y - next.y }
             const offsetX = (active.topic.style?.offsetX ?? 0) + delta.x
             const offsetY = (active.topic.style?.offsetY ?? 0) + delta.y
             if (
@@ -265,9 +252,6 @@ export const useTopicScaleResize = (
                   scale,
                   offsetX,
                   offsetY,
-                  ...(delta.z
-                    ? { spatialDepth: (active.topic.style?.spatialDepth ?? 0) + delta.z }
-                    : {}),
                 },
               },
               () => {

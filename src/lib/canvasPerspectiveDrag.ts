@@ -1,3 +1,4 @@
+import type { NodeChange } from '@xyflow/react'
 import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
 import type { DragSession } from '@renderer/lib/canvasGestureSession'
 import { spatialPerspectiveScale } from '@renderer/lib/spatialCamera'
@@ -25,4 +26,21 @@ export const previewPerspectiveDrag = (
     next[index] = { ...node, position: { x, y } }
   }
   return next ?? nodes
+}
+
+/** Capture the newest anchor once; all descendants share the same frame's world displacement. */
+export const canvasPerspectivePreview = (
+  changes: readonly NodeChange<CanvasFlowNode>[],
+  session: DragSession | null,
+  depths: ReadonlyMap<string, number>,
+): ((nodes: CanvasFlowNode[]) => CanvasFlowNode[]) | undefined => {
+  if (!session) return undefined
+  const anchor = changes.find(
+    (change) => change.type === 'position' && change.id === session.anchorId,
+  )
+  const origin = session.origins.get(session.anchorId)
+  if (anchor?.type !== 'position' || !anchor.position || !origin) return undefined
+  const dx = anchor.position.x - origin.x
+  const dy = anchor.position.y - origin.y
+  return (nodes) => previewPerspectiveDrag(nodes, session, depths, dx, dy)
 }

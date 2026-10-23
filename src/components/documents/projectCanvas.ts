@@ -1,4 +1,3 @@
-import type { SpatialView } from '@renderer/state/spatialView'
 import { relationAnchors } from '@shared/relation-geometry'
 import { visualPath } from '@shared/sketch'
 import { layoutDocument, type LayoutNode, type MindMapLayout } from '@layout'
@@ -24,18 +23,17 @@ export const edgeHandles = (
       down: ['bottom', 'top'],
     } as const
     const [from, to] = sides[direction]
-    return { sourceHandle: `source-${from}`, targetHandle: `target-${to}` }
+    return { sourceHandle: `source-${from}`, targetHandle: `source-${to}` }
   }
   const vertical = Math.abs(dy) > Math.abs(dx)
   const from = vertical ? (dy > 0 ? 'bottom' : 'top') : dx > 0 ? 'right' : 'left'
   const to = vertical ? (dy > 0 ? 'top' : 'bottom') : dx > 0 ? 'left' : 'right'
-  return { sourceHandle: `source-${from}`, targetHandle: `target-${to}` }
+  return { sourceHandle: `source-${from}`, targetHandle: `source-${to}` }
 }
 export const projectCanvas = (
   document: MindMapDocument,
   surface?: string,
   layout: MindMapLayout = layoutDocument(document),
-  spatial?: SpatialView,
 ) => {
   const byId = new Map(layout.nodes.map((node) => [node.id, node]))
   const orderedDepths = layout.nodes
@@ -59,6 +57,10 @@ export const projectCanvas = (
     if (!topic) return []
     const appearance = topicAppearance(document, node.id, surface)
     const zIndex = layers.get(node.id)
+    // RF measures integer offset dimensions; avoid fractional-only resize notifications.
+    const width = node.cameraScale === undefined ? node.width : Math.max(1, Math.round(node.width))
+    const height =
+      node.cameraScale === undefined ? node.height : Math.max(1, Math.round(node.height))
     return [
       {
         id: node.id,
@@ -69,17 +71,14 @@ export const projectCanvas = (
           : {
               className: '[contain:layout_style] [&>.topic-projection]:will-change-transform',
               // RF retains initialized ports while its observer updates their DOM bounds.
-              measured: { width: Math.round(node.width), height: Math.round(node.height) },
+              measured: { width, height },
             }),
         position: { x: node.x, y: node.y },
         ...(zIndex === undefined ? {} : { zIndex }),
         // Known layout dimensions keep fresh nodes visible when Lexical takes focus.
-        initialWidth: node.width,
-        initialHeight: node.height,
-        style: {
-          width: node.width,
-          height: node.height,
-        },
+        initialWidth: width,
+        initialHeight: height,
+        style: { width, height },
         data: {
           topic,
           visualStyle: document.settings?.visualStyle ?? 'normal',
@@ -150,7 +149,7 @@ export const projectCanvas = (
       }
     })
   return {
-    nodes: [...nodes, ...projectInk(document, spatial)] as CanvasFlowNode[],
+    nodes: [...nodes, ...projectInk(document)] as CanvasFlowNode[],
     edges: [
       ...edges,
       ...relationEdges(document, new Set(byId.keys())).map((edge) => {
@@ -162,7 +161,7 @@ export const projectCanvas = (
         return {
           ...edge,
           sourceHandle: `source-${anchors.source}`,
-          targetHandle: `target-${anchors.target}`,
+          targetHandle: `source-${anchors.target}`,
         }
       }),
     ],

@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
 import { getSubtreeIds } from '@core/tree'
 import { createCanvasDropFinder } from '@renderer/lib/canvasDropIndex'
-import { findCanvasDrop } from '@renderer/lib/canvasDrop'
+import { findCanvasDrop, nodeCenter } from '@renderer/lib/canvasDrop'
 import { projectCanvas } from '@renderer/components/documents/projectCanvas'
 import { layoutDocument } from '@layout'
 import { projectSpatialLayout } from '@renderer/lib/spatialProjection'
@@ -84,4 +84,25 @@ it('preserves projection order on equal-distance overlapping targets', () => {
     }))
   const find = createCanvasDropFinder(document, nodes, new Set())
   expect(find({ x: 50, y: 20 })?.targetId).toBe(nodes[0]?.id)
+})
+
+it('targets projected bounds when a 3D surface keeps a larger world-sized DOM box', () => {
+  const document = createFixtureDocument(2)
+  const nodes = projectCanvas(document)
+    .nodes.filter((node) => node.type === 'topic')
+    .map((node, index) => ({
+      ...node,
+      position: { x: index * 1200, y: 0 },
+      style: { width: 1000, height: 500 },
+      measured: { width: 100, height: 50 },
+      data: { ...node.data, outerProjection: true as const },
+    }))
+  const root = nodes.find((node) => node.id === 'root')
+  if (!root) throw new Error('Missing root fixture')
+  const center = nodeCenter(root)
+  expect(center).toEqual({ x: root.position.x + 50, y: 25 })
+  const find = createCanvasDropFinder(document, nodes, new Set())
+  expect(find(center)?.targetId).toBe(root.id)
+  expect(find({ x: root.position.x + 500, y: 25 })).toBeUndefined()
+  expect(findCanvasDrop(document, nodes, new Set(), center)?.targetId).toBe(root.id)
 })

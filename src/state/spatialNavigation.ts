@@ -1,3 +1,4 @@
+import { LRUCache } from 'lru-cache'
 import { useCanvasInk } from '@renderer/state/canvasInk'
 import type { CameraControlsImpl } from '@react-three/drei'
 import { useCanvasInteraction } from '@renderer/state/canvasInteraction'
@@ -28,7 +29,9 @@ export interface SpatialNavigationFrame {
   readonly viewport: Viewport
 }
 
-const frames = new Map<string, { signature: string; frame: SpatialNavigationFrame }>()
+const frames = new LRUCache<string, { signature: string; frame: SpatialNavigationFrame }>({
+  max: 16,
+})
 const frameKey = (workbookId: string, sheetId: string): string =>
   JSON.stringify([workbookId, sheetId])
 const signature = (view: SpatialView): string =>
@@ -53,9 +56,7 @@ export const rememberSpatialNavigationFrame = (
 ): void => {
   if (!validFrame(frame)) return
   const key = frameKey(workbookId, sheetId)
-  frames.delete(key)
   frames.set(key, { signature: signature(settings), frame })
-  while (frames.size > 16) frames.delete(frames.keys().next().value ?? key)
 }
 
 export const rememberCurrentSpatialNavigationFrame = (
@@ -72,7 +73,7 @@ export const getSpatialNavigationFrame = (
   sheetId: string,
   settings: SpatialView,
 ): SpatialNavigationFrame | undefined => {
-  const remembered = frames.get(frameKey(workbookId, sheetId))
+  const remembered = frames.peek(frameKey(workbookId, sheetId))
   const savedViewport = getSpatialViewport(workbookId, sheetId, '3d')
   const frame = remembered?.frame
   if (

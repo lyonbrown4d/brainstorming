@@ -141,7 +141,7 @@ describe('native export center', () => {
     await create('当前三维视角导出')
     await named('三维视图').click()
     await expect(browser.$('[data-view-mode="3d"]')).toBeDisplayed()
-    await expect(browser.$('[data-spatial-renderer] canvas')).toBeDisplayed()
+    await expect(browser.$('canvas[data-spatial-canvas="three"]')).toBeDisplayed()
     await editorReady('当前三维视角导出')
     await dockAction('导出')
     await selectExportFormat('图片', 'PNG 图片')

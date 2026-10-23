@@ -10,10 +10,13 @@ use std::{
 };
 use tokio::sync::Mutex;
 
+#[cfg(feature = "e2e")]
+pub type TestDialogs = Arc<Mutex<std::collections::VecDeque<(String, Option<PathBuf>)>>>;
+
 #[derive(Clone)]
 pub struct AppState {
   #[cfg(feature = "e2e")]
-  pub test_dialogs: Arc<tokio::sync::Mutex<std::collections::VecDeque<(String, Option<PathBuf>)>>>,
+  pub test_dialogs: TestDialogs,
   pub directory: PathBuf,
   pub documents: Arc<DocumentStore>,
   pub compute: Arc<crate::compute::ComputeService>,

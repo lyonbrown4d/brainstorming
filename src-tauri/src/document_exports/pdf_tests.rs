@@ -77,7 +77,7 @@ fn paper_fit_and_tiling_have_expected_pages() {
     paper: Paper::A4,
     ..PdfOptions::default()
   };
-  let fit_pdf = Document::load_mem(&encode(&[source.clone()], &fit).unwrap()).unwrap();
+  let fit_pdf = Document::load_mem(&encode(std::slice::from_ref(&source), &fit).unwrap()).unwrap();
   assert_eq!(fit_pdf.get_pages().len(), 1);
   let (width, height) = media_box(&fit_pdf, 1);
   assert!((width - 297.0 * POINTS_PER_MM).abs() < 0.1);
@@ -111,10 +111,10 @@ fn rejects_external_resources_and_bad_geometry() {
     .is_err()
   );
   assert!(serde_json::from_str::<PdfOptions>(r#"{"paper":"a4","unknown":true}"#).is_err());
-  assert!(matches!(
-    Document::load_mem(&encode(&[page("Okay", 100.0, 100.0)], &PdfOptions::default()).unwrap()),
-    Ok(_)
-  ));
+  assert!(
+    Document::load_mem(&encode(&[page("Okay", 100.0, 100.0)], &PdfOptions::default()).unwrap())
+      .is_ok()
+  );
 }
 
 #[test]

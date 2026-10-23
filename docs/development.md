@@ -23,19 +23,41 @@ pnpm dev
 
 正式画布向 `compute_layout` / `compute_spatial_layout` 发送空 `measurements`，由 Rust 在有界工作线程内估算全图尺寸；只在布局缓存未命中时执行。显式传入的尺寸仍用于预览和确定性几何比较；Storybook 保留 TypeScript 参考量测。前端缓存几何输入的身份，原生快照合并复用未变笔迹及其数组，避免重复运行 perfect-freehand；文本对比色使用有容量上限的 LRU Cache。
 
-2D / 3D 布局查询使用冻结的字符串数组作为键，通过 TanStack Query 官方 `hashKey` 生成哈希，并按数组身份用 WeakMap 复用结果。键内容与默认哈希保持一致，结构相同的查询、精确失效和默认 QueryClient 读取仍共享缓存；可变键及包含对象的键不复用哈希。节点外部投影或选区改变后同步更新协调基线，后续指针状态变化复用已协调节点，保留 React Flow 临时框选、拖动释放位置与最新函数式更新。专项回归见 `src/lib/nativeLayoutQueryKey.test.ts` 和 `stories/CanvasNodeState.stories.tsx`。
+2D / 3D 布局查询使用冻结的字符串数组作为键，通过 TanStack Query 官方 `hashKey` 生成哈希，并按数组身份用 WeakMap 复用结果。键内容与默认哈希保持一致，结构相同的查询、精确失效和默认 QueryClient 读取仍共享缓存；可变键及包含对象的键不复用哈希。二维节点外部投影或选区改变后同步更新协调基线，后续指针状态变化复用已协调节点，保留 React Flow 临时框选、拖动释放位置与最新函数式更新。专项回归见 `src/lib/nativeLayoutQueryKey.test.ts` 和 `stories/CanvasNodeState.stories.tsx`。
 
-2D 平移与缩放由 React Flow 更新视口，不触发原生重布局；画布继续复用 TanStack Query 的布局缓存和现有低倍率细节层级。缩放读数只订阅取整后的百分比，平移不重绘缩放按钮。父子分支线关闭改接端点与透明交互副本，手动关联线仍保留选中、拖动与改接能力；主题容器使用布局与样式 containment，避免内部变化扩散到其他主题。
+2D 平移与缩放由 React Flow 更新视口，不触发原生重布局；画布继续复用 TanStack Query 的布局缓存和现有低倍率细节层级。缩放读数只订阅取整后的百分比，平移不重绘缩放按钮。父子分支线复用 React Flow 的端点、可见性与路径算法，合并到共享 SVG，拖动期间将相关连线与可缓存的静止连线分层；原始边记录保留用于连接查询，关闭单边 SVG 包装、指针命中、改接端点与透明交互副本。至少 250 条分支线时，相邻同色的不透明普通曲线或直线合并为路径；路由、手绘和未知样式沿用单线绘制。小组拖动只拆出受影响的线，整组移动继续批量绘制，避免重新挂载大量路径。手动关联线仍保留选中、拖动与改接能力；主题容器使用布局与样式 containment，避免内部变化扩散到其他主题。
 
-拖动开始时按当前 React Flow 节点快照建立 [Flatbush](https://github.com/mourner/flatbush) 静态空间索引，并缓存父节点、剩余同级顺序和排列轴。指针移动只查询附近目标，不再逐次转换全图、查找父节点和计算同级范围；保持主题正文优先于插入提示区的规则，三维正文重叠时优先前方主题，等深等距时保留投影顺序。归属预判复用 React Flow 的节点边界与曲线路径，默认提前 48 屏幕像素识别子主题或同级插入，保留小幅退出缓冲以减少闪烁；原父主题的无变化挂接不触发预判。预览线只订阅移动根主题与目标父主题，批量选区最多展示 24 条预览线，整组命令仍覆盖全部所选主题。索引只属于当前手势，结束、取消、切换 Sheet 或卸载后释放。拖动回调复用 ahooks 的稳定函数，关联线事件处理器按挂载周期缓存，避免指针帧反复更新 React Flow 的事件配置。拖动中的节点临时使用 Tailwind `will-change-transform` 合成层提示，结束或取消后释放，不为整张导图常驻创建图层。React Flow 的位置变更和子树跟随在一次状态更新内完成，未发生位移的节点和数组保留原引用；2D、3D 与混合笔迹选区共用此流程。全图测量和布局继续交给 Rust，指针命中保留在前端，避免每帧跨进程往返。
+二维拖动开始时按当前 React Flow 节点快照建立 [Flatbush](https://github.com/mourner/flatbush) 静态空间索引，并缓存父节点、剩余同级顺序和排列轴。指针移动只查询附近目标，保持主题正文优先于插入提示区的规则；默认提前 48 屏幕像素识别子主题或同级插入，保留退出缓冲，原父主题的无变化挂接不触发预判。预览线只订阅移动根主题与目标父主题，批量选区最多展示 24 条预览线，整组命令仍覆盖全部所选主题。手势结束、取消、切换 Sheet 或卸载后释放索引。拖动回调复用 ahooks 稳定函数，关联线事件处理器按挂载周期缓存。拖动期间使用临时合成层提示，结束或取消后释放。位置通知通过 RxJS 动画帧调度合并，同一帧保留每个节点的最新位置，松手同步排空，取消丢弃待处理位置。React Flow 的位置变更和子树跟随通过官方 Store API 一次发布完整预览，外部文档与选区变化在 `useLayoutEffect` 中协调；未位移的节点和数组保留引用。每个工作簿与 Sheet 使用独立 ReactFlowProvider 生命周期，避免旧画布清理覆盖新节点。二维主题与笔迹共用选区及批量命令；全图测量和布局仍交给 Rust，指针命中留在前端。
 
-千节点检查复用 `createFixtureDocument(1000)`，组件预览为 `Canvas Performance / Thousand Topics`，原生回归为 `tests/native/canvas-performance.spec.ts`；原生用例记录导航帧间隔，并验证拖动中的连线、保存与单次撤销。React Scan 用于开发环境的重渲染检查；原生指针契约用例补全固定版本 WebDriver 缺少的 `MouseEvent.view` 与按键状态，真实指针命中由 `tests/canvas` 验证。WebView 的 requestAnimationFrame 采样和合成滚轮、拖动事件不能代表物理触控板或 GPU 实际呈现帧率。
+二维缩略图继续复用 React Flow 官方 MiniMap，通过独立 ReactFlowProvider 保存延后的视图快照，与主画布共享导航控制器。复用 RxJS 合并更新通知：平移和缩放停止变化 80ms 后，先等待主画布动画帧，再排入后续任务读取最新状态；主题拖动期间保留上一张概览，结束或取消后直接排队同步。主画布恢复更新时，也取消已经排入动画帧或后续任务的旧刷新，避免低帧率下概览任务插入连续导航。没有逐帧复制全图，也没有把绘制移到工作线程。至少 250 个已测量节点时，相邻同色的不透明概览区域合并为路径，保留绘制顺序；超过 32 组则复用浏览器 SVG 图片解码器异步生成一张缓存图像，固定 512 × 512 像素的固有尺寸避免按世界坐标分配巨大图像。新图就绪前保留旧概览，失败后恢复路径；替换、取消或卸载时释放对象 URL。自定义组件、点击回调、描边、半透明或无法解析的颜色沿用官方节点。小地图自身的拖动和滚轮操作读取主画布的即时视口，避免延迟快照覆盖连续输入；SVG 数值尺寸跟随实际容器变化，避免紧凑布局下裁切；开始导航前同步视口和缩放基线。关闭后取消待处理任务，重新打开从当前状态初始化。
 
-3D 镜头推拉时，React Flow 继续更新节点位置、命中范围及连线，轻量投影包装层通过 `transform` 缩放稳定的主题内容。相机比例不通过继承的 CSS 变量传到富文本、图片和 SVG 子树，避免逐帧重新计算整棵主题子树的样式。正文只在低倍率细节阈值、编辑、选区或内容变化时更新。受控节点直接从当前投影派生，React Flow 的测量、指针预览和框选中的临时选区单独保留，直到对应操作提交；镜头帧不再通过状态调整重复渲染画布。三维投影保留已知尺寸，连接点仍由 React Flow 的 ResizeObserver 更新。
+普通主题轮廓在颜色已解析为十六进制时复用浏览器 SVG 图片缓存和有界 LRU，保留原始几何与描边外延，正文与连接点仍使用共享编辑组件；手绘、中心主题与未解析颜色继续使用原 SVG。每个主题复用四个官方连接点，通过 React Flow 的 Loose 模式支持线的两个端点，减少不可见重复端口；文档中的关联线锚点不变。
 
-地面与方向控件按 [React Three Fiber 的高频更新建议](https://r3f.docs.pmnd.rs/advanced/pitfalls) 直接同步相机对象，不把每帧姿态送入整个 React Three Fiber 组件树。方向控件只响应角度变化，模式与深度控件只订阅所需字段，关闭的角度面板不订阅姿态预览。地面复用 Drei Grid 与 AdaptiveDpr，运动时降低该 WebGL 层分辨率，停止后恢复；网格着色器负责线条抗锯齿，不创建额外 MSAA、深度或模板缓冲，主题文字和图片保持原有清晰度。相机输入尺寸由 ResizeObserver 更新，滚轮和镜头帧只读缓存，避免同步读取布局；原生查询缓存的主题深度直接用于投影，不逐帧重建深度映射。相机距离忽略浮点舍入噪声，纯旋转不重复提交相同的 React Flow 视口。普通原生命令返回新的设置对象时按值比较空间配置，内容编辑和拖动不会因此重置临时镜头；真正的相机配置变更及其撤销仍同步应用。上述优化不设置 60 FPS 上限，实际帧率仍取决于导图规模、系统和显示器。
+主题缩放手柄只在投影后的主题至少为 48 × 28 屏幕像素时显示，避免固定大小的四角手柄遮住远处主题的拖动区域；拉近后自动恢复。此规则共用于二维和三维，不改变文档中的缩放比例。
 
-`compute_spatial_layout` 复用原生 2D 布局，并返回主题深度记录。主题深度由层级、`settings.spatial.spacing` 和沿祖先累加的 `style.spatialDepth` 计算；2D 布局与测量忽略这些空间字段。空间计算使用 Moka 缓存和有界工作任务；前端根据结果、`yaw`、`pitch` 与可选 `target` 做透视相机投影。主题与笔迹面向相机，笔迹深度使用可选 `drawings[].spatialDepth`。节点保留干净的二维正面，不绘制背板或挤出实体；空间感由节点的深度、透视位置和大小变化呈现。React Three Fiber / Three.js 与 Drei Grid 提供导图下方的地面参照。节点与笔迹的投影尺寸使用相机深度计算透视比例，指针移动通过同一相机平面的逆投影还原空间位移；混合深度选区保持相同世界位移。节点内容使用原生布局尺寸，缩放通过变换更新，避免反复生成文本排版和手绘轮廓；地面尺寸按档位更新，避免逐帧重建。主题选中、编辑、中文输入法、关联线和笔迹继续走共享画布交互。Drei 导出的 CameraControls 统一处理空白处拖动旋转、右键平移、双指平移、捏合缩放与 Alt 双指旋转；React Flow 在 3D 模式关闭自身平移与缩放，只负责节点、笔迹和选区交互。三维的放大、缩小、复位视距、显示全部和聚焦直接调用 CameraControls 的 `dollyTo` 与 `moveTo`；显示全部和首次取景复用历史版本的包围盒留白，通过 `getDistanceToFitBox` 计算视距，保留当前视角。最小视距为 150 画布单位，单主题的初始视距至少为 400；大图仍可拉近查看局部。捏合按累计目标视距乘以 `exp(deltaY × 0.008)`，Alt 双指旋转按画布高度换算一周角度，避免细小手势需要反复操作。首次进入三维使用空间范围确定视距，已有三维会话恢复原镜头；React Flow 只接收镜头换算后的投影视口，不驱动三维相机。控制器同步空间镜头与编辑层，避免两套视口动画冲突。旋转或右键平移结束后通过 `setDocumentSettings` 保存一次视角和相机目标；主题深度通过 `setTopicStyle` 保存。透视镜头的 `cameraDistance` 只保存在有容量上限的渲染会话中，写入 `settings.spatial` 前显式移除；它不属于文件契约，不参与原生布局缓存键。二维视口以及三维触控板平移与缩放按工作簿、Sheet 和模式保留在会话中，切换 Sheet 后分别恢复，不写入文档；三维右键平移调整的相机目标随视角保存。原生深度尚未准备完成时保留旧画面并暂停画布编辑，避免把投影坐标写入主题位置。首次进入三维时先绘制统一加载蒙版，按需加载空间渲染与方向控件；原生布局、空间首帧和方向控件首帧均就绪后再开放编辑。WebGL 不可用时解除蒙版并保留共享编辑层。相机变化复用已缓存的原生布局，地面与方向控件复用 Drei，不再为主题创建额外几何体。缺省模式为 2D，视图配置和主题深度的文件约束见 [单文件协议](file-format.md#主题表现笔迹与演示页面)。
+千节点检查复用 `createFixtureDocument(1000)`。二维组件预览为 `Canvas Performance / Thousand Topics`；原生性能用例包括 `tests/native/canvas-performance.spec.ts`、`tests/native/high-frequency.spec.ts` 和 `tests/native/independent-spatial-performance.spec.ts`。`tests/native/independent-spatial-correctness.spec.ts` 与三维交互用例检查相机导航、选中、混合拖动、归属预判、笔迹、缩放、关联线、保存和单次撤销。用例存在不代表已经执行通过，当前独立三维架构的原生性能仍需使用当前源码的完整 E2E 二进制采样；旧 React Flow 三维投影与 PixiJS GPU 混合方案的测量不适用于当前架构。
+
+性能采样区分 requestAnimationFrame 调度、WebGL 渲染提交和拖动中的实际位置更新频率。它们不等于 GPU 物理呈现帧率，合成滚轮和拖动也不能代表物理触控板。高频检查每帧输入多次等量事件，并检查操作结果，不能只数回调。千节点连续导航与拖动以尽量稳定在 60 FPS 以上为优化目标，不设置 60 FPS 上限；结果需注明系统、导图规模、输入方式与采样范围，不能由单机结果推断全部平台。React Scan 只用于开发环境重渲染检查；真实指针命中由 `tests/canvas` 验证。
+
+### 独立二维与三维画布
+
+`src/App.tsx` 只装配路由、QueryClient、MotionConfig 与 TooltipProvider。`components/application/ApplicationShell.tsx` 负责应用外壳与工作区选择，`EditorWorkspace.tsx` 组合画布、侧栏和演示，`WorkspaceNotices.tsx` 负责恢复、错误和密码提示；服务初始化集中在 `useApplicationServices`。编辑工作区仅在 2D 分支挂载 ReactFlowProvider。`components/Canvas.tsx` 选择二维 Canvas2D，或通过 `React.lazy` 加载 `spatial/independent/IndependentSpatialCanvas`，三维不依赖二维视口、节点或 store。
+
+Three.js、React Three Fiber、Drei 与 PixiJS 运行时代码均从三维入口按需加载。二维入口的静态依赖不能间接引入这些运行时；纯类型引用可保留。Vite 的 `optimizeDeps` 只负责开发依赖预构建，不表示浏览器已预加载三维模块。构建 manifest 为被忽略的生成产物，可用于核对入口与动态 chunk，不进入 Git。
+
+独立三维由 `IndependentSpatialRuntime` 保存场景模型、相机投影、手势预览与订阅，React Three Fiber 使用 `frameloop="demand"`。CameraControls 直接控制实际 Three.js 透视相机；镜头变化只请求场景渲染，不把每个主题的位置逐帧写入 React Flow 或 React 状态。相机姿态、镜头请求和临时文档预览分别同步；内容编辑不能重置临时镜头，真正的空间配置变更及撤销仍应用到相机。前端只承担视图计算和即时交互，确定性全图量测、布局与缓存继续由 Rust 负责。
+
+主题正面使用始终面向相机的 GPU 实例与纹理图集，不逐主题挂载 DOM。图集最多 4 页，每页 2048 × 2048 像素；容量不足时降低采样密度，不无限分配纹理。主题栅格缓存有容量上限，准备分批让出主线程，模型替换及卸载时取消过期任务并释放资源。PixiJS 只提供 `CanvasTextMetrics` 和 `TextStyle` 的字体量测与换行，不创建 Pixi Application 或第二套 GPU 渲染器。主题形态与分支线路径复用共享几何，通过 Three.js SVGLoader 处理；笔迹合并到场景几何中。当前活动标题使用共享 Lexical 编辑覆盖层，其余主题保持 GPU 内容。视觉模型变化时重新开启加载门禁，等新 GPU 内容的实际首帧完成再恢复命中；仅相机变化的等价模型直接复用。
+
+镜头静止 180ms 后，可见主题按投影尺寸和实际像素比补充高分辨率图集；最多 24 个主题、单页 2048 × 2048、单项不超过 100 万像素，每次扫描至少间隔 600ms。连续镜头输入只取消和合并请求，不逐帧重建文字；失败保留基础图集，替换和卸载释放纹理。线条复用导数抗锯齿及多重采样覆盖。关联线按布局引用缓存端点索引和世界几何，相机只投影已有采样；DOM 命中路径仍随镜头更新，其成本与关系数和采样点数相关。
+
+三维命中、框选、主题与笔迹混合拖动、提前归属预判、画笔、擦除、四角缩放和手动关联线由独立视图处理，再提交既有类型化命令。混合选区保留各元素深度与相同世界位移；中间预览、选区和取消不写历史，结束按一次操作提交。侧栏、属性、快捷键及文档历史复用原有业务能力，不建立第二套文档模型。笔迹渲染键按文档缓存并避让主题 ID，矩形显式携带原始 drawing ID，禁止用前缀截取还原业务标识。
+
+三维缩略图使用单张 Canvas 2D 位图，复用本机开关偏好。镜头变化暂停 80ms 后，先等待主画布动画帧，再通过 RxJS 异步队列读取最新投影；连续导航取消旧刷新，拖动期间保留旧概览，结束或取消后刷新。拖动与滚轮直接调用独立相机；小地图拖动期间冻结位图，仅同步 SVG 视口框，结束后重绘。缩略图不逐帧投影或复制全图，也不建立第二个 React Flow 画布。
+
+`compute_spatial_layout` 复用原生 2D 布局，并返回主题深度。深度由层级、`settings.spatial.spacing` 和沿祖先累加的 `style.spatialDepth` 计算，笔迹沿用可选 `drawings[].spatialDepth`；2D 量测与布局忽略这些字段。计算使用 Moka 缓存与有界工作任务。节点保留二维正面，不绘制背板或挤出实体，地面网格提供空间参照。
+
+CameraControls 处理空白处旋转、右键平移、双指平移、捏合与 Alt 双指旋转，放大、缩小、复位、显示全部和聚焦使用同一相机。视角、相机目标、层距及主题深度继续通过既有文档命令随 Sheet 保存与撤销；镜头距离、运行时缓冲、选择和拖动预览只保留在渲染会话，不参与原生布局缓存键。首次进入等待原生布局、场景内容与相机就绪，失败提供加载错误与重试。独立画布不改变现有文件协议或 SQLite 表结构，无需数据库迁移；字段约束见 [单文件协议](file-format.md#主题表现笔迹与演示页面)。
 
 ## 常用命令
 
@@ -62,7 +84,7 @@ macOS 桌面验证先安装 `brew install pkgconf vips`。`desktop-test`、`desk
 
 `pnpm build-storybook && pnpm test:canvas` 使用现有 Playwright 在隔离的 Storybook 组件预览中执行真实鼠标操作，覆盖画笔命中层级、连续绘制、Esc 取消、擦除与撤销。Moon 的 `canvas-test` 任务会先构建 Storybook。当前 embedded WDIO 1.5 的 pointer actions 实际派发 `MouseEvent`，不能用它验证依赖 `PointerEvent` 与指针捕获的绘画；这部分使用 Playwright 的真实输入，文件持久化继续由 Rust SQLite 集成测试验收，不伪造驱动事件。
 
-原生 E2E 遵循 [Tauri 官方 WebDriver 指南](https://v2.tauri.app/develop/tests/webdriver/)，使用 WebdriverIO 与 `@wdio/tauri-service` 的 embedded 驱动，覆盖 macOS、Windows 和 Linux。插件只在独立 E2E 构建启用；生产应用不启用测试驱动。直接使用 `tauri-driver` 的外部驱动仅支持 Windows、Linux，本项目不为 macOS 维护另一套驱动实现。验收使用当前源码生成的完整测试二进制，不将旧二进制与新的开发 renderer 混用；构建超时或失败时记录阻塞，不能用组件测试结果代替原生 E2E 通过。
+原生 E2E 遵循 [Tauri 官方 WebDriver 指南](https://v2.tauri.app/develop/tests/webdriver/)，使用 WebdriverIO 与 `@wdio/tauri-service` 的 embedded 驱动，覆盖 macOS、Windows 和 Linux。插件只在独立 E2E 构建启用；生产应用不启用测试驱动。macOS 的 WDIO 1.5 内嵌指针端点仅产生 MouseEvent，独立 3D 指针验收因此通过仅在 macOS + e2e 编译的 AppKit 适配器向当前可信测试窗口投递原生鼠标事件；观察器仍必须验证真实 isTrusted、指针捕获、位置、落盘与历史。适配器拒绝跨窗口、失焦、越界、并发和视口变化，异步执行并在超时后请求释放，不修改 DOM 事件、捕获或业务状态。直接使用 `tauri-driver` 的外部驱动仅支持 Windows、Linux，本项目不为 macOS 维护另一套驱动实现。验收使用当前源码生成的完整测试二进制，不将旧二进制与新的开发 renderer 混用；构建超时或失败时记录阻塞，不能用组件测试结果代替原生 E2E 通过。
 
 CI 保留 Node 24 / 26 的前端、Storybook 构建与浏览器检查；Ubuntu 单独运行无 UI 的 Rust 测试，macOS 运行 Clippy、完整桌面 Rust 测试、真实 WDIO E2E 和 app bundle 构建。预览包使用 Tauri 的 [ad-hoc 签名](https://v2.tauri.app/distribute/sign/macos/#ad-hoc-signing)，经 `codesign` 校验后用 `ditto` 打包，保留 app 的执行权限；此步骤不代表完成公证或正式发布。本轮 CI 不构建、不测试 iOS / Android。
 
@@ -225,7 +247,7 @@ React Scan 默认在开发模式启用，显示重渲染和 FPS；可设置 `VIT
 
 DevTools CLI 自身使用 Electron，仅作为开发依赖，产品运行时仍为 Tauri。只有开发 CSP 允许该本机 WebSocket，生产 CSP 与发布入口不加载诊断代码。默认不启用远程诊断；不要把本机调试端口转发到外部网络。React DevTools 上游仅发布 Flow API，`src/dev/react-devtools-core.d.ts` 声明项目实际使用的最小接口。
 
-依赖升级以最新稳定且上游兼容的组合为准。本轮 WDIO 仍使用 9.x：最新 Tauri service 1.5.0 仍调用 `executeAsync`，WDIO 10 已移除此 API；SQLite 底层库受 SQLx 0.9 的 `<0.38` 约束，保持 0.37.0。Tauri Specta 使用最新的 `2.0.0-rc.26`，按其精确约束配套 Specta `2.0.0-rc.26` 和 TypeScript 导出器 `0.0.13`，不能混用更新的 Specta `rc.27` / 导出器 `0.0.14`。其余直接依赖以升级时的最新稳定版本为准，具体版本由 pnpm 和 Cargo 锁文件固定。
+依赖升级以最新稳定且上游兼容的组合为准。本轮 WDIO 仍使用 9.x：最新 Tauri service 1.5.0 仍调用 `executeAsync`，WDIO 10 已移除此 API；SQLite 底层库受 SQLx 0.9 的 `<0.38` 约束，保持 0.37.0。Tauri Specta 使用最新的 `2.0.0-rc.26`，按其精确约束配套 Specta `2.0.0-rc.26` 和 TypeScript 导出器 `0.0.13`，不能混用更新的 Specta `rc.27` / 导出器 `0.0.14`。`svg2pdf 0.13` 与 PDF 合并代码共用 `pdf-writer 0.12.1` 的类型，不能替换为不兼容的 `0.15`。其余直接依赖以升级时的最新稳定版本为准，具体版本由 pnpm 和 Cargo 锁文件固定。
 
 ## React Flow 交互参考
 

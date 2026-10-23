@@ -4,7 +4,8 @@ import { useMessages } from '@renderer/i18n/useMessages'
 import { topicAppearance, documentAppearance } from '@shared/appearance'
 import { useEditor } from '@renderer/state/editor'
 import { CanvasOverlay } from '@renderer/components/workbench/CanvasOverlay'
-import { MiniMap, Panel, type Node } from '@xyflow/react'
+import { Panel, useStoreApi, type Node } from '@xyflow/react'
+import { CanvasMinimapSnapshot } from '@renderer/components/CanvasMinimapSnapshot'
 import { memo } from 'react'
 
 const nodeColor = (node: Node): string => {
@@ -26,9 +27,10 @@ import { Map, X } from 'lucide-react'
 import { useCanvasPreferences } from '@renderer/state/canvasPreferences'
 import { Button } from '@renderer/components/ui/button'
 
-/** Use React Flow's viewport projection and interaction, without duplicating the graph. */
+/** Defer the overview while React Flow renders the main canvas immediately. */
 export const CanvasMinimap = memo(() => {
   const { translate } = useMessages()
+  const source = useStoreApi()
 
   const colors = useAppearanceColors()
   const document = useEditor((state) => state.history.document)
@@ -38,7 +40,8 @@ export const CanvasMinimap = memo(() => {
     <CanvasOverlay className="z-[5]">
       {visible ? (
         <Panel position="bottom-left" className="pointer-events-auto !m-4 @max-[640px]:!bottom-32">
-          <MiniMap
+          <CanvasMinimapSnapshot
+            source={source}
             position="bottom-left"
             ariaLabel={translate('canvasMinimap')}
             pannable

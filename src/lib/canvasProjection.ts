@@ -33,14 +33,15 @@ export const createCanvasProjector = () => {
     )
       return previous
     const selectedLayout = layout ?? layoutDocument(document)
-    const next = projectCanvas(document, selectedSurface, selectedLayout, spatial)
+    const next = projectCanvas(document, selectedSurface, selectedLayout)
     if (previous) {
       const nodes = new Map(previous.nodes.map((node) => [node.id, node]))
       next.nodes = next.nodes.map((node) => {
         const old = nodes.get(node.id)
         return old &&
+          Object.is(old.position.x, node.position.x) &&
+          Object.is(old.position.y, node.position.y) &&
           shallow(old.data, node.data) &&
-          shallow(old.position, node.position) &&
           shallow(old.style, node.style) &&
           old.initialWidth === node.initialWidth &&
           old.initialHeight === node.initialHeight &&
@@ -52,7 +53,7 @@ export const createCanvasProjector = () => {
       const edges = new Map(previous.edges.map((edge) => [edge.id, edge]))
       next.edges = next.edges.map((edge) => {
         const old = edges.get(edge.id)
-        return old && isEqual(old, edge) ? old : edge
+        return old && old.data?.path === edge.data?.path && isEqual(old, edge) ? old : edge
       })
       if (
         !refreshGeometry &&

@@ -1,3 +1,4 @@
+import { verifyNativeSpatialDrop } from '@tests/native/spatial-drop'
 import { browser, expect } from '@wdio/globals'
 import { Key } from 'webdriverio'
 import { applyCommand, createDocument, createWorkbook, serializeWorkbook } from '@core'
@@ -77,7 +78,17 @@ it('previews native 2D / 3D attachment before contact and saves one undoable hie
   for (const mode of ['2d', '3d'] as const) {
     const spatial = mode === '3d'
     const targetId = spatial ? 'branch-b' : 'root'
-    if (spatial) await named('三维视图').click()
+    if (spatial) {
+      await named('三维视图').click()
+      await verifyNativeSpatialDrop({
+        fixture: name,
+        movingId: 'detail',
+        targetId,
+        originalParent: 'branch-a',
+        currentParent,
+      })
+      continue
+    }
     await expect(browser.$(`[data-view-mode="${mode}"]`)).toBeDisplayed()
     await expect(browser.$('[data-canvas-loading]')).not.toExist()
     await focusNativeWindow()
@@ -121,4 +132,4 @@ it('previews native 2D / 3D attachment before contact and saves one undoable hie
     await shortcut('z')
     await browser.waitUntil(async () => (await currentParent()) === 'branch-a')
   }
-})
+}).timeout(300_000)

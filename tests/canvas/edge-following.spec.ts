@@ -18,11 +18,16 @@ const endpoint = async (path: Locator) =>
   })
 const handleDistance = async (node: Locator, point: { x: number; y: number }) =>
   node.evaluate((element, end) => {
-    const handles = [...element.querySelectorAll('[data-handleid^="target-"]')]
+    const handles = [...element.querySelectorAll('[data-handleid^="source-"]')]
     return Math.min(
       ...handles.map((handle) => {
         const box = handle.getBoundingClientRect()
-        return Math.hypot(box.x + box.width / 2 - end.x, box.y + box.height / 2 - end.y)
+        const side = handle.getAttribute('data-handlepos')
+        const x =
+          side === 'left' ? box.x : side === 'right' ? box.x + box.width : box.x + box.width / 2
+        const y =
+          side === 'top' ? box.y : side === 'bottom' ? box.y + box.height : box.y + box.height / 2
+        return Math.hypot(x - end.x, y - end.y)
       }),
     )
   }, point)

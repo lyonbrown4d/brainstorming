@@ -44,9 +44,15 @@ import {
 } from '@renderer/components/ui/context-menu'
 
 /** Business actions compose the official shadcn menu without modifying downloaded source. */
-export const CanvasContextMenu = ({ children }: { children: ReactNode }) => {
+export const CanvasContextMenuSurface = ({
+  children,
+  interaction,
+}: {
+  children: ReactNode
+  interaction: ReturnType<typeof useCanvasContextMenu>
+}) => {
   const { translate } = useMessages()
-  const { target, guard, prepare, run, disabled } = useCanvasContextMenu()
+  const { target, guard, prepare, run, disabled } = interaction
   const document = useEditor((state) => state.history.document)
   const id = useEditor((state) => state.selectedId)
   const removable =
@@ -203,4 +209,9 @@ export const CanvasContextMenu = ({ children }: { children: ReactNode }) => {
       </ContextMenuContent>
     </ContextMenu>
   )
+}
+
+export const CanvasContextMenu = ({ children }: { children: ReactNode }) => {
+  const interaction = useCanvasContextMenu()
+  return <CanvasContextMenuSurface interaction={interaction}>{children}</CanvasContextMenuSurface>
 }

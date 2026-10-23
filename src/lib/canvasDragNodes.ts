@@ -46,8 +46,8 @@ export const synchronizeCanvasNodes = (
       node.type === 'ink' ? state.drawings.has(node.data.stroke.id) : state.topics.has(node.id)
     const draggable = node.draggable !== false && !state.playing
     if (
-      old?.data === node.data &&
-      old.style === node.style &&
+      old?.data === measured.data &&
+      old.style === measured.style &&
       old.width === measured.width &&
       old.height === measured.height &&
       old.initialWidth === measured.initialWidth &&

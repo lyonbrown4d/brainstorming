@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { applyCommand, createDocument } from '@core'
-import { App } from '@renderer/App'
+import { IndependentSpatialPreview } from '@stories/IndependentSpatialEvidence'
 import { setInkMode } from '@renderer/state/canvasInk'
 import { useEditor } from '@renderer/state/editor'
 import { useSelection } from '@renderer/state/selection'
@@ -8,7 +8,7 @@ import { useSpatialView } from '@renderer/state/spatialView'
 
 const meta = {
   title: 'Brainstorming/空间视图',
-  component: App,
+  component: IndependentSpatialPreview,
   parameters: { layout: 'fullscreen' },
   beforeEach: () => {
     setInkMode('select')
@@ -55,7 +55,7 @@ const meta = {
       setInkMode('select')
     }
   },
-} satisfies Meta<typeof App>
+} satisfies Meta<typeof IndependentSpatialPreview>
 
 export default meta
 type Story = StoryObj<typeof meta>

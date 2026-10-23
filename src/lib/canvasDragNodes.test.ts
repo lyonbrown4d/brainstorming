@@ -128,3 +128,27 @@ it('scopes composition layers to a gesture and preserves unrelated classes and n
   expect(released[1]).toBe(untouched)
   expect(canvasDragLayers(released)).toBe(released)
 })
+
+it('keeps unaffected topic contents stable when only the selection changes', () => {
+  const projected = [0, 1, 2].map((index) => ({
+    ...topic(index * 100),
+    id: `topic-${index}`,
+    selected: index === 0,
+  }))
+  const next = synchronizeCanvasNodes(projected, projected, {
+    ...selection,
+    topics: new Set(['topic-1']),
+    geometryChanged: false,
+  })
+  expect(next[0]?.selected).toBe(false)
+  expect(next[1]?.selected).toBe(true)
+  expect(next[2]).toBe(projected[2])
+  expect(next[1]?.data).toBe(projected[1]?.data)
+  expect(
+    synchronizeCanvasNodes(next, projected, {
+      ...selection,
+      topics: new Set(['topic-1']),
+      geometryChanged: false,
+    }),
+  ).toBe(next)
+})

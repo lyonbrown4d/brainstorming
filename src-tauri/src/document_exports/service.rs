@@ -43,10 +43,10 @@ struct Pending {
 }
 impl Drop for Pending {
   fn drop(&mut self) {
-    if self.armed {
-      if let Ok(mut jobs) = self.jobs.lock() {
-        jobs.remove(&self.id);
-      }
+    if self.armed
+      && let Ok(mut jobs) = self.jobs.lock()
+    {
+      jobs.remove(&self.id);
     }
   }
 }

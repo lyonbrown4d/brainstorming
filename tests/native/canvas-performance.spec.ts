@@ -1,14 +1,18 @@
+import { nativeStructuralEdgePath } from '@tests/native/structural-edge-path'
 import { browser, expect } from '@wdio/globals'
 import { writeFile } from 'node:fs/promises'
 import { createFixtureDocument, createWorkbook, serializeWorkbook } from '@core'
 import { nativeArtifact } from '@tests/native/artifacts'
+import {
+  nativePerformanceGesture,
+  waitNativeCanvasQuiet,
+} from '@tests/native/canvas-performance-geometry'
 import { previewNativeCanvasDrag, finishNativeCanvasDrag } from '@tests/native/canvas-drag'
 import {
   artifact,
   chooseFile,
   home,
   native,
-  named,
   openSaved,
   root,
   readDocument,
@@ -68,7 +72,7 @@ const sampleNavigation = async (kind: 'pan' | 'zoom') =>
 
 it('navigates and moves a thousand-topic map with one undo and live structural edges', async () => {
   await home()
-  const document = createFixtureDocument(1000)
+  const document = { ...createFixtureDocument(1000), id: artifact('fixture') }
   const source = createWorkbook(document)
   const sheet = source.sheets[0]
   if (!sheet) throw new Error('Missing fixture sheet')
@@ -87,15 +91,9 @@ it('navigates and moves a thousand-topic map with one undo and live structural e
   const samples = []
   for (const kind of ['pan', 'zoom'] as const) {
     for (let run = 0; run < 3; run += 1) {
-      await named('适应画布').click()
-      let previous: string | null = null
-      await browser.waitUntil(async () => {
-        const current = await browser.$('.react-flow__viewport').getAttribute('style')
-        const settled = current !== null && current === previous
-        previous = current
-        return settled
-      })
+      await browser.$('button[aria-label="适应画布"]').click()
       await focusNativeWindow()
+      await waitNativeCanvasQuiet()
       const sample = await sampleNavigation(kind)
       console.info('Native 2D sample', { kind, run, ...sample })
       expect(sample.changed).toBe(true)
@@ -106,28 +104,19 @@ it('navigates and moves a thousand-topic map with one undo and live structural e
   }
   await shortcut('r')
   await expect(root()).toBeDisplayed()
-  let last = { x: Infinity, y: Infinity }
-  await browser.waitUntil(async () => {
-    const current = await root().getLocation()
-    const settled = Math.abs(current.x - last.x) < 0.1 && Math.abs(current.y - last.y) < 0.1
-    last = current
-    return settled
-  })
-  const before = await root().getLocation()
-  const size = await root().getSize()
-  const edge = () => browser.$('.react-flow__edge path.react-flow__edge-path')
-  const previousPath = await edge().getAttribute('d')
-  if (!previousPath) throw new Error('Missing structural edge path')
-  const x = Math.round(before.x + size.width / 2),
-    y = Math.round(before.y + size.height / 2)
   await focusNativeWindow()
-  const end = { x: x + 120, y: y + 70 }
+  await waitNativeCanvasQuiet()
+  const rootGesture = await nativePerformanceGesture('root')
+  const before = rootGesture.rect
+  const previousPath = await nativeStructuralEdgePath()
+  if (!previousPath) throw new Error('Missing structural edge path')
+  const { start, end } = rootGesture
   try {
-    const dragSample = await previewNativeCanvasDrag({ x, y }, end)
+    const dragSample = await previewNativeCanvasDrag(start, end)
     console.info('Native 2D drag sample', dragSample)
     expect(dragSample.changed).toBe(true)
     samples.push({ kind: 'drag', run: 0, ...dragSample })
-    await expect(edge()).not.toHaveAttribute('d', previousPath)
+    await browser.waitUntil(async () => (await nativeStructuralEdgePath()) !== previousPath)
   } finally {
     await finishNativeCanvasDrag(end)
   }
@@ -145,22 +134,9 @@ it('navigates and moves a thousand-topic map with one undo and live structural e
   })
   await browser.waitUntil(async () => Math.abs((await root().getLocation()).x - before.x) < 3)
   // A leaf gesture exercises the indexed target finder; moving the root excludes every target.
-  const leaf = await browser.execute(() => {
-    for (const node of window.document.querySelectorAll<HTMLElement>('.react-flow__node-topic')) {
-      const id = node.dataset.id
-      if (!id?.startsWith('topic-') || Number(id.split('-')[1]) < 250) continue
-      const rect = node.getBoundingClientRect()
-      const x = rect.x + rect.width / 2,
-        y = rect.y + rect.height / 2
-      if (x < 120 || x > innerWidth - 120 || y < 140 || y > innerHeight - 200) continue
-      const end = { x: x < innerWidth / 2 ? 160 : innerWidth - 160, y: 180 }
-      if (window.document.elementFromPoint(end.x, end.y)?.closest('.react-flow__node')) continue
-      return { id, start: { x, y }, end }
-    }
-    return null
-  })
-  if (!leaf) throw new Error('No visible leaf for the thousand-topic drag check')
   await focusNativeWindow()
+  await waitNativeCanvasQuiet()
+  const leaf = await nativePerformanceGesture('leaf')
   try {
     const sample = await previewNativeCanvasDrag(leaf.start, leaf.end, leaf.id)
     expect(sample.changed).toBe(true)
@@ -173,6 +149,17 @@ it('navigates and moves a thousand-topic map with one undo and live structural e
     const saved = await readDocument(name)
     return Math.abs(saved.sheets[0]?.document.topics[leaf.id]?.style?.offsetX ?? 0) > 1
   })
+  const leafMoved = await readDocument(name)
+  expect(
+    Object.fromEntries(
+      Object.values(leafMoved.sheets[0]?.document.topics ?? {}).map(({ id, children }) => [
+        id,
+        children,
+      ]),
+    ),
+  ).toEqual(
+    Object.fromEntries(Object.values(document.topics).map(({ id, children }) => [id, children])),
+  )
   await shortcut('z')
   await browser.waitUntil(async () => {
     const restored = await readDocument(name)

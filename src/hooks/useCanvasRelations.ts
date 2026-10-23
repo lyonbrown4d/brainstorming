@@ -2,10 +2,12 @@ import { translate } from '@renderer/i18n'
 import type { MindMapDocument } from '@core'
 import type { RelationAnchor } from '@core/extensions'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { Edge, ReactFlowProps } from '@xyflow/react'
+import type { ReactFlowProps } from '@xyflow/react'
+import type { CanvasProjectionController } from '@renderer/lib/canvasProjectionController'
+import { useCanvasProjectionEdges } from '@renderer/hooks/useCanvasProjectionEdges'
 import { usePresentation } from '@renderer/state/presentation'
 import { useEditor } from '@renderer/state/editor'
-import { selectAnnotation, useAnnotationInteraction } from '@renderer/state/annotationInteraction'
+import { selectAnnotation } from '@renderer/state/annotationInteraction'
 import { runAnnotationCommand } from '@renderer/components/annotations/commands'
 
 type RelationHandlers = Pick<
@@ -44,13 +46,11 @@ const valid = (source: string | null, target: string | null) => {
 
 /** React Flow owns the drag preview; only a valid completed reconnection changes the document. */
 export const useCanvasRelations = (
-  projectedEdges: Edge[],
+  projection: CanvasProjectionController,
 ): RelationHandlers & {
-  edges: Edge[]
   reconnecting: boolean
 } => {
-  const playing = usePresentation((state) => state.playing)
-  const selected = useAnnotationInteraction((state) => state.selected)
+  useCanvasProjectionEdges(projection)
   const sheetId = useEditor((state) => state.activeSheetId)
   const session = useRef<{ sheetId: string; document: MindMapDocument; edgeId?: string } | null>(
     null,
@@ -72,19 +72,6 @@ export const useCanvasRelations = (
       window.removeEventListener('blur', cancel)
     }
   }, [sheetId])
-  const edges = useMemo(
-    () =>
-      projectedEdges.map((edge) => {
-        if (edge.type !== 'relation') return edge
-        const active =
-          !playing &&
-          selected?.kind === 'relation' &&
-          selected.sheetId === sheetId &&
-          edge.id === `relation-${selected.id}`
-        return { ...edge, selected: active, reconnectable: active }
-      }),
-    [projectedEdges, selected, sheetId, playing],
-  )
   const handlers = useMemo<RelationHandlers>(
     () => ({
       isValidConnection: ({ source, target }) => valid(source, target),
@@ -205,5 +192,5 @@ export const useCanvasRelations = (
     }),
     [],
   )
-  return { ...handlers, edges, reconnecting }
+  return { ...handlers, reconnecting }
 }

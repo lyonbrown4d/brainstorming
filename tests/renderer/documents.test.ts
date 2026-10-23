@@ -173,7 +173,7 @@ describe('文档编辑能力', () => {
     const document = useEditor.getState().history.document
     expect(projectCanvas(document).edges[0]).toMatchObject({
       sourceHandle: 'source-right',
-      targetHandle: 'target-left',
+      targetHandle: 'source-left',
     })
     const vertical = applyCommand(document, {
       type: 'setDocumentSettings',
@@ -181,7 +181,36 @@ describe('文档编辑能力', () => {
     })
     expect(projectCanvas(vertical).edges[0]).toMatchObject({
       sourceHandle: 'source-bottom',
-      targetHandle: 'target-top',
+      targetHandle: 'source-top',
+    })
+  })
+  it('关联线复用四向端口，显式锚点与自动方向不改变文档字段', () => {
+    const document = applyCommand(useEditor.getState().history.document, {
+      type: 'upsertRelation',
+      relation: {
+        id: 'manual',
+        from: 'root',
+        to: 'a',
+        sourceAnchor: 'top',
+        targetAnchor: 'bottom',
+      },
+    })
+    const withAutomatic = applyCommand(document, {
+      type: 'upsertRelation',
+      relation: { id: 'automatic', from: 'root', to: 'a' },
+    })
+    const edges = projectCanvas(withAutomatic).edges
+    expect(edges.find((edge) => edge.id === 'relation-manual')).toMatchObject({
+      sourceHandle: 'source-top',
+      targetHandle: 'source-bottom',
+    })
+    expect(edges.find((edge) => edge.id === 'relation-automatic')).toMatchObject({
+      sourceHandle: 'source-right',
+      targetHandle: 'source-left',
+    })
+    expect(withAutomatic.relations?.find((relation) => relation.id === 'manual')).toMatchObject({
+      sourceAnchor: 'top',
+      targetAnchor: 'bottom',
     })
   })
   it('标签、图标与逾期任务交叉筛选，隐藏节点仍保留模型', () => {
@@ -216,7 +245,7 @@ describe('文档编辑能力', () => {
       target = { ...source, id: 't', x: 50, y: 200 }
     expect(edgeHandles(source, target, 'down')).toEqual({
       sourceHandle: 'source-bottom',
-      targetHandle: 'target-top',
+      targetHandle: 'source-top',
     })
   })
 })

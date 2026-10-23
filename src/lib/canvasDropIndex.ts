@@ -2,7 +2,7 @@ import Flatbush from 'flatbush'
 import type { Rect } from '@xyflow/react'
 import { createDropPrediction } from '@renderer/lib/canvasDropPrediction'
 import type { MindMapDocument } from '@core'
-import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
+import { canvasNodeSize, type CanvasFlowNode } from '@renderer/lib/canvasNodes'
 import type { DropNode } from '@renderer/lib/canvasDrop'
 import { createTopicDropResolver } from '@renderer/lib/canvasDropTarget'
 
@@ -20,8 +20,7 @@ export const createCanvasDropFinder = (
           {
             id: node.id,
             position: node.position,
-            width: Number(node.style?.width ?? node.width ?? 160),
-            height: Number(node.style?.height ?? node.height ?? 48),
+            ...canvasNodeSize(node),
             direction: node.data.direction ?? 'right',
             zIndex: node.zIndex ?? 0,
           },

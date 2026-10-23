@@ -1,6 +1,5 @@
 import { type Command, type MindMapDocument, type Side } from '@core'
-import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
-import type { TopicFlowNode } from '@renderer/components/TopicNode'
+import { canvasNodeSize, type CanvasFlowNode } from '@renderer/lib/canvasNodes'
 import type { LayoutDirection } from '@layout/types'
 import { createTopicDropResolver } from '@renderer/lib/canvasDropTarget'
 
@@ -25,12 +24,11 @@ export interface CanvasDrop {
   readonly indicator?: { readonly axis: 'x' | 'y'; readonly edge: 'before' | 'after' }
 }
 export const nodeCenter = (
-  node: Pick<TopicFlowNode, 'position' | 'style' | 'width' | 'height'>,
+  node: Pick<CanvasFlowNode, 'position' | 'style' | 'width' | 'height'> &
+    Partial<Pick<CanvasFlowNode, 'data' | 'measured' | 'initialWidth' | 'initialHeight'>>,
 ): Point => {
-  return {
-    x: node.position.x + Number(node.style?.width ?? node.width ?? 160) / 2,
-    y: node.position.y + Number(node.style?.height ?? node.height ?? 48) / 2,
-  }
+  const { width, height } = canvasNodeSize(node)
+  return { x: node.position.x + width / 2, y: node.position.y + height / 2 }
 }
 
 /** Center drops attach; dropping at a sibling's outer edge inserts before or after it. */
@@ -47,8 +45,7 @@ export const findCanvasDrop = (
       .map((node) => ({
         id: node.id,
         position: node.position,
-        width: Number(node.style?.width ?? node.width ?? 160),
-        height: Number(node.style?.height ?? node.height ?? 48),
+        ...canvasNodeSize(node),
         direction: node.data.direction ?? 'right',
         zIndex: node.zIndex ?? 0,
       })),

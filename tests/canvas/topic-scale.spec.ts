@@ -29,6 +29,33 @@ test('scale grips appear only on the selected topic', async ({ page }) => {
   await expect(node(page, 'b').locator('.topic-scale-control')).toHaveCount(4)
 })
 
+test('overview zoom leaves the selected topic body draggable and restores grips when zoomed in', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await open(page)
+  const card = node(page, 'a')
+  const smaller = page.getByRole('button', { name: '缩小', exact: true })
+  for (let step = 0; step < 12; step++) await smaller.click()
+  await expect.poll(async () => (await bounds(card)).height).toBeLessThan(28)
+  await expect(card.locator('.topic-scale-control')).toHaveCount(0)
+  const box = await bounds(card)
+  const hit = await page.evaluate(
+    ({ x, y }) => {
+      const hit = document.elementFromPoint(x, y)
+      return (
+        hit?.closest('.react-flow__node')?.getAttribute('data-id') === 'a' &&
+        !hit.closest('.nodrag')
+      )
+    },
+    { x: box.x + box.width / 2, y: box.y + box.height / 2 },
+  )
+  expect(hit).toBe(true)
+  const larger = page.getByRole('button', { name: '放大', exact: true })
+  for (let step = 0; step < 12; step++) await larger.click()
+  await expect(card.locator('.topic-scale-control')).toHaveCount(4)
+})
+
 const corners = [
   { name: 'top-left', dx: -65, dy: -35 },
   { name: 'top-right', dx: 65, dy: -35 },

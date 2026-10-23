@@ -1,96 +1,76 @@
-import { cameraScale, exposedTopicPoint } from '@tests/canvas/spatial-test-geometry'
-import { expect, test, type Locator, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
+import {
+  clickSpatial,
+  emptySpatialPoint,
+  locatorBounds,
+  openSpatial,
+  openSpatialCamera,
+  settledSpatialRect,
+  spatialCanvas,
+  spatialDistance,
+  spatialMarqueePoints,
+  spatialEvidence,
+  spatialRect,
+} from '@tests/canvas/spatial-test-geometry'
 
-const story = '/iframe.html?id=brainstorming-空间视图--interactive&viewMode=story'
-const topic = (page: Page, id: string): Locator =>
-  page.locator(`.react-flow__node[data-id="${id}"]`)
-
-const bounds = async (locator: Locator) => {
-  const box = await locator.boundingBox()
-  if (!box) throw new Error('Missing spatial topic geometry')
-  return box
-}
-
-const open = async (page: Page): Promise<void> => {
-  await page.goto(story)
-  await expect(page.locator('[data-view-mode="3d"]')).toBeVisible()
-  await expect(page.locator('[data-canvas-loading]')).toHaveCount(0, { timeout: 10_000 })
-  await expect(page.locator('[data-spatial-renderer] canvas')).toBeVisible()
-  await expect(topic(page, 'branch-a')).toBeVisible()
-}
-
-/** Pick a real exposed pane point, clear of nodes, panels, and the camera widget. */
-const emptyPanePoint = async (page: Page): Promise<{ x: number; y: number }> =>
-  page.locator('.react-flow__pane').evaluate((pane) => {
-    const rect = pane.getBoundingClientRect()
-    for (const y of [0.72, 0.6, 0.42, 0.28])
-      for (const x of [0.12, 0.2, 0.8, 0.88]) {
-        const point = { x: rect.left + rect.width * x, y: rect.top + rect.height * y }
-        if (document.elementFromPoint(point.x, point.y) === pane) return point
-      }
-    throw new Error('No exposed empty pane point for the camera gesture')
-  })
-
-const moved = async (locator: Locator, original: Awaited<ReturnType<typeof bounds>>) => {
-  const current = await bounds(locator)
-  return Math.hypot(current.x - original.x, current.y - original.y)
-}
-
-test('right drag on empty canvas trucks the scene without changing its angle or opening a menu', async ({
+test('right drag trucks the actual Three camera without orbiting or opening a menu', async ({
   page,
 }) => {
-  await open(page)
-  const branch = topic(page, 'branch-a')
-  const before = await bounds(branch)
-  const beforeScale = await cameraScale(branch)
-  const point = await emptyPanePoint(page)
-
+  await openSpatial(page)
+  const before = await spatialRect(page, 'branch-a'),
+    original = await spatialEvidence(page)
+  const point = await emptySpatialPoint(page)
   await page.mouse.move(point.x, point.y)
   await page.mouse.down({ button: 'right' })
   await page.mouse.move(point.x + 110, point.y + 55, { steps: 12 })
   await page.mouse.up({ button: 'right' })
-
-  await expect.poll(() => moved(branch, before)).toBeGreaterThan(25)
-  await expect.poll(async () => await cameraScale(branch)).toBeCloseTo(beforeScale, 4)
+  await expect
+    .poll(async () => {
+      const rect = await spatialRect(page, 'branch-a')
+      return Math.hypot(rect.x - before.x, rect.y - before.y)
+    })
+    .toBeGreaterThan(25)
+  await settledSpatialRect(page, 'branch-a')
+  expect((await spatialEvidence(page)).view.yaw).toBe(original.view.yaw)
+  expect((await spatialEvidence(page)).view.pitch).toBe(original.view.pitch)
+  expect((await spatialEvidence(page)).camera).not.toEqual(original.camera)
   await expect(page.getByRole('menu')).toHaveCount(0)
 })
 
-test('two-finger wheel pans and Ctrl-wheel pinches the map without zooming the page', async ({
-  page,
-}) => {
-  await open(page)
-  const branch = topic(page, 'branch-a')
-  const original = await bounds(branch)
-  const point = await emptyPanePoint(page)
-  const pageScale = await page.evaluate(() => window.devicePixelRatio)
-  const zoom = page.locator('.zoom-value')
-  const originalZoom = await zoom.textContent()
-
+test('two-finger wheel pans and Ctrl-wheel pinches without zooming the page', async ({ page }) => {
+  await openSpatial(page)
+  const original = await spatialRect(page, 'branch-a'),
+    point = await emptySpatialPoint(page)
+  const pageScale = await page.evaluate(() => window.devicePixelRatio),
+    distance = await spatialDistance(page)
   await page.mouse.move(point.x, point.y)
   await page.mouse.wheel(85, 70)
-  await expect.poll(() => moved(branch, original)).toBeGreaterThan(15)
-  await expect(zoom).toHaveText(originalZoom ?? '')
-
-  const panned = await bounds(branch)
+  await expect
+    .poll(async () => {
+      const rect = await spatialRect(page, 'branch-a')
+      return Math.hypot(rect.x - original.x, rect.y - original.y)
+    })
+    .toBeGreaterThan(15)
+  await expect.poll(() => spatialDistance(page)).toBe(distance)
+  const panned = await spatialRect(page, 'branch-a')
   await page.keyboard.down('Control')
   try {
     await page.mouse.wheel(0, -40)
   } finally {
     await page.keyboard.up('Control')
   }
-  await expect(zoom).not.toHaveText(originalZoom ?? '')
-  await expect.poll(async () => (await bounds(branch)).width).not.toBeCloseTo(panned.width, 0)
+  await expect.poll(() => spatialDistance(page)).toBeLessThan(distance)
+  await expect
+    .poll(async () => (await spatialRect(page, 'branch-a')).width)
+    .toBeGreaterThan(panned.width)
   expect(await page.evaluate(() => window.devicePixelRatio)).toBe(pageScale)
   expect(await page.evaluate(() => document.documentElement.scrollTop)).toBe(0)
 })
 
-test('Alt-wheel rotates the spatial map while keeping the editor ready', async ({ page }) => {
-  await open(page)
-  const branch = topic(page, 'branch-a')
-  const before = await bounds(branch)
-  const point = await emptyPanePoint(page)
-  const zoom = await page.locator('.zoom-value').textContent()
-
+test('Alt-wheel rotates with one undo while keeping title editing ready', async ({ page }) => {
+  await openSpatial(page)
+  const original = await spatialEvidence(page),
+    point = await emptySpatialPoint(page)
   await page.mouse.move(point.x, point.y)
   await page.keyboard.down('Alt')
   try {
@@ -98,73 +78,67 @@ test('Alt-wheel rotates the spatial map while keeping the editor ready', async (
   } finally {
     await page.keyboard.up('Alt')
   }
-  await expect.poll(() => moved(branch, before)).toBeGreaterThan(8)
-  await expect(page.locator('.zoom-value')).toHaveText(zoom ?? '')
+  await expect.poll(async () => (await spatialEvidence(page)).view.yaw).not.toBe(original.view.yaw)
   await expect(page.locator('[data-canvas-loading]')).toHaveCount(0)
   await page.locator('#sheet-panel').focus()
   await page.keyboard.press('ControlOrMeta+z')
-  await expect.poll(async () => (await bounds(branch)).x).toBeCloseTo(before.x, 0)
-  await expect.poll(async () => (await bounds(branch)).y).toBeCloseTo(before.y, 0)
+  await expect.poll(async () => (await spatialEvidence(page)).view.yaw).toBe(original.view.yaw)
+  await clickSpatial(page, 'branch-a')
+  await page.keyboard.press('F2')
+  await expect(page.getByRole('textbox', { name: '编辑主题标题', exact: true })).toBeFocused()
 })
 
-test('Shift marquee selects a topic without rotating the camera', async ({ page }) => {
-  await open(page)
-  const branch = topic(page, 'branch-a')
-  const before = await bounds(branch)
+test('Shift marquee selects a topic while preserving actual camera pose', async ({ page }) => {
+  await openSpatial(page)
+  const camera = (await spatialEvidence(page)).camera
+  const points = await spatialMarqueePoints(page, 'branch-a')
   await page.keyboard.down('Shift')
   try {
-    await page.mouse.move(before.x - 18, before.y - 18)
+    await page.mouse.move(points.start.x, points.start.y)
     await page.mouse.down()
-    await page.mouse.move(before.x + before.width + 18, before.y + before.height + 18, {
-      steps: 10,
-    })
+    await page.mouse.move(points.end.x, points.end.y, { steps: 10 })
     await page.mouse.up()
   } finally {
     await page.keyboard.up('Shift')
   }
-  await expect(branch).toHaveClass(/selected/)
-  await expect.poll(async () => (await bounds(branch)).x).toBeCloseTo(before.x, 0)
-  await expect.poll(async () => (await bounds(branch)).y).toBeCloseTo(before.y, 0)
+  await expect.poll(async () => (await spatialEvidence(page)).selected).toContain('branch-a')
+  const after = (await spatialEvidence(page)).camera
+  expect(after).toHaveLength(camera.length)
+  expect(
+    Math.max(...after.map((value, index) => Math.abs(value - (camera[index] ?? Infinity)))),
+  ).toBeLessThan(1e-9)
 })
 
-test('resizing the pane keeps the perspective camera and editable cards at the same scale', async ({
+test('pane resize preserves camera distance and scales the Three perspective by pane height', async ({
   page,
 }) => {
-  await open(page)
-  const branch = topic(page, 'branch-a')
-  const before = await bounds(branch)
-  const pane = await bounds(page.locator('.react-flow__pane'))
-  const zoom = page.locator('.zoom-value')
-  const initialDistance = await zoom.textContent()
+  await openSpatial(page)
+  const before = await spatialRect(page, 'branch-a'),
+    pane = await locatorBounds(spatialCanvas(page)),
+    distance = await spatialDistance(page)
   await page.setViewportSize({ width: 1440, height: 1050 })
-  const resizedPane = await bounds(page.locator('.react-flow__pane'))
-  const ratio = resizedPane.height / pane.height
-  await expect.poll(async () => (await bounds(branch)).width / before.width).toBeCloseTo(ratio, 2)
-  await expect(zoom).toHaveText(initialDistance ?? '')
+  const resized = await locatorBounds(spatialCanvas(page))
+  await expect
+    .poll(async () => (await spatialRect(page, 'branch-a')).width / before.width)
+    .toBeCloseTo(resized.height / pane.height, 2)
+  await expect.poll(() => spatialDistance(page)).toBe(distance)
   await page.setViewportSize({ width: 1440, height: 900 })
-  await expect.poll(async () => (await bounds(branch)).width).toBeCloseTo(before.width, 0)
+  await expect
+    .poll(async () => (await spatialRect(page, 'branch-a')).width)
+    .toBeCloseTo(before.width, 0)
 })
 
-const cameraDistance = async (page: Page): Promise<number> => {
-  const text = await page.locator('.zoom-value').textContent()
-  const value = Number(text?.replace(/[^\d]/g, '') ?? '')
-  if (!Number.isFinite(value) || value <= 0) throw new Error(`Invalid 3D camera distance: ${text}`)
-  return value
-}
-
-test('3D buttons, keyboard shortcuts, and pinch all change the same native camera distance', async ({
-  page,
-}) => {
-  await open(page)
-  const first = await cameraDistance(page)
+test('buttons, shortcuts and pinch change the same Three camera distance', async ({ page }) => {
+  await openSpatial(page)
+  const first = await spatialDistance(page)
   await page.getByRole('button', { name: '放大', exact: true }).click()
-  await expect.poll(() => cameraDistance(page)).toBeLessThan(first)
-  const afterButton = await cameraDistance(page)
+  await expect.poll(() => spatialDistance(page)).toBeLessThan(first)
+  const button = await spatialDistance(page)
   await page.locator('#sheet-panel').focus()
   await page.keyboard.press('ControlOrMeta+-')
-  await expect.poll(() => cameraDistance(page)).toBeGreaterThan(afterButton)
-  const beforePinch = await cameraDistance(page)
-  const point = await emptyPanePoint(page)
+  await expect.poll(() => spatialDistance(page)).toBeGreaterThan(button)
+  const before = await spatialDistance(page),
+    point = await emptySpatialPoint(page)
   await page.mouse.move(point.x, point.y)
   await page.keyboard.down('Control')
   try {
@@ -172,44 +146,64 @@ test('3D buttons, keyboard shortcuts, and pinch all change the same native camer
   } finally {
     await page.keyboard.up('Control')
   }
-  await expect.poll(() => cameraDistance(page)).toBeLessThan(beforePinch * 0.8)
+  await expect.poll(() => spatialDistance(page)).toBeLessThan(before * 0.8)
   await page.getByRole('button', { name: '重置视距', exact: true }).click()
-  await expect.poll(() => cameraDistance(page)).toBeGreaterThan(0)
+  await expect.poll(() => spatialDistance(page)).toBeGreaterThan(0)
 })
 
-test('native 3D fit preserves the chosen angle and leaves topics editable', async ({ page }) => {
-  await open(page)
-  await page.getByRole('button', { name: '视角', exact: true }).click()
+test('fit preserves the chosen camera angle and title editing remains available', async ({
+  page,
+}) => {
+  await openSpatial(page)
+  await openSpatialCamera(page)
   await page.getByRole('button', { name: '右侧', exact: true }).click()
-  const yaw = page.getByRole('slider').first()
-  await expect(yaw).toHaveAttribute('aria-valuenow', '90')
   await page.keyboard.press('Escape')
   await page.getByRole('button', { name: '适应画布', exact: true }).click()
-  await expect(topic(page, 'branch-a')).toBeInViewport()
-  await page.getByRole('button', { name: '视角', exact: true }).click()
-  await expect(page.getByRole('slider').first()).toHaveAttribute('aria-valuenow', '90')
-  await page.keyboard.press('Escape')
-  const point = await exposedTopicPoint(topic(page, 'branch-a'))
-  await page.mouse.click(point.x, point.y)
+  await settledSpatialRect(page, 'branch-a')
+  expect((await spatialEvidence(page)).view.yaw).toBeCloseTo(Math.PI / 2)
+  const rect = await spatialRect(page, 'branch-a'),
+    pane = await locatorBounds(spatialCanvas(page))
+  expect(rect.x + rect.width).toBeGreaterThan(pane.x)
+  expect(rect.x).toBeLessThan(pane.x + pane.width)
+  await clickSpatial(page, 'branch-a')
   await page.keyboard.press('F2')
   const editor = page.getByRole('textbox', { name: '编辑主题标题', exact: true })
   await expect(editor).toBeFocused()
   await page.keyboard.insertText('三维适应后仍可编辑')
   await page.keyboard.press('Enter')
-  await expect(topic(page, 'branch-a')).toContainText('三维适应后仍可编辑')
+  await expect
+    .poll(async () => (await spatialEvidence(page)).document.topics['branch-a']?.title)
+    .toBe('三维适应后仍可编辑')
 })
 
-test('Tab-created child stays visible and focused while the 3D camera follows native layout', async ({
+test('Tab-created child stays visible and focused in the independent Three canvas', async ({
   page,
 }) => {
-  await open(page)
-  await topic(page, 'branch-a').click()
+  await openSpatial(page)
+  await clickSpatial(page, 'branch-a')
   await page.keyboard.press('Tab')
   const editor = page.getByRole('textbox', { name: '编辑主题标题', exact: true })
   await expect(editor).toBeFocused()
   await expect(editor).toBeInViewport()
   await page.keyboard.insertText('空间新想法')
   await page.keyboard.press('Enter')
-  await expect(page.locator('.react-flow__node-topic')).toHaveCount(5)
-  await expect(page.getByText('空间新想法', { exact: true })).toBeInViewport()
+  await expect
+    .poll(async () => Object.keys((await spatialEvidence(page)).document.topics).length)
+    .toBe(5)
+  await expect
+    .poll(async () =>
+      Object.values((await spatialEvidence(page)).document.topics).some(
+        (topic) => topic.title === '空间新想法',
+      ),
+    )
+    .toBe(true)
+  const created = Object.values((await spatialEvidence(page)).document.topics).find(
+    (topic) => topic.title === '空间新想法',
+  )
+  if (!created) throw new Error('New spatial child was not saved')
+  await expect
+    .poll(async () =>
+      (await spatialEvidence(page)).rectangles.some((rect) => rect.id === created.id),
+    )
+    .toBe(true)
 })

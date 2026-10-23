@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { createRef, useImperativeHandle, useState, type RefObject } from 'react'
+import { createRef, StrictMode, useImperativeHandle, useState, type RefObject } from 'react'
 import { flushSync } from 'react-dom'
-import { expect, spyOn } from 'storybook/test'
+import { createRoot } from 'react-dom/client'
+import { ReactFlow, ReactFlowProvider, useStoreApi } from '@xyflow/react'
+import { expect, spyOn, waitFor } from 'storybook/test'
 import { useCanvasNodeState } from '@renderer/hooks/useCanvasNodeState'
 import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
 import { useEditor } from '@renderer/state/editor'
@@ -34,6 +36,7 @@ interface Frame {
 }
 type Controls = ReturnType<typeof useCanvasNodeState> & {
   frame: (patch?: Partial<Frame>) => void
+  getFlowNodes: () => CanvasFlowNode[]
 }
 const control = createRef<Controls>()
 const read = () => {
@@ -47,6 +50,7 @@ const changeSelection = (topics: readonly string[]) => {
   })
 }
 const Probe = ({ control }: { control: RefObject<Controls | null> }) => {
+  const flow = useStoreApi<CanvasFlowNode>()
   const [frame, setFrame] = useState<Frame>(() => ({
     projected: [topic('root'), topic('other', 150)],
     scope: 'first-sheet',
@@ -56,6 +60,7 @@ const Probe = ({ control }: { control: RefObject<Controls | null> }) => {
   const state = useCanvasNodeState(frame.projected, frame.scope, frame.dragging)
   useImperativeHandle(control, () => ({
     ...state,
+    getFlowNodes: () => flow.getState().nodes,
     frame: (patch) => {
       flushSync(() => {
         if (patch) setFrame((previous) => ({ ...previous, ...patch }))
@@ -63,12 +68,19 @@ const Probe = ({ control }: { control: RefObject<Controls | null> }) => {
       })
     },
   }))
-  return <output aria-label="画布节点状态">{`${revision}: ${state.nodes.length}`}</output>
+  return <output aria-label="画布节点状态">{`${revision}`}</output>
 }
 const meta = {
   title: 'Brainstorming/画布节点状态',
   component: Probe,
   args: { control },
+  decorators: [
+    (Story) => (
+      <ReactFlowProvider>
+        <Story />
+      </ReactFlowProvider>
+    ),
+  ],
   beforeEach: () => {
     useEditor.setState({ selectedId: 'root' })
     useSelection.setState({ sheets: {}, drawings: {} })
@@ -84,28 +96,32 @@ export const RepeatedExternalFrames: Story = {
     const scans = spyOn(projected, 'map')
     try {
       read().frame({ projected })
+      await expect(read().getFlowNodes()).toBe(read().getNodes())
       const callbacks = read()
       changeSelection(['node-0'])
-      const selected = read().nodes
+      const selected = read().getNodes()
       await expect(selected[0]?.selected).toBe(true)
       scans.mockClear()
       // Refresh pointer inputs so the compiler cannot skip the hook at its caller.
       for (let index = 0; index < 20; index++) read().frame({ dragging: new Set() })
       await expect(scans).not.toHaveBeenCalled()
-      await expect(read().nodes).toBe(selected)
-      await expect(read().nodes[1]).toBe(selected[1])
+      await expect(read().getNodes()).toBe(selected)
+      await expect(read().getFlowNodes()).toBe(selected)
+      await expect(read().getNodes()[1]).toBe(selected[1])
       await expect(read().setNodes === callbacks.setNodes).toBe(true)
       await expect(read().onNodesChange === callbacks.onNodesChange).toBe(true)
+      await expect(read().getNodes === callbacks.getNodes).toBe(true)
       changeSelection(['node-1'])
       await expect(scans).toHaveBeenCalledTimes(1)
-      await expect(read().nodes[0]?.selected).toBe(false)
-      await expect(read().nodes[1]?.selected).toBe(true)
-      await expect(read().nodes[2]).toBe(selected[2])
-      const settled = read().nodes
+      await expect(read().getNodes()[0]?.selected).toBe(false)
+      await expect(read().getNodes()[1]?.selected).toBe(true)
+      await expect(read().getNodes()[2]).toBe(selected[2])
+      const settled = read().getNodes()
       scans.mockClear()
       for (let index = 0; index < 20; index++) read().frame({ dragging: new Set() })
       await expect(scans).not.toHaveBeenCalled()
-      await expect(read().nodes).toBe(settled)
+      await expect(read().getNodes()).toBe(settled)
+      await expect(read().getFlowNodes()).toBe(settled)
     } finally {
       scans.mockRestore()
     }
@@ -114,21 +130,22 @@ export const RepeatedExternalFrames: Story = {
 
 export const PointerAndCameraFrames: Story = {
   play: async () => {
-    const original = read().nodes
+    const original = read().getNodes()
     const setters = read()
     // RF's marquee preview is independent of the committed selection until selection end.
     flushSync(() => {
       setters.onNodesChange([{ id: 'other', type: 'select', selected: true }])
     })
     read().frame()
-    await expect(read().nodes[1]?.selected).toBe(true)
+    await expect(read().getNodes()[1]?.selected).toBe(true)
     changeSelection(['root'])
-    await expect(read().nodes[1]?.selected).toBe(false)
+    await expect(read().getNodes()[1]?.selected).toBe(false)
     read().frame({ dragging: new Set(['root']) })
     flushSync(() => {
       setters.onNodesChange([{ id: 'root', type: 'position', position: { x: 180, y: 50 } }])
     })
-    const beforeCamera = read().nodes
+    await expect(read().getFlowNodes()).toBe(read().getNodes())
+    const beforeCamera = read().getNodes()
     const root = topic('root', 40)
     const camera = [
       {
@@ -140,17 +157,18 @@ export const PointerAndCameraFrames: Story = {
       topic('other', 210),
     ]
     read().frame({ projected: camera })
-    await expect(read().nodes[0]?.position).toEqual({ x: 180, y: 50 })
-    await expect(read().nodes[0]?.measured).toBe(camera[0]?.measured)
-    await expect(read().nodes[1]?.position.x).toBe(210)
-    await expect(read().nodes[0]?.data.cameraScale).toBe(1.2)
+    await expect(read().getNodes()[0]?.position).toEqual({ x: 180, y: 50 })
+    await expect(read().getNodes()[0]?.measured).toBe(camera[0]?.measured)
+    await expect(read().getNodes()[1]?.position.x).toBe(210)
+    await expect(read().getNodes()[0]?.data.cameraScale).toBe(1.2)
+    await expect(read().getFlowNodes()).toBe(read().getNodes())
     // Releasing and changing selection cannot rewind the final pointer position.
     read().frame({ dragging: undefined })
     changeSelection(['other'])
-    await expect(read().nodes[0]?.position).toEqual({ x: 180, y: 50 })
-    await expect(read().nodes[0]?.selected).toBe(false)
-    await expect(read().nodes[0]?.measured).toBe(camera[0]?.measured)
-    await expect(read().nodes[1]?.selected).toBe(true)
+    await expect(read().getNodes()[0]?.position).toEqual({ x: 180, y: 50 })
+    await expect(read().getNodes()[0]?.selected).toBe(false)
+    await expect(read().getNodes()[0]?.measured).toBe(camera[0]?.measured)
+    await expect(read().getNodes()[1]?.selected).toBe(true)
     // A cancellation callback retained before camera updates sees the latest frame and queue.
     let cancellationInput: CanvasFlowNode[] | undefined
     flushSync(() => {
@@ -166,14 +184,80 @@ export const PointerAndCameraFrames: Story = {
     await expect(cancellationInput?.[0]?.dragging).toBe(false)
     await expect(cancellationInput?.[0]?.measured).toBe(camera[0]?.measured)
     await expect(cancellationInput?.[0]?.selected).toBe(false)
-    await expect(read().nodes[0]?.position).toEqual({ x: 40, y: 0 })
+    await expect(read().getNodes()[0]?.position).toEqual({ x: 40, y: 0 })
     await expect(read().setNodes === setters.setNodes).toBe(true)
-    await expect(read().nodes[0]).not.toBe(beforeCamera[0])
-    await expect(read().nodes[0]?.data).toBe(camera[0]?.data)
+    await expect(read().getNodes()[0]).not.toBe(beforeCamera[0])
+    await expect(read().getNodes()[0]?.data).toEqual({ ...camera[0]?.data, outerProjection: true })
+    const current = read().getNodes()[0]
+    if (current?.type !== 'topic') throw new Error('Expected the projected topic')
+    await expect(current.data.topic).toBe(camera[0]?.data.topic)
+    await expect(read().getFlowNodes()).toBe(read().getNodes())
     // Reusing IDs in another scope must discard the old gesture and measurements.
     read().frame({ projected: original, scope: 'second-sheet', dragging: new Set(['root']) })
-    await expect(read().nodes[0]?.position).toEqual({ x: 0, y: 0 })
-    await expect(read().nodes[0]?.measured).toBe(original[0]?.measured)
-    await expect(read().nodes[1]?.selected).toBe(true)
+    await expect(read().getNodes()[0]?.position).toEqual({ x: 0, y: 0 })
+    await expect(read().getNodes()[0]?.measured).toBe(original[0]?.measured)
+    await expect(read().getNodes()[1]?.selected).toBe(true)
+    await expect(read().getFlowNodes()).toBe(read().getNodes())
+  },
+}
+
+export const RapidFunctionalUpdates: Story = {
+  play: async () => {
+    const setters = read()
+    setters.setNodes((current) =>
+      current.map((node) =>
+        node.id === 'root' ? { ...node, className: 'will-change-transform' } : node,
+      ),
+    )
+    setters.onNodesChange([{ id: 'root', type: 'position', position: { x: 20, y: 10 } }])
+    setters.setNodes((current) =>
+      current.map((node) =>
+        node.id === 'root'
+          ? { ...node, position: { ...node.position, x: node.position.x + 5 } }
+          : node,
+      ),
+    )
+    // No React flush or render is needed to read the complete ordered update sequence.
+    const immediate = setters.getNodes()
+    await expect(immediate[0]?.position).toEqual({ x: 25, y: 10 })
+    await expect(immediate[0]?.className).toBe('will-change-transform')
+    await expect(read().getNodes()[0]?.position).toEqual({ x: 25, y: 10 })
+    await expect(read().getNodes()[0]?.className).toBe('will-change-transform')
+    await expect(read().getFlowNodes()).toBe(read().getNodes())
+    read().frame({ dragging: new Set(['root']) })
+    await expect(read().getFlowNodes()).toBe(read().getNodes())
+    await expect(read().getNodes()[0]?.position).toEqual({ x: 25, y: 10 })
+  },
+}
+
+const strictNodeTypes = { topic: () => <span>预置主题</span> }
+const StrictFlowProbe = ({ projected }: { projected: CanvasFlowNode[] }) => {
+  const { onNodesChange } = useCanvasNodeState(projected, 'strict-cached-sheet', undefined)
+  return <ReactFlow nodeTypes={strictNodeTypes} onNodesChange={onNodesChange} />
+}
+
+export const StrictCachedSheetRemount: Story = {
+  render: () => <div data-testid="strict-flow-root" className="h-[400px] w-[600px]" />,
+  play: async ({ canvasElement }) => {
+    const host = canvasElement.querySelector<HTMLElement>('[data-testid="strict-flow-root"]')
+    if (!host) throw new Error('Strict canvas host is not mounted')
+    const root = createRoot(host)
+    const projected = [topic('cached-root'), topic('cached-other', 150)]
+    try {
+      for (const sheet of ['first-sheet', 'cached-sheet']) {
+        flushSync(() => {
+          root.render(
+            <StrictMode>
+              <ReactFlowProvider key={sheet}>
+                <StrictFlowProbe projected={projected} />
+              </ReactFlowProvider>
+            </StrictMode>,
+          )
+        })
+        await waitFor(() => expect(host.querySelectorAll('.react-flow__node')).toHaveLength(2))
+      }
+    } finally {
+      root.unmount()
+    }
   },
 }

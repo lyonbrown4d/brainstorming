@@ -1,3 +1,4 @@
+import { independentSpatialTopicAt } from '@renderer/lib/independentSpatialRegistry'
 import { useEffect, useRef, useState, type DragEvent } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { AUDIO_MIME_TYPES, type Command, type DocumentAsset } from '@core'
@@ -123,6 +124,7 @@ export const useFileDrop = () => {
           .elementFromPoint(drop.x, drop.y)
           ?.closest('[data-topic-id], .react-flow__node[data-id]')
         const topicId =
+          independentSpatialTopicAt(drop.x, drop.y) ??
           element?.getAttribute('data-topic-id') ??
           element?.getAttribute('data-id') ??
           state.selectedId
@@ -185,6 +187,7 @@ export const useFileDrop = () => {
             ? event.target.closest('[data-topic-id], .react-flow__node[data-id]')
             : null
         const topicId =
+          independentSpatialTopicAt(event.clientX, event.clientY) ??
           element?.getAttribute('data-topic-id') ??
           element?.getAttribute('data-id') ??
           state.selectedId

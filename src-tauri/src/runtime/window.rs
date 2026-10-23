@@ -141,21 +141,6 @@ fn appearance_theme(value: &str) -> Result<Option<tauri::Theme>> {
   }
 }
 
-#[cfg(test)]
-mod tests {
-  use super::appearance_theme;
-  #[test]
-  fn native_system_appearance_clears_override_and_manual_modes_stay_explicit() {
-    assert_eq!(appearance_theme("system").unwrap(), None);
-    assert_eq!(
-      appearance_theme("light").unwrap(),
-      Some(tauri::Theme::Light)
-    );
-    assert_eq!(appearance_theme("dark").unwrap(), Some(tauri::Theme::Dark));
-    assert!(appearance_theme("auto").is_err());
-  }
-}
-
 pub fn focused_label(app: &AppHandle) -> Option<String> {
   let windows = app.webview_windows();
   windows
@@ -170,4 +155,19 @@ pub fn focused_label(app: &AppHandle) -> Option<String> {
         .find(|window| window.label() == "main" || window.label().starts_with("editor-"))
     })
     .map(|window| window.label().to_string())
+}
+
+#[cfg(test)]
+mod tests {
+  use super::appearance_theme;
+  #[test]
+  fn native_system_appearance_clears_override_and_manual_modes_stay_explicit() {
+    assert_eq!(appearance_theme("system").unwrap(), None);
+    assert_eq!(
+      appearance_theme("light").unwrap(),
+      Some(tauri::Theme::Light)
+    );
+    assert_eq!(appearance_theme("dark").unwrap(), Some(tauri::Theme::Dark));
+    assert!(appearance_theme("auto").is_err());
+  }
 }

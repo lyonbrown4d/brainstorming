@@ -1,9 +1,8 @@
 import { getSpatialView, useSpatialView, type SpatialView } from '@renderer/state/spatialView'
-import { projectedInkBounds, resizeSpatialInk } from '@renderer/lib/spatialInk'
 import { useCallback, useEffect, useRef } from 'react'
 import { useReactFlow, type NodeResizerProps } from '@xyflow/react'
 import type { CanvasStroke, MindMapDocument } from '@core'
-import { transformInk, type InkBounds } from '@shared/ink-geometry'
+import { inkGeometry, transformInk, type InkBounds } from '@shared/ink-geometry'
 import { useEditor } from '@renderer/state/editor'
 import { usePresentation } from '@renderer/state/presentation'
 import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
@@ -109,10 +108,7 @@ export const useInkResize = (
       if (current.busy || current.editingId || usePresentation.getState().playing) return
       session.current = {
         stroke,
-        bounds: projectedInkBounds(
-          stroke,
-          getSpatialView(current.workbook.id, current.activeSheetId),
-        ),
+        bounds: inkGeometry(stroke).bounds,
         view: getSpatialView(current.workbook.id, current.activeSheetId),
         workbookId: current.workbook.id,
         document: current.history.document,
@@ -131,7 +127,7 @@ export const useInkResize = (
         getSpatialView(active.workbookId, active.sheetId) !== active.view
       )
         return
-      const next = resizeSpatialInk(active.stroke, bounds, active.view)
+      const next = transformInk(active.stroke, active.bounds, bounds)
       const rollback = (): void => {
         const current = useEditor.getState()
         if (

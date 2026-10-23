@@ -3,7 +3,7 @@ import { createFixtureDocument } from '@core'
 import type { MindMapLayout } from '@layout'
 import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
 import { previewPerspectiveDrag } from '@renderer/lib/canvasPerspectiveDrag'
-import { projectInk } from '@renderer/lib/canvasNodes'
+import { projectSpatialInk } from '@renderer/lib/spatialInk'
 import { projectSpatialLayout } from '@renderer/lib/spatialProjection'
 import { spatialDepthVisible } from '@renderer/lib/spatialCamera'
 import { getSpatialView } from '@renderer/state/spatialView'
@@ -109,7 +109,7 @@ it('culls cards, incident edges, decorations, and ink behind the near plane', ()
   expect(projected.nodes.map((node) => node.id)).toEqual(['root'])
   expect(projected.edges).toEqual([])
   expect(projected.decorations).toEqual([])
-  expect(projectInk(document, view)).toEqual([])
+  expect(projectSpatialInk(document, view)).toEqual([])
   expect(native.nodes).toHaveLength(2)
   // A scene-sized camera may sit beyond the old fixed far plane when viewing a large map.
   expect(spatialDepthVisible({ ...view, cameraDistance: 100_000_000 }, 0)).toBe(true)

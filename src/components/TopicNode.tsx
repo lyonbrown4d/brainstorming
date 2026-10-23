@@ -33,6 +33,9 @@ export type TopicFlowNode = Node<
     fontFamily?: string
     direction?: LayoutDirection
     cameraScale?: number
+    /** World-sized DOM with perspective applied by the RF wrapper; never persisted. */
+    outerProjection?: true
+    sprite?: true
     cameraDepth?: number
     worldWidth?: number
     worldHeight?: number
@@ -128,6 +131,8 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
         data-testid={`topic-${id}`}
       >
         <TopicShapeVisual
+          cached={!root}
+          fill={fill}
           shape={shape}
           visualStyle={data.visualStyle}
           sketchFill={root || branch || Boolean(style?.fill) || shape === 'sticky'}
@@ -144,14 +149,7 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
             editingHere ? 'opacity-100' : 'opacity-0',
           )}
         />
-        {[Position.Top, Position.Right, Position.Bottom, Position.Left].map((position) => (
-          <Handle
-            key={`target-${position}`}
-            id={`target-${position}`}
-            type="target"
-            position={position}
-          />
-        ))}
+        {/* Loose connection mode uses the same four ports for either edge endpoint. */}
         {[Position.Top, Position.Right, Position.Bottom, Position.Left].map((position) => (
           <Handle
             key={`source-${position}`}
@@ -216,21 +214,31 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
 const StableTopicContent = memo(TopicNodeContent, sameTopicNodeContent)
 
 /** Transform only this billboard; changing an inherited variable restyles every text descendant. */
-export const TopicNode = (props: NodeProps<TopicFlowNode>) => (
-  <>
-    {props.selected && <TopicScaleHandle id={props.id} topic={props.data.topic} selected />}
-    <div
-      className="topic-projection"
-      style={{
-        width: props.data.worldWidth ?? '100%',
-        height: props.data.worldHeight ?? '100%',
-        transform: `scale(${props.data.cameraScale ?? 1})`,
-        transformOrigin: 'top left',
-      }}
-    >
-      <StableTopicContent {...props} />
-    </div>
-  </>
-)
+const TopicNodeSurface = (props: NodeProps<TopicFlowNode>) =>
+  props.data.sprite ? null : (
+    <>
+      {props.selected && <TopicScaleHandle id={props.id} topic={props.data.topic} selected />}
+      <div
+        className="topic-projection"
+        style={{
+          width: props.data.worldWidth ?? '100%',
+          height: props.data.worldHeight ?? '100%',
+          transform: `scale(${props.data.outerProjection ? 1 : (props.data.cameraScale ?? 1)})`,
+          transformOrigin: 'top left',
+        }}
+      >
+        <StableTopicContent {...props} />
+      </div>
+    </>
+  )
 
+export const TopicNode = memo(
+  TopicNodeSurface,
+  (before, after) =>
+    before.selected === after.selected &&
+    before.data.outerProjection === after.data.outerProjection &&
+    before.data.sprite === after.data.sprite &&
+    (after.data.outerProjection ?? before.data.cameraScale === after.data.cameraScale) &&
+    sameTopicNodeContent(before, after),
+)
 TopicNode.displayName = 'TopicNode'

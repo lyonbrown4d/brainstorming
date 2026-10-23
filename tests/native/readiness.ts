@@ -1,4 +1,5 @@
 import { browser } from '@wdio/globals'
+import type { SpatialTestCanvas } from '@tests/native/independent-spatial'
 
 /** Store commands render before HashRouter reflects them; wait for both contracts. */
 export const creationReady = async (
@@ -43,8 +44,19 @@ export const editorReady = async (title?: string): Promise<void> => {
     async () =>
       browser.execute((expectedTitle) => {
         const topic = document.querySelector('[data-testid="topic-root"]')
+        const canvas = document.querySelector<SpatialTestCanvas>(
+          'canvas[data-spatial-canvas="three"]',
+        )
+        const surface = topic ?? canvas
+        const title = topic?.textContent ?? canvas?.spatialFrameDiagnostics.rootTitle ?? ''
         const menu = document.querySelector('button[aria-label="文件菜单"]')
-        if (!(topic instanceof HTMLElement) || !(menu instanceof HTMLButtonElement)) return false
+        if (!(surface instanceof HTMLElement) || !(menu instanceof HTMLButtonElement)) return false
+        if (
+          canvas &&
+          (!canvas.spatialFrameDiagnostics.renderFrame ||
+            !canvas.spatialFrameDiagnostics.topicCount)
+        )
+          return false
         return (
           window.location.hash.startsWith('#/documents/') &&
           document.visibilityState === 'visible' &&
@@ -53,9 +65,9 @@ export const editorReady = async (title?: string): Promise<void> => {
             'section[aria-label="新建文档"], section[aria-label="新建画布"]',
           ) &&
           !menu.disabled &&
-          topic.getClientRects().length > 0 &&
-          getComputedStyle(topic).visibility === 'visible' &&
-          (expectedTitle === null || topic.textContent.includes(expectedTitle))
+          surface.getClientRects().length > 0 &&
+          getComputedStyle(surface).visibility === 'visible' &&
+          (expectedTitle === null || title.includes(expectedTitle))
         )
       }, title ?? null),
     { timeoutMsg: 'The active editor route and current canvas did not become ready' },

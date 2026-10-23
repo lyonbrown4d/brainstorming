@@ -1,5 +1,4 @@
 import { getSpatialView, useSpatialView, type SpatialView } from '@renderer/state/spatialView'
-import { placeSpatialInk } from '@renderer/lib/spatialInk'
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react'
 import { useReactFlow } from '@xyflow/react'
 import { INK_LIMITS, type CanvasPoint, type CanvasStroke } from '@core/ink'
@@ -136,7 +135,7 @@ export const useInkDrawing = () => {
     const active = gesture.current
     if (active?.pointerId !== event.pointerId) return
     onPointerMove(event)
-    const stroke = placeSpatialInk({ ...active.stroke, points: active.points }, active.view)
+    const stroke = { ...active.stroke, points: active.points }
     cancel()
     useEditor.getState().command({ type: 'upsertDrawing', stroke })
   }

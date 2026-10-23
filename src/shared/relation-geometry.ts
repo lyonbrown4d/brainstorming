@@ -1,4 +1,4 @@
-import { getBezierPath, getStraightPath, Position } from '@xyflow/react'
+import { getBezierPath, getStraightPath, Position } from '@xyflow/system'
 import type { Relation, RelationAnchor, RelationPoint } from '@core/extensions'
 
 export interface RelationBox extends RelationPoint {

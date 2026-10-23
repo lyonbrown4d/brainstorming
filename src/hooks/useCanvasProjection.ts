@@ -3,66 +3,35 @@ import { useQuery } from '@tanstack/react-query'
 import type { MindMapDocument } from '@core'
 import { createCanvasProjector } from '@renderer/lib/canvasProjection'
 import { nativeMeasurements, nativeLayoutQuery } from '@renderer/lib/nativeLayout'
-import { nativeSpatialLayoutQuery } from '@renderer/lib/nativeSpatialLayout'
 import { queryClient } from '@renderer/lib/queryClient'
 import { setNavigationLayout } from '@renderer/state/keyboard'
 import { useEditor } from '@renderer/state/editor'
-import { DEFAULT_SPATIAL_VIEW, useSpatialView } from '@renderer/state/spatialView'
-import { spatialLensKey, useSpatialLens, withSpatialLens } from '@renderer/state/spatialLens'
-import { projectSpatialLayout } from '@renderer/lib/spatialProjection'
+import { createCanvasProjectionController } from '@renderer/lib/canvasProjectionController'
+import { useCanvasCameraProjection } from '@renderer/hooks/useCanvasCameraProjection'
 import {
   completeCanvasFrame,
-  spatialFrameReady,
   type CanvasProjectionFrame,
 } from '@renderer/lib/canvasProjectionFrame'
 
-/** The query key prevents results for an older document, sheet, or geometry from reaching this canvas. */
+/** Native 2D geometry stays scoped to its document and sheet while a refresh is pending. */
 export const useCanvasProjection = (
   document: MindMapDocument,
   sheetId: string,
   surface?: string,
 ) => {
   const workbookId = useEditor((state) => state.workbook.id)
-  const preview = useSpatialView((state) => state.views[JSON.stringify([workbookId, sheetId])])
-  const distance = useSpatialLens((state) => state.distances[spatialLensKey(workbookId, sheetId)])
-  const view = withSpatialLens(
-    preview ?? document.settings?.spatial ?? DEFAULT_SPATIAL_VIEW,
-    distance,
-  )
   const scopeId = JSON.stringify([workbookId, sheetId, document.id])
+  const controller = useMemo(() => createCanvasProjectionController(scopeId), [scopeId])
   const [completed, setCompleted] = useState<CanvasProjectionFrame | null>(null)
   const measurements = useMemo(() => nativeMeasurements(document), [document])
-  const layoutQuery = useMemo(
+  const options = useMemo(
     () => nativeLayoutQuery(document, sheetId, measurements),
     [document, sheetId, measurements],
   )
-  const depthView = useMemo(
-    () => ({ ...DEFAULT_SPATIAL_VIEW, mode: '3d' as const, spacing: view.spacing }),
-    [view.spacing],
-  )
-  const spatialQuery = useMemo(
-    () => nativeSpatialLayoutQuery(document, sheetId, depthView, measurements),
-    [document, sheetId, depthView, measurements],
-  )
   const [project] = useState(createCanvasProjector)
-  const [projectSpatial] = useState(createCanvasProjector)
-  const nativeQuery = useQuery(
+  const query = useQuery(
     {
-      ...layoutQuery,
-      enabled: view.mode === '2d',
-      retry: 1,
-      // Keep this canvas mounted while its next geometry arrives; never carry across sheets.
-      placeholderData: (previous, previousQuery) =>
-        previousQuery?.queryKey[1] === sheetId && previousQuery.queryKey[2] === document.id
-          ? previous
-          : undefined,
-    },
-    queryClient,
-  )
-  const spatialResult = useQuery(
-    {
-      ...spatialQuery,
-      enabled: view.mode === '3d',
+      ...options,
       retry: 1,
       placeholderData: (previous, previousQuery) =>
         previousQuery?.queryKey[1] === sheetId && previousQuery.queryKey[2] === document.id
@@ -71,68 +40,26 @@ export const useCanvasProjection = (
     },
     queryClient,
   )
-  const query = view.mode === '3d' ? spatialResult : nativeQuery
-  const layout = view.mode === '3d' ? spatialResult.data?.layout : nativeQuery.data
-  const depths = view.mode === '3d' ? spatialResult.data?.depths : undefined
+  const layout = query.data
   const frame = useMemo(
     () =>
       completeCanvasFrame(
         completed,
-        {
-          scopeId,
-          document,
-          layout,
-          depths,
-          placeholder: query.isPlaceholderData,
-          surface,
-          deferProjection: view.mode === '3d',
-        },
+        { scopeId, document, layout, placeholder: query.isPlaceholderData, surface },
         project,
       ),
-    [
-      completed,
-      scopeId,
-      document,
-      layout,
-      depths,
-      query.isPlaceholderData,
-      surface,
-      view.mode,
-      project,
-    ],
+    [completed, scopeId, document, layout, query.isPlaceholderData, surface, project],
   )
-  // React's conditional state adjustment retains the complete frame without an effect-frame flash.
   if (frame !== completed) setCompleted(frame)
-  const projection = useMemo(
-    () =>
-      !frame
-        ? null
-        : view.mode === '2d'
-          ? frame.phase === '2d'
-            ? frame.projection
-            : null
-          : frame.phase === '3d' && frame.depths
-            ? projectSpatial(
-                frame.document,
-                projectSpatialLayout(frame.document, frame.layout, view, frame.depths),
-                surface,
-                frame.refreshGeometry,
-                view,
-              )
-            : null,
-    [frame, view, projectSpatial, surface],
-  )
+  useCanvasCameraProjection(controller, frame)
   useEffect(() => {
     if (layout && !query.isPlaceholderData) setNavigationLayout(document, layout)
   }, [document, layout, query.isPlaceholderData])
-  const spatialPending =
-    view.mode === '3d' && !spatialFrameReady(frame, query.isPlaceholderData, query.isPending)
   return {
-    projection,
+    controller,
+    projectionReady: Boolean(frame),
     nativeLayout: frame?.layout,
-    depths: view.mode === '3d' ? (frame?.depths ?? null) : null,
-    interactionReady: Boolean(frame) && !spatialPending,
-    spatialPending,
+    interactionReady: Boolean(frame),
     loading: query.isPending,
     error: query.error,
     retry: query.refetch,

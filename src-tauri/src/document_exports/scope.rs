@@ -34,10 +34,11 @@ pub fn select(request: &Request) -> Result<Value> {
     if let Some(topics) = doc["topics"].as_object_mut() {
       for topic in topics.values_mut() {
         let link = &topic["metadata"]["link"];
-        if link["kind"] == "topic" && link["sheetId"].as_str().is_some_and(|id| !ids.contains(id)) {
-          if let Some(metadata) = topic.get_mut("metadata").and_then(Value::as_object_mut) {
-            metadata.remove("link");
-          }
+        if link["kind"] == "topic"
+          && link["sheetId"].as_str().is_some_and(|id| !ids.contains(id))
+          && let Some(metadata) = topic.get_mut("metadata").and_then(Value::as_object_mut)
+        {
+          metadata.remove("link");
         }
       }
     }
@@ -121,13 +122,12 @@ fn prune(doc: &mut Value, request: &Request) -> Result<()> {
     {
       dependencies.retain(|item| item.as_str().is_some_and(|id| keep.contains(id)));
     }
-    if let Some(metadata) = topic.get_mut("metadata").and_then(Value::as_object_mut) {
-      if metadata
+    if let Some(metadata) = topic.get_mut("metadata").and_then(Value::as_object_mut)
+      && metadata
         .get("link")
         .is_some_and(|link| link["kind"] == "topic")
-      {
-        metadata.remove("link");
-      }
+    {
+      metadata.remove("link");
     }
     topics.insert(id, topic);
   }

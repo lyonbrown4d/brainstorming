@@ -8,7 +8,9 @@
       "@iconify-json/simple-icons",
       "lodash-es",
       "zustand/shallow",
-      "openseadragon"
+      "openseadragon",
+      "three/addons/loaders/SVGLoader.js",
+      "three/addons/utils/BufferGeometryUtils.js"
     ]
   },
   "inputs": {

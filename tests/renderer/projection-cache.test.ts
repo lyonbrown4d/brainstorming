@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { applyCommand, createExampleDocument } from '@core'
+import { applyCommand, createExampleDocument, createFixtureDocument } from '@core'
+import { layoutDocument } from '@layout'
 import { createCanvasProjector } from '@renderer/lib/canvasProjection'
 
 describe('canvas projection identity', () => {
@@ -44,6 +45,44 @@ describe('canvas projection identity', () => {
         .nodes.filter((node) => node.type !== 'ink')
         .find((node) => node.id === document.rootId)?.data.topic.title,
     ).toBe(document.title)
+  })
+
+  it('updates moved geometry while preserving unchanged neighbors and equivalent edge paths', () => {
+    const document = createFixtureDocument(2)
+    const layout = layoutDocument(document)
+    const routed = {
+      ...layout,
+      edges: layout.edges.map((edge) => ({ ...edge, routing: 'orthogonal' as const })),
+    }
+    const project = createCanvasProjector()
+    const before = project(document, routed)
+    const movedLayout = {
+      ...routed,
+      nodes: routed.nodes.map((node) =>
+        node.id === 'topic-1' ? { ...node, x: node.x + 40 } : node,
+      ),
+    }
+    const moved = project(document, movedLayout)
+    expect(moved.nodes.find((node) => node.id === 'root')).toBe(
+      before.nodes.find((node) => node.id === 'root'),
+    )
+    expect(moved.nodes.find((node) => node.id === 'topic-1')?.position.x).toBe(
+      (before.nodes.find((node) => node.id === 'topic-1')?.position.x ?? 0) + 40,
+    )
+    expect(moved.edges[0]?.data?.path).not.toBe(before.edges[0]?.data?.path)
+    // A matching path still requires the complete live geometry comparison.
+    const depthOnly = project(document, {
+      ...movedLayout,
+      nodes: movedLayout.nodes.map((node) => ({ ...node, cameraDepth: 100 })),
+    })
+    expect(depthOnly.edges[0]?.data?.path).toBe(moved.edges[0]?.data?.path)
+    expect(depthOnly.edges[0]).not.toBe(moved.edges[0])
+    const equivalent = project(document, {
+      ...movedLayout,
+      nodes: movedLayout.nodes.map((node) => ({ ...node, cameraDepth: 100 })),
+    })
+    expect(equivalent.nodes).toBe(depthOnly.nodes)
+    expect(equivalent.edges).toBe(depthOnly.edges)
   })
 
   it('keeps the current valid projection after rejecting a malformed document', () => {

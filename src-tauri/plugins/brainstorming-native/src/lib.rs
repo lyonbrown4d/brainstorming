@@ -9,6 +9,12 @@ tauri::ios_plugin_binding!(init_plugin_brainstorming_native);
 
 #[cfg(desktop)]
 mod desktop_capture;
+#[cfg(all(feature = "e2e", target_os = "macos"))]
+mod e2e_pointer;
+#[cfg(all(feature = "e2e", target_os = "macos"))]
+mod e2e_pointer_native;
+#[cfg(all(feature = "e2e", target_os = "macos"))]
+mod e2e_pointer_request;
 #[cfg(target_os = "macos")]
 mod macos_chrome;
 
@@ -31,6 +37,8 @@ impl<R: Runtime> NativeBridge<R> {
     #[cfg(desktop)]
     {
       match command {
+        #[cfg(all(feature = "e2e", target_os = "macos"))]
+        "e2eNativePointer" => e2e_pointer::call(&self.app, payload).await,
         #[cfg(target_os = "macos")]
         "getWindowChromeMetrics" => macos_chrome::metrics(&self.app).await,
         "captureWindowView" => desktop_capture::capture_window(&self.app, payload).await,
@@ -59,6 +67,8 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
       let handle = api.register_ios_plugin(init_plugin_brainstorming_native)?;
       #[cfg(desktop)]
       let _ = api;
+      #[cfg(all(feature = "e2e", target_os = "macos"))]
+      app.manage(std::sync::Arc::new(e2e_pointer::Adapter::default()));
       app.manage(NativeBridge {
         #[cfg(mobile)]
         handle,

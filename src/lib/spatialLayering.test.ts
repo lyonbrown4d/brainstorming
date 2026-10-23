@@ -26,8 +26,8 @@ it('draws the camera-nearer card above the farther card when the view reverses',
   const leftBranch = left.nodes.find((node) => node.id === 'topic-1')
   expect(rightBranch?.cameraDepth).toBeGreaterThan(rightRoot?.cameraDepth ?? Number.NaN)
   expect(leftBranch?.cameraDepth).toBeLessThan(leftRoot?.cameraDepth ?? Number.NaN)
-  const rightNodes = projectCanvas(document, undefined, right, side).nodes
-  const leftNodes = projectCanvas(document, undefined, left, opposite).nodes
+  const rightNodes = projectCanvas(document, undefined, right).nodes
+  const leftNodes = projectCanvas(document, undefined, left).nodes
   expect(byId(rightNodes, 'topic-1').zIndex).toBeGreaterThan(byId(rightNodes, 'root').zIndex ?? -1)
   expect(byId(leftNodes, 'root').zIndex).toBeGreaterThan(byId(leftNodes, 'topic-1').zIndex ?? -1)
   expect(rightNodes.every((node) => (node.zIndex ?? 0) >= 0 && (node.zIndex ?? 0) <= 500)).toBe(
@@ -37,9 +37,7 @@ it('draws the camera-nearer card above the farther card when the view reverses',
   const twoD: SpatialView = { mode: '2d', yaw: 0, pitch: 0, spacing: 100 }
   expect(projectSpatialLayout(document, native, twoD)).toBe(native)
   expect(
-    projectCanvas(document, undefined, native, twoD).nodes.every(
-      (node) => node.zIndex === undefined,
-    ),
+    projectCanvas(document, undefined, native).nodes.every((node) => node.zIndex === undefined),
   ).toBe(true)
 })
 
@@ -81,4 +79,34 @@ it('reissues cached and retained nodes when only their layer changes', () => {
   expect(reordered).not.toBe(synced)
   expect(reordered.map((node) => node.id)).toEqual([...synced].reverse().map((node) => node.id))
   expect(reordered[0]).toBe(synced.at(-1))
+})
+
+it('keeps fractional perspective scaling while matching RF integer wrapper measurements', () => {
+  const layout: MindMapLayout = {
+    nodes: [
+      {
+        id: 'root',
+        x: 10.25,
+        y: 20.75,
+        width: 107.24,
+        height: 42.19,
+        side: 'right',
+        cameraScale: 1.0724,
+        cameraDepth: 100,
+        worldWidth: 100,
+        worldHeight: 42.19 / 1.0724,
+      },
+    ],
+    edges: [],
+  }
+  const topic = projectCanvas(document, undefined, layout).nodes[0]
+  expect(topic?.style).toEqual({ width: 107, height: 42 })
+  expect(topic?.measured).toEqual({ width: 107, height: 42 })
+  expect(topic?.position).toEqual({ x: 10.25, y: 20.75 })
+  expect(topic?.data.cameraScale).toBe(1.0724)
+  const twoD = projectCanvas(document, undefined, {
+    nodes: [{ id: 'root', x: 0, y: 0, width: 107.24, height: 42.19, side: 'right' }],
+    edges: [],
+  }).nodes[0]
+  expect(twoD?.style).toEqual({ width: 107.24, height: 42.19 })
 })

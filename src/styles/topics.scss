@@ -42,6 +42,7 @@
 
   &:not(.is-selected):not(:hover):not(:focus-within) .fold-button:not([data-collapsed='true']) {
     opacity: 0;
+    pointer-events: none;
   }
 }
 @media (hover: none) {

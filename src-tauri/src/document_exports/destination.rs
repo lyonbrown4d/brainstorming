@@ -30,9 +30,16 @@ mod tests {
     std::fs::write(&source, b"native document").unwrap();
     let alias = directory.path().join("alias.pdf");
     std::fs::hard_link(&source, &alias).unwrap();
-    assert!(validate(&alias, "pdf", &[source.clone()]).is_err());
+    assert!(validate(&alias, "pdf", std::slice::from_ref(&source)).is_err());
     assert_eq!(std::fs::read(&source).unwrap(), b"native document");
-    assert!(validate(&directory.path().join("new.pdf"), "pdf", &[source.clone()]).is_ok());
+    assert!(
+      validate(
+        &directory.path().join("new.pdf"),
+        "pdf",
+        std::slice::from_ref(&source)
+      )
+      .is_ok()
+    );
     assert!(validate(&source, "pdf", &[]).is_err());
   }
 }
