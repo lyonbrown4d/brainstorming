@@ -1,13 +1,14 @@
+mod cache_key;
 mod search;
 mod spatial;
 pub mod wire;
 
 use crate::layout_engine::{Layout, NodeSize};
+use cache_key::cache_key;
 use moka::future::Cache;
 pub use search::{FindInput, FindMatch};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use sha2::{Digest, Sha256};
 pub use spatial::SpatialLayout;
 use std::{sync::Arc, time::Duration};
 use tokio::sync::Semaphore;
@@ -212,14 +213,6 @@ impl ComputeService {
 }
 pub(crate) fn validate_document(document: &Value) -> Result<(), String> {
   crate::document::validate_canvas(document).map_err(|error| error.to_string())
-}
-
-fn cache_key(input: &impl Serialize) -> Result<[u8; 32], String> {
-  let encoded = serde_json::to_vec(input).map_err(|_| "计算输入无效")?;
-  if encoded.len() > 64 * 1024 * 1024 {
-    return Err("计算输入超过限制".into());
-  }
-  Ok(Sha256::digest(&encoded).into())
 }
 
 /// Screen geometry does not depend on spatial camera, spacing, or topic depth.

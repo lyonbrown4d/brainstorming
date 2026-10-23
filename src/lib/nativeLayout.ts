@@ -4,6 +4,7 @@ import { layoutDocument, measureTopic, type MindMapLayout } from '@layout'
 import type { NativeLayoutInput } from '@shared/compute'
 import { getPlatformAPI } from '@renderer/lib/desktop'
 import { queryClient } from '@renderer/lib/queryClient'
+import { hashNativeLayoutKey } from '@renderer/lib/nativeLayoutQueryKey'
 import { boundNativeLayoutCache, estimateLayoutSource } from '@renderer/lib/nativeLayoutCache'
 
 const layoutCache = boundNativeLayoutCache(queryClient)
@@ -112,7 +113,13 @@ export const nativeLayoutQuery = (
   measurements: NativeLayoutInput['measurements'] = nativeMeasurements(document),
 ) => {
   return {
-    queryKey: ['canvas-layout', sheetId, document.id, layoutIdentity(document, measurements)],
+    queryKey: Object.freeze([
+      'canvas-layout',
+      sheetId,
+      document.id,
+      layoutIdentity(document, measurements),
+    ] as const),
+    queryKeyHashFn: hashNativeLayoutKey,
     queryFn: () => computeNativeLayout(document, measurements),
     staleTime: Infinity,
     gcTime: 5 * 60_000,

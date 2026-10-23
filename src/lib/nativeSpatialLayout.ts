@@ -9,6 +9,7 @@ import {
 } from '@renderer/lib/nativeLayout'
 import { estimateLayoutSource } from '@renderer/lib/nativeLayoutCache'
 import { queryClient } from '@renderer/lib/queryClient'
+import { hashNativeLayoutKey } from '@renderer/lib/nativeLayoutQueryKey'
 import { spatialTopicOffsets } from '@renderer/lib/spatialProjection'
 import type { SpatialView } from '@renderer/state/spatialView'
 
@@ -30,13 +31,14 @@ export const nativeSpatialLayoutQuery = (
   view: SpatialView,
   measurements: NativeLayoutInput['measurements'] = nativeMeasurements(document),
 ) => ({
-  queryKey: [
+  queryKey: Object.freeze([
     'canvas-spatial-layout',
     sheetId,
     document.id,
     layoutIdentity(document, measurements),
     spatialIdentity(document, view),
-  ],
+  ] as const),
+  queryKeyHashFn: hashNativeLayoutKey,
   queryFn: () => computeNativeSpatialLayout(document, view, measurements),
   staleTime: Infinity,
   gcTime: 5 * 60_000,

@@ -582,6 +582,7 @@ dependencies = [
  "clipboard-rs",
  "csv",
  "d3-hierarchy",
+ "digest-io",
  "docx-rs",
  "fluxdi",
  "futures-util",
@@ -1464,6 +1465,15 @@ dependencies = [
  "const-oid",
  "crypto-common 0.2.2",
  "ctutils",
+]
+
+[[package]]
+name = "digest-io"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2de63d600bc7fab91180bc17385f29b342468dc8ef2af09dceba450a293de3da"
+dependencies = [
+ "digest 0.11.3",
 ]
 
 [[package]]

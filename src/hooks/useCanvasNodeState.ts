@@ -34,25 +34,30 @@ export const useCanvasNodeState = (
       before.primary === primary &&
       before.playing === playing
     )
-      return previous.nodes
-    return synchronizeCanvasNodes(
-      previous.source?.scope === scope ? previous.nodes : projected,
-      projected,
-      {
-        geometryChanged:
-          previous.source?.projected !== projected || previous.source.scope !== scope,
-        dragging: previous.source?.scope === scope ? dragging : undefined,
-        topics: new Set(topics ?? [primary]),
-        drawings: new Set(drawings),
-        playing,
-      },
-    )
+      return previous
+    return {
+      source,
+      nodes: synchronizeCanvasNodes(
+        before?.scope === scope ? previous.nodes : projected,
+        projected,
+        {
+          geometryChanged: before?.projected !== projected || before.scope !== scope,
+          dragging: before?.scope === scope ? dragging : undefined,
+          topics: new Set(topics ?? [primary]),
+          drawings: new Set(drawings),
+          playing,
+        },
+      ),
+    }
   }
-  const nodes = reconcile(retained)
+  const current = reconcile(retained)
+  // Advance the baseline for external changes as well as RF updates. React retries this
+  // component before children render; unrelated renders can then reuse the settled nodes.
+  if (current !== retained) setRetained(current)
   // Stable callbacks preserve the drag cancellation subscriptions while the camera moves.
   const setNodes = useMemoizedFn((update: SetStateAction<CanvasFlowNode[]>) => {
     setRetained((previous) => {
-      const current = reconcile(previous)
+      const current = reconcile(previous).nodes
       return { source, nodes: typeof update === 'function' ? update(current) : update }
     })
   })
@@ -67,5 +72,5 @@ export const useCanvasNodeState = (
       })
     },
   )
-  return { nodes, setNodes, onNodesChange }
+  return { nodes: current.nodes, setNodes, onNodesChange }
 }
