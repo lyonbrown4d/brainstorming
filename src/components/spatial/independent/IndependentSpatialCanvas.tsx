@@ -34,7 +34,17 @@ import { IndependentSpatialInkResize } from '@renderer/components/spatial/indepe
 import { IndependentSpatialScale } from '@renderer/components/spatial/independent/IndependentSpatialScale'
 import { IndependentSpatialSelection } from '@renderer/components/spatial/independent/IndependentSpatialSelection'
 
-const Scene = ({ model }: { model: SpatialSceneModel }) => {
+const Scene = ({
+  model,
+  pending,
+  layoutError,
+  retryLayout,
+}: {
+  model: SpatialSceneModel
+  pending: boolean
+  layoutError: boolean
+  retryLayout: () => unknown
+}) => {
   const { translate } = useMessages()
   const [runtime] = useState(() => createIndependentSpatialRuntime(model))
   const [cameraReady, setCameraReady] = useState(false)
@@ -42,7 +52,7 @@ const Scene = ({ model }: { model: SpatialSceneModel }) => {
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
   const playing = usePresentation((state) => state.playing)
-  const ready = cameraReady && contentReady && !failed
+  const ready = cameraReady && contentReady && !failed && !pending
   const contextMenu = useIndependentSpatialContextMenu(runtime)
   const gestures = useIndependentSpatialGestures(runtime, ready && !playing)
   const cameraFinished = useCallback(() => {
@@ -134,8 +144,9 @@ const Scene = ({ model }: { model: SpatialSceneModel }) => {
         <IndependentSpatialMinimap runtime={runtime} disabled={!ready || playing} />
         {!ready && (
           <CanvasLoading
-            error={failed}
+            error={failed || layoutError}
             retry={() => {
+              if (layoutError) return retryLayout()
               setFailed(false)
               setCameraReady(false)
               setContentReady(false)
@@ -174,7 +185,13 @@ const IndependentSpatialCanvas = () => {
   if (current && current !== previous) setPrevious(current)
   const model = current ?? (previous?.document.id === query.document.id ? previous : null)
   return model ? (
-    <Scene key={`${workbookId}:${query.sheetId}`} model={model} />
+    <Scene
+      key={`${workbookId}:${query.sheetId}`}
+      model={model}
+      pending={!current}
+      layoutError={!current && Boolean(query.error)}
+      retryLayout={() => query.refetch()}
+    />
   ) : (
     <section className="relative min-w-0 flex-1" data-view-mode="3d">
       <CanvasLoading error={Boolean(query.error)} retry={() => query.refetch()} />

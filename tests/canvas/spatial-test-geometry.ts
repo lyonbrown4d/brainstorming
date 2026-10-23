@@ -5,6 +5,7 @@ import type { CanvasDrop } from '@renderer/lib/canvasDrop'
 import type { SpatialSceneRect } from '@renderer/lib/independentSpatialRuntime'
 
 export interface SpatialEvidence {
+  readonly modelCurrent: boolean
   readonly document: MindMapDocument
   readonly selected: string[]
   readonly selectedDrawings: string[]
@@ -16,9 +17,13 @@ export interface SpatialEvidence {
 }
 export const spatialCanvas = (page: Page) => page.locator('canvas[data-spatial-canvas="three"]')
 export const spatialEvidence = async (page: Page): Promise<SpatialEvidence> =>
-  JSON.parse(
-    (await page.getByTestId('independent-spatial-evidence').textContent()) ?? '{}',
-  ) as SpatialEvidence
+  page
+    .getByTestId('independent-spatial-evidence')
+    .evaluate(
+      (element) =>
+        (element as HTMLOutputElement & { readonly spatialEvidence: SpatialEvidence })
+          .spatialEvidence,
+    )
 export const spatialRect = async (page: Page, id: string): Promise<SpatialSceneRect> => {
   let rect = (await spatialEvidence(page)).rectangles.find((item) => item.id === id)
   if (!rect)
@@ -66,6 +71,8 @@ export const settledSpatialRect = async (page: Page, id: string) => {
   return previous
 }
 export const spatialPoint = async (page: Page, id: string) => {
+  await expect.poll(async () => (await spatialEvidence(page)).modelCurrent).toBe(true)
+  await expect(page.locator('[data-canvas-loading]')).toHaveCount(0)
   const rectangles = (await spatialEvidence(page)).rectangles
   const rect = rectangles.find((item) => item.id === id)
   if (!rect) throw new Error(`Missing topic ${id}`)

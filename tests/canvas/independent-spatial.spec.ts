@@ -23,9 +23,12 @@ interface Evidence {
   rectangles: Rectangle[]
 }
 const evidence = async (page: Page): Promise<Evidence> =>
-  JSON.parse(
-    (await page.getByTestId('independent-spatial-evidence').textContent()) ?? '{}',
-  ) as Evidence
+  page
+    .getByTestId('independent-spatial-evidence')
+    .evaluate(
+      (element) =>
+        (element as HTMLOutputElement & { readonly spatialEvidence: Evidence }).spatialEvidence,
+    )
 const rectangle = async (page: Page, id = 'branch-a') => {
   const rect = (await evidence(page)).rectangles.find((item) => item.id === id)
   if (!rect) throw new Error(`Missing projected topic ${id}`)
