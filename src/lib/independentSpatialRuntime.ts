@@ -62,6 +62,9 @@ export const createIndependentSpatialRuntime = (model: SpatialSceneModel) => {
     model,
     updateModel: (next: SpatialSceneModel) => {
       runtime.model = next
+      // Preview ownership ends at the model boundary, even if loading unmounted input handlers.
+      runtime.offsets.clear()
+      runtime.inkPreviews.clear()
       runtime.scales.clear()
       runtime.relationPreviews.clear()
       runtime.changed('model')

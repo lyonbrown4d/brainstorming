@@ -241,3 +241,14 @@ it('keeps colliding topic and ink identities distinct through picking, mixed mov
   expect(runtime.rectangle(topic.id)).toEqual(topic)
   expect(document.topics['ink-stroke-a']?.id).toBe('ink-stroke-a')
 })
+
+it('clears transient geometry on model replacement even without mounted gesture listeners', () => {
+  const runtime = fixture()
+  runtime.offsets.set('branch', { x: 85, y: 35, z: 10 })
+  runtime.scales.set('branch', 1.5)
+  runtime.inkPreviews.set('ink-stroke-a', { x: 1, y: 2, width: 30, height: 40 })
+  runtime.updateModel({ ...runtime.model })
+  expect(runtime.offsets.size).toBe(0)
+  expect(runtime.scales.size).toBe(0)
+  expect(runtime.inkPreviews.size).toBe(0)
+})
