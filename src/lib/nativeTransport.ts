@@ -1,5 +1,4 @@
 import { invoke, isTauri } from '@tauri-apps/api/core'
-import { listen } from '@tauri-apps/api/event'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import type { PhysicalPosition } from '@tauri-apps/api/dpi'
 
@@ -35,7 +34,7 @@ export const createNativeTransport = (): NativeTransport => {
     request: <T>(method: string, args: Record<string, unknown> = {}) =>
       invoke<T>('native_request', { method, args }).catch(throwNativeError),
     listen: (event, callback) =>
-      listen(event, ({ payload }) => {
+      getCurrentWindow().listen(event, ({ payload }) => {
         callback(payload)
       }),
     onDrop: (callback) =>

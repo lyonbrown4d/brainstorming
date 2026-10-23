@@ -1,3 +1,4 @@
+import { DocumentWindowMenu } from '@renderer/components/DocumentWindowMenu'
 import { useMessages } from '@renderer/i18n/useMessages'
 import { FileText, Plus, X } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
@@ -56,6 +57,7 @@ export const DocumentTabs = () => {
                       />
                     )}
                   </TabsTrigger>
+                  <DocumentWindowMenu tabId={tab.id} />
                   <Button
                     variant="ghost"
                     size="icon"

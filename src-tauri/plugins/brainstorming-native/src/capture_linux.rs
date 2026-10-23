@@ -34,7 +34,11 @@ pub fn snapshot(
           mapped.stride() as usize,
         );
         let format = i32::from(mapped.format());
-        if width > 2560 || height > 1440 || ![0, 1].contains(&format) {
+        if width > 16384
+          || height > 16384
+          || u64::from(width) * u64::from(height) > 40_000_000
+          || ![0, 1].contains(&format)
+        {
           return Err("原生截图像素格式无效".into());
         }
         let mut rgba = vec![0; width as usize * height as usize * 4];

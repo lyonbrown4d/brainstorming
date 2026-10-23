@@ -68,9 +68,11 @@ iOS / Android 系统文件可能是安全范围 URL 或内容提供者 URI。平
 
 XMind 不是本机存储格式。导入器识别 ZIP 内现代 `content.json` 与旧版 `content.xml`，经校验转换为工作簿并返回报告。导入文档没有正式保存路径，首次保存生成 `.brainstorming`，不能覆盖源 `.xmind`。
 
-支持现代 XMind 导出，以及 Markdown、OPML、纯文本大纲和 PNG / JPEG / WebP / SVG / PDF 图形导出。第三方格式的完整语义和视觉不能保证无损，导入报告列出不支持内容；Brainstorming 扩展字段用于自身导出后再导入。ZIP 解压、XML 和 Markdown 解析复用维护中的第三方库。
+支持现代 XMind、Markdown、OPML、纯文本大纲，以及 PNG / JPEG / WebP / SVG / PDF / PPTX / DOCX / HTML / CSV / JSON 导出。第三方格式的完整语义和视觉不能保证无损，导入报告列出不支持内容；Brainstorming 扩展字段用于自身导出后再导入。ZIP 解压、XML 和 Markdown 解析复用维护中的第三方库。
 
-导出对话框从完整布局生成含嵌入资源的 SVG，再通过原生 `resvg` / `image` 渲染和编码 PNG、JPEG 与无损 WebP；JPEG 默认质量为 92，透明区域填白。SVG 保留矢量内容，字体依赖查看设备。位图默认以 2× 输出，并自动适配单边 16384 px、总计 4000 万像素的限制。PDF 仍将栅格图适配到单页 A3，文字不可搜索。
+统一导出从工作簿生成范围副本，支持当前、全部、指定 Sheet、选区和分支，不改变原文件、路径或脏状态。完整导图使用原生 2D SVG 场景；PNG、JPEG 与无损 WebP 由 `resvg` / `image` 编码，PDF 使用原生 SVG 矢量转换并支持纸张与分页。当前 3D 视角导出使用栅格截图；演示可导出图片、PDF、HTML 和含可编辑元素的 PPTX。多页图片打包 ZIP；DOCX 为层级内容文档，CSV 为主题表格，JSON 使用 `format: "brainstorming.export"`、`version: 1` 的交换包装，不可作为 `.brainstorming` 直接打开。
+
+导出写入前检查扩展名、所有窗口的原生源路径及文件身份，禁止通过别名或硬链接覆盖正在编辑的原生文件；成品通过原子替换写入。导出范围、内容类型、任务进度、窗口归属和移交状态不进入原生文档协议。本次导出与多窗口变化沿用 SQLite 协议 v2，不新增文件格式迁移。具体选项和容量限制见 [文档导出](development.md#文档导出)。
 
 ## 主题表现、笔迹与演示页面
 

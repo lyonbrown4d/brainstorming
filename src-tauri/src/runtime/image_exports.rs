@@ -28,8 +28,9 @@ pub async fn export(app: &AppHandle, state: &AppState, mut args: Value) -> Resul
   };
   let job_id = request.job_id;
   let handle = app.clone();
+  let label = state.window_id.clone();
   let report: Reporter = Arc::new(move |stage| {
-    if let Some(window) = handle.get_webview_window("main") {
+    if let Some(window) = handle.get_webview_window(&label) {
       let _ = window.emit("native:export-progress", Progress { job_id, stage });
     }
   });

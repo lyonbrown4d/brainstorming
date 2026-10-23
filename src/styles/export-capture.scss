@@ -1,0 +1,19 @@
+html[data-export-capture] {
+  [data-slot='dialog-overlay'],
+  [data-slot='dialog-content'],
+  [data-workbench-panel],
+  [data-slot='canvas-dock'],
+  [data-slot='document-dock'],
+  .react-flow__panel,
+  [data-spatial-camera-widget],
+  .react-flow__controls,
+  .react-flow__minimap,
+  .react-flow__resize-control,
+  [role='toolbar'] {
+    // Snapshot only after chrome disappears, without its normal fade transition.
+    transition: none !important;
+    animation: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
+}

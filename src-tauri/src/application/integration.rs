@@ -1,5 +1,6 @@
 use super::{media::BackendServices, platform::RuntimeConfig};
 use crate::{
+  document_exports::DocumentExportService,
   export_image::ImageExportService,
   runtime::{ai::AIService, mcp::MCPService, notifications::NotificationService},
 };
@@ -16,7 +17,12 @@ static_module! {
         notifications: NotificationService = notifications(config);
         #[scope(root)]
         image_exports: ImageExportService = image_exports();
+        #[scope(root)]
+        document_exports: DocumentExportService = document_exports();
     }
+}
+fn document_exports() -> Result<Shared<DocumentExportService>, Error> {
+  Ok(Shared::new(DocumentExportService::default()))
 }
 fn image_exports() -> Result<Shared<ImageExportService>, Error> {
   Ok(Shared::new(ImageExportService::default()))
@@ -40,12 +46,14 @@ impl Module for IntegrationModule {
       graph.mcp()?;
       graph.notifications()?;
       graph.image_exports()?;
+      graph.document_exports()?;
       Ok(())
     })
   }
   fn on_stop(&self, _: Shared<Injector>) -> ModuleLifecycleFuture {
     let graph = self.0.clone();
     Box::pin(async move {
+      graph.document_exports()?.shutdown().await;
       graph.image_exports()?.shutdown().await;
       graph.notifications()?.shutdown();
       let mcp = graph.mcp()?;

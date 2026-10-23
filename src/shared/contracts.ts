@@ -1,3 +1,5 @@
+import type { DocumentExportsAPI } from '@shared/documentExports'
+import type { DesktopWindowsAPI } from '@shared/windows'
 import type { ComputeAPI } from '@shared/compute'
 import type { BuiltinArtAPI } from '@shared/builtinArt'
 import type { TemplatesAPI } from '@shared/templates'
@@ -14,18 +16,8 @@ import type { MCPAPI } from '@shared/mcp'
 import type { ExportRequest } from '@shared/exports'
 import type { ContentSearchAPI } from '@shared/contentSearch'
 
-export type MenuAction =
-  | 'closeTab'
-  | 'new'
-  | 'open'
-  | 'save'
-  | 'saveAs'
-  | 'undo'
-  | 'redo'
-  | 'zoomIn'
-  | 'zoomOut'
-  | 'actualSize'
-  | 'centerRoot'
+export type { MenuAction } from '@renderer/generated/native'
+import type { MenuAction } from '@renderer/generated/native'
 export interface OpenedDocument {
   recoveryId?: string
   path: string | null
@@ -64,7 +56,9 @@ export interface DesktopAPI
     NotificationAPI,
     DocumentPreviewAPI {
   /** Native compute is absent only from explicitly injected component previews. */
+  readonly windows?: DesktopWindowsAPI
   readonly compute?: ComputeAPI
+  readonly exports?: DocumentExportsAPI
   minimizeWindow?(): Promise<void>
   toggleFullScreen?(): Promise<void>
   toggleMaximizeWindow?(): Promise<void>
@@ -102,8 +96,8 @@ export interface DesktopAPI
   saveDocument(request: SaveRequest): Promise<string | null>
   readRecovery(): Promise<string | null>
   writeRecovery(contents: string): Promise<void>
-  setDirty(dirty: boolean, preserveRecovery?: boolean): void
+  setDirty(dirty: boolean, preserveRecovery?: boolean, documentTitle?: string): void
   getRecentFiles(): Promise<RecentFile[]>
   openRecent(path: string): Promise<OpenedDocument | null>
-  onMenuAction(callback: (action: MenuAction) => void): () => void
+  onMenuAction(callback: (action: MenuAction, windowId?: string) => void): () => void
 }

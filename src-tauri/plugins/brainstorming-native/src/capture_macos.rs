@@ -73,6 +73,7 @@ pub fn snapshot(
     let webview = &*(webview.inner() as *mut WKWebView);
     let marker = objc2::MainThreadMarker::new().expect("native snapshot main thread");
     let config = WKSnapshotConfiguration::new(marker);
+    config.setAfterScreenUpdates(true);
     webview.takeSnapshotWithConfiguration_completionHandler(Some(&config), &callback);
   }
 }

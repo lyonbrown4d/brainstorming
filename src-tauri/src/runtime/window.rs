@@ -2,59 +2,39 @@ use super::{input::Result, state::AppState};
 use serde_json::{Value, json};
 use tauri::{AppHandle, Emitter, Manager, Window, WindowEvent};
 
-pub fn startup_ready(app: &AppHandle) -> Result<()> {
-  let Some(main) = app.get_webview_window("main") else {
+pub fn startup_ready(app: &AppHandle, label: &str) -> Result<()> {
+  let Some(main) = app.get_webview_window(label) else {
     return Ok(());
   };
   crate::platform::restore_window_state(&main);
   // Match Tauri's splash handoff: queue its close before revealing main.
   // Showing main first lets closing the key splash deactivate the application.
-  if let Some(splash) = app.get_webview_window("splash") {
+  if label == "main"
+    && let Some(splash) = app.get_webview_window("splash")
+  {
     // Resign the splash's native key-window status before its deferred close.
     splash.hide().map_err(|_| "无法隐藏启动窗口")?;
     splash.close().map_err(|_| "无法关闭启动窗口")?;
   }
   main.show().map_err(|_| "无法显示主窗口")?;
-  focus_visible_main(app)?;
-  Ok(())
-}
-
-fn focus_visible_main(app: &AppHandle) -> Result<()> {
-  let Some(main) = app.get_webview_window("main") else {
-    return Ok(());
-  };
-  if !main.is_visible().unwrap_or(false) || main.is_minimized().unwrap_or(false) {
-    return Ok(());
-  }
-  if app
-    .try_state::<std::sync::Arc<AppState>>()
-    .is_some_and(|state| {
-      state
-        .session
-        .try_lock()
-        .is_ok_and(|session| session.closing || session.close_allowed)
-    })
-  {
-    return Ok(());
-  }
   #[cfg(target_os = "macos")]
   app.show().map_err(|_| "无法显示应用")?;
-  main.set_focus().map_err(|_| "无法聚焦主窗口")?;
+  main.set_focus().map_err(|_| "无法聚焦窗口")?;
   Ok(())
 }
 
-pub fn state(app: &AppHandle) -> Result<Value> {
-  let window = app.get_webview_window("main").ok_or("应用窗口不可用")?;
+pub fn state(app: &AppHandle, label: &str) -> Result<Value> {
+  let window = app.get_webview_window(label).ok_or("应用窗口不可用")?;
   Ok(
     json!({"focused":window.is_focused().unwrap_or(false),"fullScreen":window.is_fullscreen().unwrap_or(false)}),
   )
 }
-pub async fn appearance(app: &AppHandle, theme: &str) -> Result<()> {
+pub async fn appearance(app: &AppHandle, label: &str, theme: &str) -> Result<()> {
   let theme = appearance_theme(theme)?;
   #[cfg(desktop)]
   {
     app
-      .get_webview_window("main")
+      .get_webview_window(label)
       .ok_or("应用窗口不可用")?
       .set_theme(theme)
       .map_err(|_| "无法设置应用外观".into())
@@ -72,8 +52,8 @@ pub async fn appearance(app: &AppHandle, theme: &str) -> Result<()> {
             .map_err(|_| "无法设置应用外观".into())
   }
 }
-pub fn command(app: &AppHandle, method: &str) -> Result<Value> {
-  let window = app.get_webview_window("main").ok_or("应用窗口不可用")?;
+pub fn command(app: &AppHandle, label: &str, method: &str) -> Result<Value> {
+  let window = app.get_webview_window(label).ok_or("应用窗口不可用")?;
   let result = match method {
     "minimizeWindow" => window.minimize(),
     "maximizeWindow" => {
@@ -92,7 +72,7 @@ pub fn command(app: &AppHandle, method: &str) -> Result<Value> {
   Ok(Value::Null)
 }
 pub fn handle_window_event(window: &Window, event: &WindowEvent) {
-  if window.label() != "main" {
+  if window.label() != "main" && !window.label().starts_with("editor-") {
     return;
   }
   match event {
@@ -100,6 +80,9 @@ pub fn handle_window_event(window: &Window, event: &WindowEvent) {
       let _ = window.emit("native:system-theme", ());
     }
     WindowEvent::Focused(_) | WindowEvent::Resized(_) => {
+      if matches!(event, WindowEvent::Focused(true)) {
+        let _ = crate::platform::install_menu(window.app_handle());
+      }
       let _ = window.emit("native:window-state", json!({"focused":window.is_focused().unwrap_or(false),"fullScreen":window.is_fullscreen().unwrap_or(false)}));
     }
     WindowEvent::CloseRequested { api, .. } => {
@@ -108,72 +91,19 @@ pub fn handle_window_event(window: &Window, event: &WindowEvent) {
         return;
       };
       if state
-        .session
-        .try_lock()
-        .is_ok_and(|session| session.close_allowed)
+        .windows
+        .try_close_allowed(window.label())
+        .unwrap_or(false)
       {
         return;
       }
       api.prevent_close();
+      let label = window.label().to_string();
       tauri::async_runtime::spawn(async move {
-        close(&app).await;
+        super::window_lifecycle::close(&app, &label).await;
       });
     }
     _ => (),
-  }
-}
-async fn close(app: &AppHandle) {
-  let state = app.state::<std::sync::Arc<AppState>>();
-  let (dirty, preserve) = {
-    let mut session = state.session.lock().await;
-    if session.closing {
-      return;
-    }
-    session.closing = true;
-    (session.dirty, session.preserve_recovery)
-  };
-  let result = async {
-    if dirty && !super::dialogs::confirm_discard(app).await? {
-      return Ok(false);
-    }
-    if dirty && !preserve {
-      super::recovery::write(&state, &json!([])).await?;
-    }
-    // Await any in-flight recovery commit before destroying the editor.
-    {
-      let _guard = state.recovery.lock().await;
-    }
-    if let Some(window) = app.get_webview_window("main") {
-      crate::platform::save_window_state(&window).await;
-    }
-    if crate::platform::finish_shutdown(app).await.is_err() {
-      // Teardown is terminal: all modules have already been attempted.
-      // Keep the confirmed exit instead of leaving a closed backend in the UI.
-      tracing::error!("Native service shutdown failed");
-    }
-    Ok::<bool, String>(true)
-  }
-  .await;
-  let mut session = state.session.lock().await;
-  session.closing = false;
-  match result {
-    Ok(true) => {
-      session.close_allowed = true;
-      drop(session);
-      if let Some(window) = app.get_webview_window("main") {
-        let _ = window.close();
-      }
-    }
-    Ok(false) => (),
-    Err(_) => {
-      drop(session);
-      use tauri_plugin_dialog::DialogExt;
-      app
-        .dialog()
-        .message("自动恢复文件清理失败，请重试。所有打开的导图仍保留在窗口中。")
-        .title("无法关闭")
-        .show(|_| {});
-    }
   }
 }
 pub async fn enqueue_open(app: &AppHandle, path: std::path::PathBuf) -> bool {
@@ -181,10 +111,18 @@ pub async fn enqueue_open(app: &AppHandle, path: std::path::PathBuf) -> bool {
     return false;
   }
   let state = app.state::<std::sync::Arc<AppState>>();
+  let canonical = tokio::fs::canonicalize(&path).await.unwrap_or(path.clone());
+  if super::window_transfer::focus_owner(app, &state, &canonical).await {
+    return true;
+  }
+  let label = focused_label(app).unwrap_or_else(|| "main".into());
+  let Ok(state) = state.for_window(&label).await else {
+    return false;
+  };
   let accepted = state.session.lock().await.enqueue(path);
   if accepted {
-    let _ = app.emit_to("main", "native:open-file", ());
-    if let Some(window) = app.get_webview_window("main")
+    let _ = app.emit_to(&label, "native:open-file", ());
+    if let Some(window) = app.get_webview_window(&label)
       && window.is_visible().unwrap_or(false)
     {
       let _ = window.unminimize();
@@ -216,4 +154,20 @@ mod tests {
     assert_eq!(appearance_theme("dark").unwrap(), Some(tauri::Theme::Dark));
     assert!(appearance_theme("auto").is_err());
   }
+}
+
+pub fn focused_label(app: &AppHandle) -> Option<String> {
+  let windows = app.webview_windows();
+  windows
+    .values()
+    .find(|window| {
+      (window.label() == "main" || window.label().starts_with("editor-"))
+        && window.is_focused().unwrap_or(false)
+    })
+    .or_else(|| {
+      windows
+        .values()
+        .find(|window| window.label() == "main" || window.label().starts_with("editor-"))
+    })
+    .map(|window| window.label().to_string())
 }

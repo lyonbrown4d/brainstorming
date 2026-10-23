@@ -17,7 +17,23 @@ pub async fn dispatch(
   args: Value,
 ) -> Result<Value> {
   match method {
-        "initialize" => Ok(json!({"platform":platform(),"resourceOrigin":state.resource_origin.read().map_err(|_| "资源服务不可用")?.clone(),"language":state.language.read().map_err(|_| "语言设置不可用")?.clone(),"windowState":window::state(app)?})),
+        "initialize" => Ok(json!({"platform":platform(),"resourceOrigin":state.resource_origin.read().map_err(|_| "资源服务不可用")?.clone(),"language":state.language.read().map_err(|_| "语言设置不可用")?.clone(),"windowState":window::state(app, &state.window_id)?})),
+        "syncMenuState" => { crate::platform::sync_menu(app, &state.window_id, args)?; Ok(Value::Null) }
+        "newWindow" => Ok(json!(super::window_transfer::create(app, state).await?)),
+        "listWindows" => Ok(super::window_transfer::list(app, state).await),
+        "moveDocumentToWindow" => super::window_transfer::move_document(app, state, &args).await,
+        "takeTransferredDocument" => super::window_transfer::receive(state).await,
+        "acknowledgeDocumentTransfer" => { super::window_transfer::acknowledge(state, input::text(&args, "token", 80)?).await?; Ok(Value::Null) }
+        "openDocumentInNewWindow" => {
+            if let Some(path) = dialogs::open(app).await? {
+                let canonical = tokio::fs::canonicalize(&path).await.map_err(|_| "文件不可用")?;
+                if !super::window_transfer::focus_owner(app, state, &canonical).await {
+                    let label = super::window_transfer::create(app, state).await?;
+                    state.for_window(&label).await?.session.lock().await.enqueue(path);
+                }
+            }
+            Ok(Value::Null)
+        }
         "listBuiltinArt" => Ok(json!(crate::builtin_art::list()?)),
         "getBuiltinArt" => Ok(json!(&*crate::builtin_art::get(input::text(&args, "id", 80)?).await?)),
         "listTemplates" => Ok(json!(crate::templates::list()?)),
@@ -36,21 +52,21 @@ pub async fn dispatch(
             let input: super::notifications::SetEnabled = serde_json::from_value(args).map_err(|_| "通知设置无效")?;
             Ok(json!(state.notifications.set_enabled(&state.metadata, input.enabled).await?))
         }
-        "getWindowState" => window::state(app),
-        "setAppearance" => { window::appearance(app, input::text(&args, "theme", 10)?).await?; Ok(Value::Null) }
-        "minimizeWindow" | "maximizeWindow" | "closeWindow" | "startWindowDrag" | "toggleFullScreen" => window::command(app, method),
+        "getWindowState" => window::state(app, &state.window_id),
+        "setAppearance" => { window::appearance(app, &state.window_id, input::text(&args, "theme", 10)?).await?; Ok(Value::Null) }
+        "minimizeWindow" | "maximizeWindow" | "closeWindow" | "startWindowDrag" | "toggleFullScreen" => window::command(app, &state.window_id, method),
         "hasOpenFile" => Ok(json!(!state.session.lock().await.open_files.is_empty())),
         "takeOpenFile" => {
             let path = state.session.lock().await.open_files.pop_front();
-            match path { Some(path) => documents::open(state, path).await, None => Ok(Value::Null) }
+            match path { Some(path) => open_document(app, state, path).await, None => Ok(Value::Null) }
         }
-        "openDocument" => match dialogs::open(app).await? { Some(path) => documents::open(state, path).await, None => Ok(Value::Null) },
+        "openDocument" => match dialogs::open(app).await? { Some(path) => open_document(app, state, path).await, None => Ok(Value::Null) },
         "openRecent" => {
             let path = input::text(&args, "path", 4096)?;
-            if !state.session.lock().await.recent.iter().any(|p| p == path) { return Err("文件不在最近文件列表中".into()); }
-            documents::open(state, PathBuf::from(path)).await
+            if !state.metadata.recent_files().await.map_err(|e| e.to_string())?.iter().any(|p| p == path) { return Err("文件不在最近文件列表中".into()); }
+            open_document(app, state, PathBuf::from(path)).await
         }
-        "getRecentFiles" => Ok(json!(state.session.lock().await.recent.iter().map(|p| json!({"path":p,"name":std::path::Path::new(p).file_name().unwrap_or_default().to_string_lossy()})).collect::<Vec<_>>())),
+        "getRecentFiles" => Ok(json!(state.metadata.recent_files().await.map_err(|e| e.to_string())?.iter().map(|p| json!({"path":p,"name":std::path::Path::new(p).file_name().unwrap_or_default().to_string_lossy()})).collect::<Vec<_>>())),
         "getDocumentPreviewRevision" => super::document_previews::revision(state, &args).await,
         "writeDocumentPreviews" => super::document_previews::write(state, &args).await,
         "saveDocument" => {
@@ -71,6 +87,7 @@ pub async fn dispatch(
             let path = input::path(input::text(&args, "path", 4096)?, true)?;
             let mut session = state.session.lock().await;
             if session.retained.remove(&path) {
+                state.windows.release_path(&state.window_id, &path).await;
                 state.documents.release(&path).await.map_err(|e| e.to_string())?;
                 let ids: Vec<String> = session.sources.iter().filter(|(_, p)| **p == path).map(|(id, _)| id.clone()).collect();
                 for id in ids { session.sources.remove(&id); session.passwords.remove(&id); }
@@ -114,7 +131,11 @@ pub async fn dispatch(
             let dirty = args["dirty"].as_bool().ok_or("文档状态无效")?;
             let mut session = state.session.lock().await;
             session.dirty = dirty; session.preserve_recovery = args["preserveRecovery"].as_bool().unwrap_or(false);
-            if let Some(window) = app.get_webview_window("main") { let _ = window.set_title(if dirty { "● Brainstorming" } else { "Brainstorming" }); }
+            if let Some(window) = app.get_webview_window(&state.window_id) {
+                let title = args["documentTitle"].as_str().unwrap_or("").chars().take(200).collect::<String>();
+                let title = if title.is_empty() { "Brainstorming".into() } else { format!("{title} — Brainstorming") };
+                let _ = window.set_title(&format!("{}{title}", if dirty { "● " } else { "" }));
+            }
             Ok(Value::Null)
         }
         "syncContentIndex" => content_search::sync(state, &args).await,
@@ -143,11 +164,10 @@ pub async fn dispatch(
             Ok(Value::Null)
         }
         "startupReady" => {
-            state.mcp.stop(app).await;
-            window::startup_ready(app)?;
+            window::startup_ready(app, &state.window_id)?;
             Ok(Value::Null)
         }
-        "startupFailed" => { if let Some(splash) = app.get_webview_window("splash") { let _ = splash.show(); } Ok(Value::Null) }
+        "startupFailed" => { if state.window_id == "main" && let Some(splash) = app.get_webview_window("splash") { let _ = splash.show(); } else if let Some(window) = app.get_webview_window(&state.window_id) { let _ = window.show(); } Ok(Value::Null) }
         _ => Err(format!("未知原生方法：{method}")),
     }
 }
@@ -185,4 +205,14 @@ fn platform() -> &'static str {
   } else {
     "linux"
   }
+}
+
+async fn open_document(app: &AppHandle, state: &AppState, path: PathBuf) -> Result<Value> {
+  let canonical = tokio::fs::canonicalize(&path)
+    .await
+    .map_err(|_| "无法打开文档文件")?;
+  if super::window_transfer::focus_owner(app, state, &canonical).await {
+    return Ok(Value::Null);
+  }
+  documents::open(state, canonical).await
 }

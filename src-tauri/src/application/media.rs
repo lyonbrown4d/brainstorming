@@ -1,6 +1,7 @@
 use super::{core::CoreServices, platform::RuntimeConfig, service_error, session::SessionService};
 use crate::{
   document::DocumentStore,
+  document_exports::DocumentExportService,
   export_image::ImageExportService,
   media::MediaState,
   runtime::{AppState, ai::AIService, mcp::MCPService, notifications::NotificationService},
@@ -25,6 +26,7 @@ static_module! {
             mcp: MCPService;
             notifications: NotificationService;
             image_exports: ImageExportService;
+            document_exports: DocumentExportService;
         };
         external core_services: Weak<CoreServices>;
         #[scope(root)]

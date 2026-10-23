@@ -244,7 +244,7 @@ fn decode_entries(rows: Vec<(String, String, i64)>) -> Result<Vec<RecoveryEntry>
     .collect()
 }
 
-fn validate_paths(paths: &[String]) -> Result<()> {
+pub(super) fn validate_paths(paths: &[String]) -> Result<()> {
   let mut unique = HashSet::new();
   if paths.len() > 10 {
     return Err(invalid("最近文件数量超过限制"));

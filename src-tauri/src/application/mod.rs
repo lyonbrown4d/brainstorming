@@ -156,15 +156,17 @@ async fn stop_owned(
   // Revoke producers before draining commands, including pending preview
   // and AI requests. The writer prevents new commands during teardown.
   if let Some(media) = media {
-    media.revoke();
+    media.revoke_all().await;
   }
   state.image_exports.begin_shutdown();
+  state.document_exports.begin_shutdown();
   state.compute.shutdown().await;
   state.editor.shutdown().await?;
   state.ai.cancel_all().await;
   state.mcp.shutdown().await;
   let mut open = admission.write().await;
   *open = false;
+  state.windows.shutdown(&state).await;
   lifecycle
     .lock()
     .await

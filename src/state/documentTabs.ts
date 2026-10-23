@@ -33,6 +33,17 @@ export const useDocumentTabs = create<DocumentTabsState>(() => ({
 }))
 let switching = false
 export const isSwitchingDocument = (): boolean => switching
+
+/** Restore the tab identity and its stores before lifecycle subscribers capture either. */
+export const runDocumentTabTransition = (transition: () => void): void => {
+  const previous = switching
+  switching = true
+  try {
+    transition()
+  } finally {
+    switching = previous
+  }
+}
 const releaseClosedTab = (workbookId: string): void => {
   void releaseNativeEditor(workbookId).catch((error: unknown) => {
     useEditor.getState().setError(error instanceof Error ? error.message : String(error))
@@ -89,14 +100,11 @@ export const switchDocumentTab = (id: string): boolean => {
   }
   const tab = useDocumentTabs.getState().tabs.find((entry) => entry.id === id)
   if (!tab) return false
-  switching = true
-  try {
+  runDocumentTabTransition(() => {
     useDocumentTabs.setState({ activeId: id })
     restoreDocumentSession(tab)
     enterWorkspaceEditor()
-  } finally {
-    switching = false
-  }
+  })
   synchronizeDocumentTab()
   return true
 }
@@ -213,4 +221,33 @@ export const nextDocumentTab = (offset: number): void => {
 export const anyDocumentDirty = (): boolean => {
   const { tabs, activeId } = useDocumentTabs.getState()
   return tabs.some((tab) => editorIsDirty(tab.id === activeId ? useEditor.getState() : tab.editor))
+}
+
+/** The native transfer already owns this session; remove its projection without releasing it. */
+export const detachDocumentTab = (id: string): void => {
+  const state = useDocumentTabs.getState()
+  const tabs = state.tabs.filter((tab) => tab.id !== id)
+  const next = tabs[0]
+  switching = true
+  try {
+    useDocumentTabs.setState({
+      tabs,
+      activeId: state.activeId === id ? (next?.id ?? null) : state.activeId,
+    })
+    if (state.activeId === id) {
+      if (next) {
+        restoreDocumentSession(next)
+        enterWorkspaceEditor()
+      } else
+        useWorkspace.setState({
+          screen: 'home',
+          hasDocument: false,
+          creationWorkbookId: null,
+          creationStep: 1,
+        })
+    }
+  } finally {
+    switching = false
+  }
+  useDocumentTabs.setState({ tabs: [...tabs] })
 }

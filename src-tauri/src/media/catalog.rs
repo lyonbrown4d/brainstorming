@@ -30,6 +30,29 @@ impl Catalog {
       scan: tokio::sync::Mutex::new(()),
     }
   }
+  pub async fn transfer_to(&self, target: &Self, workbook: &Value) -> Result<(), String> {
+    for sheet in workbook["sheets"].as_array().into_iter().flatten() {
+      for asset in sheet["document"]["assets"]
+        .as_object()
+        .into_iter()
+        .flat_map(|assets| assets.values())
+      {
+        for storage in [&asset["storage"], &asset["storage"]["preview"]] {
+          if let Some(id) = storage["objectId"].as_str() {
+            let (entry, _) = self.resolve(id).await?;
+            target
+              .entries
+              .write()
+              .await
+              .entry(id.into())
+              .or_default()
+              .push(entry);
+          }
+        }
+      }
+    }
+    Ok(())
+  }
   pub async fn register_vault(&self, id: &str, length: u64, mime: &str) {
     let mut entries = self.entries.write().await;
     let items = entries.entry(id.into()).or_default();

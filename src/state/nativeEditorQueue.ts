@@ -123,3 +123,8 @@ export const releaseNativeEditor = async (workbookId: string): Promise<void> => 
 export const forgetNativeEditor = (workbookId: string): void => {
   void releaseNativeEditor(workbookId).catch(() => undefined)
 }
+
+/** Moving a tab transfers its native owner; closing it here would destroy undo. */
+export const detachNativeEditor = (workbookId: string): void => {
+  sessions.delete(workbookId)
+}

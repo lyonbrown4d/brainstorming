@@ -50,12 +50,16 @@ pub async fn native_request(
       _ => Err("启动窗口无权访问编辑器数据".into()),
     };
   }
-  if window.label() != "main" {
+  if window.label() != "main" && !window.label().starts_with("editor-") {
     return Err("此窗口无权访问编辑器数据".into());
   }
-  let state = super::initialization::ready(&app).await?;
+  let state = super::initialization::ready(&app)
+    .await?
+    .for_window(window.label())
+    .await?;
   let _lease = super::initialization::acquire(&app).await?;
-  let media = app.state::<Arc<MediaState>>();
+  let root_media = app.state::<Arc<MediaState>>();
+  let media = root_media.for_window(state.clone()).await?;
   if let Some(result) = media.dispatch(&method, args.clone()).await {
     return result;
   }

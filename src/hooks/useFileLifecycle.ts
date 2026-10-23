@@ -1,3 +1,5 @@
+import { subscribeWindowTransfers } from '@renderer/state/windowTransfers'
+import { runWindowMenuAction } from '@renderer/state/windowMenuActions'
 import { flushNativeEditor } from '@renderer/state/nativeEditorQueue'
 import { translate } from '@renderer/i18n'
 import { useEffect } from 'react'
@@ -39,6 +41,7 @@ export const useFileLifecycle = (): void => {
     )
     const bridge = requireDesktopAPI()
     const stopAutosave = startDocumentAutosave()
+    const stopTransfers = subscribeWindowTransfers()
     const reportError = (error: unknown): void => {
       if (alive)
         useEditor
@@ -105,11 +108,19 @@ export const useFileLifecycle = (): void => {
       retainedPaths = paths
       hadWorkspace ||= tabs.tabs.length > 0
       const dirty = anyDocumentDirty()
+      void bridge.windows
+        ?.syncMenuState({
+          hasDocument: workspace.hasDocument,
+          busy: state.busy,
+          playing: usePresentation.getState().playing,
+        })
+        .catch(reportError)
       const protectedRecovery = !ready || tabs.recovery.length > 0
-      const status = `${dirty}:${protectedRecovery}`
+      const documentTitle = workspace.hasDocument ? state.workbook.title : ''
+      const status = `${dirty}:${protectedRecovery}:${documentTitle}`
       if (status !== nativeStatus) {
         try {
-          bridge.setDirty(dirty, protectedRecovery)
+          bridge.setDirty(dirty, protectedRecovery, documentTitle)
           nativeStatus = status
         } catch (error) {
           recoveryWriter.cancel()
@@ -182,7 +193,11 @@ export const useFileLifecycle = (): void => {
       openPending()
     })
     const unsubscribeWorkspace = useWorkspace.subscribe(synchronize)
-    const removeMenu = bridge.onMenuAction((action) => {
+    const unsubscribePresentation = usePresentation.subscribe((state, previous) => {
+      if (state.playing !== previous.playing) synchronize()
+    })
+    const removeMenu = bridge.onMenuAction((action, windowId) => {
+      if (runWindowMenuAction(action, windowId)) return
       if (usePresentation.getState().playing) return
       if (
         useWorkspace.getState().screen !== 'editor' &&
@@ -258,8 +273,10 @@ export const useFileLifecycle = (): void => {
       alive = false
       recoveryWriter.dispose()
       stopAutosave()
+      stopTransfers()
       unsubscribe()
       unsubscribeWorkspace()
+      unsubscribePresentation()
       unsubscribeTabs()
       removeMenu()
       removeOpenFile()

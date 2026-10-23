@@ -6,15 +6,27 @@ use tokio::sync::{Mutex, oneshot};
 use tokio_util::sync::CancellationToken;
 
 pub struct Active {
+  pub window: String,
   pub connection: Value,
   pub cancel: CancellationToken,
   pub pending: Mutex<HashMap<String, oneshot::Sender<Result<Value>>>>,
 }
-#[derive(Default)]
 pub struct MCPService {
+  window: String,
   active: Mutex<Option<Arc<Active>>>,
 }
+impl Default for MCPService {
+  fn default() -> Self {
+    Self::with_window("main")
+  }
+}
 impl MCPService {
+  pub fn with_window(window: &str) -> Self {
+    Self {
+      window: window.into(),
+      active: Mutex::new(None),
+    }
+  }
   pub async fn connection(&self) -> Value {
     self
       .active
@@ -47,6 +59,7 @@ impl MCPService {
     connection["endpoint"] = json!(format!("http://127.0.0.1:{port}/mcp"));
     connection["token"] = json!(token);
     let active = Arc::new(Active {
+      window: self.window.clone(),
       connection: connection.clone(),
       cancel: CancellationToken::new(),
       pending: Mutex::new(HashMap::new()),
@@ -60,7 +73,7 @@ impl MCPService {
     });
     *slot = Some(active);
     if app
-      .emit_to("main", "native:mcp-connection", &connection)
+      .emit_to(&self.window, "native:mcp-connection", &connection)
       .is_err()
     {
       if let Some(active) = slot.take() {
@@ -78,7 +91,7 @@ impl MCPService {
   }
   pub async fn stop(&self, app: &AppHandle) {
     self.shutdown().await;
-    let _ = app.emit_to("main", "native:mcp-connection", Value::Null);
+    let _ = app.emit_to(&self.window, "native:mcp-connection", Value::Null);
   }
   pub async fn reply(&self, value: &Value) -> Result<()> {
     if value.to_string().len() > 256 * 1024 {
@@ -130,7 +143,10 @@ pub async fn request(
   }
   let connection = &active.connection;
   let event = json!({"id":id,"sessionId":connection["sessionId"],"grant":{"workbookId":connection["workbookId"],"includeNotes":connection["includeNotes"],"allowProposals":connection["allowProposals"]},"action":action});
-  if app.emit_to("main", "native:mcp-request", event).is_err() {
+  if app
+    .emit_to(&active.window, "native:mcp-request", event)
+    .is_err()
+  {
     active.pending.lock().await.remove(&id);
     return Err("Brainstorming 编辑器未连接".into());
   }

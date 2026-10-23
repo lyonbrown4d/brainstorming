@@ -4,7 +4,12 @@ use serde_json::Value;
 use std::sync::Arc;
 use tauri::{AppHandle, Manager};
 
-pub async fn hydrate(app: &AppHandle, workbook: Value, original: bool) -> Result<Value, String> {
+pub async fn hydrate_for(
+  app: &AppHandle,
+  state: &AppState,
+  workbook: Value,
+  original: bool,
+) -> Result<Value, String> {
   crate::document::validate_workbook(&workbook).map_err(|e| e.to_string())?;
   let stored = workbook["sheets"]
     .as_array()
@@ -23,7 +28,11 @@ pub async fn hydrate(app: &AppHandle, workbook: Value, original: bool) -> Result
   let media = app
     .try_state::<Arc<crate::media::MediaState>>()
     .ok_or("媒体服务尚未就绪")?;
-  media.hydrate_workbook(workbook, original).await
+  media
+    .for_window(Arc::new(state.clone()))
+    .await?
+    .hydrate_workbook(workbook, original)
+    .await
 }
 pub async fn render(state: &AppState, input: SceneInput) -> Result<SheetScene, String> {
   // Stored resources are hydrated by the command after native authorization.
@@ -68,7 +77,7 @@ pub async fn export(
   };
   // Text formats do not read binary resources; current-sheet exports never load other sheets.
   let workbook = if input.format == "xmind" {
-    hydrate(app, workbook, true).await?
+    hydrate_for(app, state, workbook, true).await?
   } else {
     workbook
   };

@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "editor",
   "description": "Application editor windows only; remote preview windows receive no native permissions.",
-  "windows": ["main", "splash"],
+  "windows": ["main", "editor-*", "splash"],
   "permissions": [
     "core:default",
     "core:window:allow-start-dragging",

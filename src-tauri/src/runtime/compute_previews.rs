@@ -51,7 +51,7 @@ pub async fn refresh(app: &AppHandle, state: &AppState, input_value: Value) -> R
   } else {
     parsed[0].0.clone()
   };
-  let workbook = compute::hydrate(app, workbook, false).await?;
+  let workbook = compute::hydrate_for(app, state, workbook, false).await?;
   let budget = MAX_PREVIEW_BYTES.min(MAX_TOTAL_PREVIEW_BYTES / count);
   let mut total = 0usize;
   let mut previews = Vec::with_capacity(count);

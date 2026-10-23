@@ -159,3 +159,8 @@ pub fn render_with_geometry(
     height,
   })
 }
+
+/// The same document background is used for full sheets and drawing selections.
+pub(crate) fn background(document: &Value) -> String {
+  appearance::palette(document).background
+}

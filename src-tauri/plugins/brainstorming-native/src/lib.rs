@@ -33,6 +33,7 @@ impl<R: Runtime> NativeBridge<R> {
       match command {
         #[cfg(target_os = "macos")]
         "getWindowChromeMetrics" => macos_chrome::metrics(&self.app).await,
+        "captureWindowView" => desktop_capture::capture_window(&self.app, payload).await,
         "captureLinkPreview" => desktop_capture::capture(&self.app, payload).await,
         "cancelLinkPreview" => desktop_capture::cancel(&self.app, payload).await,
         _ => Err("此命令仅用于原生移动系统适配".into()),

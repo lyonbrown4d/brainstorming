@@ -1,3 +1,4 @@
+import { ToolbarWindowsMenu } from '@renderer/components/ToolbarWindowsMenu'
 import { LoadingIndicator } from '@renderer/components/feedback/LoadingIndicator'
 import { requireDesktopAPI } from '@renderer/lib/desktop'
 import { useMessages } from '@renderer/i18n/useMessages'
@@ -40,7 +41,7 @@ const RecentFilesMenu = () => {
       </DropdownMenuSubTrigger>
       <DropdownMenuPortal>
         <DropdownMenuSubContent
-          className="max-w-[min(320px,calc(100vw-24px))]"
+          className="max-h-[min(24rem,var(--radix-dropdown-menu-content-available-height))] max-w-[min(320px,calc(100vw-24px))] overflow-y-auto"
           sideOffset={6}
           alignOffset={-6}
           aria-label={translate('recentFileList')}
@@ -83,6 +84,7 @@ const RecentFilesMenu = () => {
 }
 
 export const ToolbarFileMenu = () => {
+  const [open, setOpen] = useState(false)
   const platform = requireDesktopAPI().platform
   const shortcutOverrides = useShortcutPreferences((state) => state.overrides)
   const shortcutHint = (id: ShortcutId) => {
@@ -97,7 +99,7 @@ export const ToolbarFileMenu = () => {
   const busy = useEditor((state) => state.busy)
   const filename = title.endsWith('.brainstorming') ? title : `${title}.brainstorming`
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
@@ -111,7 +113,7 @@ export const ToolbarFileMenu = () => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
-        className="w-56"
+        className="w-64 max-w-[calc(100vw-24px)]"
         align="start"
         sideOffset={10}
         aria-label={translate('fileActions')}
@@ -155,6 +157,7 @@ export const ToolbarFileMenu = () => {
             {shortcutHint('saveAs')}
           </DropdownMenuItem>
         </DropdownMenuGroup>
+        <ToolbarWindowsMenu open={open} />
       </DropdownMenuContent>
     </DropdownMenu>
   )

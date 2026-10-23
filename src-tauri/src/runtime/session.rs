@@ -16,6 +16,7 @@ pub struct PendingUnlock {
 }
 #[derive(Default)]
 pub struct Session {
+  pub recovery_ids: HashSet<String>,
   pub dirty: bool,
   pub preserve_recovery: bool,
   pub close_allowed: bool,

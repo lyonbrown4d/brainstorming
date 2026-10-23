@@ -31,6 +31,7 @@ use std::{
 use tauri::{AppHandle, Manager};
 pub type Result<T> = std::result::Result<T, String>;
 pub struct MediaState {
+  windows: tokio::sync::Mutex<HashMap<String, Arc<MediaState>>>,
   app: AppHandle,
   state: Arc<AppState>,
   importer: Arc<Importer>,
@@ -50,7 +51,9 @@ impl MediaState {
   pub async fn new(app: AppHandle, state: Arc<AppState>) -> Result<Self> {
     let catalog = Arc::new(catalog::Catalog::new(state.clone()));
     let importer = Arc::new(Importer::new(state.clone(), catalog.clone()));
-    let window = app.get_webview_window("main").ok_or("主窗口尚未创建")?;
+    let window = app
+      .get_webview_window(&state.window_id)
+      .ok_or("应用窗口尚未创建")?;
     let url = window.url().map_err(|_| "主窗口地址不可用")?;
     let origin = if matches!(url.scheme(), "http" | "https") {
       url.origin().ascii_serialization()
@@ -71,6 +74,7 @@ impl MediaState {
       }
     };
     Ok(Self {
+      windows: Default::default(),
       app,
       state,
       importer,
@@ -79,6 +83,32 @@ impl MediaState {
       grants: Mutex::new(HashMap::new()),
       raw_documents: Default::default(),
     })
+  }
+  pub async fn for_window(self: &Arc<Self>, state: Arc<AppState>) -> Result<Arc<Self>> {
+    if state.window_id == self.state.window_id {
+      return Ok(self.clone());
+    }
+    let mut windows = self.windows.lock().await;
+    if let Some(media) = windows.get(&state.window_id) {
+      return Ok(media.clone());
+    }
+    let media = Arc::new(Self::new(self.app.clone(), state.clone()).await?);
+    windows.insert(state.window_id.clone(), media.clone());
+    Ok(media)
+  }
+  pub async fn transfer_document(&self, target: &Self, workbook: &serde_json::Value) -> Result<()> {
+    self
+      .importer
+      .catalog
+      .transfer_to(&target.importer.catalog, workbook)
+      .await
+  }
+  pub async fn remove_window(&self, label: &str) {
+    if let Some(media) = self.windows.lock().await.remove(label) {
+      media.shutdown_local().await;
+    } else if label == self.state.window_id {
+      self.shutdown_local().await;
+    }
   }
   /// Only a native Tauri drop event may create path capabilities.
   pub fn grant_paths(&self, paths: Vec<PathBuf>) {
@@ -94,6 +124,12 @@ impl MediaState {
       }
     }
   }
+  pub async fn revoke_all(&self) {
+    for media in self.windows.lock().await.values() {
+      media.revoke();
+    }
+    self.revoke();
+  }
   pub fn revoke(&self) {
     if let Ok(server) = self.server.lock()
       && let Some(server) = &*server
@@ -103,6 +139,13 @@ impl MediaState {
     self.previews.revoke();
   }
   pub async fn shutdown(&self) {
+    let windows = std::mem::take(&mut *self.windows.lock().await);
+    for media in windows.values() {
+      media.shutdown_local().await;
+    }
+    self.shutdown_local().await;
+  }
+  async fn shutdown_local(&self) {
     self.revoke();
     self.previews.shutdown().await;
     let server = self.server.lock().ok().and_then(|mut server| server.take());

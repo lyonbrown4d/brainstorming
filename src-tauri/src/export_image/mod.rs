@@ -3,6 +3,7 @@ mod service;
 #[cfg(test)]
 mod tests;
 mod validation;
+mod validation_clips;
 #[cfg(test)]
 mod validation_tests;
 
@@ -106,3 +107,22 @@ pub struct Progress {
   pub stage: Stage,
 }
 pub type Reporter = std::sync::Arc<dyn Fn(Stage) + Send + Sync>;
+
+/// Validate self-contained native export geometry before any renderer parses it.
+pub(crate) fn validate_svg_scene(svg: &str) -> Result<()> {
+  if svg.is_empty() || svg.len() > MAX_SVG_BYTES {
+    return Err("导出 SVG 超过大小限制".into());
+  }
+  validation::scene_svg(svg)
+}
+
+/// Shared native encoders run inside the document export service worker limit.
+pub(crate) fn encode_scene(request: Request) -> Result<Vec<u8>> {
+  static FONTS: std::sync::OnceLock<std::sync::Arc<resvg::usvg::fontdb::Database>> =
+    std::sync::OnceLock::new();
+  raster::render(
+    request,
+    FONTS.get_or_init(raster::fonts).clone(),
+    std::sync::Arc::new(|_| {}),
+  )
+}

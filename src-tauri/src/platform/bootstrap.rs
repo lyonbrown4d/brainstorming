@@ -9,7 +9,7 @@ pub fn run() {
   let builder =
     super::plugins::register(tauri::Builder::default()).on_permission_request(|webview, kind| {
       use tauri::webview::{PermissionKind, PermissionResponse};
-      if webview.label() != "main"
+      if (webview.label() != "main" && !webview.label().starts_with("editor-"))
         || !webview
           .url()
           .is_ok_and(|url| super::request::trusted_url(&url, webview.app_handle()))
@@ -61,31 +61,43 @@ pub fn run() {
       Ok(())
     })
     .on_page_load(|webview, payload| {
-      if webview.label() == "main"
+      if (webview.label() == "main" || webview.label().starts_with("editor-"))
         && matches!(payload.event(), tauri::webview::PageLoadEvent::Started)
       {
         let app = webview.app_handle().clone();
+        let label = webview.label().to_string();
         tauri::async_runtime::spawn(async move {
-          runtime::renderer_started(&app).await;
+          runtime::renderer_started(&app, &label).await;
         });
       }
     })
     .on_window_event(|window, event| {
       if let tauri::WindowEvent::DragDrop(tauri::DragDropEvent::Drop { paths, .. }) = event
-        && window.label() == "main"
+        && (window.label() == "main" || window.label().starts_with("editor-"))
         && let Some(media) = window.app_handle().try_state::<Arc<MediaState>>()
       {
-        media.grant_paths(paths.clone());
+        let app = window.app_handle().clone();
+        let label = window.label().to_string();
+        let paths = paths.clone();
+        let media = media.inner().clone();
+        tauri::async_runtime::spawn(async move {
+          if let Some(state) = app.try_state::<Arc<AppState>>()
+            && let Ok(state) = state.for_window(&label).await
+            && let Ok(media) = media.for_window(state).await
+          {
+            media.grant_paths(paths);
+          }
+        });
       }
       runtime::handle_window_event(window, event);
-      if window.label() == "main" && matches!(event, tauri::WindowEvent::Destroyed) {
-        if let Some(media) = window.app_handle().try_state::<Arc<MediaState>>() {
-          media.revoke();
-        }
-        if let Some(splash) = window.app_handle().get_webview_window("splash") {
-          let _ = splash.destroy();
-        }
-        super::initialization::exit(window.app_handle(), 0);
+      if (window.label() == "main" || window.label().starts_with("editor-"))
+        && matches!(event, tauri::WindowEvent::Destroyed)
+      {
+        let app = window.app_handle().clone();
+        let label = window.label().to_string();
+        tauri::async_runtime::spawn(async move {
+          runtime::window_lifecycle::destroyed(&app, &label).await;
+        });
       }
     })
     .build(tauri::generate_context!())
@@ -112,14 +124,17 @@ pub fn run() {
         return;
       }
       api.prevent_exit();
-      let state = app.try_state::<Arc<AppState>>();
-      let confirmed = state
-        .as_ref()
-        .is_some_and(|state| state.session.try_lock().is_ok_and(|s| s.close_allowed));
-      if state.is_none() || confirmed || app.get_webview_window("main").is_none() {
-        super::initialization::exit(app, code.unwrap_or(0));
-      } else if let Some(main) = app.get_webview_window("main") {
-        let _ = main.close();
+      if code.is_some() {
+        let app = app.clone();
+        tauri::async_runtime::spawn(async move {
+          runtime::window_lifecycle::quit(&app, code.unwrap_or(0)).await;
+        });
+      } else if app
+        .webview_windows()
+        .values()
+        .all(|window| window.label() == "splash")
+      {
+        super::initialization::exit(app, 0);
       }
     }
     RunEvent::Exit => {

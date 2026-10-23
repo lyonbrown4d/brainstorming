@@ -1,8 +1,15 @@
+import {
+  createDocumentExportsAPI,
+  documentExportProgressSchema,
+} from '@renderer/lib/nativeDocumentExports'
+import type { DocumentExportProgress } from '@shared/documentExports'
+import { createWindowAPI } from '@renderer/lib/nativeWindowsAPI'
 import { createComputeAPI } from '@renderer/lib/nativeComputeAPI'
 import { builtinArtCatalogSchema, parseBuiltinArtAsset } from '@shared/builtinArt'
 import { contentTemplateSchema, templateCatalogSchema, templateIdSchema } from '@shared/templates'
 import { imageExportProgressSchema, type ImageExportProgress } from '@shared/exportImages'
-import type { DesktopAPI, DroppedFilesResult, MenuAction } from '@shared/contracts'
+import type { MenuActionEvent } from '@renderer/generated/native'
+import type { DesktopAPI, DroppedFilesResult } from '@shared/contracts'
 import type { AppLanguage } from '@shared/language'
 import type { DesktopPlatform, WindowState } from '@shared/window'
 import { isWindowState } from '@shared/window'
@@ -20,19 +27,6 @@ export interface NativeInitialization {
   readonly language: AppLanguage
   readonly windowState: WindowState
 }
-const actions = new Set<MenuAction>([
-  'closeTab',
-  'new',
-  'open',
-  'save',
-  'saveAs',
-  'undo',
-  'redo',
-  'zoomIn',
-  'zoomOut',
-  'actualSize',
-  'centerRoot',
-])
 export const createNativeAPI = async (
   transport: NativeTransport,
   initial: NativeInitialization,
@@ -55,7 +49,10 @@ export const createNativeAPI = async (
     }
   }
   const events = [
+    'document-transfer',
+    'focus-document',
     'export-progress',
+    'document-export-progress',
     'open-file',
     'menu-action',
     'system-theme',
@@ -116,6 +113,15 @@ export const createNativeAPI = async (
   }
   const api: DesktopAPI = {
     compute: createComputeAPI(),
+    exports: createDocumentExportsAPI((callback) =>
+      on(
+        'document-export-progress',
+        callback,
+        (value): value is DocumentExportProgress =>
+          documentExportProgressSchema.safeParse(value).success,
+      ),
+    ),
+    windows: createWindowAPI(request, on),
     ...(windowAction
       ? {
           minimizeWindow: () => windowAction('minimize'),
@@ -225,15 +231,24 @@ export const createNativeAPI = async (
       requiredDocument(await opened('restoreDocumentBackup', { id })),
     readRecovery: () => request('readRecovery'),
     writeRecovery: (contents) => request('writeRecovery', { contents }),
-    setDirty: (dirty, preserveRecovery = false) => {
-      send('setDirty', { dirty, preserveRecovery })
+    setDirty: (dirty, preserveRecovery = false, documentTitle) => {
+      send('setDirty', {
+        dirty,
+        preserveRecovery,
+        ...(documentTitle === undefined ? {} : { documentTitle }),
+      })
     },
     onMenuAction: (callback) =>
       on(
         'menu-action',
-        callback,
-        (value): value is MenuAction =>
-          typeof value === 'string' && actions.has(value as MenuAction),
+        (event: MenuActionEvent) => {
+          callback(event.action, event.windowId ?? undefined)
+        },
+        (value): value is MenuActionEvent =>
+          typeof value === 'object' &&
+          value !== null &&
+          'action' in value &&
+          typeof value.action === 'string',
       ),
   }
   return {

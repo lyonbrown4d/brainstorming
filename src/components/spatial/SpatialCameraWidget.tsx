@@ -93,6 +93,7 @@ export const SpatialCameraWidget = ({
   return (
     <ErrorBoundary fallbackRender={() => <WidgetUnavailable onReady={onReady} />}>
       <div
+        data-spatial-camera-widget
         className="size-28 overflow-hidden rounded-xl border border-border/80 bg-background shadow-floating transition-[border-color,box-shadow] duration-150 hover:border-ring/60 focus-within:ring-2 focus-within:ring-ring/50"
         aria-label={translate('spatialCameraWidget')}
         title={translate('spatialCameraWidget')}

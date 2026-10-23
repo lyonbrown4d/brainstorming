@@ -4,6 +4,7 @@ use super::{
 };
 use crate::{
   document::DocumentStore,
+  document_exports::DocumentExportService,
   export_image::ImageExportService,
   runtime::{AppState, ai::AIService, mcp::MCPService, notifications::NotificationService},
   search::SearchService,
@@ -29,6 +30,7 @@ static_module! {
             mcp: MCPService;
             notifications: NotificationService;
             image_exports: ImageExportService;
+            document_exports: DocumentExportService;
         };
         import computations: ComputeServices {
             compute: crate::compute::ComputeService;
@@ -47,9 +49,10 @@ impl AppState {
       .upgrade()
       .ok_or_else(|| super::service_error("原生服务容器已释放"))?;
     let session = services.session().await?;
+    let origin = std::sync::Arc::new(RwLock::new("http://brainstorming.localhost".into()));
     Ok(Shared::new(Self {
       #[cfg(feature = "e2e")]
-      test_dialogs: tokio::sync::Mutex::new(Default::default()),
+      test_dialogs: std::sync::Arc::new(tokio::sync::Mutex::new(Default::default())),
       directory: services.config()?.directory.clone(),
       documents: services.documents()?,
       metadata: services.metadata().await?,
@@ -61,10 +64,18 @@ impl AppState {
       mcp: services.mcp()?,
       notifications: services.notifications()?,
       image_exports: services.image_exports()?,
+      document_exports: services.document_exports()?,
       search: services.search().await?,
       compute: services.compute()?,
       editor: services.editor()?,
-      resource_origin: RwLock::new("http://brainstorming.localhost".into()),
+      resource_origin: origin.clone(),
+      window_id: "main".into(),
+      windows: std::sync::Arc::new(crate::runtime::windows::WindowSessions::new(
+        session.session.clone(),
+        services.search().await?,
+        services.mcp()?,
+        origin,
+      )),
     }))
   }
 }

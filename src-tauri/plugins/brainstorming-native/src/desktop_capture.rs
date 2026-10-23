@@ -137,3 +137,29 @@ pub async fn cancel<R: Runtime>(app: &AppHandle<R>, args: Value) -> Result<Value
   }
   Ok(Value::Null)
 }
+
+/// Snapshot an already trusted application WebView. Rust selects the window and
+/// private output path; no frontend plugin command exposes arbitrary windows.
+pub async fn capture_window<R: Runtime>(app: &AppHandle<R>, args: Value) -> Result<Value> {
+  let label = args["windowLabel"].as_str().ok_or("窗口标识无效")?;
+  let output = PathBuf::from(args["outputPath"].as_str().ok_or("截图输出无效")?);
+  let window = app.get_webview_window(label).ok_or("截图窗口已关闭")?;
+  let cancelled = Arc::new(AtomicBool::new(false));
+  struct Cancel(Arc<AtomicBool>);
+  impl Drop for Cancel {
+    fn drop(&mut self) {
+      self.0.store(true, Ordering::Release);
+    }
+  }
+  let _guard = Cancel(cancelled.clone());
+  let (send, receive) = oneshot::channel();
+  let target = output.clone();
+  window
+    .with_webview(move |webview| platform::snapshot(webview, target, cancelled, send))
+    .map_err(|_| "无法访问原生窗口画面")?;
+  tokio::time::timeout(Duration::from_secs(12), receive)
+    .await
+    .map_err(|_| "窗口截图超时，请重试")?
+    .map_err(|_| "窗口截图未返回")??;
+  Ok(json!({"outputPath": output}))
+}

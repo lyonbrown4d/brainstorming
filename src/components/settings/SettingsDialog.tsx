@@ -16,9 +16,10 @@ import { KeyboardShortcutsContent } from '@renderer/components/settings/Keyboard
 
 export interface SettingsDialogProps {
   readonly onClose: () => void
+  readonly initialSection?: 'general' | 'shortcuts'
 }
 
-const SettingsDialog = ({ onClose }: SettingsDialogProps) => {
+const SettingsDialog = ({ onClose, initialSection = 'general' }: SettingsDialogProps) => {
   const { translate } = useMessages()
   const sections = [
     ['general', 'settingsGeneral'],
@@ -56,7 +57,7 @@ const SettingsDialog = ({ onClose }: SettingsDialogProps) => {
             {translate('settingsDescription')}
           </DialogDescription>
         </DialogHeader>
-        <Tabs defaultValue="general" className="min-h-0 flex-1 gap-4">
+        <Tabs key={initialSection} defaultValue={initialSection} className="min-h-0 flex-1 gap-4">
           <TabsList
             aria-label={translate('applicationSettings')}
             className="grid h-10 w-full shrink-0 grid-cols-4 rounded-lg bg-secondary/70 p-1"

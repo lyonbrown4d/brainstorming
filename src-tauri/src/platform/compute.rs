@@ -60,10 +60,13 @@ async fn access(
   app: &AppHandle,
   window: &WebviewWindow,
 ) -> Result<(Arc<AppState>, OwnedRwLockReadGuard<bool>), String> {
-  if window.label() != "main" || !super::request::trusted(window, app) {
+  if !super::request::trusted(window, app) {
     return Err("此窗口无权访问文档计算".into());
   }
-  let state = super::initialization::ready(app).await?;
+  let state = super::initialization::ready(app)
+    .await?
+    .for_window(window.label())
+    .await?;
   let lease = super::initialization::acquire(app).await?;
   Ok((state, lease))
 }
@@ -77,6 +80,10 @@ pub async fn editor_open(
 ) -> Result<EditorSnapshot, String> {
   let (state, _lease) = access(&app, &window).await?;
   crate::runtime::input::identifier(&session_id)?;
+  state
+    .windows
+    .claim_editor(window.label(), &session_id)
+    .await?;
   Ok(state.editor.open(session_id, workbook.0).await?.into())
 }
 #[tauri::command]
@@ -89,6 +96,10 @@ pub async fn editor_execute(
   operation: JsonValue,
 ) -> Result<EditorSnapshot, String> {
   let (state, _lease) = access(&app, &window).await?;
+  state
+    .windows
+    .assert_editor(window.label(), &session_id)
+    .await?;
   let revision = revision.parse::<u64>().map_err(|_| "文档版本无效")?;
   Ok(
     state
@@ -106,7 +117,15 @@ pub async fn editor_close(
   session_id: String,
 ) -> Result<(), String> {
   let (state, _lease) = access(&app, &window).await?;
-  state.editor.close(&session_id).await
+  if state
+    .windows
+    .release_editor(window.label(), &session_id)
+    .await
+  {
+    state.editor.close(&session_id).await
+  } else {
+    Err("此窗口无权关闭该导图".into())
+  }
 }
 #[tauri::command]
 #[specta::specta]
@@ -154,7 +173,7 @@ pub async fn compute_render(
   input: SceneInput,
 ) -> Result<SheetScene, String> {
   let (state, _lease) = access(&app, &window).await?;
-  let workbook = crate::runtime::compute::hydrate(&app, input.workbook, false).await?;
+  let workbook = crate::runtime::compute::hydrate_for(&app, &state, input.workbook, false).await?;
   crate::runtime::compute::render(&state, SceneInput { workbook, ..input }).await
 }
 #[tauri::command]

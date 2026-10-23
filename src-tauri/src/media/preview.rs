@@ -62,7 +62,11 @@ impl PreviewQueue {
           }
         }
         let _ = job.result.send(Some(outcome));
-        let _ = queue.app.emit("native:link-preview", &job.url);
+        let _ = queue.app.emit_to(
+          &queue.importer.state.window_id,
+          "native:link-preview",
+          &job.url,
+        );
         let desired: Vec<_> = state
           .desired
           .iter()

@@ -14,10 +14,18 @@ pub async fn e2e_fixture(
   args: Value,
 ) -> Result<Value, String> {
   if app.config().identifier != "app.brainstorming.e2e"
-    || window.label() != "main"
+    || !state.windows.contains(window.label()).await
     || !super::request::trusted(&window, &app)
   {
     return Err("仅独立的本机测试应用允许使用测试文件选择器".into());
+  }
+  if action == "menuSnapshot" {
+    return super::menu_snapshot::snapshot(&app).map_err(|error| error.to_string());
+  }
+  if action == "menu" {
+    let id = args["id"].as_str().ok_or("缺少菜单操作")?;
+    super::menu::dispatch(&app, id);
+    return Ok(Value::Null);
   }
   #[cfg(target_os = "macos")]
   if action == "macChrome" {

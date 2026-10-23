@@ -52,3 +52,19 @@ export const nativeSnapshotSheet = (
   if (history.future.length > 100) history.future.splice(0, history.future.length - 100)
   return after
 }
+
+export const captureNativeSheetHistory = (workbookId: string): unknown =>
+  histories.get(workbookId) ?? null
+export const restoreNativeSheetHistory = (workbookId: string, history: unknown): void => {
+  if (
+    history &&
+    typeof history === 'object' &&
+    'revision' in history &&
+    'past' in history &&
+    'future' in history &&
+    typeof history.revision === 'string' &&
+    Array.isArray(history.past) &&
+    Array.isArray(history.future)
+  )
+    histories.set(workbookId, history as FocusHistory)
+}

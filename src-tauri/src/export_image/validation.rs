@@ -9,8 +9,11 @@ const MAX_ELEMENTS: u32 = 100_000;
 /// Only the static primitives emitted by the application scene generator are accepted.
 /// In particular there are no filters, stylesheets, scripts, links, use expansion or sub-SVG images.
 pub(super) fn scene(request: &Request) -> Result<()> {
+  scene_svg(&request.svg)
+}
+pub(super) fn scene_svg(svg: &str) -> Result<()> {
   let document = Document::parse_with_options(
-    &request.svg,
+    svg,
     ParsingOptions {
       allow_dtd: false,
       nodes_limit: MAX_ELEMENTS,
@@ -30,6 +33,7 @@ pub(super) fn scene(request: &Request) -> Result<()> {
   if markers.len() > 10_000 {
     return Err("导出箭头数量超过限制".into());
   }
+  let clips = super::validation_clips::collect(root)?;
   let mut image_bytes = 0;
   let mut image_pixels = 0;
   let mut images = 0;
@@ -47,7 +51,7 @@ pub(super) fn scene(request: &Request) -> Result<()> {
     if node.tag_name().namespace() != Some("http://www.w3.org/2000/svg")
       || ![
         "svg", "g", "path", "rect", "circle", "ellipse", "line", "polyline", "polygon", "text",
-        "tspan", "title", "image", "marker",
+        "tspan", "title", "desc", "image", "marker", "defs", "clipPath",
       ]
       .contains(&name)
     {
@@ -55,6 +59,9 @@ pub(super) fn scene(request: &Request) -> Result<()> {
     }
     if name == "marker" && node.parent() != Some(root) {
       return Err("导出箭头必须在 SVG 根节点声明".into());
+    }
+    if name == "defs" && node.parent() != Some(root) {
+      return Err("导出裁剪声明位置无效".into());
     }
     for attribute in node.attributes() {
       let key = attribute.name();
@@ -115,11 +122,18 @@ pub(super) fn scene(request: &Request) -> Result<()> {
         "orient",
         "marker-start",
         "marker-end",
+        "clip-path",
       ]
       .contains(&key)
         || key.starts_with("data-")
         || key.starts_with("aria-");
       let marker_reference = ["marker-start", "marker-end"].contains(&key);
+      let clip_reference = key == "clip-path";
+      if clip_reference
+        && (name != "image" || !super::validation_clips::valid_reference(value, &clips))
+      {
+        return Err("导出裁剪引用无效".into());
+      }
       if marker_reference {
         let id = value
           .strip_prefix("url(#")
@@ -138,7 +152,7 @@ pub(super) fn scene(request: &Request) -> Result<()> {
         || key.to_ascii_lowercase().starts_with("on")
         || key == "style"
         || key == "base"
-        || (lower.contains("url(") && !marker_reference)
+        || (lower.contains("url(") && !marker_reference && !clip_reference)
         || lower.contains("@import")
         || value.len() > 12 * 1024 * 1024
       {

@@ -1,4 +1,15 @@
 export const documentTabMessages = {
+  windowActions: ['窗口操作', 'Window actions'],
+  currentWindow: ['{{title}}（当前窗口）', '{{title}} (current window)'],
+  noOpenWindows: ['没有打开的窗口', 'No open windows'],
+  newWindow: ['新建窗口', 'New Window'],
+  openNewWindow: ['在新窗口打开…', 'Open in New Window…'],
+  moveMapNewWindow: ['移到新窗口', 'Move to New Window'],
+  moveMapToWindow: ['移到 {{title}}', 'Move to {{title}}'],
+  windowListFailed: [
+    '无法读取窗口列表，请重新打开菜单',
+    'Could not load windows. Reopen this menu.',
+  ],
   mapTabShortcuts: ['下一份导图 / 上一份导图', 'Next map / previous map'],
   closeMapShortcuts: ['关闭当前导图 / 关闭窗口', 'Close current map / close window'],
   openMaps: ['打开的导图', 'Open maps'],

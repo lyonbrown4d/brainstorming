@@ -18,6 +18,7 @@ export const AnimatedPanel = ({
   return (
     <motion.div
       ref={root}
+      data-workbench-panel
       {...focus}
       className={`absolute inset-y-0 z-30 flex min-h-0 overflow-hidden bg-background shadow-floating [&>aside]:h-full ${side === 'left' ? 'left-0' : 'right-0'}`}
       style={{ width: side === 'left' ? OUTLINE_WIDTH : INSPECTOR_WIDTH }}

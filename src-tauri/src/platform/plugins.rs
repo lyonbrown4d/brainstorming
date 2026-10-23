@@ -23,7 +23,8 @@ pub fn register(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<tauri::Wr
         }
       }
       // Initial visibility belongs to the renderer's startupReady handoff.
-      if let Some(main) = app.get_webview_window("main")
+      if let Some(main) =
+        crate::runtime::window::focused_label(&app).and_then(|label| app.get_webview_window(&label))
         && main.is_visible().unwrap_or(false)
       {
         let _ = main.unminimize();

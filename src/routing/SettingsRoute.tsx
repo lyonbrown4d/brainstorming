@@ -1,4 +1,5 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
+import { useSettingsRequest } from '@renderer/state/settingsMenu'
 import { useLocation, useNavigate } from 'react-router'
 import { canonicalWorkspacePath, validSettingsReturn } from '@renderer/routing/workspacePaths'
 
@@ -7,6 +8,18 @@ const SettingsDialog = lazy(() => import('@renderer/components/settings/Settings
 export const SettingsRoute = () => {
   const location = useLocation()
   const navigate = useNavigate()
+  const requestedSection = useSettingsRequest((state) => state.section)
+  useEffect(() => {
+    if (!requestedSection) return
+    void navigate('/settings', {
+      state: {
+        settingsReturnTo:
+          location.pathname === '/settings' ? canonicalWorkspacePath() : location.pathname,
+        settingsSection: requestedSection,
+      },
+    })
+    useSettingsRequest.setState({ section: null })
+  }, [requestedSection, location.pathname, navigate])
   if (location.pathname !== '/settings') return null
   const state: unknown = location.state
   const returnTo =
@@ -20,7 +33,17 @@ export const SettingsRoute = () => {
   }
   return (
     <Suspense fallback={null}>
-      <SettingsDialog onClose={close} />
+      <SettingsDialog
+        onClose={close}
+        initialSection={
+          state &&
+          typeof state === 'object' &&
+          'settingsSection' in state &&
+          state.settingsSection === 'shortcuts'
+            ? 'shortcuts'
+            : 'general'
+        }
+      />
     </Suspense>
   )
 }

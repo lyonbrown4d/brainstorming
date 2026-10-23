@@ -3,6 +3,7 @@ import type { NativeImageExportRequest } from '@shared/exportImages'
 import type { ExportRequest } from '@renderer/export/files'
 import type { ExportFormat } from '@renderer/export/files'
 import type { NativeImageFormat } from '@shared/exportImages'
+import type { DocumentExportsAPI } from '@shared/documentExports'
 
 export type DialogExportFormat = ExportFormat | NativeImageFormat
 export const isNativeImageFormat = (value: string): value is NativeImageFormat =>
@@ -17,5 +18,6 @@ export interface ExportDialogProps {
   readonly currentSheetId: string
   readonly onExport?: (request: ExportRequest) => Promise<string | null>
   readonly onExportImage?: (request: NativeImageExportRequest) => Promise<string | null>
+  readonly exportAPI?: DocumentExportsAPI
   readonly defaultOpen?: boolean
 }
