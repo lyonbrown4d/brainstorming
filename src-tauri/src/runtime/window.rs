@@ -20,6 +20,8 @@ pub fn startup_ready(app: &AppHandle, label: &str) -> Result<()> {
   #[cfg(target_os = "macos")]
   app.show().map_err(|_| "无法显示应用")?;
   main.set_focus().map_err(|_| "无法聚焦窗口")?;
+  // A key native window can still leave WKWebView without a keyboard responder after reload.
+  main.as_ref().set_focus().map_err(|_| "无法聚焦工作区")?;
   Ok(())
 }
 

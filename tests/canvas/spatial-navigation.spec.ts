@@ -117,10 +117,16 @@ test('pane resize preserves camera distance and scales the Three perspective by 
     pane = await locatorBounds(spatialCanvas(page)),
     distance = await spatialDistance(page)
   await page.setViewportSize({ width: 1440, height: 1050 })
-  const resized = await locatorBounds(spatialCanvas(page))
   await expect
-    .poll(async () => (await spatialRect(page, 'branch-a')).width / before.width)
-    .toBeCloseTo(resized.height / pane.height, 2)
+    .poll(async () => (await locatorBounds(spatialCanvas(page))).height)
+    .toBeGreaterThan(pane.height)
+  await expect
+    .poll(async () => {
+      const resized = await locatorBounds(spatialCanvas(page))
+      const ratio = (await spatialRect(page, 'branch-a')).width / before.width
+      return ratio / (resized.height / pane.height)
+    })
+    .toBeCloseTo(1, 2)
   await expect.poll(() => spatialDistance(page)).toBe(distance)
   await page.setViewportSize({ width: 1440, height: 900 })
   await expect

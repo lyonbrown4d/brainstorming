@@ -37,6 +37,8 @@ pnpm dev
 
 千节点检查复用 `createFixtureDocument(1000)`。二维组件预览为 `Canvas Performance / Thousand Topics`；原生性能用例包括 `tests/native/canvas-performance.spec.ts`、`tests/native/high-frequency.spec.ts` 和 `tests/native/independent-spatial-performance.spec.ts`。`tests/native/independent-spatial-correctness.spec.ts` 与三维交互用例检查相机导航、选中、混合拖动、归属预判、笔迹、缩放、关联线、保存和单次撤销。用例存在不代表已经执行通过，当前独立三维架构的原生性能仍需使用当前源码的完整 E2E 二进制采样；旧 React Flow 三维投影与 PixiJS GPU 混合方案的测量不适用于当前架构。
 
+原生缩放契约通过显式合成 Ctrl+Wheel 检查实际 Three 相机与视距变化。WDIO embedded 1.5 的滚轮接口不携带修饰键，此用例不代表硬件触控板捏合验收；真实指针拖动沿用受限 AppKit 输入适配器。
+
 性能采样区分 requestAnimationFrame 调度、WebGL 渲染提交和拖动中的实际位置更新频率。它们不等于 GPU 物理呈现帧率，合成滚轮和拖动也不能代表物理触控板。高频检查每帧输入多次等量事件，并检查操作结果，不能只数回调。千节点连续导航与拖动以尽量稳定在 60 FPS 以上为优化目标，不设置 60 FPS 上限；结果需注明系统、导图规模、输入方式与采样范围，不能由单机结果推断全部平台。React Scan 只用于开发环境重渲染检查；真实指针命中由 `tests/canvas` 验证。
 
 ### 独立二维与三维画布
@@ -47,7 +49,7 @@ Three.js、React Three Fiber、Drei 与 PixiJS 运行时代码均从三维入口
 
 独立三维由 `IndependentSpatialRuntime` 保存场景模型、相机投影、手势预览与订阅，React Three Fiber 使用 `frameloop="demand"`。CameraControls 直接控制实际 Three.js 透视相机；镜头变化只请求场景渲染，不把每个主题的位置逐帧写入 React Flow 或 React 状态。相机姿态、镜头请求和临时文档预览分别同步；内容编辑不能重置临时镜头，真正的空间配置变更及撤销仍应用到相机。前端只承担视图计算和即时交互，确定性全图量测、布局与缓存继续由 Rust 负责。
 
-主题正面使用始终面向相机的 GPU 实例与纹理图集，不逐主题挂载 DOM。图集最多 4 页，每页 2048 × 2048 像素；容量不足时降低采样密度，不无限分配纹理。主题栅格缓存有容量上限，准备分批让出主线程，模型替换及卸载时取消过期任务并释放资源。PixiJS 只提供 `CanvasTextMetrics` 和 `TextStyle` 的字体量测与换行，不创建 Pixi Application 或第二套 GPU 渲染器。主题形态与分支线路径复用共享几何，通过 Three.js SVGLoader 处理；笔迹合并到场景几何中。当前活动标题使用共享 Lexical 编辑覆盖层，其余主题保持 GPU 内容。视觉模型变化时重新开启加载门禁，等新 GPU 内容的实际首帧完成再恢复命中；仅相机变化的等价模型直接复用。
+主题正面使用始终面向相机的 GPU 实例与纹理图集，不逐主题挂载 DOM。图集最多 4 页，每页 2048 × 2048 像素；容量不足时降低采样密度，不无限分配纹理。主题栅格缓存有容量上限，准备分批让出主线程，模型替换及卸载时取消过期任务并释放资源。PixiJS 只提供 `CanvasTextMetrics` 和 `TextStyle` 的字体量测与换行，不创建 Pixi Application 或第二套 GPU 渲染器。主题形态与分支线路径复用共享几何，通过 Three.js SVGLoader 处理；笔迹合并到场景几何中。当前活动标题使用共享 Lexical 编辑覆盖层，其余主题保持 GPU 内容。首次进入或切换文档、Sheet 时等待布局、相机与 GPU 首帧后开放编辑。同一画布内的内容更新保留上一帧并后台准备新图集，不显示整屏蒙版；超过 150ms 才显示不拦截指针的更新提示。更新期间保留镜头导航与已打开的 Lexical 编辑器，依赖新几何的选择、拖动、缩放和关联线操作等待新 GPU 首帧；小地图保留旧位图，完成后异步刷新。仅相机变化的等价模型直接复用。
 
 镜头静止 180ms 后，可见主题按投影尺寸和实际像素比补充高分辨率图集；最多 24 个主题、单页 2048 × 2048、单项不超过 100 万像素，每次扫描至少间隔 600ms。连续镜头输入只取消和合并请求，不逐帧重建文字；失败保留基础图集，替换和卸载释放纹理。线条复用导数抗锯齿及多重采样覆盖。关联线按布局引用缓存端点索引和世界几何，相机只投影已有采样；DOM 命中路径仍随镜头更新，其成本与关系数和采样点数相关。
 
@@ -55,7 +57,7 @@ Three.js、React Three Fiber、Drei 与 PixiJS 运行时代码均从三维入口
 
 三维缩略图使用单张 Canvas 2D 位图，复用本机开关偏好。镜头变化暂停 80ms 后，先等待主画布动画帧，再通过 RxJS 异步队列读取最新投影；连续导航取消旧刷新，拖动期间保留旧概览，结束或取消后刷新。拖动与滚轮直接调用独立相机；小地图拖动期间冻结位图，仅同步 SVG 视口框，结束后重绘。缩略图不逐帧投影或复制全图，也不建立第二个 React Flow 画布。
 
-`compute_spatial_layout` 复用原生 2D 布局，并返回主题深度。深度由层级、`settings.spatial.spacing` 和沿祖先累加的 `style.spatialDepth` 计算，笔迹沿用可选 `drawings[].spatialDepth`；2D 量测与布局忽略这些字段。计算使用 Moka 缓存与有界工作任务。节点保留二维正面，不绘制背板或挤出实体，地面网格提供空间参照。
+`compute_spatial_layout` 复用原生 2D 布局，并返回主题深度。深度由层级、`settings.spatial.spacing` 和沿祖先累加的 `style.spatialDepth` 计算，笔迹沿用可选 `drawings[].spatialDepth`；2D 量测与布局忽略这些字段。计算使用 Moka 缓存与有界工作任务。节点保留二维正面，不绘制背板或挤出实体，地面网格提供空间参照。网格复用 Drei Grid，浅色画布提高中性线条对比与主次线宽；有限范围淡出以相机在地面的投影为中心，避免地面高度让线条额外衰减。
 
 CameraControls 处理空白处旋转、右键平移、双指平移、捏合与 Alt 双指旋转，放大、缩小、复位、显示全部和聚焦使用同一相机。视角、相机目标、层距及主题深度继续通过既有文档命令随 Sheet 保存与撤销；镜头距离、运行时缓冲、选择和拖动预览只保留在渲染会话，不参与原生布局缓存键。首次进入等待原生布局、场景内容与相机就绪，失败提供加载错误与重试。独立画布不改变现有文件协议或 SQLite 表结构，无需数据库迁移；字段约束见 [单文件协议](file-format.md#主题表现笔迹与演示页面)。
 
@@ -271,7 +273,7 @@ Rust 的 `search` 模块通过 FluxDI 装配到 AppState。索引复用 SQLx 和
 
 插件统一由 `src-tauri/src/platform/plugins.rs` 注册。已接入官方 clipboard-manager、fs、single-instance，本轮补充 log `2.10.1`、notification `2.7.0`、window-state `2.5.0`；版本以 Cargo.lock 为准。所有插件从 Rust 侧使用，renderer 继续调用类型明确的 `native_request`，不增加通用文件读写、任意通知或前端日志权限。
 
-- `single-instance` 首先注册，后续启动继续将文件交给已有窗口；主窗口隐藏时不抢先显示，由 `startupReady` 完成启动交接。
+- `single-instance` 首先注册，后续启动继续将文件交给已有窗口；主窗口隐藏时不抢先显示，由 `startupReady` 完成启动交接。 交接先关闭启动页，再显示并聚焦原生窗口和 WebView；原生启动验收同时检查窗口焦点与 `document.hasFocus()`。
 - `window-state` 仅管理主窗口。自动恢复尺寸与位置；最大化在 `startupReady` 恢复一次，正常关闭前通过官方接口保存三项状态。不恢复显隐、全屏、窗口装饰，不追踪启动页或远程预览。E2E 关闭窗口状态持久化，避免修改本机窗口偏好。
 - `log` 是唯一日志后端，现有 tracing 调用通过官方 `log` 功能转发一次。默认 Warn 级别，只接受本应用 target，输出 stderr 和系统应用日志目录。单文件上限 1 MiB，保留 3 个归档；生命周期错误使用固定文案，避免把底层异常中的内容、路径、URL 或密钥写入日志。不订阅 WebView console。E2E 不写日志文件。
 - `notification` 由 FluxDI 管理的 NotificationService 调用，只在 `exportFile` 或 `exportImage` 完成原生写入后发送固定的中英文提示。取消、失败和自动保存不发送；发送失败不改变导出结果，后台发送受容量与时限约束。权限仅由设置中的显式启用动作申请，被拒绝或服务不可用时保留可读状态。桌面插件返回 Granted 并不能证明系统实际展示了通知，仍受通知中心设置、免打扰和打包环境影响。

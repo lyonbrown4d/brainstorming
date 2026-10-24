@@ -17,14 +17,16 @@ import { documentAppearance, topicAppearance } from '@shared/appearance'
 export const useIndependentSpatialMinimap = (
   runtime: IndependentSpatialRuntime,
   enabled: boolean,
+  current = true,
 ) => {
   const canvas = useRef<HTMLCanvasElement>(null)
   const viewportMask = useRef<SVGPathElement>(null)
   const navigating = useRef(false)
   const geometry = useRef<IndependentMinimapGeometry | null>(null)
   const bounds = useRef<DOMRect | null>(null)
+  const refresh = useRef<() => void>(() => undefined)
   const blocked = useMemoizedFn(
-    () => runtime.interacting || Boolean(useCanvasInteraction.getState().drag),
+    () => !current || runtime.interacting || Boolean(useCanvasInteraction.getState().drag),
   )
   const interacting = useMemoizedFn(() => navigating.current || blocked())
   const updateViewport = useMemoizedFn((dx: number, dy: number) => {
@@ -57,6 +59,9 @@ export const useIndependentSpatialMinimap = (
     if (id && runtime.model.document.topics[id])
       requestSpatialCamera({ kind: 'focusTopic', topicId: id })
   })
+  useLayoutEffect(() => {
+    refresh.current()
+  }, [current])
   useLayoutEffect(() => {
     const element = canvas.current
     if (!enabled || !element) return
@@ -110,6 +115,7 @@ export const useIndependentSpatialMinimap = (
         updateViewport(0, 0)
       },
     )
+    refresh.current = queue.request
     const detachInput = bindIndependentSpatialMinimapInput({
       canvas: element,
       runtime,
@@ -131,6 +137,7 @@ export const useIndependentSpatialMinimap = (
     observer.observe(element)
     if (runtime.canvas) observer.observe(runtime.canvas)
     return () => {
+      refresh.current = () => undefined
       detachInput()
       observer.disconnect()
       queue.unsubscribe()

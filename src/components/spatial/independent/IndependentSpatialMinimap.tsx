@@ -9,9 +9,11 @@ import { Button } from '@renderer/components/ui/button'
 export const IndependentSpatialMinimap = ({
   runtime,
   disabled = false,
+  updating = false,
 }: {
   readonly runtime: IndependentSpatialRuntime
   readonly disabled?: boolean
+  readonly updating?: boolean
 }) => {
   const { translate } = useMessages()
   const visible = useCanvasPreferences((state) => state.minimap)
@@ -19,6 +21,7 @@ export const IndependentSpatialMinimap = ({
   const { canvas, focus, viewportMask } = useIndependentSpatialMinimap(
     runtime,
     visible && !disabled,
+    !updating,
   )
   return (
     <div className="pointer-events-auto absolute bottom-4 left-4 z-[5] @max-[640px]:bottom-32">
@@ -29,9 +32,9 @@ export const IndependentSpatialMinimap = ({
             className="block size-full touch-none"
             data-spatial-minimap
             role="button"
-            tabIndex={disabled ? -1 : 0}
+            tabIndex={disabled || updating ? -1 : 0}
             aria-label={translate('canvasMinimap')}
-            aria-disabled={disabled}
+            aria-disabled={disabled || updating}
             onKeyDown={(event) => {
               if (event.key !== 'Enter' && event.key !== ' ') return
               event.preventDefault()

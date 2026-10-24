@@ -83,7 +83,26 @@ test('Three first frame draws content without shader errors; blank drag and whee
     if (message.type() === 'error' && /shader|WebGL|THREE/i.test(message.text()))
       errors.push(message.text())
   })
+  await page.addInitScript(() => {
+    const observer = new MutationObserver(() => {
+      const mask = document.querySelector<HTMLElement>(
+        '[data-view-mode="3d"] [data-canvas-loading]:not([data-canvas-updating])',
+      )
+      if (!mask) return
+      const bounds = mask.getBoundingClientRect()
+      const hit = document.elementFromPoint(
+        bounds.x + bounds.width / 2,
+        bounds.y + bounds.height / 2,
+      )
+      if (bounds.width > 0 && bounds.height > 0 && hit && mask.contains(hit)) {
+        document.documentElement.dataset.spatialFirstFrameBlocked = 'true'
+        observer.disconnect()
+      }
+    })
+    observer.observe(document, { childList: true, subtree: true })
+  })
   await open(page)
+  await expect(page.locator('html')).toHaveAttribute('data-spatial-first-frame-blocked', 'true')
   await page.screenshot({ path: testInfo.outputPath('independent-spatial-first-frame.png') })
   const original = await evidence(page)
   const point = await blankPoint(page)
@@ -110,6 +129,7 @@ test('actual topic picking, dragging, four grips, Chinese title commit and 2D re
   await expect(page.locator('[data-spatial-scale] button')).toHaveCount(4)
   for (const grip of await page.locator('[data-spatial-scale] button').all())
     await expect(grip).toBeVisible()
+  const originalTitle = (await evidence(page)).title
   const original = (await evidence(page)).topic
   await drag(page, point, 60, 35)
   await expect.poll(async () => (await evidence(page)).topic).not.toEqual(original)
@@ -121,21 +141,42 @@ test('actual topic picking, dragging, four grips, Chinese title commit and 2D re
   await expect(editor).toBeFocused()
   await page.keyboard.insertText('中文空间想法')
   await page.evaluate(() => {
-    document.documentElement.dataset.spatialRebuildGateObserved = 'false'
-    const observer = new MutationObserver(() => {
-      if (document.querySelector('[data-canvas-loading]')) {
-        document.documentElement.dataset.spatialRebuildGateObserved = 'true'
-        observer.disconnect()
-      }
+    document.documentElement.dataset.spatialBlockingGateObserved = 'false'
+    const observer = new MutationObserver((records) => {
+      const added = records.flatMap((record) =>
+        [...record.addedNodes].flatMap((node) =>
+          node instanceof Element ? [node, ...node.querySelectorAll('[data-canvas-loading]')] : [],
+        ),
+      )
+      for (const marker of added.filter((element) => element.matches('[data-canvas-loading]')))
+        if (
+          !marker.hasAttribute('data-canvas-updating') ||
+          !marker.classList.contains('pointer-events-none') ||
+          (marker.isConnected && getComputedStyle(marker).backdropFilter !== 'none')
+        )
+          document.documentElement.dataset.spatialBlockingGateObserved = 'true'
     })
     observer.observe(document.body, { childList: true, subtree: true })
   })
+  await page.locator('canvas[data-spatial-canvas="three"]').evaluate((canvas) => {
+    canvas.setAttribute('data-preserved-frame', 'true')
+  })
   await page.keyboard.press('Enter')
-  await expect(page.locator('html')).toHaveAttribute('data-spatial-rebuild-gate-observed', 'true')
   await expect(page.locator('[data-canvas-loading]')).toHaveCount(0)
   await expect(editor).toHaveCount(0)
   await expect.poll(async () => (await evidence(page)).title).toBe('中文空间想法')
   expect((await evidence(page)).count).toBe(4)
+  await page.keyboard.press('ControlOrMeta+z')
+  await expect.poll(async () => (await evidence(page)).title).toBe(originalTitle)
+  await expect(page.locator('[data-canvas-loading]')).toHaveCount(0)
+  await page.keyboard.press('ControlOrMeta+Shift+z')
+  await expect.poll(async () => (await evidence(page)).title).toBe('中文空间想法')
+  await expect(page.locator('[data-canvas-loading]')).toHaveCount(0)
+  await expect(page.locator('html')).toHaveAttribute('data-spatial-blocking-gate-observed', 'false')
+  await expect(page.locator('canvas[data-spatial-canvas="three"]')).toHaveAttribute(
+    'data-preserved-frame',
+    'true',
+  )
   await page.getByRole('radio', { name: '二维视图', exact: true }).click()
   await expect(page.locator('#sheet-panel[data-view-mode="2d"]')).toBeVisible()
   await expect(page.locator('[data-canvas-loading]')).toHaveCount(0)

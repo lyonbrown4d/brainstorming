@@ -20,7 +20,9 @@ describe('native startup, window chrome and menu shortcuts', () => {
     await browser.saveScreenshot(await nativeArtifact('brainstorming-native-startup.png'))
     try {
       await browser.waitUntil(
-        async () => (await fixture<NativeWindowState>('windowState', {})).focused,
+        async () =>
+          (await fixture<NativeWindowState>('windowState', {})).focused &&
+          (await browser.execute(() => document.hasFocus())),
         { timeoutMsg: 'The native main window did not receive focus after the splash handoff' },
       )
     } catch (failure) {

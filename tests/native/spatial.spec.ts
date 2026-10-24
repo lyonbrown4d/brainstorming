@@ -4,7 +4,7 @@ import { browser, expect } from '@wdio/globals'
 import { Key } from 'webdriverio'
 import { chooseAppearance } from '@tests/native/appearance'
 import { nativeArtifact } from '@tests/native/artifacts'
-import { verifySpatialPinch } from '@tests/native/spatial-gestures'
+import { verifySyntheticSpatialCtrlWheel } from '@tests/native/spatial-gestures'
 import {
   artifact,
   closeSaved,
@@ -12,6 +12,7 @@ import {
   dockAction,
   editor,
   fillContentEditable,
+  focusNativeWindow,
   home,
   named,
   openSaved,
@@ -34,7 +35,7 @@ describe('native spatial canvas', () => {
     await named('三维视图').click()
     await expect(browser.$('[data-view-mode="3d"]')).toBeDisplayed()
     await waitIndependentSpatial()
-    await verifySpatialPinch()
+    await verifySyntheticSpatialCtrlWheel()
     await selectIndependentTopicFromOutline('空间创作')
     await openDepth()
     await depth().setValue('175')
@@ -50,12 +51,14 @@ describe('native spatial canvas', () => {
     await expect(depth()).toHaveValue('175')
 
     await selectIndependentTopicFromOutline('空间创作')
+    await focusNativeWindow()
     await browser.keys(Key.F2)
     await expect(editor()).toBeFocused()
     await fillContentEditable(editor(), '空间创作完成')
     await browser.keys(Key.Enter)
     await expect(editor()).not.toExist()
     await selectIndependentTopicFromOutline('空间创作完成')
+    await focusNativeWindow()
     await browser.keys(Key.F2)
     await expect(editor()).toHaveText('空间创作完成')
     await browser.keys(Key.Escape)
@@ -79,6 +82,7 @@ describe('native spatial canvas', () => {
     await openSaved(name)
     await waitIndependentSpatial()
     await selectIndependentTopicFromOutline('空间创作完成')
+    await focusNativeWindow()
     await browser.keys(Key.F2)
     await expect(editor()).toHaveText('空间创作完成')
     await browser.keys(Key.Escape)
@@ -163,6 +167,7 @@ describe('native spatial canvas', () => {
     await openSaved(name)
     await waitIndependentSpatial()
     await selectIndependentTopicFromOutline('空间视角验收')
+    await focusNativeWindow()
     await browser.keys(Key.F2)
     await expect(editor()).toHaveText('空间视角验收')
     await browser.keys(Key.Escape)

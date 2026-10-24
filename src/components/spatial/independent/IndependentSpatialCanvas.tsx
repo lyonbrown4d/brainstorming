@@ -13,6 +13,7 @@ import { useEditor } from '@renderer/state/editor'
 import { usePresentation } from '@renderer/state/presentation'
 import { documentAppearance } from '@shared/appearance'
 import { CanvasLoading } from '@renderer/components/workbench/CanvasLoading'
+import { CanvasUpdating } from '@renderer/components/workbench/CanvasUpdating'
 import { CanvasOverlay } from '@renderer/components/workbench/CanvasOverlay'
 import { FloatingToolbar } from '@renderer/components/FloatingToolbar'
 import { DragFeedback } from '@renderer/components/workbench/DragFeedback'
@@ -48,28 +49,46 @@ const Scene = ({
   const { translate } = useMessages()
   const [runtime] = useState(() => createIndependentSpatialRuntime(model))
   const [cameraReady, setCameraReady] = useState(false)
-  const [contentReady, setContentReady] = useState(false)
+  const [contentModel, setContentModel] = useState<SpatialSceneModel | null>(null)
+  const [hasPresented, setHasPresented] = useState(false)
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
   const playing = usePresentation((state) => state.playing)
-  const ready = cameraReady && contentReady && !failed && !pending
+  const interactionReady = cameraReady && contentModel === model && !failed && !pending
+  const navigationReady = cameraReady && hasPresented && !failed && !layoutError
+  if (interactionReady && !hasPresented) setHasPresented(true)
   const contextMenu = useIndependentSpatialContextMenu(runtime)
-  const gestures = useIndependentSpatialGestures(runtime, ready && !playing)
+  const gestures = useIndependentSpatialGestures(runtime, interactionReady && !playing)
   const cameraFinished = useCallback(() => {
     setCameraReady(true)
   }, [])
   const contentFinished = useCallback(() => {
-    setContentReady(true)
-  }, [])
+    setContentModel(runtime.model)
+  }, [runtime])
   const contentPreparing = useCallback(() => {
-    setContentReady(false)
+    setContentModel(null)
   }, [])
   useLayoutEffect(() => {
     runtime.updateModel(model)
   }, [runtime, model])
   const extent = useMemo(() => stageFloorExtent(model.layout, 0), [model.layout])
   return (
-    <CanvasContextMenuSurface interaction={contextMenu}>
+    <CanvasContextMenuSurface
+      interaction={{
+        ...contextMenu,
+        disabled: contextMenu.disabled || !interactionReady,
+        guard: (event) => {
+          if (interactionReady) contextMenu.guard(event)
+          else {
+            event.preventDefault()
+            event.stopPropagation()
+          }
+        },
+        run: (action) => {
+          if (interactionReady) contextMenu.run(action)
+        },
+      }}
+    >
       <section
         id="sheet-panel"
         role="tabpanel"
@@ -116,7 +135,7 @@ const Scene = ({
             <SpatialStage layout={model.layout} extent={extent} />
             <IndependentSpatialCamera
               runtime={runtime}
-              disabled={!ready || playing}
+              disabled={!navigationReady || playing}
               onReady={cameraFinished}
             />
             <SpatialSceneContent
@@ -129,31 +148,37 @@ const Scene = ({
             />
           </ThreeCanvas>
         </ErrorBoundary>
-        {ready && (
+        {interactionReady && (
           <>
             <IndependentSpatialRelations runtime={runtime} />
             <IndependentSpatialAnnotations runtime={runtime} model={model} />
-            <IndependentSpatialEditor runtime={runtime} model={model} />
           </>
         )}
+        {hasPresented && !failed && <IndependentSpatialEditor runtime={runtime} model={model} />}
         <IndependentSpatialSelection {...gestures} />
-        <IndependentSpatialInk runtime={runtime} ready={ready && !playing} />
-        <IndependentSpatialScale runtime={runtime} ready={ready && !playing} />
-        <IndependentSpatialInkResize runtime={runtime} ready={ready && !playing} />
-        <IndependentSpatialControls runtime={runtime} disabled={!ready} />
-        <IndependentSpatialMinimap runtime={runtime} disabled={!ready || playing} />
-        {!ready && (
+        <IndependentSpatialInk runtime={runtime} ready={interactionReady && !playing} />
+        <IndependentSpatialScale runtime={runtime} ready={interactionReady && !playing} />
+        <IndependentSpatialInkResize runtime={runtime} ready={interactionReady && !playing} />
+        <IndependentSpatialControls runtime={runtime} disabled={!navigationReady || playing} />
+        <IndependentSpatialMinimap
+          runtime={runtime}
+          disabled={!navigationReady || playing}
+          updating={!interactionReady}
+        />
+        {(!hasPresented || failed || layoutError) && !interactionReady && (
           <CanvasLoading
             error={failed || layoutError}
             retry={() => {
               if (layoutError) return retryLayout()
               setFailed(false)
               setCameraReady(false)
-              setContentReady(false)
+              setContentModel(null)
+              setHasPresented(false)
               setAttempt((value) => value + 1)
             }}
           />
         )}
+        {hasPresented && !failed && !layoutError && !interactionReady && <CanvasUpdating />}
         {!playing && (
           <CanvasOverlay>
             <DragFeedback />
@@ -186,7 +211,7 @@ const IndependentSpatialCanvas = () => {
   const model = current ?? (previous?.document.id === query.document.id ? previous : null)
   return model ? (
     <Scene
-      key={`${workbookId}:${query.sheetId}`}
+      key={`${workbookId}:${query.sheetId}:${query.document.id}`}
       model={model}
       pending={!current}
       layoutError={!current && Boolean(query.error)}
