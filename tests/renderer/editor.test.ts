@@ -19,6 +19,16 @@ afterEach(() => {
 })
 
 describe('编辑器操作与草稿', () => {
+  it('没有活动草稿时保持快照引用，避免一次选中额外发布全局状态', () => {
+    const before = useEditor.getState()
+    before.commitDraft()
+    expect(useEditor.getState()).toBe(before)
+    expect(useEditor.getState().history.past).toHaveLength(0)
+    before.startEdit('root')
+    before.commitDraft()
+    expect(useEditor.getState().editingId).toBeNull()
+    expect(useEditor.getState().history.past).toHaveLength(0)
+  })
   it('备注草稿只提交一次历史；超长备注保留输入并阻止切换覆盖', () => {
     const state = useEditor.getState()
     state.startEdit('root', undefined, 'notes')

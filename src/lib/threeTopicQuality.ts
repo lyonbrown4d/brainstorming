@@ -105,7 +105,7 @@ export const createThreeTopicQuality = ({
       clear()
     },
     updateSelection: () => {
-      active?.batches.update(selected())
+      active?.batches.updateSelection(selected())
       queue.request()
     },
     dispose: () => {

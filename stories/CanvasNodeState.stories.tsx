@@ -1,9 +1,17 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { createRef, StrictMode, useImperativeHandle, useState, type RefObject } from 'react'
+import {
+  createRef,
+  StrictMode,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react'
 import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 import { ReactFlow, ReactFlowProvider, useStoreApi } from '@xyflow/react'
-import { expect, spyOn, waitFor } from 'storybook/test'
+import { expect, waitFor } from 'storybook/test'
 import { useCanvasNodeState } from '@renderer/hooks/useCanvasNodeState'
 import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
 import { useEditor } from '@renderer/state/editor'
@@ -37,6 +45,7 @@ interface Frame {
 type Controls = ReturnType<typeof useCanvasNodeState> & {
   frame: (patch?: Partial<Frame>) => void
   getFlowNodes: () => CanvasFlowNode[]
+  commits: () => number
 }
 const control = createRef<Controls>()
 const read = () => {
@@ -57,10 +66,15 @@ const Probe = ({ control }: { control: RefObject<Controls | null> }) => {
     dragging: undefined,
   }))
   const [revision, setRevision] = useState(0)
+  const commits = useRef(0)
+  useLayoutEffect(() => {
+    commits.current++
+  })
   const state = useCanvasNodeState(frame.projected, frame.scope, frame.dragging)
   useImperativeHandle(control, () => ({
     ...state,
     getFlowNodes: () => flow.getState().nodes,
+    commits: () => commits.current,
     frame: (patch) => {
       flushSync(() => {
         if (patch) setFrame((previous) => ({ ...previous, ...patch }))
@@ -93,38 +107,42 @@ type Story = StoryObj<typeof meta>
 export const RepeatedExternalFrames: Story = {
   play: async () => {
     const projected = Array.from({ length: 512 }, (_, index) => topic(`node-${index}`, index))
-    const scans = spyOn(projected, 'map')
-    try {
-      read().frame({ projected })
-      await expect(read().getFlowNodes()).toBe(read().getNodes())
-      const callbacks = read()
-      changeSelection(['node-0'])
-      const selected = read().getNodes()
-      await expect(selected[0]?.selected).toBe(true)
-      scans.mockClear()
-      // Refresh pointer inputs so the compiler cannot skip the hook at its caller.
-      for (let index = 0; index < 20; index++) read().frame({ dragging: new Set() })
-      await expect(scans).not.toHaveBeenCalled()
-      await expect(read().getNodes()).toBe(selected)
-      await expect(read().getFlowNodes()).toBe(selected)
-      await expect(read().getNodes()[1]).toBe(selected[1])
-      await expect(read().setNodes === callbacks.setNodes).toBe(true)
-      await expect(read().onNodesChange === callbacks.onNodesChange).toBe(true)
-      await expect(read().getNodes === callbacks.getNodes).toBe(true)
-      changeSelection(['node-1'])
-      await expect(scans).toHaveBeenCalledTimes(1)
-      await expect(read().getNodes()[0]?.selected).toBe(false)
-      await expect(read().getNodes()[1]?.selected).toBe(true)
-      await expect(read().getNodes()[2]).toBe(selected[2])
-      const settled = read().getNodes()
-      scans.mockClear()
-      for (let index = 0; index < 20; index++) read().frame({ dragging: new Set() })
-      await expect(scans).not.toHaveBeenCalled()
-      await expect(read().getNodes()).toBe(settled)
-      await expect(read().getFlowNodes()).toBe(settled)
-    } finally {
-      scans.mockRestore()
-    }
+    read().frame({ projected })
+    await expect(read().getFlowNodes()).toBe(read().getNodes())
+    const callbacks = read()
+    const beforeSelection = read().commits()
+    changeSelection(['node-0'])
+    const selected = read().getNodes()
+    await expect(read().commits()).toBe(beforeSelection)
+    await expect(selected[0]?.selected).toBe(true)
+    flushSync(() => {
+      useEditor.setState({ selectedId: 'node-0' })
+    })
+    await expect(read().getNodes()).toBe(selected)
+    await expect(read().commits()).toBe(beforeSelection)
+    // Refresh pointer inputs so the compiler cannot skip the hook at its caller.
+    for (let index = 0; index < 20; index++) read().frame({ dragging: new Set() })
+    await expect(read().getNodes()).toBe(selected)
+    await expect(read().getFlowNodes()).toBe(selected)
+    await expect(read().getNodes()[1]).toBe(selected[1])
+    await expect(read().setNodes === callbacks.setNodes).toBe(true)
+    await expect(read().onNodesChange === callbacks.onNodesChange).toBe(true)
+    await expect(read().getNodes === callbacks.getNodes).toBe(true)
+    changeSelection(['node-1'])
+    await expect(read().getNodes()[0]?.selected).toBe(false)
+    await expect(read().getNodes()[1]?.selected).toBe(true)
+    await expect(read().getNodes()[2]).toBe(selected[2])
+    const settled = read().getNodes()
+    for (let index = 0; index < 20; index++) read().frame({ dragging: new Set() })
+    await expect(read().getNodes()).toBe(settled)
+    await expect(read().getFlowNodes()).toBe(settled)
+    changeSelection([])
+    const empty = read().getNodes()
+    flushSync(() => {
+      useEditor.setState({ selectedId: 'node-2' })
+    })
+    await expect(read().getNodes()).toBe(empty)
+    await expect(empty.every((node) => !node.selected)).toBe(true)
   },
 }
 
@@ -187,7 +205,7 @@ export const PointerAndCameraFrames: Story = {
     await expect(read().getNodes()[0]?.position).toEqual({ x: 40, y: 0 })
     await expect(read().setNodes === setters.setNodes).toBe(true)
     await expect(read().getNodes()[0]).not.toBe(beforeCamera[0])
-    await expect(read().getNodes()[0]?.data).toEqual({ ...camera[0]?.data, outerProjection: true })
+    await expect(read().getNodes()[0]?.data).toEqual(camera[0]?.data)
     const current = read().getNodes()[0]
     if (current?.type !== 'topic') throw new Error('Expected the projected topic')
     await expect(current.data.topic).toBe(camera[0]?.data.topic)

@@ -106,6 +106,7 @@ export const useEditor = create<EditorState>((set, get) => ({
   },
   commitDraft: () => {
     const before = get()
+    if (before.editingId === null) return
     const command = draftCommand(before)
     if (
       command &&

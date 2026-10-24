@@ -21,9 +21,10 @@ export const PropertySection = ({
   const [disclosure, setDisclosure] = useState({
     open: defaultOpen || Boolean(revealKey),
     revealKey,
+    visited: defaultOpen || Boolean(revealKey),
   })
   const reveal = Boolean(revealKey && revealKey !== disclosure.revealKey)
-  if (reveal) setDisclosure({ open: true, revealKey })
+  if (reveal) setDisclosure({ open: true, revealKey, visited: true })
   const open = reveal || disclosure.open
   return (
     <Accordion
@@ -31,7 +32,11 @@ export const PropertySection = ({
       collapsible
       value={open ? 'section' : ''}
       onValueChange={(value) => {
-        setDisclosure({ open: value === 'section', revealKey })
+        setDisclosure((previous) => ({
+          open: value === 'section',
+          revealKey,
+          visited: previous.visited || value === 'section',
+        }))
       }}
       className="border-t border-border/60"
     >
@@ -44,7 +49,7 @@ export const PropertySection = ({
           hidden={!open}
           className="pb-3 [&>section]:border-0 [&>section]:pt-0 [&>section>h3]:sr-only"
         >
-          {children}
+          {(open || disclosure.visited) && children}
         </AccordionContent>
       </AccordionItem>
     </Accordion>

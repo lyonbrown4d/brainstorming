@@ -25,12 +25,43 @@ interface NodeSynchronization {
   readonly playing: boolean
 }
 
+/** Selection-only updates preserve RF's pointer/resize state without rebuilding geometry. */
+const synchronizeSelection = (
+  previous: CanvasFlowNode[],
+  projected: CanvasFlowNode[],
+  state: NodeSynchronization,
+): CanvasFlowNode[] | undefined => {
+  if (previous.length !== projected.length) return undefined
+  let next: CanvasFlowNode[] | undefined
+  for (let index = 0; index < previous.length; index++) {
+    const old = previous[index]
+    const node = projected[index]
+    // RF may temporarily reorder/add/remove nodes; use the full reconciler then.
+    if (!node || old?.id !== node.id) return undefined
+    const selected =
+      node.type === 'ink' ? state.drawings.has(node.data.stroke.id) : state.topics.has(node.id)
+    const draggable = node.draggable !== false && !state.playing
+    if (old.selected === selected && old.draggable === draggable && old.zIndex === node.zIndex)
+      continue
+    next ??= previous.slice()
+    const updated: CanvasFlowNode = { ...old, selected, draggable }
+    if (node.zIndex === undefined) delete updated.zIndex
+    else updated.zIndex = node.zIndex
+    next[index] = updated
+  }
+  return next ?? previous
+}
+
 /** Selection notifications do not rewind positions retained after a pointer gesture. */
 export const synchronizeCanvasNodes = (
   previous: CanvasFlowNode[],
   projected: CanvasFlowNode[],
   state: NodeSynchronization,
 ): CanvasFlowNode[] => {
+  if (!state.geometryChanged) {
+    const selected = synchronizeSelection(previous, projected, state)
+    if (selected) return selected
+  }
   const existing = new Map(previous.map((node) => [node.id, node]))
   let changed =
     previous.length !== projected.length ||

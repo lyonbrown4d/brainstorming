@@ -5,7 +5,7 @@ import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
 import type { CanvasProjectionController } from '@renderer/lib/canvasProjectionController'
 import { synchronizeCanvasNodes } from '@renderer/lib/canvasDragNodes'
 import { useEditor } from '@renderer/state/editor'
-import { useSelection, useSelectedDrawingIds } from '@renderer/state/selection'
+import { useSelection } from '@renderer/state/selection'
 import { usePresentation } from '@renderer/state/presentation'
 
 /** React Flow owns live 2D nodes; native geometry and pointer previews share one reconciler. */
@@ -15,11 +15,6 @@ export const useCanvasNodeState = (
   dragging: ReadonlySet<string> | undefined,
 ) => {
   const store = useStoreApi<CanvasFlowNode>()
-  const sheetId = useEditor((state) => state.activeSheetId)
-  const primary = useEditor((state) => state.selectedId)
-  const topics = useSelection((state) => state.sheets[sheetId])
-  const drawings = useSelectedDrawingIds()
-  const playing = usePresentation((state) => state.playing)
   const readSource = () => {
     const editor = useEditor.getState()
     const selection = useSelection.getState()
@@ -42,7 +37,7 @@ export const useCanvasNodeState = (
       before.scope === scope &&
       before.topics === source.topics &&
       before.drawings === source.drawings &&
-      before.primary === source.primary &&
+      (source.topics !== undefined || before.primary === source.primary) &&
       before.playing === source.playing
     )
       return
@@ -73,8 +68,20 @@ export const useCanvasNodeState = (
     return Array.isArray(projected) ? undefined : projected.subscribe(reconcile)
   }, [projected, store, reconcile])
   useLayoutEffect(() => {
+    // Selection belongs to RF's live nodes; publishing it must not rerender Canvas2D.
+    const subscriptions = [
+      useEditor.subscribe(reconcile),
+      useSelection.subscribe(reconcile),
+      usePresentation.subscribe(reconcile),
+    ]
     reconcile()
-  }, [scope, topics, drawings, primary, playing, dragging, reconcile])
+    return () => {
+      for (const unsubscribe of subscriptions) unsubscribe()
+    }
+  }, [store, reconcile])
+  useLayoutEffect(() => {
+    reconcile()
+  }, [scope, dragging, reconcile])
   // Stable callbacks preserve the drag cancellation subscriptions while the camera moves.
   const getNodes = useMemoizedFn(() => store.getState().nodes)
   const setNodes = useMemoizedFn((update: SetStateAction<CanvasFlowNode[]>) => {

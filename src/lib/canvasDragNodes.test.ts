@@ -152,3 +152,61 @@ it('keeps unaffected topic contents stable when only the selection changes', () 
     }),
   ).toBe(next)
 })
+
+it('restores topic and ink dragging after playback without losing live pointer state', () => {
+  const original = topic(0)
+  const locked = { ...topic(200), id: 'locked', draggable: false, selected: false }
+  const ink: CanvasFlowNode = {
+    id: 'ink:stroke',
+    type: 'ink',
+    position: { x: 400, y: 20 },
+    data: {
+      stroke: {
+        id: 'stroke',
+        points: [
+          { x: 0, y: 0, pressure: 0.5 },
+          { x: 20, y: 20, pressure: 0.5 },
+        ],
+        color: '#000000',
+        width: 4,
+      },
+    },
+    draggable: true,
+  }
+  const projected = [original, locked, ink]
+  const preview = [
+    { ...original, position: { x: 90, y: 30 }, width: 180, resizing: true },
+    locked,
+    ink,
+  ]
+  const playing = synchronizeCanvasNodes(preview, projected, {
+    ...selection,
+    geometryChanged: false,
+    drawings: new Set(['stroke']),
+    playing: true,
+  })
+  expect(playing.map((node) => node.draggable)).toEqual([false, false, false])
+  expect(playing[0]?.position).toBe(preview[0]?.position)
+  expect(playing[0]?.width).toBe(180)
+  expect(playing[0]?.resizing).toBe(true)
+  expect(playing[2]?.selected).toBe(true)
+  const resumed = synchronizeCanvasNodes(playing, projected, {
+    ...selection,
+    geometryChanged: false,
+  })
+  expect(resumed.map((node) => node.draggable)).toEqual([true, false, true])
+  expect(resumed[0]?.position).toBe(preview[0]?.position)
+  expect(resumed[2]?.selected).toBe(false)
+})
+
+it('uses canonical order when RF nodes no longer match an unchanged projection', () => {
+  const first = topic(0)
+  const second = { ...topic(200), id: 'second', selected: false }
+  const next = synchronizeCanvasNodes([second, first], [first, second], {
+    ...selection,
+    geometryChanged: false,
+  })
+  expect(next).toEqual([first, second])
+  expect(next[0]).toBe(first)
+  expect(next[1]).toBe(second)
+})

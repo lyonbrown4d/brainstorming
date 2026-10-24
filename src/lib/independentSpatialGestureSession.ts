@@ -1,7 +1,7 @@
 import { independentSpatialInkIdentity } from '@renderer/lib/independentSpatialInkIdentity'
 import type { getSpatialView } from '@renderer/state/spatialView'
 import type { independentSpatialPointerPlane } from '@renderer/lib/independentSpatialGestureGeometry'
-import type { createIndependentSpatialDropFinder } from '@renderer/lib/independentSpatialDrop'
+import { createIndependentSpatialDropFinder } from '@renderer/lib/independentSpatialDrop'
 import type { MindMapDocument } from '@core'
 import { inkGeometry } from '@shared/ink-geometry'
 import { canvasDescendants, canvasMoveCommand, canvasTopicRoots } from '@renderer/lib/canvasGesture'
@@ -53,6 +53,8 @@ export const independentSpatialMove = (
     runtime.model.layout.nodes.map((node) => [node.id, { x: node.x, y: node.y }]),
   )
   const canDrop = !drawings.length && !roots.includes(document.rootId)
+  const previousOffsets = new Map([...excluded].map((id) => [id, runtime.offsets.get(id)]))
+  let previewed = false
   let delta: SpatialSceneOffset = { x: 0, y: 0, z: 0 }
   let finished = false
   return {
@@ -62,6 +64,7 @@ export const independentSpatialMove = (
     preview: (next: SpatialSceneOffset) => {
       if (finished) return
       delta = next
+      previewed = true
       for (const id of excluded) runtime.offsets.set(id, next)
       runtime.changed()
     },
@@ -79,9 +82,18 @@ export const independentSpatialMove = (
     },
     cancel: () => {
       finished = true
-      for (const id of excluded) if (runtime.offsets.get(id) === delta) runtime.offsets.delete(id)
+      let changed = runtime.dropTarget !== null
+      if (previewed)
+        for (const id of excluded) {
+          if (runtime.offsets.get(id) !== delta) continue
+          const previous = previousOffsets.get(id)
+          if (previous) runtime.offsets.set(id, previous)
+          else runtime.offsets.delete(id)
+          changed = true
+        }
+      previewed = false
       runtime.dropTarget = null
-      runtime.changed()
+      if (changed) runtime.changed()
     },
   }
 }
@@ -96,6 +108,8 @@ export interface IndependentSpatialPointerSession {
   rectangles: SpatialSceneRect[]
   topics: readonly string[]
   drawings: readonly string[]
+  movingTopics: readonly string[]
+  movingDrawings: readonly string[]
   move: ReturnType<typeof independentSpatialMove> | null
   plane: ReturnType<typeof independentSpatialPointerPlane> | null
   anchor: ReturnType<ReturnType<typeof independentSpatialPointerPlane>>
@@ -104,6 +118,27 @@ export interface IndependentSpatialPointerSession {
   token: symbol | null
   dragged: boolean
   singlePick: boolean
+}
+
+/** Frozen pointer-down geometry is kept; the full drag snapshot is needed only past the threshold. */
+export const independentSpatialStartDrag = (
+  runtime: IndependentSpatialRuntime,
+  active: IndependentSpatialPointerSession,
+) => {
+  if (active.dragged) return
+  active.dragged = true
+  active.move = active.rect
+    ? independentSpatialMove(runtime, active.movingTopics, active.movingDrawings)
+    : null
+  active.rectangles = runtime.rectangles()
+  active.find = active.move?.canDrop
+    ? createIndependentSpatialDropFinder(
+        active.document,
+        runtime.model.layout,
+        active.rectangles,
+        active.move.excluded,
+      )
+    : null
 }
 
 /** A click narrows selection only after a non-drag gesture; group grabs preserve it. */

@@ -12,7 +12,7 @@ import { Button } from '@renderer/components/ui/button'
 import { TopicFormatting } from '@renderer/components/TopicFormatting'
 import { TopicContentPanel } from '@renderer/components/TopicContentPanel'
 import { TopicMetadataPanel } from '@renderer/components/metadata/TopicMetadataPanel'
-import { FieldSelect } from '@renderer/components/FieldSelect'
+import { TopicParentPicker } from '@renderer/components/TopicParentPicker'
 import { MarkerAction } from '@renderer/components/metadata/MarkerAction'
 
 export const TopicProperties = () => {
@@ -39,15 +39,6 @@ export const TopicProperties = () => {
   const index = parent?.children.indexOf(selectedId) ?? -1
   const root = selectedId === document.rootId
   const firstLevel = parentId === document.rootId
-  const forbidden = new Set<string>()
-  const stack = [selectedId]
-  while (stack.length > 0) {
-    const id = stack.pop()
-    if (id) {
-      forbidden.add(id)
-      stack.push(...(document.topics[id]?.children ?? []))
-    }
-  }
   const run = (action: () => void): void => {
     useEditor.getState().commitDraft()
     action()
@@ -173,12 +164,10 @@ export const TopicProperties = () => {
             </div>
             <div className="move-parent-field mt-3 flex flex-col gap-[9px] text-xs text-secondary-foreground [&_.field-select]:w-full">
               <span>{translate('moveToTopic')}</span>
-              <FieldSelect
-                label={translate('moveToParentTopic')}
-                value={parentId ?? ''}
-                options={Object.values(document.topics)
-                  .filter((candidate) => !forbidden.has(candidate.id))
-                  .map((candidate) => ({ value: candidate.id, label: candidate.title }))}
+              <TopicParentPicker
+                document={document}
+                topicId={selectedId}
+                parentId={parentId ?? ''}
                 onChange={(value) => {
                   run(() =>
                     useEditor.getState().command({

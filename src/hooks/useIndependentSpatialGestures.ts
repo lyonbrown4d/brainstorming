@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { isEqual } from 'lodash-es'
 import type { IndependentSpatialRuntime } from '@renderer/lib/independentSpatialRuntime'
 import {
   independentSpatialPointerPlane,
@@ -8,11 +9,10 @@ import {
 } from '@renderer/lib/independentSpatialGestureGeometry'
 import {
   independentSpatialAnchor,
-  independentSpatialMove,
+  independentSpatialStartDrag,
   independentSpatialClickSelection,
   type IndependentSpatialPointerSession,
 } from '@renderer/lib/independentSpatialGestureSession'
-import { createIndependentSpatialDropFinder } from '@renderer/lib/independentSpatialDrop'
 import {
   independentSpatialDoubleClick,
   bindIndependentSpatialBlankActions,
@@ -60,16 +60,17 @@ export const useIndependentSpatialGestures = (
     let session: IndependentSpatialPointerSession | null = null
     const clear = (revert: boolean) => {
       const active = session
+      if (!active) return
       session = null
       runtime.interacting = false
-      if (active?.token) clearCanvasDrag(active.token)
-      if (revert) active?.move?.cancel()
+      if (active.token) clearCanvasDrag(active.token)
+      if (revert) active.move?.cancel()
+      const dropChanged = runtime.dropTarget !== null
       runtime.dropTarget = null
-      useEditor.setState({ dropTargetId: null })
+      if (useEditor.getState().dropTargetId !== null) useEditor.setState({ dropTargetId: null })
       setOverlay(emptyOverlay)
-      if (active && canvas.hasPointerCapture(active.pointer))
-        canvas.releasePointerCapture(active.pointer)
-      runtime.changed()
+      if (canvas.hasPointerCapture(active.pointer)) canvas.releasePointerCapture(active.pointer)
+      if (dropChanged) runtime.changed()
     }
     const valid = (active: IndependentSpatialPointerSession) => {
       const editor = useEditor.getState()
@@ -129,8 +130,6 @@ export const useIndependentSpatialGestures = (
           ? independentSpatialPointerPlane(runtime.camera, canvas.getBoundingClientRect(), center)
           : null
       const start = { x: event.clientX, y: event.clientY }
-      const move = hit ? independentSpatialMove(runtime, selectedTopics, selectedDrawings) : null
-      const rectangles = runtime.rectangles()
       session = {
         pointer: event.pointerId,
         start,
@@ -138,21 +137,16 @@ export const useIndependentSpatialGestures = (
         workbook: current.workbook.id,
         sheet: current.activeSheetId,
         view: getSpatialView(current.workbook.id, current.activeSheetId),
-        rectangles,
+        rectangles: [],
         topics: additive ? topics : [],
         drawings: additive ? drawings : [],
-        move,
+        movingTopics: selectedTopics,
+        movingDrawings: selectedDrawings,
+        move: null,
         plane,
         anchor: plane?.(start) ?? null,
         rect: hit,
-        find: move?.canDrop
-          ? createIndependentSpatialDropFinder(
-              current.history.document,
-              runtime.model.layout,
-              rectangles,
-              move.excluded,
-            )
-          : null,
+        find: null,
         token: null,
         dragged: false,
         singlePick: !additive,
@@ -172,7 +166,7 @@ export const useIndependentSpatialGestures = (
       const dx = point.x - active.start.x,
         dy = point.y - active.start.y
       if (!active.dragged && Math.hypot(dx, dy) < 4) return
-      active.dragged = true
+      independentSpatialStartDrag(runtime, active)
       if (!active.move) {
         const marquee = independentSpatialMarquee(active.start, point)
         const hits = independentSpatialMarqueeSelection(active.rectangles, marquee)
@@ -191,11 +185,6 @@ export const useIndependentSpatialGestures = (
         active.move.roots,
         selectedDrawingIds(useEditor.getState()).length,
       )
-      active.move.preview({
-        x: next.x - active.anchor.x,
-        y: next.y - active.anchor.y,
-        z: next.z - active.anchor.z,
-      })
       const bounds = {
         x: active.rect.x + dx,
         y: active.rect.y + dy,
@@ -216,7 +205,11 @@ export const useIndependentSpatialGestures = (
             }
           : null,
       })
-      runtime.changed()
+      active.move.preview({
+        x: next.x - active.anchor.x,
+        y: next.y - active.anchor.y,
+        z: next.z - active.anchor.z,
+      })
     }
     const up = (event: PointerEvent) => {
       const active = session
@@ -227,7 +220,12 @@ export const useIndependentSpatialGestures = (
       const command = valid(active) && active.dragged ? active.move?.finish(drop) : undefined
       const selection = valid(active) ? independentSpatialClickSelection(active) : null
       clear(!command)
-      if (selection) setCanvasSelection(selection.topics, selection.drawings)
+      if (
+        selection &&
+        (!isEqual(selection.topics, selectedTopicIds(useEditor.getState())) ||
+          !isEqual(selection.drawings, selectedDrawingIds(useEditor.getState())))
+      )
+        setCanvasSelection(selection.topics, selection.drawings)
       if (
         command &&
         !useEditor.getState().command(command, () => {

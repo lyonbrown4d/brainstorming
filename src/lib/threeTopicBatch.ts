@@ -1,4 +1,5 @@
 import {
+  DynamicDrawUsage,
   Float32BufferAttribute,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
@@ -50,6 +51,10 @@ export const createThreeTopicBatches = (
   runtime: IndependentSpatialRuntime,
 ) => {
   let excluded: ReadonlySet<string> = new Set()
+  let selection: ReadonlySet<string> = new Set()
+  let dropTarget: string | null = null
+  let layout = runtime.model.layout.nodes
+  let nodes = new Map(layout.map((node) => [node.id, node]))
   const batches = atlas.textures.map((texture, page) => {
     const tiles = atlas.tiles.filter((tile) => tile.page === page)
     const geometry = new InstancedBufferGeometry()
@@ -69,6 +74,12 @@ export const createThreeTopicBatches = (
       2,
     )
     geometry.setAttribute('size', sizes)
+    for (const attribute of [centers, selected, sizes]) {
+      attribute.setUsage(DynamicDrawUsage)
+      attribute.onUpload(() => {
+        attribute.clearUpdateRanges()
+      })
+    }
     geometry.setAttribute(
       'atlasRect',
       new InstancedBufferAttribute(
@@ -101,8 +112,11 @@ export const createThreeTopicBatches = (
       batch.tiles.map((tile, index) => [tile.id, { batch, tile, index }] as const),
     ),
   )
-  const update = (selectedIds: ReadonlySet<string>) => {
-    const nodes = new Map(runtime.model.layout.nodes.map((node) => [node.id, node]))
+  const updateGeometry = () => {
+    if (layout !== runtime.model.layout.nodes) {
+      layout = runtime.model.layout.nodes
+      nodes = new Map(layout.map((node) => [node.id, node]))
+    }
     for (const batch of batches) {
       batch.tiles.forEach((tile, index) => {
         const node = nodes.get(tile.id)
@@ -120,23 +134,45 @@ export const createThreeTopicBatches = (
           runtime.hiddenTopics.has(tile.id) || excluded.has(tile.id) ? 0 : (tile.width + 8) * scale,
           (tile.height + 8) * scale,
         )
-        batch.selected.setX(
-          index,
-          runtime.dropTarget === tile.id ? 2 : selectedIds.has(tile.id) ? 1 : 0,
-        )
       })
-      batch.centers.needsUpdate = true
-      batch.selected.needsUpdate = true
-      batch.sizes.needsUpdate = true
+      for (const attribute of [batch.centers, batch.sizes]) {
+        attribute.addUpdateRange(0, attribute.array.length)
+        attribute.needsUpdate = true
+      }
     }
+  }
+  const updateSelection = (selectedIds: ReadonlySet<string>) => {
+    const updateId = (id: string) => {
+      const entry = entries.get(id)
+      if (!entry) return
+      const { batch, index } = entry
+      const value = runtime.dropTarget === id ? 2 : selectedIds.has(id) ? 1 : 0
+      if (batch.selected.getX(index) === value) return
+      batch.selected.setX(index, value)
+      batch.selected.addUpdateRange(index, 1)
+      batch.selected.needsUpdate = true
+    }
+    for (const id of selection) updateId(id)
+    for (const id of selectedIds) updateId(id)
+    if (dropTarget) updateId(dropTarget)
+    if (runtime.dropTarget) updateId(runtime.dropTarget)
+    selection = new Set(selectedIds)
+    dropTarget = runtime.dropTarget
   }
   return {
     meshes: batches.map((batch) => batch.mesh),
-    update,
+    updateGeometry,
+    updateSelection,
+    update: (selectedIds: ReadonlySet<string>) => {
+      updateGeometry()
+      updateSelection(selectedIds)
+    },
     setExcluded: (ids: ReadonlySet<string>) => {
       const changed = new Set([...excluded, ...ids])
-      excluded = ids
+      const previous = excluded
+      excluded = new Set(ids)
       for (const id of changed) {
+        if (previous.has(id) === excluded.has(id)) continue
         const entry = entries.get(id)
         if (!entry) continue
         const { batch, tile, index } = entry
@@ -146,6 +182,7 @@ export const createThreeTopicBatches = (
           runtime.hiddenTopics.has(id) || excluded.has(id) ? 0 : (tile.width + 8) * scale,
           (tile.height + 8) * scale,
         )
+        batch.sizes.addUpdateRange(index * 2, 2)
         batch.sizes.needsUpdate = true
       }
     },

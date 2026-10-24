@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { isEqual } from 'lodash-es'
 import { Group } from 'three'
 import { addAfterEffect, useThree } from '@react-three/fiber'
 import { createThreeTopicQuality } from '@renderer/lib/threeTopicQuality'
@@ -43,7 +44,7 @@ export const SpatialSceneContent = ({
     let controller = new AbortController()
     let dispose: (() => void) | undefined
     let update: (() => void) | undefined
-    let updateSelection: (() => void) | undefined
+    let updateSelection: (() => boolean) | undefined
     let quality: ReturnType<typeof createThreeTopicQuality> | null = null
     let disposed = false
     let transientGeometry = false
@@ -99,14 +100,25 @@ export const SpatialSceneContent = ({
           selected: () => new Set(selectedTopicIds(useEditor.getState())),
         })
         pendingDisposals.push(nextQuality.dispose)
-        const updateSelected = () => {
+        let previousTopics: readonly string[] | null = null
+        let previousDrawings: readonly string[] | null = null
+        const updateSelected = (force = false) => {
           const state = useEditor.getState()
-          topics.update(new Set(selectedTopicIds(state)))
-          ink.update(new Set(selectedDrawingIds(state)))
+          const topicIds = selectedTopicIds(state)
+          const drawingIds = selectedDrawingIds(state)
+          const topicsChanged = !isEqual(previousTopics, topicIds)
+          const drawingsChanged = !isEqual(previousDrawings, drawingIds)
+          if (!force && !topicsChanged && !drawingsChanged) return false
+          previousTopics = topicIds
+          previousDrawings = drawingIds
+          if (force || topicsChanged) topics.updateSelection(new Set(topicIds))
+          if (force || drawingsChanged) ink.update(new Set(drawingIds))
           invalidate()
+          return true
         }
         const updateScene = () => {
-          updateSelected()
+          topics.updateGeometry()
+          updateSelected(true)
           lines.update()
           annotations.update()
           transientGeometry = runtime.scales.size > 0 || runtime.relationPreviews.size > 0
@@ -163,16 +175,14 @@ export const SpatialSceneContent = ({
       }
     })
     const unsubscribeSelection = useSelection.subscribe(() => {
-      updateSelection?.()
-      quality?.updateSelection()
+      if (updateSelection?.()) quality?.updateSelection()
     })
     const unsubscribeEditor = useEditor.subscribe((state, previous) => {
       if (
         state.selectedId !== previous.selectedId ||
         state.activeSheetId !== previous.activeSheetId
       ) {
-        updateSelection?.()
-        quality?.updateSelection()
+        if (updateSelection?.()) quality?.updateSelection()
       }
     })
     models.update(runtime.model)

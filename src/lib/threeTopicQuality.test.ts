@@ -1,4 +1,4 @@
-import { CanvasTexture, Group } from 'three'
+import { CanvasTexture, Group, type Mesh, type InstancedBufferAttribute } from 'three'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createDocument } from '@core'
 import type * as TopicAtlas from '@renderer/lib/threeTopicAtlas'
@@ -36,15 +36,16 @@ const fixture = () => {
   const base = { setExcluded: vi.fn() }
   const renderer = { initTexture: vi.fn() }
   const host = new Group()
+  const selected = new Set<string>()
   const quality = createThreeTopicQuality({
     runtime,
     overview,
     base,
     renderer,
     host,
-    selected: () => new Set(),
+    selected: () => selected,
   })
-  return { quality, base, renderer, rectangles, host, runtime, overview }
+  return { quality, base, renderer, rectangles, host, runtime, overview, selected }
 }
 const atlas = (tiles: ThreeTopicAtlas['tiles']): ThreeTopicAtlas => ({
   tiles,
@@ -76,6 +77,19 @@ describe('atomic spatial topic detail layer', () => {
     await vi.advanceTimersByTimeAsync(0)
     expect(value.renderer.initTexture).toHaveBeenCalledWith(prepared.textures[0])
     expect(value.base.setExcluded).toHaveBeenLastCalledWith(new Set(['root']))
+    const mesh = value.host.children[0]?.children[0] as Mesh | undefined
+    if (!mesh) throw new Error('Missing detail mesh')
+    const center = mesh.geometry.getAttribute('center') as InstancedBufferAttribute
+    const size = mesh.geometry.getAttribute('size') as InstancedBufferAttribute
+    const selected = mesh.geometry.getAttribute('selected') as InstancedBufferAttribute
+    const versions = [center.version, size.version]
+    value.selected.add('root')
+    value.quality.updateSelection()
+    expect(selected.getX(0)).toBe(1)
+    expect([center.version, size.version]).toEqual(versions)
+    value.selected.clear()
+    value.quality.updateSelection()
+    expect(selected.getX(0)).toBe(0)
     value.quality.request()
     await vi.advanceTimersByTimeAsync(800)
     expect(prepareThreeTopicAtlas).toHaveBeenCalledTimes(1)
