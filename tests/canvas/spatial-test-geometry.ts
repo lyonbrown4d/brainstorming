@@ -104,11 +104,11 @@ export const spatialPoint = async (page: Page, id: string) => {
 }
 export const clickSpatial = async (page: Page, id: string, additive = false) => {
   const point = await spatialPoint(page, id)
-  if (additive) await page.keyboard.down('Meta')
+  if (additive) await page.keyboard.down('ControlOrMeta')
   try {
     await page.mouse.click(point.x, point.y)
   } finally {
-    if (additive) await page.keyboard.up('Meta')
+    if (additive) await page.keyboard.up('ControlOrMeta')
   }
 }
 export const emptySpatialPoint = async (page: Page) => {

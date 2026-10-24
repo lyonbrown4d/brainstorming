@@ -3,9 +3,11 @@ import '@renderer/styles/export-capture.scss'
 import type { DocumentExportsAPI, ExportPage } from '@shared/documentExports'
 
 /** Native WebView snapshot preserves the current 3D projection without a second renderer. */
-export const captureCurrentExportView = async (api: DocumentExportsAPI): Promise<ExportPage> => {
+export const captureCurrentExportView = async (
+  api: Pick<DocumentExportsAPI, 'captureView'>,
+): Promise<ExportPage> => {
   if (!api.captureView) throw new Error('当前平台不支持视角截图。')
-  const canvas = document.querySelector<HTMLElement>('.react-flow')
+  const canvas = document.querySelector<HTMLCanvasElement>('canvas[data-spatial-canvas="three"]')
   if (!canvas) throw new Error('请返回 3D 画布后导出当前视角。')
   const rect = canvas.getBoundingClientRect()
   const before = document.documentElement.getAttribute('data-export-capture')

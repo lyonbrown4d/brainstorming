@@ -37,7 +37,7 @@ test('right-click preserves multiple selected nodes; Escape restores direct typi
 }) => {
   await open(page)
   await node(page, 'branch').click()
-  await node(page, 'descendant').click({ modifiers: ['Meta'] })
+  await node(page, 'descendant').click({ modifiers: ['ControlOrMeta'] })
   await node(page, 'branch').click({ button: 'right' })
   await expect(page.getByRole('menu')).toBeVisible()
   await expect(node(page, 'branch')).toHaveClass(/selected/)

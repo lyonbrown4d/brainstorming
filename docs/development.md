@@ -188,7 +188,7 @@ PDF 使用 `svg2pdf` / `pdf-writer` 从 SVG 生成矢量内容，原生字体库
 
 `runtime/window_transfer.rs` 与前端 `state/windowTransfers.ts` 完成移交：源窗口提交草稿并等待编辑队列，停止播放，携带文档会话、焦点历史、二维/三维视口和镜头距离交给目标。原生历史继续复用同一工作簿，资源授权、密码和文件保留引用在目标确认后转移，源标签随后移除。移交期间暂停该文档编辑；45 秒内未确认或窗口关闭时撤销待接收请求，源窗口仍保留文档。无路径文档移交只转移内存会话，不触发自动保存。
 
-`platform/menu*.rs` 按窗口保存 `hasDocument`、`busy`、`playing` 上下文，只用聚焦窗口的状态构建原生菜单，并将类型化 `MenuActionEvent` 定向发给该窗口。macOS 提供应用、文件、编辑、视图、演示、窗口与帮助菜单；窗口列表支持聚焦和移交，标准文字剪贴操作使用系统菜单项。语言切换及窗口焦点变化会刷新菜单。标题栏左侧下拉菜单提供窗口列表与最近文件；窗口切换通过生成的 `focusEditorWindow` 命令验证调用窗口和目标窗口。最近文件在本机 SQLite 中按最近使用顺序保留 10 条，更新采用写事务合并，避免窗口之间覆盖历史，重启后继续保留。实现与测试入口存在不代表 Windows / Linux 原生验收已完成，也不代表已在 Office 应用中打开验证导出文件。
+`platform/menu*.rs` 按窗口保存 `hasDocument`、`busy`、`playing` 上下文，只用聚焦窗口的状态构建原生菜单，并将类型化 `MenuActionEvent` 定向发给该窗口。macOS 提供应用、文件、编辑、视图、演示、窗口与帮助菜单；窗口列表支持聚焦和移交，标准文字剪贴操作使用系统菜单项。语言切换及窗口焦点变化会刷新菜单。仅 macOS 挂载原生菜单；Windows 和 Linux 不挂载原生菜单栏，操作通过自定义标题栏、应用内菜单和快捷键提供；原生 E2E 对 Windows 和 Linux 断言菜单为空。标题栏左侧下拉菜单提供窗口列表与最近文件；窗口切换通过生成的 `focusEditorWindow` 命令验证调用窗口和目标窗口。最近文件在本机 SQLite 中按最近使用顺序保留 10 条，更新采用写事务合并，避免窗口之间覆盖历史，重启后继续保留。实现与测试入口存在不代表 Windows / Linux 原生验收已完成，也不代表已在 Office 应用中打开验证导出文件。
 
 ## 系统文件预览的平台状态
 
@@ -247,6 +247,25 @@ Lexical 内容输入通过 `fillContentEditable` 使用 WebDriver 全选后插�
 
 外部存储发生归档写入或依赖读取停滞时，先检查进程与文件活动；可使用本机 SSD 用户缓存目录保存 Cargo 产物（`CARGO_TARGET_DIR`），避免运行中的验收程序被临时目录清理移除，并将 `BRAINSTORMING_E2E_BINARY` 指向该目录生成的当前测试应用。若依赖缓存也在外部卷，使用当前源码的本机临时验收副本和独立 pnpm 缓存；必须按锁文件安装并完整构建，不能混用旧二进制与新 renderer。
 
+## Linux 打包
+
+复用 `scripts/build-desktop.ts` 与 Tauri bundler，`pnpm package:linux` 生成 deb、rpm、AppImage；`pnpm package --bundles deb`、`--bundles rpm` 或 `--bundles appimage` 可单独选择格式，追加 `--debug` 可生成本机调试包。Linux 平台配置由 Tauri 自动合并 `src-tauri/tauri.linux.conf.json`，不影响其他平台。桌面主程序和缩略图 helper 使用相同架构与 debug/release 配置，生成的安装映射只位于忽略的 target 目录。
+
+Ubuntu 24.04 / Debian 13 构建机需先安装系统依赖（需要 sudo）：
+
+```sh
+sudo apt-get update
+sudo apt-get install -y build-essential pkg-config libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libvips-dev patchelf gstreamer1.0-tools gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+pnpm install --frozen-lockfile
+pnpm package:linux
+```
+
+libvips 要求至少 8.15；deb 声明 `libvips42t64 | libvips42`，rpm 声明 `vips` 运行依赖，媒体播放依赖 GStreamer good 插件。AppImage 开启 Tauri 的媒体框架打包，推荐在 Ubuntu 构建；AppImage 及其 libvips/媒体编解码器仍需在目标发行版验证。deb/rpm 同时包含只读缩略图 helper、MIME 与 thumbnailer 描述；AppImage 不安装宿主缩略图提供程序。
+
+默认输出为 `src-tauri/target/release/bundle/deb/*.deb`、`rpm/*.rpm`、`appimage/*.AppImage`，debug 使用 `target/debug/bundle/`；设置 `CARGO_TARGET_DIR` 或目标架构时路径相应变化。可用 `dpkg-deb --info`、`dpkg-deb --contents` 检查 deb 的运行依赖和桌面集成文件，安装需由用户在目标系统使用 apt/dnf 执行。
+
+`.github/workflows/linux-packages.yml` 在 Ubuntu 24.04 x86_64 构建三种格式，限时 45 分钟，产物通过 Actions 的 `brainstorming-linux-x86_64` artifact 下载，不自动发布或安装。正式分发以该构建环境为基线，不承诺更老的 glibc 系统可运行；本机 Debian 13 产物只用于本机验证。遵循 [Tauri Linux 分发兼容要求](https://v2.tauri.app/distribute/appimage/#limitations)，ARM AppImage 必须在对应架构的 Linux 主机或模拟器构建，不能仅传 `--target` 完成跨架构打包。
+
 ## React 开发诊断
 
 React Scan 默认在开发模式启用，显示重渲染和 FPS；可设置 `VITE_REACT_SCAN=false` 关闭。需要组件树或 Profiler 时，先运行 `pnpm devtools`，再在另一个终端运行 `VITE_REACT_DEVTOOLS=true pnpm dev`。官方 React DevTools standalone 监听 `127.0.0.1:8097`，后端 hook 先于 React 与 Scan 初始化。工具未连接不阻止编辑器启动。
@@ -254,6 +273,8 @@ React Scan 默认在开发模式启用，显示重渲染和 FPS；可设置 `VIT
 DevTools CLI 自身使用 Electron，仅作为开发依赖，产品运行时仍为 Tauri。只有开发 CSP 允许该本机 WebSocket，生产 CSP 与发布入口不加载诊断代码。默认不启用远程诊断；不要把本机调试端口转发到外部网络。React DevTools 上游仅发布 Flow API，`src/dev/react-devtools-core.d.ts` 声明项目实际使用的最小接口。
 
 依赖升级以最新稳定且上游兼容的组合为准。本轮 WDIO 仍使用 9.x：最新 Tauri service 1.5.0 仍调用 `executeAsync`，WDIO 10 已移除此 API；SQLite 底层库受 SQLx 0.9 的 `<0.38` 约束，保持 0.37.0。Tauri Specta 使用最新的 `2.0.0-rc.26`，按其精确约束配套 Specta `2.0.0-rc.26` 和 TypeScript 导出器 `0.0.13`，不能混用更新的 Specta `rc.27` / 导出器 `0.0.14`。`svg2pdf 0.13` 与 PDF 合并代码共用 `pdf-writer 0.12.1` 的类型，不能替换为不兼容的 `0.15`。其余直接依赖以升级时的最新稳定版本为准，具体版本由 pnpm 和 Cargo 锁文件固定。
+
+Linux 构建的 `tauri-plugin-deep-link 2.6.2` 依赖 `rust-ini 0.21.1`，由 Cargo.lock 固定；`0.21.3` 为 `ParseOption` 新增字段，与该插件的结构体初始化不兼容。升级时须同步验证 Linux 原生编译。
 
 ## React Flow 交互参考
 

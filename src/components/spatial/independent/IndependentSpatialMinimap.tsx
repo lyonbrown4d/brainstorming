@@ -24,7 +24,10 @@ export const IndependentSpatialMinimap = ({
     !updating,
   )
   return (
-    <div className="pointer-events-auto absolute bottom-4 left-4 z-[5] @max-[640px]:bottom-32">
+    <div
+      data-spatial-controls
+      className="pointer-events-auto absolute bottom-4 left-4 z-[5] @max-[640px]:bottom-32"
+    >
       {visible ? (
         <div className="relative h-28 w-44 overflow-hidden rounded-lg border border-border/80 bg-background @max-[640px]:h-20 @max-[640px]:w-28">
           <canvas

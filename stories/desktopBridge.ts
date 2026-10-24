@@ -3,15 +3,22 @@ import { templateAPI } from '@tests/fixtures/templates'
 import type { DesktopAPI } from '@shared/contracts'
 import { inactiveMCP } from '@tests/fixtures/mcp'
 
+const previewPlatform = (): DesktopAPI['platform'] => {
+  const platform = typeof window === 'undefined' ? '' : navigator.platform
+  if (platform.includes('Win')) return 'windows'
+  if (platform.includes('Linux')) return 'linux'
+  return 'macos'
+}
+
 /** Component preview adapter only; product entry requires native Tauri initialization. */
-export const createStoryDesktop = (): DesktopAPI => {
+export const createStoryDesktop = (platform = previewPlatform()): DesktopAPI => {
   let clipboard = ''
   return {
     ...templateAPI,
     ...builtinArtAPI,
     syncContentIndex: () => Promise.resolve(),
     searchContent: () => Promise.resolve([]),
-    platform: 'macos',
+    platform,
     getNotificationSettings: () => Promise.resolve({ enabled: false, permission: 'granted' }),
     setNotificationsEnabled: (enabled) => Promise.resolve({ enabled, permission: 'granted' }),
     getLanguage: () => Promise.resolve('zh-CN'),

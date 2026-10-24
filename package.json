@@ -29,6 +29,7 @@
     "test:storybook": "pnpm generate:bindings && vitest run --config vitest.storybook.config.ts",
     "build": "pnpm generate:bindings && vite build",
     "package": "tsx scripts/build-desktop.ts",
+    "package:linux": "tsx scripts/build-desktop.ts --bundles deb,rpm,appimage",
     "ci-gate": "moon run brainstorming:check",
     "moon": "moon",
     "prepare": "husky",

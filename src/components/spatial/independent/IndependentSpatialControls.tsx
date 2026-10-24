@@ -19,7 +19,10 @@ export const IndependentSpatialControls = ({
   const { translate } = useMessages()
   return (
     <>
-      <div className="absolute top-3 left-3 z-10 flex items-center gap-1 rounded-lg border border-border/80 bg-background p-1 shadow-floating">
+      <div
+        data-spatial-controls
+        className="absolute top-3 left-3 z-10 flex items-center gap-1 rounded-lg border border-border/80 bg-background p-1 shadow-floating"
+      >
         <SpatialDepthControl />
         <SpatialCameraControls layout={runtime.model.layout} depths={runtime.model.depths} />
         <Button
@@ -39,10 +42,13 @@ export const IndependentSpatialControls = ({
           <RotateCcw className="size-3.5" />
         </Button>
       </div>
-      <div className="absolute top-3 right-3 z-10">
+      <div data-spatial-controls className="absolute top-3 right-3 z-10">
         <SpatialCameraWidget disabled={disabled} onReady={() => undefined} />
       </div>
-      <p className="pointer-events-none absolute right-3 bottom-3 z-10 max-w-[70%] rounded-md border border-border/70 bg-background px-2 py-1 text-[10px] text-secondary-foreground shadow-floating">
+      <p
+        data-spatial-controls
+        className="pointer-events-none absolute right-3 bottom-3 z-10 max-w-[70%] rounded-md border border-border/70 bg-background px-2 py-1 text-[10px] text-secondary-foreground shadow-floating"
+      >
         {translate('spatialCameraHint')}
       </p>
     </>

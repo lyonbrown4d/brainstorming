@@ -192,9 +192,11 @@ describe('native export center', () => {
       await focusNativeWindow()
       await assertNativeMenus(true)
       const menus = await nativeMenus()
-      expect(menuEntry(menus, 'focusWindow:main')?.enabled).toBe(true)
-      expect(menuEntry(menus, `focusWindow:${label}`)?.enabled).toBe(true)
-      expect(menuEntry(menus, 'moveTabWindow:main')?.enabled).toBe(true)
+      if (process.platform === 'darwin') {
+        expect(menuEntry(menus, 'focusWindow:main')?.enabled).toBe(true)
+        expect(menuEntry(menus, `focusWindow:${label}`)?.enabled).toBe(true)
+        expect(menuEntry(menus, 'moveTabWindow:main')?.enabled).toBe(true)
+      }
       await fixture('menu', { id: 'export' })
       await expect(exportDialog().$('h2')).toHaveText('导出中心')
       await selectExportFormat('交换格式', '纯文本大纲')

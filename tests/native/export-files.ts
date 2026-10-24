@@ -83,6 +83,10 @@ export const menuEntry = (
   return undefined
 }
 export const assertNativeMenus = async (enabled: boolean): Promise<void> => {
+  if (process.platform !== 'darwin') {
+    expect(await nativeMenus()).toEqual([])
+    return
+  }
   await browser.waitUntil(async () => menuEntry(await nativeMenus(), 'export')?.enabled === enabled)
   const menus = await nativeMenus()
   expect(menus.map((menu) => menu.title)).toEqual(
@@ -93,10 +97,8 @@ export const assertNativeMenus = async (enabled: boolean): Promise<void> => {
     expect.arrayContaining(['newWindow', 'openNewWindow', 'export', 'print']),
   )
   expect(menuEntry(menus, 'print')?.enabled).toBe(enabled)
-  if (process.platform === 'darwin') {
-    const application = menus.find((menu) => menu.title === 'Brainstorming')
-    expect(application?.items?.some((item) => item.id === 'settings')).toBe(true)
-  }
+  const application = menus.find((menu) => menu.title === 'Brainstorming')
+  expect(application?.items?.some((item) => item.id === 'settings')).toBe(true)
 }
 
 export const decodedPng = async (path: string): Promise<{ width: number; height: number }> => {

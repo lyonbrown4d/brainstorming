@@ -7,7 +7,7 @@ for (const surface of ['settings', 'help'] as const) {
     await page.setViewportSize({ width: 760, height: 420 })
     await page.goto('/iframe.html?id=brainstorming-画布自由绘图--mixed-selection&viewMode=story')
     await expect(page.locator('.react-flow__node[data-id="branch"]')).toBeVisible()
-    if (surface === 'settings') await page.keyboard.press('Meta+,')
+    if (surface === 'settings') await page.keyboard.press('ControlOrMeta+,')
     else await page.getByRole('button', { name: '键盘快捷键', exact: true }).click()
 
     const settings = page.getByRole('dialog', {

@@ -7,7 +7,7 @@ use std::{
 };
 use tauri::webview::PlatformWebview;
 use tokio::sync::oneshot;
-use webkit2gtk::{SnapshotOptions, SnapshotRegion, prelude::WebViewExt};
+use webkit2gtk::{SnapshotOptions, SnapshotRegion, WebViewExt};
 
 pub fn snapshot(
   webview: PlatformWebview,

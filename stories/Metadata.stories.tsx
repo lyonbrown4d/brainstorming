@@ -70,7 +70,7 @@ export const AnnotationCrud: Story = {
     await userEvent.clear(input)
     await userEvent.type(input, '下次迭代验证')
     await userEvent.tab()
-    await expect(canvas.getByRole('button', { name: '标注：下次迭代验证' })).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: '标注：下次迭代验证' })).toBeVisible()
     useEditor.getState().undo()
     await waitFor(() => expect(canvas.getByRole('button', { name: '标注：标注' })).toBeVisible())
   },

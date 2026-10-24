@@ -1,3 +1,4 @@
+#[cfg(target_os = "macos")]
 #[path = "menu_build.rs"]
 mod build;
 use super::menu_actions::MenuActionEvent;
@@ -21,7 +22,7 @@ pub fn install(app: &AppHandle) -> tauri::Result<()> {
   install_with_language(app, if chinese { "zh-CN" } else { "en" })
 }
 pub fn install_with_language(app: &AppHandle, language: &str) -> tauri::Result<()> {
-  #[cfg(desktop)]
+  #[cfg(target_os = "macos")]
   {
     let label = crate::runtime::window::focused_label(app).unwrap_or_default();
     let context = app
@@ -36,7 +37,7 @@ pub fn install_with_language(app: &AppHandle, language: &str) -> tauri::Result<(
       .unwrap_or_default();
     app.set_menu(build::build(app, language, context)?)?;
   }
-  #[cfg(mobile)]
+  #[cfg(not(target_os = "macos"))]
   let _ = (app, language);
   Ok(())
 }

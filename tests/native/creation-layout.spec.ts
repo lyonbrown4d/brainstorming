@@ -5,34 +5,65 @@ import { home, named } from '@tests/native/driver'
 import { creationReady } from '@tests/native/readiness'
 
 const expectUsableLayout = async (): Promise<void> => {
-  await browser.waitUntil(async () =>
-    browser.execute(() => {
-      const preview = document.querySelector('[data-creation-preview]')
-      const gallery = document.querySelector('section[aria-label="新建文档"]')
-      const create = document.querySelector('button[type="submit"]')
-      if (!preview || !gallery || !create) return false
-      // Capture the finished native transition rather than its faded first frame.
-      let ancestor: Element | null = preview
-      while (ancestor && ancestor !== gallery) {
-        if (Number.parseFloat(getComputedStyle(ancestor).opacity) < 0.99) return false
-        ancestor = ancestor.parentElement
-      }
-      const bounds = preview.getBoundingClientRect()
-      const action = create.getBoundingClientRect()
-      const scrollAreas = [...gallery.querySelectorAll('*')].filter((element) => {
-        const overflow = getComputedStyle(element).overflowY
-        return ['auto', 'scroll'].includes(overflow) && element.scrollHeight > element.clientHeight
+  await browser
+    .waitUntil(async () =>
+      browser.execute(() => {
+        const preview = document.querySelector('[data-creation-preview]')
+        const gallery = document.querySelector('section[aria-label="新建文档"]')
+        const create = document.querySelector('button[type="submit"]')
+        if (!preview || !gallery || !create) return false
+        // Capture the finished native transition rather than its faded first frame.
+        let ancestor: Element | null = preview
+        while (ancestor && ancestor !== gallery) {
+          if (Number.parseFloat(getComputedStyle(ancestor).opacity) < 0.99) return false
+          ancestor = ancestor.parentElement
+        }
+        const bounds = preview.getBoundingClientRect()
+        const action = create.getBoundingClientRect()
+        const scrollAreas = [...gallery.querySelectorAll('*')].filter((element) => {
+          const overflow = getComputedStyle(element).overflowY
+          return (
+            ['auto', 'scroll'].includes(overflow) && element.scrollHeight > element.clientHeight
+          )
+        })
+        return (
+          bounds.height > 0 &&
+          bounds.height < window.innerHeight * 0.45 &&
+          action.top >= 0 &&
+          action.bottom <= window.innerHeight &&
+          document.documentElement.scrollWidth <= window.innerWidth &&
+          scrollAreas.length === 1
+        )
+      }),
+    )
+    .catch(async (error: unknown) => {
+      const measurements = await browser.execute(() => {
+        const gallery = document.querySelector('section[aria-label="新建文档"]')
+        const preview = document.querySelector('[data-creation-preview]')
+        const submit = document.querySelector('button[type="submit"]')
+        const bounds = (element: Element | null) => {
+          if (!element) return null
+          const { x, y, width, height, top, bottom } = element.getBoundingClientRect()
+          return { x, y, width, height, top, bottom }
+        }
+        return {
+          viewport: { width: innerWidth, height: innerHeight },
+          documentWidth: document.documentElement.scrollWidth,
+          preview: bounds(preview),
+          submit: bounds(submit),
+          scrollAreas: [...(gallery?.querySelectorAll('*') ?? [])]
+            .filter((element) => ['auto', 'scroll'].includes(getComputedStyle(element).overflowY))
+            .map((element) => ({
+              tag: element.tagName,
+              className: element.getAttribute('class'),
+              height: element.clientHeight,
+              scrollHeight: element.scrollHeight,
+            })),
+        }
       })
-      return (
-        bounds.height > 0 &&
-        bounds.height < window.innerHeight * 0.45 &&
-        action.top >= 0 &&
-        action.bottom <= window.innerHeight &&
-        document.documentElement.scrollWidth <= window.innerWidth &&
-        scrollAreas.length === 1
-      )
-    }),
-  )
+      console.error('Native creation layout measurements:', JSON.stringify(measurements))
+      throw error
+    })
 }
 
 describe('native creation layout', () => {

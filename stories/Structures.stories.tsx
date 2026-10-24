@@ -1,3 +1,4 @@
+import { storyShortcut } from '@stories/keyboard'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within, waitFor } from 'storybook/test'
 import { createExampleDocument } from '@core'
@@ -32,9 +33,9 @@ export const ThumbnailSelection: Story = {
     await expect(useEditor.getState().history.document.settings?.layout).toBe('tree-down')
     await user.click(panel.getByRole('button', { name: '关闭属性面板' }))
     await user.click(canvas.getByTestId('topic-vision'))
-    await user.keyboard('{Meta>}')
+    await user.keyboard(storyShortcut('{Meta>}'))
     await user.click(canvas.getByTestId('topic-experience'))
-    await user.keyboard('{/Meta}')
+    await user.keyboard(storyShortcut('{/Meta}'))
     await waitFor(() =>
       expect(selectedTopicIds(useEditor.getState())).toEqual(['vision', 'experience']),
     )

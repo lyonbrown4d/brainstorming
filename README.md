@@ -34,6 +34,22 @@ pnpm dev:android
 
 各平台需要独立编译、模拟器或真机验证与签名；前端构建通过不代表全部平台已发布。移动端图片编解码范围及原生库准备见下方说明。
 
+## Linux 打包
+
+在 Linux 本机执行，生成 `.deb`、`.rpm` 和 `.AppImage`：
+
+```sh
+pnpm package:linux
+# 仅构建 Debian/Ubuntu 安装包
+pnpm package --bundles deb
+# 本机调试包，不用于正式分发
+pnpm package --debug --bundles deb
+```
+
+产物位于 `src-tauri/target/release/bundle/{deb,rpm,appimage}/`，调试包位于 `target/debug/bundle/`。Debian/Ubuntu 使用 `sudo apt install ./文件名.deb`，Fedora 使用 `sudo dnf install ./文件名.rpm`；AppImage 添加执行权限后直接运行。打包不会安装软件或修改本机桌面注册。
+
+构建依赖、发行版兼容边界和 CI 下载方式见 [Linux 打包说明](docs/development.md#linux-打包)。
+
 ## 文档与验证
 
 - [开发命令与目录](docs/development.md)
@@ -41,6 +57,7 @@ pnpm dev:android
 - [单文件协议](docs/file-format.md)
 - [原生图片库与平台能力](docs/native-libraries.md)
 - [测试迁移与验证边界](docs/testing-migration.md)
+- [Linux 本机验证记录](docs/linux-validation.md)
 - [产品说明](product.md)
 
 ```sh
