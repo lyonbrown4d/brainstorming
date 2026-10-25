@@ -274,7 +274,9 @@ DevTools CLI 自身使用 Electron，仅作为开发依赖，产品运行时仍�
 
 依赖升级以最新稳定且上游兼容的组合为准。本轮 WDIO 仍使用 9.x：最新 Tauri service 1.5.0 仍调用 `executeAsync`，WDIO 10 已移除此 API；SQLite 底层库受 SQLx 0.9 的 `<0.38` 约束，保持 0.37.0。Tauri Specta 使用最新的 `2.0.0-rc.26`，按其精确约束配套 Specta `2.0.0-rc.26` 和 TypeScript 导出器 `0.0.13`，不能混用更新的 Specta `rc.27` / 导出器 `0.0.14`。`svg2pdf 0.13` 与 PDF 合并代码共用 `pdf-writer 0.12.1` 的类型，不能替换为不兼容的 `0.15`。其余直接依赖以升级时的最新稳定版本为准，具体版本由 pnpm 和 Cargo 锁文件固定。
 
-Linux 构建的 `tauri-plugin-deep-link 2.6.2` 依赖 `rust-ini 0.21.1`，由 Cargo.lock 固定；`0.21.3` 为 `ParseOption` 新增字段，与该插件的结构体初始化不兼容。升级时须同步验证 Linux 原生编译。
+Linux 构建的 `tauri-plugin-deep-link 2.6.2` 依赖 `rust-ini 0.21.1`，由 Linux 可选直接依赖及 Cargo.lock 固定；`0.21.3` 为 `ParseOption` 新增字段，与该插件的结构体初始化不兼容。升级时须同步验证 Linux 原生编译。
+
+Linux E2E 构建提供受限 GTK 指针和滚轮输入，复用原生指针会话的有界调度与释放流程；仅独立 E2E 应用的本地授权窗口可调用。GTK 坐标与 CSS 像素分别换算，拖动期间窗口尺寸变化会拒绝继续输入。`tests/native/planar-zoom.spec.ts` 持续按住 Ctrl，验证平滑与离散滚轮、UI 缩放及原生截图中的文字位置。GNOME Wayland 可能拒绝后台窗口激活；可设置 `GDK_BACKEND=x11` 做 XWayland 对照，但不能用其结果替代 Wayland 验收，也不能跳过前台和焦点校验。
 
 ## React Flow 交互参考
 

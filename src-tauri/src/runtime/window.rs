@@ -16,6 +16,7 @@ pub fn startup_ready(app: &AppHandle, label: &str) -> Result<()> {
     splash.hide().map_err(|_| "无法隐藏启动窗口")?;
     splash.close().map_err(|_| "无法关闭启动窗口")?;
   }
+  main.unminimize().map_err(|_| "无法恢复主窗口")?;
   main.show().map_err(|_| "无法显示主窗口")?;
   #[cfg(target_os = "macos")]
   app.show().map_err(|_| "无法显示应用")?;

@@ -19,7 +19,7 @@ pub async fn e2e_fixture(
   {
     return Err("仅独立的本机测试应用允许使用测试文件选择器".into());
   }
-  #[cfg(all(feature = "e2e", target_os = "macos"))]
+  #[cfg(all(feature = "e2e", any(target_os = "macos", target_os = "linux")))]
   if action == "nativePointer" {
     use tauri_plugin_brainstorming_native::NativeBridgeExt;
     return app
@@ -29,6 +29,17 @@ pub async fn e2e_fixture(
         json!({
           "windowLabel": window.label(), "request": args,
         }),
+      )
+      .await;
+  }
+  #[cfg(target_os = "linux")]
+  if action == "nativeWheel" {
+    use tauri_plugin_brainstorming_native::NativeBridgeExt;
+    return app
+      .native_bridge()
+      .call(
+        "e2eNativeWheel",
+        json!({"windowLabel":window.label(), "request":args}),
       )
       .await;
   }

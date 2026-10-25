@@ -1,13 +1,13 @@
 import { browser, expect } from '@wdio/globals'
+import { basename } from 'node:path'
+import { selectExportFormat, writeExport } from '@tests/native/export-files'
 import {
-  artifact,
   chooseFile,
   create,
   dockAction,
   fileAction,
   fixture,
   home,
-  named,
   rootHasText,
 } from '@tests/native/driver'
 
@@ -24,14 +24,9 @@ describe('native interchange command integration', () => {
     let xmindName = ''
     for (const [extension, label] of formats) {
       await dockAction('导出')
-      await named('导出格式').click()
-      await browser.$(`[role="option"]=${label}`).click()
-      const name = artifact('native-interchange', extension)
-      await chooseFile('save', name)
-      await expect(named('导出文件')).toBeEnabled()
-      await named('导出文件').click()
+      await selectExportFormat('交换格式', label)
+      const name = basename(await writeExport(extension))
       const dialog = browser.$('[role="dialog"]')
-      await expect(dialog.$('[role="status"]')).toHaveText(expect.stringContaining(name))
       const result = await fixture<{ length: number }>('inspect', { name })
       expect(result.length).toBeGreaterThan(10)
       await dialog.$('button=关闭').click()

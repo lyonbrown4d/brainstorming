@@ -6,7 +6,7 @@ links = "tauri-plugin-brainstorming-native"
 license = "UNLICENSED"
 
 [features]
-e2e = []
+e2e = ["dep:gtk"]
 
 [dependencies]
 image = { version = "0.25.10", default-features = false, features = ["png", "tiff"] }
@@ -40,3 +40,4 @@ windows = { version = "0.62.2", features = ["Win32_UI_Shell", "Win32_System_Com"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 webkit2gtk = { version = "2.0.2", features = ["v2_40"] }
+gtk = { version = "0.18.2", optional = true }

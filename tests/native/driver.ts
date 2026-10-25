@@ -74,8 +74,13 @@ export const fillContentEditable = async (
 export const reloadNativePage = async (): Promise<void> => {
   await focusNativeWindow()
   const previousDocument = await browser.execute(() => performance.timeOrigin)
-  await browser.refresh()
-  // Embedded refresh returns before navigation; startupReady later focuses the window.
+  // WebKit's embedded refresh waits on the JS context it immediately destroys.
+  // Return the driver response first, then perform a real next-frame navigation.
+  await browser.execute(() => {
+    requestAnimationFrame(() => {
+      window.location.reload()
+    })
+  })
   await browser.waitUntil(async () => {
     try {
       const page = await browser.execute(() => ({

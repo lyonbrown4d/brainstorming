@@ -260,8 +260,8 @@ importers:
         specifier: 3.1.2
         version: 3.1.2
       dotenv:
-        specifier: 18.0.8
-        version: 18.0.8
+        specifier: 18.0.9
+        version: 18.0.9
       fast-xml-parser:
         specifier: 5.11.2
         version: 5.11.2
@@ -272,8 +272,8 @@ importers:
         specifier: 4.6.2
         version: 4.6.2
       i18next:
-        specifier: 26.5.5
-        version: 26.5.5(@typescript/typescript6@6.0.2)
+        specifier: 26.5.8
+        version: 26.5.8(@typescript/typescript6@6.0.2)
       image-size:
         specifier: 2.0.4
         version: 2.0.4
@@ -281,8 +281,8 @@ importers:
         specifier: 4.2.1
         version: 4.2.1
       katex:
-        specifier: 0.19.0
-        version: 0.19.0
+        specifier: 0.19.1
+        version: 0.19.1
       lexical:
         specifier: 0.52.0
         version: 0.52.0(@typescript/typescript6@6.0.2)
@@ -329,8 +329,8 @@ importers:
         specifier: 6.1.6
         version: 6.1.6(@types/react@19.3.0)(react@19.3.1)
       react-i18next:
-        specifier: 17.1.2
-        version: 17.1.2(@typescript/typescript6@6.0.2)(i18next@26.5.5(@typescript/typescript6@6.0.2))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: 17.1.6
+        version: 17.1.6(@typescript/typescript6@6.0.2)(i18next@26.5.8(@typescript/typescript6@6.0.2))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       react-markdown:
         specifier: 10.1.0
         version: 10.1.0(@types/react@19.3.0)(react@19.3.1)(supports-color@8.1.1)
@@ -357,8 +357,8 @@ importers:
         version: 5.0.16(@types/react@19.3.0)(react@19.3.1)(use-sync-external-store@1.7.0(react@19.3.1))
     devDependencies:
       '@babel/core':
-        specifier: 8.0.7
-        version: 8.0.7
+        specifier: 8.0.9
+        version: 8.0.9
       '@eslint/compat':
         specifier: 2.1.1
         version: 2.1.1(eslint@10.13.0(jiti@2.7.0)(supports-color@8.1.1))
@@ -366,14 +366,14 @@ importers:
         specifier: 10.0.1
         version: 10.0.1(eslint@10.13.0(jiti@2.7.0)(supports-color@8.1.1))
       '@moonrepo/cli':
-        specifier: 2.6.3
-        version: 2.6.3
+        specifier: 2.6.4
+        version: 2.6.4
       '@playwright/test':
         specifier: 1.64.1
         version: 1.64.1
       '@rolldown/plugin-babel':
         specifier: 0.2.4
-        version: 0.2.4(@babel/core@8.0.7)(@babel/runtime@7.29.10)(rolldown@1.2.14)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.106.1)(sass@1.106.1)(tsx@4.23.15)(yaml@2.9.1))
+        version: 0.2.4(@babel/core@8.0.9)(@babel/runtime@7.29.10)(rolldown@1.2.14)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.106.1)(sass@1.106.1)(tsx@4.23.15)(yaml@2.9.1))
       '@storybook/addon-a11y':
         specifier: 10.6.3
         version: 10.6.3(storybook@10.6.3(@types/react@19.3.0)(prettier@3.9.10)(react@19.3.1))
@@ -424,7 +424,7 @@ importers:
         version: typescript@7.0.2
       '@vitejs/plugin-react':
         specifier: 6.1.2
-        version: 6.1.2(@rolldown/plugin-babel@0.2.4(@babel/core@8.0.7)(@babel/runtime@7.29.10)(rolldown@1.2.14)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.106.1)(sass@1.106.1)(tsx@4.23.15)(yaml@2.9.1)))(babel-plugin-react-compiler@1.0.0)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.106.1)(sass@1.106.1)(tsx@4.23.15)(yaml@2.9.1))
+        version: 6.1.2(@rolldown/plugin-babel@0.2.4(@babel/core@8.0.9)(@babel/runtime@7.29.10)(rolldown@1.2.14)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.106.1)(sass@1.106.1)(tsx@4.23.15)(yaml@2.9.1)))(babel-plugin-react-compiler@1.0.0)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.106.1)(sass@1.106.1)(tsx@4.23.15)(yaml@2.9.1))
       '@vitest/browser-playwright':
         specifier: 5.0.5
         version: 5.0.5(playwright@1.64.1)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.106.1)(sass@1.106.1)(tsx@4.23.15)(yaml@2.9.1))(vitest@5.0.5)
@@ -553,8 +553,8 @@ packages:
     resolution: {integrity: sha512-RgHBCvtjbOK2gXSNBNIkNoEc9qoVEtau3hj8gEqKQuL3HZAibKarWFEI3Lfm6EYKkLalOh8eSrj9b+ch9H/VBA==}
     engines: {node: '>=6.9.0'}
 
-  '@babel/core@8.0.7':
-    resolution: {integrity: sha512-ZIsZWBG6Y1oa+8fkQVp0xeCdjCHBkXFCCIWrmg9SvejVvfcVQgKKRmGrBDWfM7rilhvnRoEuaqa5dkK7KB3pHA==}
+  '@babel/core@8.0.9':
+    resolution: {integrity: sha512-wXtyKlpR/pXf/u0vmib+OBakQaIzLglLcRoKpWxCHW/whqq7YfQYPD0IAAl9H/evi40MyLIjYYdvb6N+9DI2yA==}
     engines: {node: ^22.18.0 || >=24.11.0}
 
   '@babel/generator@7.29.8':
@@ -599,6 +599,10 @@ packages:
     resolution: {integrity: sha512-+6HYEBnsDRZHJtUTAEfMQd0zMDqdFHS7C+5vAsEZqBUr3vEMWOWlHJ0Jz1gS8jJIlCvLsuA6ivmeoqzH936YcA==}
     engines: {node: ^22.18.0 || >=24.11.0}
 
+  '@babel/helper-string-parser@8.0.8':
+    resolution: {integrity: sha512-fVM+gSuKbdv9cpmyRNh5EvsDHUZCdxQH3FdnFKSkNYHpbsn95bbrxm+ES3MVeQjcqwi2O5ur/DjLfmTQaO60ng==}
+    engines: {node: ^22.18.0 || >=24.11.0}
+
   '@babel/helper-validator-identifier@7.29.7':
     resolution: {integrity: sha512-qehxGkRj55h/ff8EMaJ+cYhyaKlHIxqYDn682wQD7RNp9UujOQsHog2uS0r2vzr4pW+sXf90NeeayjcNaX3fFg==}
     engines: {node: '>=6.9.0'}
@@ -619,8 +623,8 @@ packages:
     resolution: {integrity: sha512-EMCx3AGZ3WfAl6ht7AyQoPm2Lh+BGYEMdc4Q6Hf7uSCDOZFuLq44qNwL+iaim8VlyYhRAo4X43+weadK8ZB4Yg==}
     engines: {node: '>=6.9.0'}
 
-  '@babel/helpers@8.0.7':
-    resolution: {integrity: sha512-5dMj5kFwS2AY7Dt4PZp4px3c5ThMbbEa7tZfuHTncCGSFYq8uoA1ufDE1IS/lYpQedE+3+GQ3cPZUiplIu195w==}
+  '@babel/helpers@8.0.8':
+    resolution: {integrity: sha512-FBmhiDWs625wHg03OKiLQDeT6LOc2lWBbW97Yqs2iI1tZcucjpmYnO29NHsQ83XxKvredcvUymW/AAn2UtnakA==}
     engines: {node: ^22.18.0 || >=24.11.0}
 
   '@babel/parser@7.29.9':
@@ -630,6 +634,11 @@ packages:
 
   '@babel/parser@8.0.7':
     resolution: {integrity: sha512-UkDwEbPO1px2JQSrdh4qIgaH1JgG7GO/pFeJkpxhDxIETkT/QvGpnigXIw75ViHYPtIgKITmVUJqLjiO+JuWjA==}
+    engines: {node: ^22.18.0 || >=24.11.0}
+    hasBin: true
+
+  '@babel/parser@8.0.8':
+    resolution: {integrity: sha512-Gq65JogAr0S2p0BzvfSJboyuiRnxDQApyOqHkKmkrvm+VlLK4gC3pKsiOKEdnhFBemrFbSnOu90mZZWDpiJnmQ==}
     engines: {node: ^22.18.0 || >=24.11.0}
     hasBin: true
 
@@ -659,6 +668,10 @@ packages:
 
   '@babel/types@8.0.6':
     resolution: {integrity: sha512-c+xgSWboV2pdwXP67BUWDVRHi2BO5Q3KwxyFVs7taVTY+fsK47/L51ZXQoV9rozHJDNHvJ4v4WEsI/IlxV2l2A==}
+    engines: {node: ^22.18.0 || >=24.11.0}
+
+  '@babel/types@8.0.8':
+    resolution: {integrity: sha512-iXSSZAKQWmaeAwGtFw10v9fg5hUiUs0L+w+Z2K11kym3pDNK+SF0VcAQPsEFvWcTSZ7LMgClMXDBvTbH0IlICg==}
     engines: {node: ^22.18.0 || >=24.11.0}
 
   '@blazediff/core@1.10.0':
@@ -1443,9 +1456,48 @@ packages:
     peerDependencies:
       three: '>= 0.159.0'
 
-  '@moonrepo/cli@2.6.3':
-    resolution: {integrity: sha512-Xz1EPmZmm4KmygA+AWSJh1aIsl7kBV/qeNJpDat/6tyM71URhrg+SawfQ9DCkRA3PZhPFc2X/3MnOnsso8wIMg==}
+  '@moonrepo/cli@2.6.4':
+    resolution: {integrity: sha512-ek5nUwgLkuh5rNVzhsaCvzRnWvIerDdRJVbHESmeblSONIHL1R52MflKoeibqLJ2XhE5RNCyjfS78B1M7Qf/Cg==}
     hasBin: true
+
+  '@moonrepo/core-linux-arm64-gnu@2.6.4':
+    resolution: {integrity: sha512-BIzo1E7t1AnLO5TZr3YU8/p9I34WkmUypCdvIe/AUAdQUo+IES8DgaryBO16YeYB2anAveDGA8DxhhWds2lMiw==}
+    cpu: [arm64]
+    os: [linux]
+    libc: [glibc]
+
+  '@moonrepo/core-linux-arm64-musl@2.6.4':
+    resolution: {integrity: sha512-NBE08jmxc+XvAGfA3FmI4xhAMXS1f2H3ld3ZecQ+VQLV0dVH2yU6JIN0ZvseiSthJFv8p/SHh+eovI5/y54+pg==}
+    cpu: [arm64]
+    os: [linux]
+    libc: [musl]
+
+  '@moonrepo/core-linux-x64-gnu@2.6.4':
+    resolution: {integrity: sha512-RJdBV8c3CVPZzqYx3Hd43mbfBds3mnvGn80rvogmK0YMKnQOb8MUEKt4LnKDzsbJPOItBKaRXGR2vVQ3ins1SA==}
+    cpu: [x64]
+    os: [linux]
+    libc: [glibc]
+
+  '@moonrepo/core-linux-x64-musl@2.6.4':
+    resolution: {integrity: sha512-IlmCBulxt81R3k+qgIM47iTz8whgwhkTWzZcel4cZMPQdArAqSv4x13kULVQ3SJ2q00wovdiBlqIWLpjqvQ9LQ==}
+    cpu: [x64]
+    os: [linux]
+    libc: [musl]
+
+  '@moonrepo/core-macos-arm64@2.6.4':
+    resolution: {integrity: sha512-DY63ZWr+PgaIG91GnIXi1ZBuK67qQs+gkHPHU31zTn8M2hYf6lHPDSMeLJ7bXoDPmQTvMWSmNjpDLxet3nw5Iw==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@moonrepo/core-macos-x64@2.6.4':
+    resolution: {integrity: sha512-m3/yh5nYpCjtt9ulwV0DTdq9zgpFxk0+kzl0y2RFQgMpJ4SqYp+gIME3X/C3to8AyC1TVsuFJ995PVJHQvnRIg==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@moonrepo/core-windows-x64-msvc@2.6.4':
+    resolution: {integrity: sha512-NvAFdbbpu1dpTx6L0y3LwQUnaezW6iPw0L1YBaGPm0/FD2qN0YFRE1FB5iqUz7oyiRhvn9uJiMIlt3wux8fSaw==}
+    cpu: [x64]
+    os: [win32]
 
   '@napi-rs/wasm-runtime@1.2.5':
     resolution: {integrity: sha512-HshSvXzmBxNzqejd3k/KemgQ3hdREUYFRRrgxOZ+gPljDIsO2SDZrVZMd4Z/HsxudQbE62OVyVFE8z9BCurfjA==}
@@ -4996,8 +5048,8 @@ packages:
     resolution: {integrity: sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw==}
     engines: {node: '>=12'}
 
-  dotenv@18.0.8:
-    resolution: {integrity: sha512-2KDeoFoK/zRtcnbunCDlLG5VWVMcyqeQc6iK65o231nfNAcuGrKoqUQfJFUtBI+QlShk5HKIHxwebBtUl3rEfA==}
+  dotenv@18.0.9:
+    resolution: {integrity: sha512-3fVOW4cB02R066PUSwn8O4TJyz9NckQl7F81blIbaq9jKBm2tSmOKky7ZHIXzGvkVPXCSn6jkpziBPZdGFs8Tw==}
     engines: {node: '>=12'}
     hasBin: true
 
@@ -5692,8 +5744,8 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  i18next@26.5.5:
-    resolution: {integrity: sha512-txdaNOlnZCdiTMSlEzl5hUJU8TC9R4J/RCR1G7XrDPbWT2t3mR142QPz84ZuZeXDt3yq+9zmsdPiakxYtmp3fw==}
+  i18next@26.5.8:
+    resolution: {integrity: sha512-EQx2RyhwINMekbykhZpAJQ2ILeJqnYOpRjWEkSVv45pR8yeVbb0thr2zxQ+dOo365OIb7h06BKPtt16WE8Wliw==}
     peerDependencies:
       typescript: ^5 || ^6 || ^7
     peerDependenciesMeta:
@@ -6150,8 +6202,8 @@ packages:
   jszip@3.10.2:
     resolution: {integrity: sha512-3l+rb15IOWtUhU0H5MFqES/T6Kh7abYwjosBey/vD6hDt8zoEffkSC5Ws5SGtgVw3gBx2NEbhTeSW1+kWkpyTQ==}
 
-  katex@0.19.0:
-    resolution: {integrity: sha512-v6Tznz3zJ7u3niRCoDTsumM2+HA2XXcCu+WAacCeHD2z3p9A9Ks987o5FzfTGBN0e8A0vjEgIDvLbICrXpdw/Q==}
+  katex@0.19.1:
+    resolution: {integrity: sha512-jG8uKntjSEcm2EpQOh0XturpPuuC9r3Sq5HLHdsFdWZT27E672SF19QEi+of0/YeOy15lDgRhKvr5614uRrEfA==}
     hasBin: true
 
   keyv@3.1.0:
@@ -7166,8 +7218,8 @@ packages:
       react:
         optional: true
 
-  react-i18next@17.1.2:
-    resolution: {integrity: sha512-v/dCmObvAI/4yj1rlcsiKn08BDfaJ/MZxQAkbILssfm3K0zglRAj+DQ5uJjhKyLrxDiCfw9Ay5PXAeiE7Y6LCQ==}
+  react-i18next@17.1.6:
+    resolution: {integrity: sha512-Chrt5sVco051WgQST6RA3/BePVNC6fBf9BtXhKts0i7vpGVziqyLb5IrmdNtsEYE5vJ0mEDkJHWF1Gie40khXA==}
     peerDependencies:
       i18next: '>= 26.2.0'
       react: '>= 16.8.0'
@@ -8706,16 +8758,16 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@babel/core@8.0.7':
+  '@babel/core@8.0.9':
     dependencies:
       '@babel/code-frame': 8.0.6
       '@babel/generator': 8.0.6
       '@babel/helper-compilation-targets': 8.0.7
-      '@babel/helpers': 8.0.7
-      '@babel/parser': 8.0.7
+      '@babel/helpers': 8.0.8
+      '@babel/parser': 8.0.8
       '@babel/template': 8.0.0
       '@babel/traverse': 8.0.7
-      '@babel/types': 8.0.6
+      '@babel/types': 8.0.8
       '@types/gensync': 1.0.5
       convert-source-map: 2.0.0
       empathic: 2.1.0
@@ -8782,6 +8834,8 @@ snapshots:
 
   '@babel/helper-string-parser@8.0.6': {}
 
+  '@babel/helper-string-parser@8.0.8': {}
+
   '@babel/helper-validator-identifier@7.29.7': {}
 
   '@babel/helper-validator-identifier@8.0.6': {}
@@ -8795,10 +8849,10 @@ snapshots:
       '@babel/template': 7.29.7
       '@babel/types': 7.29.8
 
-  '@babel/helpers@8.0.7':
+  '@babel/helpers@8.0.8':
     dependencies:
       '@babel/template': 8.0.0
-      '@babel/types': 8.0.6
+      '@babel/types': 8.0.8
 
   '@babel/parser@7.29.9':
     dependencies:
@@ -8807,6 +8861,10 @@ snapshots:
   '@babel/parser@8.0.7':
     dependencies:
       '@babel/types': 8.0.6
+
+  '@babel/parser@8.0.8':
+    dependencies:
+      '@babel/types': 8.0.8
 
   '@babel/runtime@7.29.10': {}
 
@@ -8852,6 +8910,11 @@ snapshots:
   '@babel/types@8.0.6':
     dependencies:
       '@babel/helper-string-parser': 8.0.6
+      '@babel/helper-validator-identifier': 8.0.6
+
+  '@babel/types@8.0.8':
+    dependencies:
+      '@babel/helper-string-parser': 8.0.8
       '@babel/helper-validator-identifier': 8.0.6
 
   '@blazediff/core@1.10.0': {}
@@ -9637,9 +9700,38 @@ snapshots:
       promise-worker-transferable: 1.0.4
       three: 0.186.1
 
-  '@moonrepo/cli@2.6.3':
+  '@moonrepo/cli@2.6.4':
     dependencies:
       detect-libc: 2.1.2
+    optionalDependencies:
+      '@moonrepo/core-linux-arm64-gnu': 2.6.4
+      '@moonrepo/core-linux-arm64-musl': 2.6.4
+      '@moonrepo/core-linux-x64-gnu': 2.6.4
+      '@moonrepo/core-linux-x64-musl': 2.6.4
+      '@moonrepo/core-macos-arm64': 2.6.4
+      '@moonrepo/core-macos-x64': 2.6.4
+      '@moonrepo/core-windows-x64-msvc': 2.6.4
+
+  '@moonrepo/core-linux-arm64-gnu@2.6.4':
+    optional: true
+
+  '@moonrepo/core-linux-arm64-musl@2.6.4':
+    optional: true
+
+  '@moonrepo/core-linux-x64-gnu@2.6.4':
+    optional: true
+
+  '@moonrepo/core-linux-x64-musl@2.6.4':
+    optional: true
+
+  '@moonrepo/core-macos-arm64@2.6.4':
+    optional: true
+
+  '@moonrepo/core-macos-x64@2.6.4':
+    optional: true
+
+  '@moonrepo/core-windows-x64-msvc@2.6.4':
+    optional: true
 
   '@napi-rs/wasm-runtime@1.2.5(@emnapi/core@1.11.0)(@emnapi/runtime@1.11.0)':
     dependencies:
@@ -10970,9 +11062,9 @@ snapshots:
   '@rolldown/binding-win32-x64-msvc@1.2.14':
     optional: true
 
-  '@rolldown/plugin-babel@0.2.4(@babel/core@8.0.7)(@babel/runtime@7.29.10)(rolldown@1.2.14)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.106.1)(sass@1.106.1)(tsx@4.23.15)(yaml@2.9.1))':
+  '@rolldown/plugin-babel@0.2.4(@babel/core@8.0.9)(@babel/runtime@7.29.10)(rolldown@1.2.14)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.106.1)(sass@1.106.1)(tsx@4.23.15)(yaml@2.9.1))':
     dependencies:
-      '@babel/core': 8.0.7
+      '@babel/core': 8.0.9
       picomatch: 4.0.7
       rolldown: 1.2.14
     optionalDependencies:
@@ -11757,12 +11849,12 @@ snapshots:
       '@use-gesture/core': 10.3.1
       react: 19.3.1
 
-  '@vitejs/plugin-react@6.1.2(@rolldown/plugin-babel@0.2.4(@babel/core@8.0.7)(@babel/runtime@7.29.10)(rolldown@1.2.14)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.106.1)(sass@1.106.1)(tsx@4.23.15)(yaml@2.9.1)))(babel-plugin-react-compiler@1.0.0)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.106.1)(sass@1.106.1)(tsx@4.23.15)(yaml@2.9.1))':
+  '@vitejs/plugin-react@6.1.2(@rolldown/plugin-babel@0.2.4(@babel/core@8.0.9)(@babel/runtime@7.29.10)(rolldown@1.2.14)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.106.1)(sass@1.106.1)(tsx@4.23.15)(yaml@2.9.1)))(babel-plugin-react-compiler@1.0.0)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.106.1)(sass@1.106.1)(tsx@4.23.15)(yaml@2.9.1))':
     dependencies:
       '@rolldown/pluginutils': 1.0.1
       vite: 8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.106.1)(sass@1.106.1)(tsx@4.23.15)(yaml@2.9.1)
     optionalDependencies:
-      '@rolldown/plugin-babel': 0.2.4(@babel/core@8.0.7)(@babel/runtime@7.29.10)(rolldown@1.2.14)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.106.1)(sass@1.106.1)(tsx@4.23.15)(yaml@2.9.1))
+      '@rolldown/plugin-babel': 0.2.4(@babel/core@8.0.9)(@babel/runtime@7.29.10)(rolldown@1.2.14)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.106.1)(sass@1.106.1)(tsx@4.23.15)(yaml@2.9.1))
       babel-plugin-react-compiler: 1.0.0
 
   '@vitest/browser-playwright@5.0.5(playwright@1.64.1)(vite@8.3.5(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.106.1)(sass@1.106.1)(tsx@4.23.15)(yaml@2.9.1))(vitest@5.0.5)':
@@ -13037,7 +13129,7 @@ snapshots:
 
   dotenv@17.4.2: {}
 
-  dotenv@18.0.8: {}
+  dotenv@18.0.9: {}
 
   draco3d@1.5.9: {}
 
@@ -13982,7 +14074,7 @@ snapshots:
 
   husky@9.1.7: {}
 
-  i18next@26.5.5(@typescript/typescript6@6.0.2):
+  i18next@26.5.8(@typescript/typescript6@6.0.2):
     optionalDependencies:
       typescript: '@typescript/typescript6@6.0.2'
 
@@ -14435,7 +14527,7 @@ snapshots:
       readable-stream: 2.3.8
       setimmediate: 1.0.5
 
-  katex@0.19.0:
+  katex@0.19.1:
     dependencies:
       commander: 15.0.0
 
@@ -15724,11 +15816,11 @@ snapshots:
     optionalDependencies:
       react: 19.3.1
 
-  react-i18next@17.1.2(@typescript/typescript6@6.0.2)(i18next@26.5.5(@typescript/typescript6@6.0.2))(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
+  react-i18next@17.1.6(@typescript/typescript6@6.0.2)(i18next@26.5.8(@typescript/typescript6@6.0.2))(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
     dependencies:
       '@babel/runtime': 7.29.10
       html-parse-stringify: 4.0.1
-      i18next: 26.5.5(@typescript/typescript6@6.0.2)
+      i18next: 26.5.8(@typescript/typescript6@6.0.2)
       react: 19.3.1
       use-sync-external-store: 1.7.0(react@19.3.1)
     optionalDependencies:

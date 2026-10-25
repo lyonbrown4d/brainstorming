@@ -39,6 +39,21 @@ struct Envelope {
   request: Request,
 }
 
+pub(super) fn trusted<R: Runtime>(app: &AppHandle<R>, window: &WebviewWindow<R>) -> bool {
+  let Ok(url) = window.url() else { return false };
+  app.config().identifier == "app.brainstorming.e2e"
+    && (window.label() == "main" || window.label().starts_with("editor-"))
+    && ((url.scheme() == "tauri" && url.host_str() == Some("localhost"))
+      || (matches!(url.scheme(), "http" | "https") && url.host_str() == Some("tauri.localhost"))
+      || (cfg!(debug_assertions)
+        && app
+          .config()
+          .build
+          .dev_url
+          .as_ref()
+          .is_some_and(|dev| url.origin() == dev.origin())))
+}
+
 pub(crate) async fn call<R: Runtime>(app: &AppHandle<R>, payload: Value) -> Result<Value> {
   if app.config().identifier != "app.brainstorming.e2e" || payload.to_string().len() > 32_768 {
     return Err("此应用无权使用原生测试输入或请求超限".into());
@@ -47,7 +62,7 @@ pub(crate) async fn call<R: Runtime>(app: &AppHandle<R>, payload: Value) -> Resu
   let window = app
     .get_webview_window(&envelope.window_label)
     .ok_or("原生测试窗口不存在")?;
-  if !native::trusted(app, &window) {
+  if !trusted(app, &window) {
     return Err("此窗口无权使用原生测试输入".into());
   }
   let adapter = app.state::<Arc<Adapter>>();
@@ -126,6 +141,8 @@ async fn run<R: Runtime>(
   let delivery = Arc::new(std::sync::Mutex::new(native::Delivery {
     number: 0,
     point: points[0],
+    #[cfg(target_os = "linux")]
+    bounds: None,
   }));
   let mut last = points[0];
   let mut events = 0_u64;

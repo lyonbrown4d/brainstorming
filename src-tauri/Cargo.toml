@@ -27,7 +27,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [features]
 default = ["native-ui"]
-native-ui = ["dep:tauri-specta", "dep:specta-typescript", "dep:fluxdi", "dep:tauri", "dep:tauri-plugin-dialog", "dep:tauri-plugin-opener", "dep:tauri-plugin-clipboard-manager", "dep:tauri-plugin-fs", "dep:tauri-plugin-deep-link", "dep:tauri-plugin-os", "dep:tauri-plugin-log", "dep:tauri-plugin-window-state", "dep:tauri-plugin-notification", "dep:tauri-plugin-brainstorming-native", "dep:tauri-plugin-single-instance", "dep:tauri-plugin-macos-fps"]
+native-ui = ["dep:tauri-specta", "dep:specta-typescript", "dep:fluxdi", "dep:tauri", "dep:tauri-plugin-dialog", "dep:tauri-plugin-opener", "dep:tauri-plugin-clipboard-manager", "dep:tauri-plugin-fs", "dep:tauri-plugin-deep-link", "dep:tauri-plugin-os", "dep:tauri-plugin-log", "dep:tauri-plugin-window-state", "dep:tauri-plugin-notification", "dep:tauri-plugin-brainstorming-native", "dep:tauri-plugin-single-instance", "dep:tauri-plugin-macos-fps", "dep:rust-ini"]
 e2e = ["native-ui", "dep:tauri-plugin-wdio", "dep:tauri-plugin-wdio-webdriver", "tauri-plugin-brainstorming-native/e2e"]
 
 [build-dependencies]
@@ -60,7 +60,7 @@ d3-hierarchy = "0.1.1"
 specta = { version = "=2.0.0-rc.26", features = ["derive", "serde_json"] }
 tauri-specta = { version = "=2.0.0-rc.26", optional = true, features = ["typescript"] }
 specta-typescript = { version = "0.0.13", optional = true }
-zip = { version = "9.0.5", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+zip = { version = "9.1.0", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 quick-xml = "0.42.0"
 pulldown-cmark = "0.13.5"
 sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros"] }
@@ -102,7 +102,7 @@ svg2pdf = "0.13.0"
 # svg2pdf 0.13 exposes pdf-writer 0.12 Chunk/Ref types used by our PDF composition.
 pdf-writer = "0.12.1"
 docx-rs = { version = "0.4.22", default-features = false }
-ppt-rs = { version = "0.2.36", default-features = false, features = ["pdf-native"] }
+ppt-rs = { version = "0.2.37", default-features = false, features = ["pdf-native"] }
 csv = "1.4.0"
 same-file = "1.0.6"
 
@@ -117,6 +117,10 @@ keyring = { version = "4.2.0", features = ["v1"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 tauri-plugin-macos-fps = { version = "0.1.0", optional = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# deep-link 2.6.2 initializes ParseOption exhaustively; later 0.21 releases add fields.
+rust-ini = { version = "=0.21.1", optional = true }
 
 [dev-dependencies]
 lopdf = "0.46"

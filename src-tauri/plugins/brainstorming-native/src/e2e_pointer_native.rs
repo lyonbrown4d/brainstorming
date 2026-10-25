@@ -1,5 +1,8 @@
 //! AppKit delivery restricted to one live, locally trusted E2E WKWebView.
-use super::e2e_pointer_request::{Point, Viewport};
+use super::{
+  e2e_pointer::trusted,
+  e2e_pointer_request::{Point, Viewport},
+};
 use objc2_app_kit::{NSApplication, NSEvent, NSEventModifierFlags, NSEventType};
 use objc2_foundation::{NSPoint, NSProcessInfo};
 use objc2_web_kit::WKWebView;
@@ -17,21 +20,6 @@ pub(super) enum Phase {
 pub(super) struct Delivery {
   pub number: isize,
   pub point: Point,
-}
-
-pub(super) fn trusted<R: Runtime>(app: &AppHandle<R>, window: &WebviewWindow<R>) -> bool {
-  let Ok(url) = window.url() else { return false };
-  app.config().identifier == "app.brainstorming.e2e"
-    && (window.label() == "main" || window.label().starts_with("editor-"))
-    && ((url.scheme() == "tauri" && url.host_str() == Some("localhost"))
-      || (matches!(url.scheme(), "http" | "https") && url.host_str() == Some("tauri.localhost"))
-      || (cfg!(debug_assertions)
-        && app
-          .config()
-          .build
-          .dev_url
-          .as_ref()
-          .is_some_and(|dev| url.origin() == dev.origin())))
 }
 
 pub(super) async fn send<R: Runtime>(

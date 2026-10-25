@@ -12,7 +12,7 @@ interface NativePointerStatus {
   readonly automaticRelease: boolean
 }
 
-/** Native AppKit events target only the isolated E2E WKWebView; never the system pointer. */
+/** Native AppKit/GTK events target only the isolated E2E WebView. */
 export const startNativePointer = async (choice: SpatialDragChoice) => {
   await focusNativeWindow()
   const viewport = await browser.execute(() => ({ width: innerWidth, height: innerHeight }))
@@ -21,7 +21,7 @@ export const startNativePointer = async (choice: SpatialDragChoice) => {
     x: choice.start.x + ((choice.end.x - choice.start.x) * index) / steps,
     y: choice.start.y + ((choice.end.y - choice.start.y) * index) / steps,
   }))
-  if (process.platform !== 'darwin') {
+  if (process.platform !== 'darwin' && process.platform !== 'linux') {
     const id = 'independent-native-pointer'
     await browser.performActions([
       {
