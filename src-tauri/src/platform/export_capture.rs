@@ -1,4 +1,6 @@
-use crate::{compute::wire::JsonValue, document_exports::Page};
+use crate::compute::wire::JsonValue;
+#[cfg(desktop)]
+use crate::document_exports::Page;
 use serde::Deserialize;
 use tauri::{AppHandle, WebviewWindow};
 

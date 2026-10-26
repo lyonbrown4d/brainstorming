@@ -90,6 +90,8 @@ pub fn init() -> TauriPlugin<tauri::DynRuntime> {
       Ok(())
     })
     .on_event(|app, event| {
+      #[cfg(mobile)]
+      let _ = (app, event);
       #[cfg(desktop)]
       if let tauri::RunEvent::WindowEvent {
         label,

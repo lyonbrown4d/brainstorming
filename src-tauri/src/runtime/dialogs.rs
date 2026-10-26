@@ -16,13 +16,18 @@ pub async fn open(app: &AppHandle) -> Result<Option<PathBuf>> {
   #[cfg(not(feature = "e2e"))]
   {
     let (send, receive) = oneshot::channel();
-    app
-      .dialog()
-      .file()
-      .add_filter(
-        "Brainstorming / XMind / Outline",
-        &["brainstorming", "xmind", "opml", "md", "markdown", "txt"],
-      )
+    let picker = app.dialog().file().add_filter(
+      "Brainstorming / XMind / Outline",
+      &["brainstorming", "xmind", "opml", "md", "markdown", "txt"],
+    );
+    // Android does not map custom extensions to MIME types. Include our MIME
+    // and existing files saved as generic binary; Rust validates their contents.
+    #[cfg(target_os = "android")]
+    let picker = picker.add_filter(
+      "Brainstorming",
+      &["application/vnd.brainstorming", "application/octet-stream"],
+    );
+    picker
       .set_picker_mode(PickerMode::Document)
       .set_file_access_mode(FileAccessMode::Scoped)
       .pick_file(move |file| {
@@ -49,11 +54,16 @@ pub async fn save(app: &AppHandle, suggested: &str, format: &str) -> Result<Opti
     } else {
       format!("{name}.{format}")
     };
+    let filter = if cfg!(target_os = "android") && format == "brainstorming" {
+      "application/vnd.brainstorming"
+    } else {
+      format
+    };
     app
       .dialog()
       .file()
       .set_file_name(&name)
-      .add_filter(format.to_uppercase(), &[format])
+      .add_filter(format.to_uppercase(), &[filter])
       .save_file(move |file| {
         let _ = send.send(file);
       });

@@ -20,3 +20,7 @@ dist/
 
 # Generated from Rust by tauri3-specta; regenerate before frontend checks/build.
 src/generated/
+
+# Tauri CLI generates the Android plugin SDK for the selected runtime.
+src-tauri/plugins/brainstorming-native/android/.tauri/
+src-tauri/plugins/brainstorming-native/android/build/

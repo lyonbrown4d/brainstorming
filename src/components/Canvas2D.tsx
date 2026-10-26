@@ -24,6 +24,7 @@ import { useCanvasRelations } from '@renderer/hooks/useCanvasRelations'
 import { canvasFitPadding } from '@renderer/hooks/useWorkbenchInsets'
 import { CanvasOverlay } from '@renderer/components/workbench/CanvasOverlay'
 import { useCanvasViewport } from '@renderer/hooks/useCanvasViewport'
+import { useCanvasEditorViewport } from '@renderer/hooks/useCanvasEditorViewport'
 import { useCanvasDrag } from '@renderer/hooks/useCanvasDrag'
 import { CanvasDropPreview } from '@renderer/components/workbench/CanvasDropPreview'
 import { DragFeedback } from '@renderer/components/workbench/DragFeedback'
@@ -49,6 +50,7 @@ export const Canvas2D = () => {
   const workbookId = useEditor((state) => state.workbook.id)
   const flow = useReactFlow<CanvasFlowNode>()
   useCanvasViewport()
+  useCanvasEditorViewport()
   const reduceMotion = useReducedMotion()
   const document = useEditor((state) => state.history.document)
   const activeSheetId = useEditor((state) => state.activeSheetId)

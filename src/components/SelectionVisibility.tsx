@@ -44,7 +44,7 @@ export const SelectionVisibility = () => {
     const frame = requestAnimationFrame(() => {
       const editor = useEditor.getState()
       const spatial = getSpatialView(editor.workbook.id, editor.activeSheetId).mode === '3d'
-      const immediate = Boolean(reduceMotion)
+      const immediate = Boolean(reduceMotion) || editor.editingId !== null
       if (prior.structure !== structure && !spatial) {
         void flow.fitView({
           padding: canvasFitPadding(),

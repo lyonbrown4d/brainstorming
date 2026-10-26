@@ -15,11 +15,14 @@ pub async fn focus_editor_window(
     return Err("编辑窗口已关闭".into());
   }
   let target = app.get_webview_window(&window_id).ok_or("编辑窗口已关闭")?;
-  target.unminimize().map_err(|_| "无法恢复窗口")?;
-  target.show().map_err(|_| "无法显示窗口")?;
-  target.set_focus().map_err(|_| "无法聚焦窗口")?;
-  target
-    .as_ref()
-    .set_focus()
-    .map_err(|_| "无法聚焦工作区".into())
+  #[cfg(desktop)]
+  {
+    target.unminimize().map_err(|_| "无法恢复窗口")?;
+    target.show().map_err(|_| "无法显示窗口")?;
+    target.set_focus().map_err(|_| "无法聚焦窗口")?;
+    target.as_ref().set_focus().map_err(|_| "无法聚焦工作区")?;
+  }
+  #[cfg(mobile)]
+  let _ = target;
+  Ok(())
 }

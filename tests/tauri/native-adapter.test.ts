@@ -48,6 +48,7 @@ describe('Tauri platform adapter', () => {
   it('exposes settings-only notification operations without requesting on initialization', async () => {
     const native = fixture()
     const { api, dispose } = await createNativeAPI(native.transport, initial)
+    expect(api.windows).toBeDefined()
     expect(native.calls).toEqual([])
     native.setResult({ enabled: false, permission: 'denied' })
     await expect(api.getNotificationSettings()).resolves.toEqual({
@@ -178,11 +179,13 @@ describe('Tauri platform adapter', () => {
     )
     expect(native.events.size).toBe(0)
   })
-  it('does not register desktop drag-and-drop on mobile', async () => {
+  it.each(['ios', 'android'] as const)('omits desktop capabilities on %s', async (platform) => {
     const native = fixture()
     const onDrop = vi.spyOn(native.transport, 'onDrop')
-    const { api } = await createNativeAPI(native.transport, { ...initial, platform: 'ios' })
-    expect(api.platform).toBe('ios')
+    const { api, dispose } = await createNativeAPI(native.transport, { ...initial, platform })
+    expect(api.platform).toBe(platform)
+    expect(api.windows).toBeUndefined()
     expect(onDrop).not.toHaveBeenCalled()
+    dispose()
   })
 })

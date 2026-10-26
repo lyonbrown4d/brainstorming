@@ -108,6 +108,7 @@ pub async fn move_document(
     .await?;
   let _ = app.emit_to(&target, "native:document-transfer", ());
   if let Some(window) = app.get_webview_window(&target) {
+    #[cfg(desktop)]
     let _ = window.unminimize();
     let _ = window.set_focus();
   }
@@ -135,6 +136,7 @@ pub async fn focus_owner(app: &AppHandle, state: &AppState, path: &std::path::Pa
   };
   let _ = app.emit_to(&owner, "native:focus-document", &id);
   if let Some(window) = app.get_webview_window(&owner) {
+    #[cfg(desktop)]
     let _ = window.unminimize();
     let _ = window.show();
     let _ = window.set_focus();

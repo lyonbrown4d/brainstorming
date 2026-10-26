@@ -98,6 +98,8 @@ svg2pdf = "0.13.0"
 # svg2pdf 0.13 exposes pdf-writer 0.12 Chunk/Ref types used by our PDF composition.
 pdf-writer = "0.12.1"
 docx-rs = { version = "0.4.22", default-features = false }
+# Cargo.lock keeps pdfrs at 0.1.10: 0.1.11–0.1.13 omit Android/iOS font paths.
+# ppt-rs currently requires pdf-native even for writer-only use; keep it enabled.
 ppt-rs = { version = "0.2.37", default-features = false, features = ["pdf-native"] }
 csv = "1.4.0"
 same-file = "1.0.6"

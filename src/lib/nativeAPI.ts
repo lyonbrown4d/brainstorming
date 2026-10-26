@@ -12,7 +12,7 @@ import type { MenuActionEvent } from '@renderer/generated/native'
 import type { DesktopAPI, DroppedFilesResult } from '@shared/contracts'
 import type { AppLanguage } from '@shared/language'
 import type { DesktopPlatform, WindowState } from '@shared/window'
-import { isWindowState } from '@shared/window'
+import { hasWindowControls, isWindowState } from '@shared/window'
 import type { MCPBridgeRequest, MCPConnection } from '@shared/mcp'
 import type { NativeDrop, NativeTransport } from '@renderer/lib/nativeTransport'
 import {
@@ -121,7 +121,7 @@ export const createNativeAPI = async (
           documentExportProgressSchema.safeParse(value).success,
       ),
     ),
-    windows: createWindowAPI(request, on),
+    ...(hasWindowControls(initial.platform) ? { windows: createWindowAPI(request, on) } : {}),
     ...(windowAction
       ? {
           minimizeWindow: () => windowAction('minimize'),

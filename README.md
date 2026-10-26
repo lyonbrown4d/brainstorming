@@ -60,6 +60,7 @@ pnpm package --debug --bundles deb
 - [原生图片库与平台能力](docs/native-libraries.md)
 - [测试迁移与验证边界](docs/testing-migration.md)
 - [Linux 本机验证记录](docs/linux-validation.md)
+- [Android 本机验证记录](docs/android-validation.md)
 - [产品说明](product.md)
 
 ```sh

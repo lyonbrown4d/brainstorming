@@ -64,6 +64,7 @@ pub fn register(app: &AppHandle) {
 pub fn dispatch(app: &AppHandle, id: &str) {
   if let Some(label) = id.strip_prefix("focusWindow:") {
     if let Some(window) = app.get_webview_window(label) {
+      #[cfg(desktop)]
       let _ = window.unminimize();
       let _ = window.show();
       let _ = window.set_focus();

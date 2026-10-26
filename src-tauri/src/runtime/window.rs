@@ -16,13 +16,17 @@ pub fn startup_ready(app: &AppHandle, label: &str) -> Result<()> {
     splash.hide().map_err(|_| "无法隐藏启动窗口")?;
     splash.close().map_err(|_| "无法关闭启动窗口")?;
   }
-  main.unminimize().map_err(|_| "无法恢复主窗口")?;
-  main.show().map_err(|_| "无法显示主窗口")?;
-  #[cfg(target_os = "macos")]
-  app.show().map_err(|_| "无法显示应用")?;
-  main.set_focus().map_err(|_| "无法聚焦窗口")?;
-  // A key native window can still leave its webview without keyboard focus after reload.
-  main.as_ref().set_focus().map_err(|_| "无法聚焦工作区")?;
+  // Mobile visibility and focus belong to the system Activity / view controller.
+  #[cfg(desktop)]
+  {
+    main.unminimize().map_err(|_| "无法恢复主窗口")?;
+    main.show().map_err(|_| "无法显示主窗口")?;
+    #[cfg(target_os = "macos")]
+    app.show().map_err(|_| "无法显示应用")?;
+    main.set_focus().map_err(|_| "无法聚焦窗口")?;
+    // A key native window can leave its webview without keyboard focus after reload.
+    main.as_ref().set_focus().map_err(|_| "无法聚焦工作区")?;
+  }
   Ok(())
 }
 
@@ -44,6 +48,7 @@ pub async fn appearance(app: &AppHandle, label: &str, theme: &str) -> Result<()>
   }
   #[cfg(mobile)]
   {
+    let _ = label;
     use tauri_plugin_brainstorming_native::NativeBridgeExt;
     app.native_bridge()
             .call(
@@ -57,6 +62,12 @@ pub async fn appearance(app: &AppHandle, label: &str, theme: &str) -> Result<()>
 }
 pub fn command(app: &AppHandle, label: &str, method: &str) -> Result<Value> {
   let window = app.get_webview_window(label).ok_or("应用窗口不可用")?;
+  #[cfg(mobile)]
+  let result = match method {
+    "closeWindow" => window.close(),
+    _ => return Err("当前平台不支持桌面窗口操作".into()),
+  };
+  #[cfg(desktop)]
   let result = match method {
     "minimizeWindow" => window.minimize(),
     "maximizeWindow" => {
@@ -128,6 +139,7 @@ pub async fn enqueue_open(app: &AppHandle, path: std::path::PathBuf) -> bool {
     if let Some(window) = app.get_webview_window(&label)
       && window.is_visible().unwrap_or(false)
     {
+      #[cfg(desktop)]
       let _ = window.unminimize();
       let _ = window.set_focus();
     }

@@ -2,7 +2,9 @@ use crate::{
   media::MediaState,
   runtime::{self, AppState},
 };
-use std::{path::PathBuf, sync::Arc};
+#[cfg(desktop)]
+use std::path::PathBuf;
+use std::sync::Arc;
 use tauri::{Manager, RunEvent};
 
 pub fn run() {

@@ -1,6 +1,7 @@
 /target/
 /gen/android/.gradle/
 /gen/android/.kotlin/
+/gen/android/buildSrc/.kotlin/
 /gen/android/app/build/
 /gen/android/build/
 /gen/android/local.properties

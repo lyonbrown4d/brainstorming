@@ -98,6 +98,27 @@ CI 保留 Node 24 / 26 的前端、Storybook 构建与浏览器检查；Ubuntu �
 
 移动工程使用 Tauri 官方生成结构 `src-tauri/gen/apple` 和 `src-tauri/gen/android`。原生依赖、签名和模拟器必须独立验证，前端构建成功不代表手机端可以发布。
 
+Android 工程当前使用 SDK / Build Tools 37.0.0 和 NDK 28.2.13676358。Linux 主机可按以下方式构建 x86_64 模拟器的完整调试 APK；`JAVA_HOME` 指向本机 JDK 21，`ANDROID_HOME` 指向已有 SDK：
+
+```sh
+export NDK_HOME="$ANDROID_HOME/ndk/28.2.13676358"
+export ANDROID_NDK_HOME="$NDK_HOME"
+export TARGET_RANLIB="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ranlib"
+rustup target add x86_64-linux-android
+pnpm native:vips --android
+pnpm build:android --debug --target x86_64 --apk --ci
+```
+
+`TARGET_RANLIB` 只设置交叉编译的归档索引工具，供 SQLCipher 的 OpenSSL 构建使用；NDK 不提供旧的 `x86_64-linux-android-ranlib`。其他主机须选择 NDK 中实际存在的 LLVM 工具目录。`pnpm native:vips --android` 使用锁定的 Android 原生包，不能链接宿主机 libvips。
+
+`Cargo.lock` 暂时锁定间接依赖 `pdfrs 0.1.10`；0.1.11–0.1.13 的字体路径代码缺少 Android / iOS 分支，导致交叉编译失败。`ppt-rs 0.2.37` 即使只使用 PPTX 写入 API 也要求启用 `pdf-native`，不能直接关闭该 feature。后续升级须重新验证移动端编译及现有 PPTX 导出测试。
+
+本机模拟器验收应单独启动只读 AVD，并用明确的设备序列号执行安装和输入，避免影响已有设备。验收对象必须是当前源码构建且内嵌前端资源的 APK；构建通过、模拟器通过和真机通过分别记录。
+
+Android 打开选择器显式接受 `application/vnd.brainstorming` 和已有的二进制类型文档；仅依赖扩展名映射会把自定义格式置灰。新文档保存使用应用 MIME，读取仍由 Rust 校验文件内容。剪贴板使用独立 FileProvider，授权范围保持在其缓存子目录内。移动端不提供桌面多窗口能力。
+
+Android 的边到边窗口在 Activity 层应用 IME insets，让 WebView 随软键盘调整高度。二维画布通过 React Flow Store 的尺寸订阅，在可见节点列表提交前同步保住活动编辑器；编辑期间的自动取景不播放位移动画。继续保留画布虚拟化，不因编辑而挂载全图。回归覆盖见 `tests/canvas/topic-resize.spec.ts`，环境与本机结果见 [Android 验证记录](android-validation.md)。
+
 初始化或重新生成移动工程后，必须再运行 `pnpm tauri icon src/assets/brand/logo-dark.png --output src-tauri/icons`，更新已初始化工程实际使用的 Android / iOS 图标。
 `src-tauri/icons/android` 和 `src-tauri/icons/ios` 保留同源的 fallback 图标；iOS init 会从官方模板创建缺失资源，不能仅依靠 fallback 目录自动覆盖新工程的占位图。
 
