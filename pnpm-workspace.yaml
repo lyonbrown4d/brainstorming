@@ -1,5 +1,7 @@
 # Package-manager settings only; this repository contains one root package.
-engineStrict: true
+# Dependency engine ranges may omit Node 25; validate compatibility with the suite.
+# The root package's Node/pnpm engine requirements remain enforced by pnpm.
+engineStrict: false
 strictPeerDependencies: false
 allowBuilds:
   '@parcel/watcher@2.6.0': true

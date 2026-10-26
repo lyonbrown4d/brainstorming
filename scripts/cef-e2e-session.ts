@@ -21,7 +21,11 @@ export const cefDriverCapability = (version: string): WebdriverIO.Capabilities =
 })
 
 export const readCefVersion = async (): Promise<string> => {
-  const result = await $({ quiet: true, timeout: '5s' })`${nativeE2E.binary} --e2e-browser-version`
+  // macOS can validate a newly signed app before its first process starts.
+  const result = await $({
+    quiet: true,
+    timeout: process.platform === 'darwin' ? '30s' : '5s',
+  })`${nativeE2E.binary} --e2e-browser-version`
   return z
     .string()
     .regex(/^\d+\.\d+\.\d+\.\d+$/)

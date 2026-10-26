@@ -95,11 +95,14 @@ fn main() {
       );
     }
   } else if let Some(directory) = env::var_os("VIPS_LIB_DIR") {
-    println!(
-      "cargo:rustc-link-search=native={}",
-      PathBuf::from(directory).display()
-    );
+    let directory = PathBuf::from(directory);
+    println!("cargo:rustc-link-search=native={}", directory.display());
     if target.contains("apple-darwin") {
+      // Binding generation runs outside the app bundle during beforeBuildCommand.
+      println!(
+        "cargo:rustc-link-arg-bin=generate-bindings=-Wl,-rpath,{}",
+        directory.display()
+      );
       let lock: serde_json::Value =
         serde_json::from_str(include_str!("../config/native-vips-macos.lock.json"))
           .expect("macOS native image manifest invalid");

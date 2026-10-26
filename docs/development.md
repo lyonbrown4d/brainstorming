@@ -1,6 +1,6 @@
 # 开发
 
-项目使用单个 pnpm package、Vite、Moon 和 Tauri 3 alpha。前端为 React / TypeScript，原生服务为 Rust，移动端平台适配为 Swift / Kotlin。Node.js 要求 24 或更新版本；依赖工具支持 Node 24 LTS 或 26 及更新版本，避免使用已停止支持的奇数版本。pnpm 固定为 packageManager 声明的 12.x。
+项目使用单个 pnpm package、Vite、Moon 和 Tauri 3 alpha。前端为 React / TypeScript，原生服务为 Rust，移动端平台适配为 Swift / Kotlin。Node.js 要求 24 或更新版本，本机可继续使用 Node 25；pnpm 固定为 packageManager 声明的 12.x。部分依赖的 engines 范围未声明 Node 25，`engineStrict: false` 将依赖版本检查保留为警告；根 package 的 Node / pnpm 要求仍由 pnpm 强制校验，`verifyDepsBeforeRun: error` 继续检查已安装依赖与锁文件的一致性。项目命令沿用终端的 Node，不自动下载或替换运行时。`.nvmrc` 和 `.node-version` 继续推荐 Node 24，CI 覆盖 Node 24 / 25 / 26 验证；Node 25 的实际兼容性以本机测试结果为准。
 
 ## 本机准备
 
@@ -16,6 +16,8 @@ pnpm dev
 ## 原生接口生成
 
 `pnpm generate:bindings` 从真实 Rust 命令生成 `src/generated/native.ts`。该目录已被 Git、ESLint 和 Prettier 忽略，不能手工编辑或提交。开发、类型检查、测试、Storybook 和构建入口会先生成绑定，Moon 也将其列为前置任务。生成器使用基础 `TAURI_CONFIG={}`，避免继承外层 E2E 构建的测试权限配置。首次运行前端检查需要 Rust 和对应平台的 Tauri / libvips 开发依赖；CI 的前端任务同样安装这些依赖。
+
+macOS 打包设置 `VIPS_LIB_DIR` 后，绑定生成器需要在应用包外运行。构建脚本只为 `generate-bindings` 添加该图片库目录的运行时搜索路径；安装应用仍通过包内 `Contents/Frameworks` 加载图片库，不依赖构建机缓存路径。
 
 新增计算命令时，在 `src-tauri/src/platform/compute.rs` 声明 Tauri / Specta 命令，加入 `bindings.rs` 的唯一命令清单，再通过 `src/lib/nativeComputeAPI.ts` 转为业务视图类型。修订号用十进制字符串传输，避免 Rust u64 在 JavaScript 中丢失精度。动态工作簿使用具名 JSON 类型并在原生边界校验，不开启全局大整数强转。计算接口处理会话与派生结果，不改变版本化 JSON 或 SQLite 文件表结构，无需新增 SQL 迁移。
 
@@ -86,7 +88,7 @@ CameraControls 处理空白处旋转、右键平移、双指平移、捏合与 A
 | `pnpm package --bundles app`                     | 使用现有准备脚本编译并生成 macOS app bundle                         |
 | `pnpm storybook` / `pnpm test:storybook`         | 组件预览 / 浏览器组件测试                                           |
 
-macOS 桌面验证先安装 `brew install pkgconf vips cmake ninja`。`desktop-test`、`desktop-check` 和 `build:e2e` 使用本机开发库；`package` 使用构建脚本准备并打包固定版本的 macOS 图片库，不依赖目标机器上的 Homebrew。直接运行 `pnpm test:e2e` 不会编译应用；通常使用 Moon 的 `e2e` 任务，或先运行 `pnpm build:e2e`。
+macOS 桌面验证先安装 `brew install pkgconf vips cmake ninja`。`desktop-test`、`desktop-check` 和 `build:e2e` 使用本机开发库；`package` 使用构建脚本准备并打包固定版本的 macOS 图片库，不依赖目标机器上的 Homebrew。直接运行 `pnpm test:e2e` 不会编译应用；通常使用 Moon 的 `e2e` 任务，或先运行 `pnpm build:e2e`。macOS 的 E2E 构建生成 ad-hoc 签名的 `Brainstorming E2E.app`，WDIO 默认启动其中的 `Contents/MacOS/brainstorming`；CEF Framework 和 helper 必须随这个应用包存在，不能直接启动 `target/debug/brainstorming`。Linux / Windows 继续使用无安装包的测试二进制。
 
 `pnpm build-storybook && pnpm test:canvas` 使用现有 Playwright 在隔离的 Storybook 组件预览中执行真实鼠标操作，覆盖画笔命中层级、连续绘制、Esc 取消、擦除与撤销。Moon 的 `canvas-test` 任务会先构建 Storybook。CEF 原生用例通过 ChromeDriver 的同客户端 CDP 输入验证真实 PointerEvent 与 held 状态；Storybook 继续提供独立组件命中验证，文件持久化由真实 SQLite 测试验收。
 
@@ -94,7 +96,7 @@ macOS 桌面验证先安装 `brew install pkgconf vips cmake ninja`。`desktop-t
 
 Linux 在仍需使用桌面时可运行 `pnpm test:e2e:isolated` 或 `pnpm benchmark:2d:isolated`。入口需要 `gnome-shell`、`glxinfo`（Debian 的 `mesa-utils`）和 `dbus-run-session`；使用独立无头 GNOME / XWayland、1920×1080@60 虚拟输出、临时配置和私有 D-Bus，不修改当前桌面。构建仍须先运行 `pnpm build:e2e`。日志记录真实 CEF WebGL 渲染器；基准拒绝软件 GL，并保留五次采样的几何与焦点检查。隔离构建的 Chromium 临时缓存使用 basic 密码存储，避免调起宿主密钥环；应用 SQLCipher 和凭据服务保持原有路径。macOS / Windows 仍运行 `pnpm test:e2e`，不启用 Linux 显示入口。
 
-CI 保留 Node 24 / 26 的前端、Storybook 构建与浏览器检查；Ubuntu 单独运行无 UI 的 Rust 测试，macOS 运行 Clippy、完整桌面 Rust 测试、真实 WDIO E2E 和 app bundle 构建。预览包使用 Tauri 的 [ad-hoc 签名](https://v2.tauri.app/distribute/sign/macos/#ad-hoc-signing)，经 `codesign` 校验后用 `ditto` 打包，保留 app 的执行权限；此步骤不代表完成公证或正式发布。本轮 CI 不构建、不测试 iOS / Android。
+CI 覆盖 Node 24 / 25 / 26 的前端、Storybook 构建与浏览器检查；Ubuntu 单独运行无 UI 的 Rust 测试，macOS 运行 Clippy、完整桌面 Rust 测试、真实 WDIO E2E 和 app bundle 构建。预览包使用 Tauri 的 [ad-hoc 签名](https://v2.tauri.app/distribute/sign/macos/#ad-hoc-signing)，经 `codesign` 校验后用 `ditto` 打包，保留 app 的执行权限；此步骤不代表完成公证或正式发布。本轮 CI 不构建、不测试 iOS / Android。
 
 移动工程使用 Tauri 官方生成结构 `src-tauri/gen/apple` 和 `src-tauri/gen/android`。原生依赖、签名和模拟器必须独立验证，前端构建成功不代表手机端可以发布。
 

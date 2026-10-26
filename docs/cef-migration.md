@@ -47,6 +47,35 @@ CEF 权限回调移除了同步 URL 查询，防止原生图片读取触发权�
 
 每个测试文件使用独立进程和 CEF 缓存；Linux 另隔离配置与数据目录。测试结束清理自己的进程和临时目录，保留日志、截图与失败页面。Hyprland 只在开始时按 PID 和二进制校验窗口，设置浮动并聚焦一次；拖动过程中不反复抢焦点。`pnpm benchmark:2d` 复用同一准备流程，先预热一次，再记录五次根节点拖动，校验窗口、倍率、挂载量和渲染路径一致，并输出中位数与变异系数。实际交互继续等待现有加载和就绪门禁。
 
+## macOS 验证记录
+
+2026-10-26，在 macOS 27.0.1 / Apple M1 Pro（arm64）、Node 25.2.1、pnpm 12.14.0、libvips 8.18.7、CEF 154.0.8037.98 上运行当前源码回归。实际图形后端为 ANGLE Metal / Apple M1 Pro，DPR 为 2。
+
+本机 Node 25 沿用终端版本；依赖 engines 检查改为警告，根 package 的 Node / pnpm 版本要求和运行前锁文件一致性检查保留。CI 新增 Node 25，与 Node 24 / 26 并列；本记录不代表远程 CI 已执行。
+
+| 检查                                        | 结果                                                                                                                                     |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| 冻结安装、格式、lint、TypeScript、Vite 构建 | 通过；lint 保留一条 React Compiler / TanStack Virtual 警告                                                                               |
+| Vitest                                      | 163 个文件、1118 项通过                                                                                                                  |
+| Rust `--locked --no-default-features`       | 152 项通过；不包含需要 `native-ui` 的 libvips 专项测试                                                                                   |
+| Storybook 构建与浏览器组件测试              | 构建通过；49 个文件、190 项通过                                                                                                          |
+| Playwright 画布交互                         | 首轮 88 项通过、1 项失败；单独复核设置滚动文件的 2 项均通过，保留首次偶发失败记录                                                        |
+| macOS E2E 应用包                            | 当前源码构建、ad-hoc 签名与 `codesign --verify --deep --strict` 通过                                                                     |
+| WDIO / 真实 CEF                             | 启动文件单独失败；其余 26 个文件为 23 通过、3 失败，总计 27 个文件中 4 个失败；其中 Linux 专属 `planar-zoom` 用例在 macOS 按现有配置跳过 |
+
+本轮修复了原生测试的启动前置问题：macOS 使用 `--no-bundle` 的裸二进制缺少 CEF Framework，启动时在 `cef::library_loader` 崩溃。`pnpm build:e2e` 现在通过官方 CLI 生成包含 Framework 和五个 helper 的 `Brainstorming E2E.app`，WDIO 默认启动包内可执行文件；Linux / Windows 继续使用原有裸二进制流程。macOS 首次版本探测保留 30 秒超时上限，其他平台仍为 5 秒。
+
+尚未解决的原生失败：
+
+- `00-startup.spec.ts`：启动时红黄绿按钮中心为 16 点，标题栏中心为 22 点，相差 6 点，超过 2 点断言。后续外观用例的按钮中心为 20 点并通过相同检查，需继续定位初始窗口调整时序；没有放宽断言。
+- `creation-layout.spec.ts`：ChromeDriver 调整原生窗口尺寸时，CEF 返回 `Browser window not found`，创建页的多尺寸验收未完成。
+- `drop-prediction.spec.ts`：拖动预归属验证出现 `Desktop pointer released before an early predicted drop appeared`；未绕过指针 held / 就绪门禁。
+- `export-center.spec.ts`：四项用例被原生窗口可见与焦点检查拦住，不能据此判断这些导出流程已通过。其他文件中的自动保存、格式交换、密码保护、多窗口及关闭通知后的 PNG / SVG 导出用例通过。
+
+诊断位于忽略提交的 `test-results/native`：裸二进制崩溃记录为 `macos-unbundled-startup.log`，首次窗口几何为 `macos-startup-chrome-metrics.json`，各失败保留截图、页面和状态。画布首次偶发失败位于 `test-results/canvas/settings-scroll-settings-s-387cb-available-in-a-short-window/error-context.md`；复核产物位于 `test-results/canvas-settings-recheck`。
+
+编译曾因剩余空间不足 1 GB 停止，清理本项目可再生成的增量缓存后完成 Rust 测试；未修改业务文件或测试门槛。部分原生测试期间并行编译了 Rust，吞吐采样仅作为现有用例的诊断，不作为独立性能基准或物理显示帧率结论。本轮未执行完整桌面 Clippy、发布包、系统文件选择器或公证验收。
+
 ## Linux 验证记录
 
 2026-10-26，在 Debian 13 / Linux x86_64、GTK4 4.18.6、CEF 154.0.8037.98、AMD Radeon / Mesa 25.0.7 上验证。用户已安装全局开发依赖。原生测试使用当前源码构建的完整独立 E2E 二进制与内嵌 renderer，未混用开发服务器。
