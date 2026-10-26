@@ -67,8 +67,10 @@ export const AnnotationCrud: Story = {
     await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
     await userEvent.click(canvas.getByRole('button', { name: '添加标注' }))
     const input = await canvas.findByRole('textbox', { name: '编辑标注文字' })
-    await userEvent.clear(input)
-    await userEvent.type(input, '下次迭代验证')
+    // The annotation editor selects its text on autofocus; preserve that native range.
+    await waitFor(() => expect(input).toHaveFocus())
+    await userEvent.type(input, '下次迭代验证', { skipClick: true })
+    await expect(input).toHaveTextContent('下次迭代验证')
     await userEvent.tab()
     await expect(await canvas.findByRole('button', { name: '标注：下次迭代验证' })).toBeVisible()
     useEditor.getState().undo()

@@ -72,11 +72,11 @@ const sampleNavigation = async (kind: 'pan' | 'zoom') =>
 
 it('navigates and moves a thousand-topic map with one undo and live structural edges', async () => {
   await home()
-  const document = { ...createFixtureDocument(1000), id: artifact('fixture') }
-  const source = createWorkbook(document)
+  const fixtureDocument = { ...createFixtureDocument(1000), id: artifact('fixture') }
+  const source = createWorkbook(fixtureDocument)
   const sheet = source.sheets[0]
   if (!sheet) throw new Error('Missing fixture sheet')
-  const workbook = { ...source, sheets: [{ ...sheet, document }] }
+  const workbook = { ...source, sheets: [{ ...sheet, document: fixtureDocument }] }
   const name = artifact('large-2d')
   const path = await chooseFile('save', name)
   await native('saveDocument', {
@@ -86,12 +86,42 @@ it('navigates and moves a thousand-topic map with one undo and live structural e
   await openSaved(name)
   await expect(browser.$('[data-canvas-loading]')).not.toExist()
   await expect(browser.$('[data-view-mode="2d"]')).toBeDisplayed()
+  if (process.env.BRAINSTORMING_GPU_REFERENCE === '1') {
+    // Trigger the renderer's real context-loss fallback after WebGL has initialized.
+    const canvas = browser.$('canvas[data-gpu-edge-ready="true"]')
+    await expect(canvas).toExist()
+    await browser.execute(() => {
+      const target = document.querySelector<HTMLCanvasElement>('canvas[data-gpu-edge-ready="true"]')
+      const context = target?.getContext('webgl2') ?? target?.getContext('webgl')
+      const extension = context?.getExtension('WEBGL_lose_context')
+      if (!extension) throw new Error('Native WebGL context loss is unavailable')
+      extension.loseContext()
+    })
+    await expect(browser.$('canvas[data-gpu-edge-ready="true"]')).not.toExist()
+    await expect(browser.$('svg[data-structural-edge-renderer="dense"]')).toBeDisplayed()
+  }
+  if (process.env.BRAINSTORMING_EXPECT_GPU === '1') {
+    await expect(browser.$('canvas[data-gpu-edge-ready="true"]')).toExist()
+  }
+  await shortcut('r')
   await expect(root()).toBeDisplayed()
   await focusNativeWindow()
+  const environment = await browser.execute(() => ({
+    width: innerWidth,
+    height: innerHeight,
+    ratio: devicePixelRatio,
+  }))
+  console.info('Native performance environment', environment)
+  console.info(
+    'Native reference mode',
+    process.env.BRAINSTORMING_GPU_REFERENCE === '1' ? 'svg' : 'default',
+  )
   const samples = []
   for (const kind of ['pan', 'zoom'] as const) {
     for (let run = 0; run < 3; run += 1) {
       await browser.$('button[aria-label="适应画布"]').click()
+      await waitNativeCanvasQuiet()
+      await shortcut('r')
       await focusNativeWindow()
       await waitNativeCanvasQuiet()
       const sample = await sampleNavigation(kind)
@@ -102,37 +132,64 @@ it('navigates and moves a thousand-topic map with one undo and live structural e
       samples.push({ kind, run, ...sample })
     }
   }
-  await shortcut('r')
-  await expect(root()).toBeDisplayed()
-  await focusNativeWindow()
-  await waitNativeCanvasQuiet()
-  const rootGesture = await nativePerformanceGesture('root')
-  const before = rootGesture.rect
-  const previousPath = await nativeStructuralEdgePath()
-  if (!previousPath) throw new Error('Missing structural edge path')
-  const { start, end } = rootGesture
-  try {
-    const dragSample = await previewNativeCanvasDrag(start, end)
-    console.info('Native 2D drag sample', dragSample)
-    expect(dragSample.changed).toBe(true)
-    samples.push({ kind: 'drag', run: 0, ...dragSample })
-    await browser.waitUntil(async () => (await nativeStructuralEdgePath()) !== previousPath)
-  } finally {
-    await finishNativeCanvasDrag(end)
+  let dragZoom = 0
+  for (let run = 0; run < 3; run++) {
+    // Navigation sampling dispatches a frame-dependent number of wheel events.
+    // Reset through the visible controls so every drag cohort starts at the same zoom.
+    await browser.$('button[aria-label="适应画布"]').click()
+    await waitNativeCanvasQuiet()
+    await shortcut('r')
+    await expect(root()).toBeDisplayed()
+    await focusNativeWindow()
+    await waitNativeCanvasQuiet()
+    const rootGesture = await nativePerformanceGesture('root')
+    const before = rootGesture.rect
+    const previousPath = await nativeStructuralEdgePath('edge-topic-1')
+    if (!previousPath) throw new Error('Missing structural edge path')
+    const { start, end } = rootGesture
+    try {
+      const dragSample = await previewNativeCanvasDrag(start, end, 'root', 60)
+      console.info('Native 2D drag sample', { run, ...dragSample })
+      expect(dragSample.changed).toBe(true)
+      expect(dragSample.viewportUpdatedFrames).toBe(0)
+      if (run === 0) dragZoom = dragSample.zoom ?? 0
+      expect(dragZoom).toBeGreaterThan(0)
+      expect(dragSample.zoom).toBeCloseTo(dragZoom, 6)
+      expect({
+        width: dragSample.width,
+        height: dragSample.height,
+        ratio: dragSample.ratio,
+      }).toEqual(environment)
+      if (process.env.BRAINSTORMING_EXPECT_SVG === '1') expect(dragSample.renderer).toBe('svg')
+      if (process.env.BRAINSTORMING_EXPECT_GPU === '1') {
+        expect(dragSample.renderer).toBe('webgl')
+        expect(dragSample.gpuFrames).toBeGreaterThan(0)
+        if (run === 0)
+          await browser.saveScreenshot(await nativeArtifact('brainstorming-2d-gpu-drag.png'))
+      }
+      samples.push({ kind: 'drag', run, ...dragSample })
+      await browser.waitUntil(
+        async () => (await nativeStructuralEdgePath('edge-topic-1')) !== previousPath,
+      )
+    } finally {
+      await finishNativeCanvasDrag(end)
+    }
+    await browser.waitUntil(async () => {
+      const actual = await readDocument(name)
+      return Math.abs(actual.sheets[0]?.document.topics.root?.style?.offsetX ?? 0) > 1
+    })
+    const moved = await readDocument(name)
+    expect(Object.keys(moved.sheets[0]?.document.topics ?? {})).toHaveLength(1000)
+    expect(moved.sheets[0]?.document.topics.root?.children).toEqual(
+      fixtureDocument.topics.root?.children,
+    )
+    await shortcut('z')
+    await browser.waitUntil(async () => {
+      const restored = await readDocument(name)
+      return (restored.sheets[0]?.document.topics.root?.style?.offsetX ?? 0) === 0
+    })
+    await browser.waitUntil(async () => Math.abs((await root().getLocation()).x - before.x) < 3)
   }
-  await browser.waitUntil(async () => {
-    const actual = await readDocument(name)
-    return Math.abs(actual.sheets[0]?.document.topics.root?.style?.offsetX ?? 0) > 1
-  })
-  const moved = await readDocument(name)
-  expect(Object.keys(moved.sheets[0]?.document.topics ?? {})).toHaveLength(1000)
-  expect(moved.sheets[0]?.document.topics.root?.children).toEqual(document.topics.root?.children)
-  await shortcut('z')
-  await browser.waitUntil(async () => {
-    const restored = await readDocument(name)
-    return (restored.sheets[0]?.document.topics.root?.style?.offsetX ?? 0) === 0
-  })
-  await browser.waitUntil(async () => Math.abs((await root().getLocation()).x - before.x) < 3)
   // A leaf gesture exercises the indexed target finder; moving the root excludes every target.
   await focusNativeWindow()
   await waitNativeCanvasQuiet()
@@ -158,7 +215,9 @@ it('navigates and moves a thousand-topic map with one undo and live structural e
       ]),
     ),
   ).toEqual(
-    Object.fromEntries(Object.values(document.topics).map(({ id, children }) => [id, children])),
+    Object.fromEntries(
+      Object.values(fixtureDocument.topics).map(({ id, children }) => [id, children]),
+    ),
   )
   await shortcut('z')
   await browser.waitUntil(async () => {

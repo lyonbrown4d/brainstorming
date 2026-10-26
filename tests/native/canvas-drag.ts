@@ -1,4 +1,5 @@
 import { browser } from '@wdio/globals'
+import type { DenseEdgeGpuCanvas } from '@renderer/lib/denseEdgeGpuTypes'
 
 interface Point {
   readonly x: number
@@ -29,6 +30,8 @@ export const previewNativeCanvasDrag = async (
       if (document.querySelector('[data-canvas-loading]')) throw new Error('Canvas is not ready')
       const node = target.closest<HTMLElement>('.react-flow__node')
       if (!node) throw new Error('Missing topic wrapper')
+      const gpu = document.querySelector<DenseEdgeGpuCanvas>('canvas[data-gpu-edge-ready="true"]')
+      const initialGpuFrame = gpu?.edgeDiagnostics?.frame ?? 0
       const initial = node.style.transform
       const initialRect = node.getBoundingClientRect()
       target.dispatchEvent(
@@ -126,12 +129,24 @@ export const previewNativeCanvasDrag = async (
         !node.classList.contains('dragging') ||
         !document.querySelector('.canvas[data-node-dragging]')
       )
-        throw new Error('The sampled node drag was cancelled or resized')
+        throw new Error(
+          `The sampled node drag was cancelled or resized: ${JSON.stringify({ className: node.className, initial, final: node.style.transform, canvasDragging: document.querySelector('.canvas')?.getAttribute('data-node-dragging'), focused: document.hasFocus(), target: target.tagName })}`,
+        )
       frames.sort((a, b) => a - b)
       const durationMs = performance.now() - started
       const finalRect = node.getBoundingClientRect()
       return {
         measurement: 'synthetic WebView drag render throughput; not physical GPU FPS',
+        renderer:
+          gpu?.dataset.gpuEdgeReady === 'true' &&
+          gpu.parentElement?.dataset.gpuEdgeActive === 'true'
+            ? 'webgl'
+            : 'svg',
+        gpuFrames: (gpu?.edgeDiagnostics?.frame ?? 0) - initialGpuFrame,
+        width: innerWidth,
+        height: innerHeight,
+        ratio: devicePixelRatio,
+        zoom: viewport ? new DOMMatrix(getComputedStyle(viewport).transform).a : null,
         changed: initial !== node.style.transform,
         mounted: document.querySelectorAll('.react-flow__node-topic').length,
         fps: (frames.length * 1000) / frames.reduce((sum, value) => sum + value, 0),

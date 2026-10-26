@@ -47,11 +47,11 @@ pnpm dev
 
 `src/App.tsx` 只装配路由、QueryClient、MotionConfig 与 TooltipProvider。`components/application/ApplicationShell.tsx` 负责应用外壳与工作区选择，`EditorWorkspace.tsx` 组合画布、侧栏和演示，`WorkspaceNotices.tsx` 负责恢复、错误和密码提示；服务初始化集中在 `useApplicationServices`。编辑工作区仅在 2D 分支挂载 ReactFlowProvider。`components/Canvas.tsx` 选择二维 Canvas2D，或通过 `React.lazy` 加载 `spatial/independent/IndependentSpatialCanvas`，三维不依赖二维视口、节点或 store。
 
-Three.js、React Three Fiber、Drei 与 PixiJS 运行时代码均从三维入口按需加载。二维入口的静态依赖不能间接引入这些运行时；纯类型引用可保留。Vite 的 `optimizeDeps` 只负责开发依赖预构建，不表示浏览器已预加载三维模块。构建 manifest 为被忽略的生成产物，可用于核对入口与动态 chunk，不进入 Git。
+Three.js、React Three Fiber、Drei 从三维入口按需加载；PixiJS 从三维量测或二维 GPU 实验入口按需加载。二维入口的静态依赖不能间接引入这些运行时；纯类型引用可保留。Vite 的 `optimizeDeps` 只负责开发依赖预构建，不表示浏览器已预加载三维模块。构建 manifest 为被忽略的生成产物，可用于核对入口与动态 chunk，不进入 Git。
 
 独立三维由 `IndependentSpatialRuntime` 保存场景模型、相机投影、手势预览与订阅，React Three Fiber 使用 `frameloop="demand"`。CameraControls 直接控制实际 Three.js 透视相机；镜头变化只请求场景渲染，不把每个主题的位置逐帧写入 React Flow 或 React 状态。相机姿态、镜头请求和临时文档预览分别同步；内容编辑不能重置临时镜头，真正的空间配置变更及撤销仍应用到相机。前端只承担视图计算和即时交互，确定性全图量测、布局与缓存继续由 Rust 负责。
 
-主题正面使用始终面向相机的 GPU 实例与纹理图集，不逐主题挂载 DOM。图集最多 4 页，每页 2048 × 2048 像素；容量不足时降低采样密度，不无限分配纹理。主题栅格缓存有容量上限，准备分批让出主线程，模型替换及卸载时取消过期任务并释放资源。PixiJS 只提供 `CanvasTextMetrics` 和 `TextStyle` 的字体量测与换行，不创建 Pixi Application 或第二套 GPU 渲染器。主题形态与分支线路径复用共享几何，通过 Three.js SVGLoader 处理；笔迹合并到场景几何中。当前活动标题使用共享 Lexical 编辑覆盖层，其余主题保持 GPU 内容。首次进入或切换文档、Sheet 时等待布局、相机与 GPU 首帧后开放编辑。同一画布内的内容更新保留上一帧并后台准备新图集，不显示整屏蒙版；超过 150ms 才显示不拦截指针的更新提示。更新期间保留镜头导航与已打开的 Lexical 编辑器，依赖新几何的选择、拖动、缩放和关联线操作等待新 GPU 首帧；小地图保留旧位图，完成后异步刷新。仅相机变化的等价模型直接复用。
+主题正面使用始终面向相机的 GPU 实例与纹理图集，不逐主题挂载 DOM。图集最多 4 页，每页 2048 × 2048 像素；容量不足时降低采样密度，不无限分配纹理。主题栅格缓存有容量上限，准备分批让出主线程，模型替换及卸载时取消过期任务并释放资源。在该三维路径中，PixiJS 只提供 `CanvasTextMetrics` 和 `TextStyle` 的字体量测与换行，不创建 Pixi Application 或第二套三维 GPU 渲染器。主题形态与分支线路径复用共享几何，通过 Three.js SVGLoader 处理；笔迹合并到场景几何中。当前活动标题使用共享 Lexical 编辑覆盖层，其余主题保持 GPU 内容。首次进入或切换文档、Sheet 时等待布局、相机与 GPU 首帧后开放编辑。同一画布内的内容更新保留上一帧并后台准备新图集，不显示整屏蒙版；超过 150ms 才显示不拦截指针的更新提示。更新期间保留镜头导航与已打开的 Lexical 编辑器，依赖新几何的选择、拖动、缩放和关联线操作等待新 GPU 首帧；小地图保留旧位图，完成后异步刷新。仅相机变化的等价模型直接复用。
 
 选中变化通过 Three.js `BufferAttribute.addUpdateRange` 只提交受影响实例的高亮值，不重写位置、尺寸或图集；基础层与细节层同步选中。普通点击不准备全图拖动快照，也不发布几何预览；超过 4 像素拖动阈值后才创建后代集合、位置快照和归属索引，取消时仅清理本次手势持有的预览。
 
@@ -246,6 +246,14 @@ macOS `build:desktop --debug`（未指定证书）或显式 `APPLE_SIGNING_IDENT
 Lexical 内容输入通过 `fillContentEditable` 使用 WebDriver 全选后插入文本；不调用 embedded 驱动的 `clearElement`，该实现会直接清空 `innerHTML`，绕过编辑器状态更新。测试的 `home()` 会清理隔离实例的恢复记录；恢复功能本身仍由专用保存、重载和解锁用例验证。
 
 外部存储发生归档写入或依赖读取停滞时，先检查进程与文件活动；可使用本机 SSD 用户缓存目录保存 Cargo 产物（`CARGO_TARGET_DIR`），避免运行中的验收程序被临时目录清理移除，并将 `BRAINSTORMING_E2E_BINARY` 指向该目录生成的当前测试应用。若依赖缓存也在外部卷，使用当前源码的本机临时验收副本和独立 pnpm 缓存；必须按锁文件安装并完整构建，不能混用旧二进制与新 renderer。
+
+## 二维密集连线与 GPU 拖动
+
+GPU 连线实验默认关闭；构建时设置 `VITE_DENSE_EDGE_GPU=1` 才启用。Linux 当前采样比 SVG 慢，默认仅采用几何复用优化。启用后，至少 250 条结构连线且均符合现有不透明普通曲线/直线样式契约时，拖动期间使用按需加载的 PixiJS 8 WebGL RenderGroup。节点文字、命中与编辑仍由 React Flow / Lexical 管理；关联线沿用原有交互。平移、缩放与空闲显示使用 SVG，视口稳定 200ms 后通过 ahooks 预热下一次拖动的 GPU 缓冲，不启动持续绘制的 ticker。路由、折点、手绘及不满足批处理契约的样式继续使用 SVG。
+
+整体刚性平移时复用端点和路径，将位移交给场景变换；节点集合、尺寸、端口或内容变化时重新计算几何。GPU 只持有当前场景可见曲线，模型不变的路径保留几何缓冲；画布卸载时释放曲线和 WebGL 上下文。GPU 首帧提交后才切换可见层，初始化失败或上下文丢失时保留 SVG。使用 `pixi.js/unsafe-eval` 的官方静态 shader/uniform 同步实现兼容严格 CSP，不添加 CSP 的 `unsafe-eval` 授权。
+
+原生性能对照复用 `tests/native/canvas-performance.spec.ts`：千节点导图、三次根节点拖动，每次先通过适应画布按钮复位，等待动画停止后再居中，记录实际倍率并要求三次一致；每次 60 个输入、61 个动画帧间隔，同时验证实际连线位置、保存和单次撤销。使用启用了 `VITE_DENSE_EDGE_GPU=1` 的完整 E2E 二进制时，测试可设置 `BRAINSTORMING_EXPECT_GPU=1`，要求 GPU 预热完成、拖动期间实际提交 WebGL 帧，并记录窗口尺寸、像素比例与渲染路径。同版本 SVG 对照可设置 `BRAINSTORMING_GPU_REFERENCE=1`，在 GPU 首帧就绪后通过 `WEBGL_lose_context` 触发实际上下文丢失，要求 SVG 回退可见且拖动确实使用 SVG；不再依赖覆盖 `getContext` 原型来模拟不可用。默认构建的原生测试可用 `BRAINSTORMING_EXPECT_SVG=1` 要求实际 SVG 路径。真实鼠标 GPU 验证先以 `VITE_DENSE_EDGE_GPU=1 pnpm build-storybook` 构建，再运行 `BRAINSTORMING_EXPECT_GPU=1 pnpm test:canvas --grep "thousand-topic root translation"`，覆盖拖动、取消、撤销与上下文丢失。该用例使用合成 WebView 输入，衡量更新吞吐，不代表物理屏幕呈现帧率。比较时应保持窗口、倍率与构建方式一致，保留失败和受环境干扰的批次。
 
 ## Linux 打包
 

@@ -6,7 +6,7 @@
 
 同一导图可切换 2D 与 3D 视图。3D 以原生 2D 布局为基础，使用透视相机，支持拖动旋转、触控板平移与捏合、常用视角、聚焦主题、层距和主题深度，首次进入时等待首帧就绪后开放编辑；视角、聚焦目标、层距和主题深度随 Sheet 保存，选择、编辑及撤销沿用同一文档。完整导图按 2D 布局导出；当前 3D 视角可通过原生截图导出为 PNG、JPEG、WebP 或 PDF。
 
-二维大图编辑复用 React Flow 的即时节点状态、批量分支线和延后刷新的缩略图。三维画布按需加载，独立使用 React Three Fiber / Three.js 和 GPU 图集绘制，不为每个主题挂载 React Flow 节点；仅活动文字编辑使用共享 Lexical 编辑器。两种画布共享文档命令、历史及属性界面。千节点导航、高频输入、拖动、保存与单次撤销由性能用例检查；当前架构的原生性能结果仍需采样，测量边界见 [开发说明](docs/development.md)。
+二维大图编辑复用 React Flow 的即时节点状态和延后刷新的缩略图；密集连线在整图拖动时复用路径与整体变换。PixiJS WebGL 连线保留为构建时可启用的实验，Linux 尚未测得稳定收益，默认使用 SVG。三维画布按需加载，独立使用 React Three Fiber / Three.js 和 GPU 图集绘制，不为每个主题挂载 React Flow 节点；仅活动文字编辑使用共享 Lexical 编辑器。两种画布共享文档命令、历史及属性界面。千节点导航、高频输入、拖动、保存与单次撤销由性能用例检查；性能采样口径见 [开发说明](docs/development.md)，本机结果与未通过项目见 [Linux 验证记录](docs/linux-validation.md)。
 
 同一文档可嵌入各 Sheet 的系统预览 PNG；加密文件不提供系统预览。macOS 扩展已编译并验证 ad-hoc 签名，Finder 尚未验收；Linux deb / rpm 实现待运行验收，AppImage 无宿主注册，Windows Explorer 提供程序未实现。详见 [平台状态](docs/development.md#系统文件预览的平台状态)。
 

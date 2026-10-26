@@ -84,7 +84,10 @@ export const nativePerformanceGesture = async (kind: 'root' | 'leaf') =>
           return {
             id,
             start,
-            end: { x: start.x + 120, y: start.y + 70 },
+            end: {
+              x: start.x + (start.x + 120 < innerWidth - 120 ? 120 : -120),
+              y: start.y + (start.y + 70 < innerHeight - 160 ? 70 : -70),
+            },
             rect: { x: body.x, y: body.y },
           }
         for (let y = 180; y < innerHeight - 200; y += 80) {

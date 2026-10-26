@@ -87,7 +87,7 @@ const plainEdgeKeys = new Set([
   'interactionWidth',
   'direction',
 ])
-const opaqueStyleKey = (edge: Edge): string | null => {
+export const denseStructuralEdgeStyleKey = (edge: Edge): string | null => {
   if (edge.type !== undefined && edge.type !== 'default' && edge.type !== 'straight') return null
   if (Object.keys(edge).some((key) => !plainEdgeKeys.has(key))) return null
   const style = edge.style
@@ -119,7 +119,7 @@ export const denseStructuralEdgeRuns = (
     const key =
       moving.size <= 24 && (moving.has(entry.edge.source) || moving.has(entry.edge.target))
         ? null
-        : opaqueStyleKey(entry.edge)
+        : denseStructuralEdgeStyleKey(entry.edge)
     const previous = runs.at(-1)
     if (key === null) {
       runs.push({ kind: 'individual', entry })
