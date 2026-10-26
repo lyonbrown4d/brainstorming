@@ -6,10 +6,7 @@ interface Point {
   readonly y: number
 }
 
-/** tauri-plugin-wdio-webdriver 1.5.0 omits MouseEvent.view and held buttons on moves, which D3 drag requires.
- * Exercise that WebKit event contract here; tests/canvas retains real pointer hit-testing.
- * This helper never calls editor commands or bypasses a loading/selection guard.
- */
+/** Deterministic synthetic drag throughput, separate from native trusted-pointer acceptance. */
 export const previewNativeCanvasDrag = async (
   start: Point,
   end: Point,

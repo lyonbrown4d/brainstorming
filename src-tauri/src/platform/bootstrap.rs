@@ -6,17 +6,23 @@ use std::{path::PathBuf, sync::Arc};
 use tauri::{Manager, RunEvent};
 
 pub fn run() {
+  let context = tauri::generate_context!();
   #[cfg(desktop)]
-  let runtime = tauri_runtime_cef::Cef::default();
+  let runtime = super::cef_runtime::attributes(&context.config().identifier);
   #[cfg(mobile)]
   let runtime = tauri_runtime_wry::Wry::default();
   let builder = super::plugins::register(tauri::Builder::default().runtime(runtime))
     .on_permission_request(|webview, kind| {
       use tauri::webview::{PermissionKind, PermissionResponse};
-      if (webview.label() != "main" && !webview.label().starts_with("editor-"))
-        || !webview
-          .url()
-          .is_ok_and(|url| super::request::trusted_url(&url, webview.app_handle()))
+      if webview.label() != "main" && !webview.label().starts_with("editor-") {
+        return PermissionResponse::Deny;
+      }
+      // Desktop navigation is restricted by cef-policy. Reading URL here would
+      // deadlock CEF's permission UI thread; microphone still requires its picker.
+      #[cfg(mobile)]
+      if !webview
+        .url()
+        .is_ok_and(|url| super::request::trusted_url(&url, webview.app_handle()))
       {
         return PermissionResponse::Deny;
       }
@@ -38,13 +44,6 @@ pub fn run() {
         .decorations(false)
         .visible(true)
         .build()?;
-      let handle = app.handle().clone();
-      tauri::async_runtime::spawn(async move {
-        if super::initialization::ready(&handle).await.is_err() {
-          tracing::error!("Native initialization failed");
-          super::initialization::set_phase(&handle, "failed");
-        }
-      });
       #[cfg(desktop)]
       {
         let handle = app.handle().clone();
@@ -65,6 +64,19 @@ pub fn run() {
       Ok(())
     })
     .on_page_load(|webview, payload| {
+      // CEF initially reports about:blank during setup. Initialize after a real
+      // main document commits; the renderer's first native request may start sooner.
+      if webview.label() == "main"
+        && matches!(payload.event(), tauri::webview::PageLoadEvent::Finished)
+      {
+        let handle = webview.app_handle().clone();
+        tauri::async_runtime::spawn(async move {
+          if super::initialization::ready(&handle).await.is_err() {
+            tracing::error!("Native initialization failed");
+            super::initialization::set_phase(&handle, "failed");
+          }
+        });
+      }
       if (webview.label() == "main" || webview.label().starts_with("editor-"))
         && matches!(payload.event(), tauri::webview::PageLoadEvent::Started)
       {
@@ -104,7 +116,7 @@ pub fn run() {
         });
       }
     })
-    .build(tauri::generate_context!())
+    .build(context)
     .expect("Brainstorming 原生应用初始化失败");
   app.run(|app, event| match event {
     #[cfg(any(target_os = "macos", target_os = "ios", target_os = "android"))]

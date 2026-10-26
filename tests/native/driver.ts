@@ -1,3 +1,4 @@
+import { invokeNative, switchNativeWindow } from '@tests/native/cef-api'
 import { creationReady, editorReady, fileMenuItemReady } from '@tests/native/readiness'
 import { browser, expect } from '@wdio/globals'
 import { Key, type ChainablePromiseElement } from 'webdriverio'
@@ -26,15 +27,15 @@ export const rootHasText = async (text: string): Promise<void> => {
 export const artifact = (prefix: string, extension = 'brainstorming') =>
   `${prefix}-${randomUUID()}.${extension}`
 export const native = async <T>(method: string, args: Record<string, unknown> = {}): Promise<T> =>
-  (await browser.tauri.execute(({ core }, request) => core.invoke('native_request', request), {
+  invokeNative<T>('native_request', {
     method,
     args,
-  })) as T
+  })
 export const fixture = async <T>(action: string, args: Record<string, unknown>): Promise<T> =>
-  (await browser.tauri.execute(({ core }, request) => core.invoke('e2e_fixture', request), {
+  invokeNative<T>('e2e_fixture', {
     action,
     args,
-  })) as T
+  })
 export const chooseFile = async (
   kind: 'open' | 'save' | 'asset',
   name: string,
@@ -58,13 +59,14 @@ export const shortcut = async (key: string): Promise<void> => {
   await browser.keys([process.platform === 'darwin' ? Key.Command : Key.Control, key])
   // WebdriverIO keys() releases actions; the embedded driver treats Key.NULL as text.
 }
-/** The embedded driver's clearElement replaces innerHTML without notifying Lexical. */
+/** Native selection keystrokes keep Lexical in charge of content and history. */
 export const fillContentEditable = async (
   element: ChainablePromiseElement,
   text: string,
 ): Promise<void> => {
   await focusNativeWindow()
   await expect(element).toBeDisplayed()
+  await element.waitForClickable()
   await element.click()
   await expect(element).toBeFocused()
   await shortcut('a')
@@ -93,12 +95,12 @@ export const reloadNativePage = async (): Promise<void> => {
     }
   })
   await expect(browser.$('#startup-screen')).not.toExist()
-  await browser.tauri.switchWindow('main')
+  await switchNativeWindow('main')
   await native('startupReady')
   await focusNativeWindow()
 }
 export const home = async (): Promise<void> => {
-  await browser.tauri.switchWindow('main')
+  await switchNativeWindow('main')
   const pendingDialogs = await fixture<{ kinds: string[] }>('dialogState', {})
   if (pendingDialogs.kinds.length)
     console.warn('Discarding unused native picker fixtures before Home:', pendingDialogs.kinds)

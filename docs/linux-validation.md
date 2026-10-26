@@ -1,6 +1,6 @@
 # Linux 验证记录
 
-2026-10-26：桌面运行时已迁移至 Tauri 3 alpha / CEF。本文记录此前系统 WebView 的验证与帧率，不能作为 CEF 已通过或性能提升的证据；本次迁移按要求暂停功能与性能测试。
+2026-10-26：桌面已迁移至 Tauri 3 alpha / CEF，WDIO 已通过官方 ChromeDriver 恢复。当前 Linux CEF 验证与 GPU 隔离测试入口见 [CEF 迁移记录](cef-migration.md)。下文较早的系统 WebView 记录保留为历史，不作为 CEF 的帧率或跨平台验收证据。
 
 ## 2026-10-26：补充回归与采样校准
 

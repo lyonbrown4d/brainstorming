@@ -1,3 +1,4 @@
+import { selectExportOption } from '@tests/native/export-files'
 import { browser, expect } from '@wdio/globals'
 import {
   artifact,
@@ -39,21 +40,20 @@ describe('native notification settings', () => {
     await expect(dialog).toBeDisplayed()
     const pngName = artifact('native-hd-export', 'png')
     await chooseFile('save', pngName)
-    await expect(named('导出文件')).toBeEnabled()
-    await named('导出文件').click()
-    await expect(dialog.$('[role="status"]')).toHaveText(expect.stringContaining(pngName))
+    await expect(dialog.$('button=导出 PNG')).toBeEnabled()
+    await dialog.$('button=导出 PNG').click()
+    await expect(dialog.$('[role="status"]')).toHaveText('已导出')
     const pngFile = await fixture<{ length: number }>('inspect', { name: pngName })
     expect(pngFile.length).toBeGreaterThan(100)
-    await named('导出格式').click()
-    await named('SVG 矢量图').click()
+    await selectExportOption('导出格式', 'SVG 矢量图')
     const name = artifact('notification-export', 'svg')
     await chooseFile('save', name)
-    await named('导出文件').click()
-    await expect(dialog.$('[role="status"]')).toHaveText(expect.stringContaining(name))
+    await dialog.$('button=导出 SVG').click()
+    await expect(dialog.$('[role="status"]')).toHaveText('已导出')
     const file = await fixture<{ length: number }>('inspect', { name })
     expect(file.length).toBeGreaterThan(0)
     await chooseFile('save', artifact('notification-cancel', 'svg'), true)
-    await named('导出文件').click()
+    await dialog.$('button=导出 SVG').click()
     await expect(dialog.$('[role="status"]')).toHaveText('已取消导出')
     const close = dialog.$('button=关闭')
     await expect(close).toBeEnabled()

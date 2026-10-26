@@ -1,7 +1,9 @@
 use super::input::Result;
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
-use tauri_plugin_dialog::{DialogExt, FilePath};
+use tauri_plugin_dialog::DialogExt;
+#[cfg(any(target_os = "macos", not(feature = "e2e")))]
+use tauri_plugin_dialog::FilePath;
 #[cfg(not(feature = "e2e"))]
 use tauri_plugin_dialog::{FileAccessMode, PickerMode};
 use tokio::sync::oneshot;
@@ -115,6 +117,7 @@ pub async fn confirm_discard(app: &AppHandle) -> Result<bool> {
     });
   receive.await.map_err(|_| "确认对话框已关闭".into())
 }
+#[cfg(any(target_os = "macos", not(feature = "e2e")))]
 pub fn local_path(path: FilePath) -> Result<PathBuf> {
   path
     .into_path()

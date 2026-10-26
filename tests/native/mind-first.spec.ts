@@ -129,7 +129,7 @@ describe('mind-first native workflow', () => {
     await named('应用设置').click()
     await expect(browser.$('[role="dialog"]')).toBeDisplayed()
     expect(await browser.getUrl()).toContain('#/settings')
-    await named('画布').click()
+    await browser.$('[role="dialog"] [role="tab"][id$="-trigger-canvas"]').click()
     await expect(named('画布缩略图')).toBeDisplayed()
     await browser.saveScreenshot(await nativeArtifact('mind-first-settings.png'))
     await browser.$('[role="dialog"] [role="tab"][id$="-trigger-shortcuts"]').click()

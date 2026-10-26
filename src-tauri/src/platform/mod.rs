@@ -1,4 +1,6 @@
 mod bootstrap;
+#[cfg(desktop)]
+mod cef_runtime;
 pub(crate) mod compute;
 pub(crate) mod export_capture;
 pub(crate) mod export_commands;

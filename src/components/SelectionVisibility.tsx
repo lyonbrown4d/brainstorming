@@ -21,12 +21,20 @@ export const SelectionVisibility = () => {
   const restoreRequest = usePresentation((state) => state.viewportRequest)
   const selectedId = useEditor((state) => state.selectedId)
   const document = useEditor((state) => state.history.document)
+  const projectionReady = useStore(
+    (state) => state.nodeLookup.get(selectedId)?.data.topic === document.topics[selectedId],
+  )
   const flow = useReactFlow<TopicFlowNode>()
   const width = useStore((state) => state.width)
   const height = useStore((state) => state.height)
   const structure = documentStructureKey(document)
   const previous = useRef({ document, selectedId, structure, restoreRequest })
   useEffect(() => {
+    const editor = useEditor.getState()
+    const spatial = getSpatialView(editor.workbook.id, editor.activeSheetId).mode === '3d'
+    // Rust layout arrives after the document command. Keep the previous selection
+    // until that node is projected, so framing cannot consume an obsolete graph.
+    if (!spatial && document.topics[selectedId] && !projectionReady) return
     const prior = previous.current
     previous.current = { document, selectedId, structure, restoreRequest }
     // Playback owns framing; its exit snapshot must also preserve an offscreen selection.
@@ -96,6 +104,7 @@ export const SelectionVisibility = () => {
     playing,
     restoreRequest,
     topicFocus,
+    projectionReady,
   ])
   return null
 }

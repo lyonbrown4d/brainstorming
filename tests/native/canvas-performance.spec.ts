@@ -20,7 +20,7 @@ import {
   focusNativeWindow,
 } from '@tests/native/driver'
 
-/** Native WebKit frame intervals; synthetic wheel input does not measure physical GPU presentation. */
+/** Native CEF frame intervals; synthetic wheel input does not measure physical GPU presentation. */
 const sampleNavigation = async (kind: 'pan' | 'zoom') =>
   browser.execute(async (mode) => {
     const pane = document.querySelector('.react-flow__pane')

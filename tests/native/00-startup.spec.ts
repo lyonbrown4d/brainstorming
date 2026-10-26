@@ -1,3 +1,4 @@
+import { switchNativeWindow, nativeWindows } from '@tests/native/cef-api'
 import { nativeArtifact } from '@tests/native/artifacts'
 import { browser, expect } from '@wdio/globals'
 import { Key } from 'webdriverio'
@@ -14,9 +15,9 @@ interface NativeWindowState {
 
 describe('native startup, window chrome and menu shortcuts', () => {
   it('hands off the splash to the focused main window and retains native window actions', async () => {
-    await browser.waitUntil(async () => (await browser.tauri.listWindows()).includes('main'))
-    await browser.waitUntil(async () => !(await browser.tauri.listWindows()).includes('splash'))
-    await browser.tauri.switchWindow('main')
+    await browser.waitUntil(async () => (await nativeWindows()).includes('main'))
+    await browser.waitUntil(async () => !(await nativeWindows()).includes('splash'))
+    await switchNativeWindow('main')
     await browser.saveScreenshot(await nativeArtifact('brainstorming-native-startup.png'))
     try {
       await browser.waitUntil(

@@ -60,6 +60,17 @@ const paintedRootSamples = async (): Promise<number> => {
         .color.match(/[\d.]+/g)
         ?.map(Number)
       if (!color) throw new Error('Topic text color missing')
+      const topic = text.closest('.topic')
+      if (!topic) throw new Error('Topic text owner missing')
+      const fill = getComputedStyle(topic).getPropertyValue('--topic-fill').trim()
+      if (!/^#[\da-f]{6}$/i.test(fill)) throw new Error('Topic text background missing')
+      const background = [1, 3, 5].map((offset) =>
+        Number.parseInt(fill.slice(offset, offset + 2), 16),
+      )
+      const direction = color
+        .slice(0, 3)
+        .map((channel, index) => channel - (background[index] ?? 0))
+      const magnitude = direction.reduce((sum, channel) => sum + channel * channel, 0)
       const x = Math.floor((box.left * surface.width) / innerWidth)
       const y = Math.floor((box.top * surface.height) / innerHeight)
       const width = Math.max(1, Math.ceil((box.width * surface.width) / innerWidth))
@@ -67,9 +78,19 @@ const paintedRootSamples = async (): Promise<number> => {
       const pixels = context.getImageData(x, y, width, height).data
       let ink = 0
       for (let offset = 0; offset < pixels.length; offset += 4) {
+        // At subpixel font sizes Chromium antialiases every glyph pixel. Match
+        // foreground coverage against the actual topic fill, not opaque ink.
+        const difference = direction.map(
+          (_, index) => (pixels[offset + index] ?? 0) - (background[index] ?? 0),
+        )
+        const alpha =
+          difference.reduce((sum, channel, index) => sum + channel * (direction[index] ?? 0), 0) /
+          magnitude
         if (
+          alpha > 0.3 &&
+          alpha <= 1.2 &&
           [0, 1, 2].every(
-            (index) => Math.abs((pixels[offset + index] ?? 0) - (color[index] ?? 0)) < 55,
+            (index) => Math.abs((difference[index] ?? 0) - alpha * (direction[index] ?? 0)) < 20,
           )
         )
           ink++

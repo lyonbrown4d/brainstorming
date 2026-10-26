@@ -69,6 +69,9 @@ pnpm test
 pnpm test:rust
 pnpm build:e2e
 pnpm test:e2e
+# Linux 独立 GPU 显示环境，不占用当前桌面焦点
+pnpm test:e2e:isolated
+pnpm benchmark:2d:isolated
 ```
 
-Vitest 保留共享 TS 模型、布局、格式和编辑器测试；Rust 测试运行真实 SQLite / SQLCipher 与资源服务；Storybook 提供组件预览和 Playwright 组件测试。原生 UI 用例保留，但旧 WDIO embedded 驱动依赖 Tauri 2，尚未适配 CEF，当前不能运行 `test:e2e`。本次迁移按要求暂停回归和性能测试，不将旧 WebView 的测试或帧率当作 CEF 验证结果。
+Vitest 保留共享 TS 模型、布局、格式和编辑器测试；Rust 测试运行真实 SQLite / SQLCipher 与资源服务；Storybook 提供组件预览和 Playwright 组件测试。桌面 WDIO 通过官方 ChromeDriver 连接真实 CEF 应用，每个测试文件使用独立进程与临时缓存；不启动独立 Chrome UI。驱动按测试二进制内的 CEF SDK 版本匹配。调试端口仅在独立标识的 e2e 构建中启用，生产构建保持关闭。平台验证范围见 [CEF 迁移记录](docs/cef-migration.md)。

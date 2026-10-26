@@ -20,10 +20,11 @@ describe('warm white and graphite native UI', () => {
     await checkMacChrome()
     const workbook = createWorkbook(createWorkbenchDocument())
     const name = `theme-qa-${Date.now()}.brainstorming`
-    await chooseFile('save', name)
+    const path = await chooseFile('save', name)
     await native('saveDocument', {
       request: { path: null, contents: serializeWorkbook(workbook), suggestedName: name },
     })
+    await native('releaseDocument', { path })
     await chooseFile('open', name)
     await named('打开本地文件').click()
     await expect(root()).toBeDisplayed()

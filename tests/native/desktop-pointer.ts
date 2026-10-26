@@ -23,6 +23,10 @@ export const observeDesktopSpatialDrag = async (
       renderedUpdatesFps: 0,
       p95Ms: 0,
       events: 0,
+      inputTrace: [] as string[],
+      focusTrace: [] as string[],
+      pointerStart: {} as Record<string, unknown>,
+      pointerEnd: {} as Record<string, unknown>,
       initial: canvas.spatialDiagnostics.rectangles.find((rect) => rect.id === choice.id),
       final: canvas.spatialDiagnostics.rectangles.find((rect) => rect.id === choice.id),
       screenDelta: { x: 0, y: 0 },
@@ -40,6 +44,10 @@ export const observeDesktopSpatialDrag = async (
       previous = time
       if (!document.hasFocus() || document.visibilityState !== 'visible')
         evidence.error = 'Native drag lost window focus'
+      const diagnostics = canvas.spatialFrameDiagnostics as unknown as { input: unknown }
+      const input = JSON.stringify(diagnostics.input)
+      if (evidence.inputTrace.at(-1) !== input && evidence.inputTrace.length < 20)
+        evidence.inputTrace.push(input)
       const current = canvas.spatialFrameDiagnostics.renderFrame
       if (current !== rendered) evidence.renderedUpdates++
       rendered = current
@@ -57,6 +65,15 @@ export const observeDesktopSpatialDrag = async (
         )
         .sort((a, b) => a.depth - b.depth)[0]
       if (hit?.id !== choice.id) return
+      evidence.pointerStart = {
+        x: event.clientX,
+        y: event.clientY,
+        button: event.button,
+        buttons: event.buttons,
+        ctrl: event.ctrlKey,
+        shift: event.shiftKey,
+        meta: event.metaKey,
+      }
       pointer = event.pointerId
       evidence.initial = hit
       started = performance.now()
@@ -72,7 +89,16 @@ export const observeDesktopSpatialDrag = async (
         evidence.trusted &&= event.isTrusted
       }
     }
+    const focus = (event: Event) => {
+      evidence.focusTrace.push(
+        `${event.type}:${document.hasFocus()}:${event.target === window ? 'window' : 'element'}`,
+      )
+    }
+    window.addEventListener('blur', focus, true)
+    canvas.addEventListener('lostpointercapture', focus)
     const stop = () => {
+      window.removeEventListener('blur', focus, true)
+      canvas.removeEventListener('lostpointercapture', focus)
       cancelAnimationFrame(frame)
       window.removeEventListener('pointerdown', down, true)
       window.removeEventListener('pointermove', move, true)
@@ -81,6 +107,15 @@ export const observeDesktopSpatialDrag = async (
     }
     const up = (event: PointerEvent) => {
       if (event.pointerId !== pointer) return
+      evidence.pointerEnd = {
+        x: event.clientX,
+        y: event.clientY,
+        button: event.button,
+        buttons: event.buttons,
+      }
+      evidence.inputTrace.push(
+        JSON.stringify((canvas.spatialFrameDiagnostics as unknown as { input: unknown }).input),
+      )
       evidence.trusted &&= event.isTrusted
       stop()
       requestAnimationFrame(() => {

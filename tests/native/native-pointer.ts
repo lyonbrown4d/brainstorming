@@ -1,91 +1,46 @@
 import { browser } from '@wdio/globals'
-import { fixture, focusNativeWindow } from '@tests/native/driver'
+import { focusNativeWindow } from '@tests/native/driver'
 import type { SpatialDragChoice } from '@tests/native/independent-spatial'
 
-interface NativePointerStatus {
-  readonly gestureId: string
-  readonly phase: 'queued' | 'moving' | 'held' | 'complete' | 'failed'
-  readonly done: boolean
-  readonly events: number
-  readonly cleanupError: string | null
-  readonly error: string | null
-  readonly automaticRelease: boolean
-}
-
-/** Native AppKit/GTK events target only the isolated E2E WebView. */
+/** ChromeDriver's CEF input keeps a held gesture on the same protocol client. */
 export const startNativePointer = async (choice: SpatialDragChoice) => {
   await focusNativeWindow()
-  const viewport = await browser.execute(() => ({ width: innerWidth, height: innerHeight }))
-  const steps = 180
-  const points = Array.from({ length: steps + 1 }, (_, index) => ({
-    x: choice.start.x + ((choice.end.x - choice.start.x) * index) / steps,
-    y: choice.start.y + ((choice.end.y - choice.start.y) * index) / steps,
-  }))
-  if (process.platform !== 'darwin' && process.platform !== 'linux') {
-    const id = 'independent-native-pointer'
-    await browser.performActions([
-      {
-        type: 'pointer',
-        id,
-        parameters: { pointerType: 'mouse' },
-        actions: [
-          {
-            type: 'pointerMove',
-            x: Math.round(choice.start.x),
-            y: Math.round(choice.start.y),
-            duration: 0,
-          },
-          { type: 'pointerDown', button: 0 },
-          ...points.slice(1).map((point) => ({
-            type: 'pointerMove' as const,
-            x: Math.round(point.x),
-            y: Math.round(point.y),
-            duration: 8,
-          })),
-        ],
-      },
-    ])
-    return {
-      held: () => Promise.resolve(),
-      release: async () => {
-        await browser.releaseActions()
-      },
-    }
-  }
-  const { gestureId } = await fixture<{ gestureId: string }>('nativePointer', {
-    operation: 'start',
-    viewport,
-    points,
-    stepMs: 8,
-    holdMs: 8000,
-  })
-  const status = () =>
-    fixture<NativePointerStatus>('nativePointer', { operation: 'status', gestureId })
-  return {
-    held: async () => {
-      await browser.waitUntil(
-        async () => {
-          const current = await status()
-          if (current.error || current.done)
-            throw new Error(current.error ?? 'Native pointer released before the held assertions')
-          return current.phase === 'held'
-        },
-        {
-          timeout: 7000,
-          interval: 20,
-          timeoutMsg: 'Native pointer never reached its held destination',
-        },
+  const send = (
+    type: 'mouseMoved' | 'mousePressed' | 'mouseReleased',
+    x: number,
+    y: number,
+    held = true,
+  ) =>
+    browser.sendCommand('Input.dispatchMouseEvent', {
+      type,
+      x,
+      y,
+      pointerType: 'mouse',
+      modifiers: 0,
+      button: held ? 'left' : 'none',
+      buttons: type === 'mouseReleased' || !held ? 0 : 1,
+      ...(type === 'mouseMoved' ? {} : { clickCount: 1 }),
+    })
+  await send('mouseMoved', choice.start.x, choice.start.y, false)
+  await send('mousePressed', choice.start.x, choice.start.y)
+  try {
+    const steps = 180
+    for (let index = 1; index <= steps; index++) {
+      await send(
+        'mouseMoved',
+        choice.start.x + ((choice.end.x - choice.start.x) * index) / steps,
+        choice.start.y + ((choice.end.y - choice.start.y) * index) / steps,
       )
-    },
+      await browser.pause(8)
+    }
+  } catch (error) {
+    await send('mouseReleased', choice.end.x, choice.end.y)
+    throw error
+  }
+  return {
+    held: () => Promise.resolve(),
     release: async () => {
-      await fixture('nativePointer', { operation: 'release', gestureId })
-      await browser.waitUntil(async () => (await status()).done, { timeout: 5000, interval: 20 })
-      const final = await status()
-      if (final.error || final.cleanupError || final.automaticRelease || final.phase !== 'complete')
-        throw new Error(
-          final.error ?? final.cleanupError ?? 'Native pointer required an automatic release',
-        )
-      return final
+      await send('mouseReleased', choice.end.x, choice.end.y)
     },
   }
 }

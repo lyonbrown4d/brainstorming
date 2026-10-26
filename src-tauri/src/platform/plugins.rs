@@ -42,6 +42,8 @@ pub fn register(builder: tauri::Builder<tauri::DynRuntime>) -> tauri::Builder<ta
     .plugin(tauri_plugin_os::init())
     .plugin(tauri_plugin_notification::init())
     .plugin(tauri_plugin_brainstorming_native::init());
+  #[cfg(desktop)]
+  let builder = builder.plugin(super::cef_runtime::plugin());
   #[cfg(all(desktop, not(feature = "e2e")))]
   let builder = builder.plugin(
     tauri_plugin_window_state::Builder::new()

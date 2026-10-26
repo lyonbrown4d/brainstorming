@@ -29,6 +29,16 @@ describe('native content and password protection', () => {
     await home()
   })
 
+  it('blocks remote navigation of the privileged native editor window', async () => {
+    const before = await browser.getUrl()
+    const result = (await browser.sendCommandAndGetResult('Page.navigate', {
+      url: 'https://example.invalid/blocked-editor-navigation',
+    })) as { errorText?: string }
+    expect(['net::ERR_ABORTED', 'net::ERR_BLOCKED_BY_CLIENT']).toContain(result.errorText)
+    expect(await browser.getUrl()).toBe(before)
+    expect(await native<string>('getLanguage')).toBe('zh-CN')
+  })
+
   it('persists Chinese notes, embedded raster/attachment resources and exports attachment bytes', async () => {
     await create('媒体笔记')
     await ensureProperties()

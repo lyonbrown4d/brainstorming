@@ -1,3 +1,4 @@
+import { switchNativeWindow } from '@tests/native/cef-api'
 import { browser, expect } from '@wdio/globals'
 import { Key } from 'webdriverio'
 import { fileMenuItemReady } from '@tests/native/readiness'
@@ -40,7 +41,7 @@ describe('native desktop windows', () => {
     // The native File menu routes to the focused renderer and creates a real window.
     await fixture('menu', { id: 'newWindow' })
     const second = await secondWindow()
-    await browser.tauri.switchWindow(second)
+    await switchNativeWindow(second)
     await expect(browser.$('#startup-screen')).not.toExist()
     await native('startupReady')
     await create('窗口 B 独立导图')
@@ -57,7 +58,7 @@ describe('native desktop windows', () => {
     await browser.saveScreenshot(await nativeArtifact('multi-window-file-menu.png'))
     await named(main.title).click()
     await expect(browser.$('[role="menu"]')).not.toBeDisplayed()
-    await browser.tauri.switchWindow('main')
+    await switchNativeWindow('main')
     await browser.waitUntil(
       async () => (await native<{ focused: boolean }>('getWindowState')).focused,
       { timeoutMsg: 'The titlebar file menu did not focus the selected native window' },
@@ -80,7 +81,7 @@ describe('native desktop windows', () => {
     const destination = entries.find((window) => window.id === second)
     if (!destination) throw new Error('Missing target window')
     await named(`移到 ${destination.title}`).click()
-    await browser.tauri.switchWindow(second)
+    await switchNativeWindow(second)
     await focusNativeWindow()
     await rootHasText('窗口 A 未保存修改')
     await shortcut('z')
@@ -95,10 +96,10 @@ describe('native desktop windows', () => {
     ).toBeElementsArrayOfSize(2)
     const firstPath = recent.find((file) => file.name === firstName)?.path
     if (!firstPath) throw new Error('Transferred document was not saved')
-    await browser.tauri.switchWindow('main')
+    await switchNativeWindow('main')
     await native('startupReady')
     expect(await native('openRecent', { path: firstPath })).toBeNull()
-    await browser.tauri.switchWindow(second)
+    await switchNativeWindow(second)
     await rootHasText('窗口 A 原文')
     await browser.waitUntil(
       async () => (await native<{ focused: boolean }>('getWindowState')).focused,

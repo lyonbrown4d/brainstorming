@@ -39,7 +39,7 @@ pnpm dev
 
 千节点检查复用 `createFixtureDocument(1000)`。二维组件预览为 `Canvas Performance / Thousand Topics`；原生性能用例包括 `tests/native/canvas-performance.spec.ts`、`tests/native/high-frequency.spec.ts`、`tests/native/selection-performance.spec.ts` 和 `tests/native/independent-spatial-performance.spec.ts`。`tests/native/independent-spatial-correctness.spec.ts` 与三维交互用例检查相机导航、选中、混合拖动、归属预判、笔迹、缩放、关联线、保存和单次撤销。用例存在不代表已经执行通过，当前独立三维架构的原生性能仍需使用当前源码的完整 E2E 二进制采样；旧 React Flow 三维投影与 PixiJS GPU 混合方案的测量不适用于当前架构。
 
-原生缩放契约通过显式合成 Ctrl+Wheel 检查实际 Three 相机与视距变化。WDIO embedded 1.5 的滚轮接口不携带修饰键，此用例不代表硬件触控板捏合验收；真实指针拖动沿用受限 AppKit 输入适配器。
+原生缩放契约通过 CEF 指针与滚轮输入检查实际相机、节点与视距变化；合成输入吞吐采样不能代表硬件触控板捏合或物理呈现帧率。
 
 性能采样区分 requestAnimationFrame 调度、WebGL 渲染提交和拖动中的实际位置更新频率。它们不等于 GPU 物理呈现帧率，合成滚轮和拖动也不能代表物理触控板。高频检查每帧输入多次等量事件，并检查操作结果，不能只数回调。千节点连续导航与拖动以尽量稳定在 60 FPS 以上为优化目标，不设置 60 FPS 上限；结果需注明系统、导图规模、输入方式与采样范围，不能由单机结果推断全部平台。React Scan 只用于开发环境重渲染检查；真实指针命中由 `tests/canvas` 验证。
 
@@ -88,9 +88,11 @@ CameraControls 处理空白处旋转、右键平移、双指平移、捏合与 A
 
 macOS 桌面验证先安装 `brew install pkgconf vips cmake ninja`。`desktop-test`、`desktop-check` 和 `build:e2e` 使用本机开发库；`package` 使用构建脚本准备并打包固定版本的 macOS 图片库，不依赖目标机器上的 Homebrew。直接运行 `pnpm test:e2e` 不会编译应用；通常使用 Moon 的 `e2e` 任务，或先运行 `pnpm build:e2e`。
 
-`pnpm build-storybook && pnpm test:canvas` 使用现有 Playwright 在隔离的 Storybook 组件预览中执行真实鼠标操作，覆盖画笔命中层级、连续绘制、Esc 取消、擦除与撤销。Moon 的 `canvas-test` 任务会先构建 Storybook。当前 embedded WDIO 1.5 的 pointer actions 实际派发 `MouseEvent`，不能用它验证依赖 `PointerEvent` 与指针捕获的绘画；这部分使用 Playwright 的真实输入，文件持久化继续由 Rust SQLite 集成测试验收，不伪造驱动事件。
+`pnpm build-storybook && pnpm test:canvas` 使用现有 Playwright 在隔离的 Storybook 组件预览中执行真实鼠标操作，覆盖画笔命中层级、连续绘制、Esc 取消、擦除与撤销。Moon 的 `canvas-test` 任务会先构建 Storybook。CEF 原生用例通过 ChromeDriver 的同客户端 CDP 输入验证真实 PointerEvent 与 held 状态；Storybook 继续提供独立组件命中验证，文件持久化由真实 SQLite 测试验收。
 
-桌面 macOS、Windows、Linux 统一使用 Tauri 3 alpha / CEF，移动端使用 Wry。迁移与构建边界见 [CEF 迁移说明](cef-migration.md)。原生 UI 用例仍保留；当前 WDIO 1.5 的 Rust 插件仅支持 Tauri 2，已从应用移除注册，CEF 驱动接入前不能运行原生 E2E 和性能采样。禁止混用旧二进制与新的开发 renderer；此前的 WebKit 测试结果不代表 CEF 已验收。
+桌面 macOS、Windows、Linux 统一使用 Tauri 3 alpha / CEF，移动端使用 Wry。原生 WDIO 通过官方 ChromeDriver 连接实际 CEF 浏览器；`--e2e-browser-version` 仅在 e2e 构建中输出该二进制编译使用的 SDK 版本，驱动按相同 Chromium build 匹配。每个测试文件独立启动完整应用，并使用临时 CEF 缓存和 Linux 数据目录；来源受限的 Tauri 全局 API 用于调用真实命令。启动失败或应用标识不匹配立即终止，不退回普通 Chrome。调试端口仅在 e2e feature + 独立标识 + 显式测试环境变量下启用，生产构建关闭。Hyprland 仅在规格开始时，按 PID 和实际二进制校验窗口，设置浮动并聚焦一次；操作过程中不循环抢焦点。迁移与平台边界见 [CEF 迁移说明](cef-migration.md)。禁止混用旧二进制与新的开发 renderer。
+
+Linux 在仍需使用桌面时可运行 `pnpm test:e2e:isolated` 或 `pnpm benchmark:2d:isolated`。入口需要 `gnome-shell`、`glxinfo`（Debian 的 `mesa-utils`）和 `dbus-run-session`；使用独立无头 GNOME / XWayland、1920×1080@60 虚拟输出、临时配置和私有 D-Bus，不修改当前桌面。构建仍须先运行 `pnpm build:e2e`。日志记录真实 CEF WebGL 渲染器；基准拒绝软件 GL，并保留五次采样的几何与焦点检查。隔离构建的 Chromium 临时缓存使用 basic 密码存储，避免调起宿主密钥环；应用 SQLCipher 和凭据服务保持原有路径。macOS / Windows 仍运行 `pnpm test:e2e`，不启用 Linux 显示入口。
 
 CI 保留 Node 24 / 26 的前端、Storybook 构建与浏览器检查；Ubuntu 单独运行无 UI 的 Rust 测试，macOS 运行 Clippy、完整桌面 Rust 测试、真实 WDIO E2E 和 app bundle 构建。预览包使用 Tauri 的 [ad-hoc 签名](https://v2.tauri.app/distribute/sign/macos/#ad-hoc-signing)，经 `codesign` 校验后用 `ditto` 打包，保留 app 的执行权限；此步骤不代表完成公证或正式发布。本轮 CI 不构建、不测试 iOS / Android。
 
@@ -263,12 +265,12 @@ Ubuntu 24.04 / Debian 13 构建机需先安装系统依赖（需要 sudo）：
 
 ```sh
 sudo apt-get update
-sudo apt-get install -y build-essential pkg-config libgtk-4-dev libxdo-dev libssl-dev librsvg2-dev libvips-dev patchelf
+sudo apt-get install -y build-essential pkg-config cmake ninja-build libgtk-4-dev zenity xdg-desktop-portal libxdo-dev libssl-dev librsvg2-dev libvips-dev patchelf
 pnpm install --frozen-lockfile
 pnpm package:linux
 ```
 
-桌面运行库由 CEF 随包分发，不再依赖 WebKitGTK；Tauri 自动收集 GTK4 / CEF 的平台依赖。libvips 要求至少 8.15；deb 声明 `libvips42t64 | libvips42`，rpm 声明 `vips` 运行依赖。CEF 自带浏览器媒体运行库，移除旧 WebKitGTK 的 GStreamer 打包开关；实际音视频格式支持、AppImage 及 libvips 编解码器仍需在目标发行版验证。deb/rpm 同时包含只读缩略图 helper、MIME 与 thumbnailer 描述；AppImage 不安装宿主缩略图提供程序。
+桌面运行库由 CEF 随包分发，不再依赖 WebKitGTK；Tauri 自动收集 GTK4 / CEF 的平台依赖。libvips 要求至少 8.15；deb / rpm 声明 GTK4、XDG Desktop Portal、Zenity 和对应 libvips 运行依赖；Portal 后端由宿主桌面提供，Linux 消息确认复用上游 Zenity 后端。AppImage 也需要宿主提供 Portal / Zenity。CEF 自带浏览器媒体运行库，移除旧 WebKitGTK 的 GStreamer 打包开关；实际音视频格式支持、AppImage 及 libvips 编解码器仍需在目标发行版验证。deb/rpm 同时包含只读缩略图 helper、MIME 与 thumbnailer 描述；AppImage 不安装宿主缩略图提供程序。
 
 默认输出为 `src-tauri/target/release/bundle/deb/*.deb`、`rpm/*.rpm`、`appimage/*.AppImage`，debug 使用 `target/debug/bundle/`；设置 `CARGO_TARGET_DIR` 或目标架构时路径相应变化。可用 `dpkg-deb --info`、`dpkg-deb --contents` 检查 deb 的运行依赖和桌面集成文件，安装需由用户在目标系统使用 apt/dnf 执行。
 

@@ -1,3 +1,4 @@
+import { switchNativeWindow } from '@tests/native/cef-api'
 import { execFile } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
 import { promisify } from 'node:util'
@@ -114,10 +115,10 @@ export const decodedPng = async (path: string): Promise<{ width: number; height:
 
 /** A closing WebView cannot reliably return its own IPC response. */
 export const closeSecondaryWindow = async (): Promise<void> => {
-  await browser.tauri.execute(({ core }) => {
-    void core.invoke('native_request', { method: 'closeWindow', args: {} })
+  await browser.execute(() => {
+    void window.__TAURI__?.core.invoke('native_request', { method: 'closeWindow', args: {} })
   })
-  await browser.tauri.switchWindow('main')
+  await switchNativeWindow('main')
   await browser.waitUntil(
     async () => (await native<readonly { id: string }[]>('listWindows')).length === 1,
     { timeoutMsg: 'The secondary native window did not close' },

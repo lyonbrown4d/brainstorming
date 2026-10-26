@@ -1,9 +1,10 @@
 import 'dotenv/config'
-import { mkdir, readlink, realpath, writeFile } from 'node:fs/promises'
+import { copyFile, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { parseArgs } from 'node:util'
-import { $, sleep } from 'zx'
+import { $ } from 'zx'
 import { z } from 'zod'
+import { nativeE2E } from '@project/config/native-e2e'
 
 const { values } = parseArgs({
   options: {
@@ -11,126 +12,78 @@ const { values } = parseArgs({
     reference: { type: 'boolean', default: false },
   },
 })
-if ([values.gpu, values.reference].filter(Boolean).length > 1)
-  throw new Error('Choose GPU or SVG reference, not both')
+if (values.gpu && values.reference) throw new Error('Choose GPU or SVG reference, not both')
 
-const application = await realpath(
-  resolve(process.env.BRAINSTORMING_E2E_BINARY ?? 'src-tauri/target/debug/brainstorming'),
-)
-const hyprland = process.platform === 'linux' && !!process.env.HYPRLAND_INSTANCE_SIGNATURE
-const run = $({ quiet: true, timeout: '3s' })
-const clientSchema = z.object({
-  address: z.string().regex(/^0x[\da-f]+$/i),
-  pid: z.number().int().positive(),
-  class: z.string(),
-  size: z.tuple([z.number(), z.number()]),
-  mapped: z.boolean(),
-  hidden: z.boolean(),
-})
-const activeSchema = z.object({
-  address: z.string().optional(),
-  pid: z.number().optional(),
-  class: z.string().optional(),
-})
-const trace: (z.infer<typeof activeSchema> & { elapsedMs: number })[] = []
-const started = Date.now()
-let activated: string | undefined
-let activationCount = 0
-const activationResults: string[] = []
-let previous = ''
-const status = { running: true }
-
-const benchmark = $({
+// Window preparation belongs to the CEF harness; never run a second focus loop.
+await $({
   stdio: 'inherit',
-  nothrow: true,
-  timeout: '150s',
+  timeout: '180s',
   env: {
     ...process.env,
-    ...(process.platform === 'linux' ? { GDK_BACKEND: 'x11' } : {}),
     BRAINSTORMING_BENCHMARK_RUNS: '5',
     BRAINSTORMING_EXPECT_GPU: values.gpu ? '1' : '0',
     BRAINSTORMING_EXPECT_SVG: values.gpu ? '0' : '1',
     BRAINSTORMING_GPU_REFERENCE: values.reference ? '1' : '0',
   },
-})`pnpm exec wdio run wdio.conf.ts --spec tests/native/canvas-performance.spec.ts`
-const completion = benchmark.finally(() => {
-  status.running = false
-})
+})`${nativeE2E.pnpmExecutable} test:e2e --spec tests/native/canvas-performance.spec.ts`
 
-try {
-  while (status.running) {
-    if (hyprland) {
-      if (!activated) {
-        const clients = z
-          .array(clientSchema)
-          .parse(JSON.parse((await run`hyprctl -j clients`).stdout))
-        const candidates = clients.filter(
-          (client) =>
-            client.mapped &&
-            !client.hidden &&
-            client.size[1] > 400 &&
-            /brainstorm/i.test(client.class),
-        )
-        const executables = await Promise.all(
-          candidates.map(async (client) => ({
-            client,
-            executable: await readlink(`/proc/${client.pid}/exe`).catch(() => null),
-          })),
-        )
-        const target = executables.find((item) => item.executable === application)?.client
-        if (target) {
-          const selector = `address:${target.address}`
-          activationResults.push(
-            (
-              await run`hyprctl dispatch ${`hl.dsp.focus({ window = "${selector}" })`}`
-            ).stdout.trim(),
-          )
-          activationCount += 1
-          const active = activeSchema.parse(JSON.parse((await run`hyprctl -j activewindow`).stdout))
-          if (active.address !== target.address)
-            throw new Error('Compositor did not activate the E2E window')
-          activationResults.push(
-            (
-              await run`hyprctl dispatch ${`hl.dsp.window.fullscreen({ mode = "maximized", action = "set", window = "${selector}" })`}`
-            ).stdout.trim(),
-          )
-          if (activationResults.some((value) => value !== 'ok'))
-            throw new Error('Compositor rejected benchmark activation or sizing')
-          activated = target.address
-        }
-      }
-      // Observe subsequent focus changes; never steal focus during a held gesture.
-      const active = activeSchema.parse(JSON.parse((await run`hyprctl -j activewindow`).stdout))
-      const identity = JSON.stringify(active)
-      if (identity !== previous) {
-        previous = identity
-        trace.push({ elapsedMs: Date.now() - started, ...active })
-      }
-    }
-    await sleep(250)
-  }
-  const result = await completion
-  process.exitCode = result.exitCode ?? 1
-} catch (error) {
-  await benchmark.kill('SIGTERM')
-  await completion
-  process.exitCode = 1
-  console.error(error instanceof Error ? error.message : 'Native benchmark failed')
-} finally {
-  const directory = resolve('test-results/native')
-  await mkdir(directory, { recursive: true })
-  await writeFile(
-    resolve(directory, 'planar-focus-trace.json'),
-    JSON.stringify(
-      {
-        compositor: hyprland ? 'hyprland' : 'native-window-manager',
-        activationCount,
-        activationResults,
-        activated,
-        trace,
-      },
-      null,
-      2,
-    ),
-  )
+// Preserve this five-run cohort when a later functional suite writes its samples.
+const raw = resolve('test-results/native/planar-benchmark-samples.json')
+await copyFile(resolve('test-results/native/brainstorming-2d-performance.json'), raw)
+const graphics = z
+  .object({ renderer: z.string(), vendor: z.string(), userAgent: z.string() })
+  .parse(JSON.parse(await readFile(resolve('test-results/native/cef-graphics.json'), 'utf8')))
+if (/llvmpipe|softpipe|swiftshader|software rasterizer/i.test(graphics.renderer))
+  throw new Error(`Performance sampling used a software graphics backend: ${graphics.renderer}`)
+const records = z
+  .array(z.record(z.string(), z.unknown()))
+  .parse(JSON.parse(await readFile(raw, 'utf8')))
+const drag = z.object({
+  fps: z.number().positive(),
+  p95: z.number().nonnegative(),
+  width: z.number().positive(),
+  height: z.number().positive(),
+  ratio: z.number().positive(),
+  zoom: z.number().positive(),
+  mounted: z.number().int().positive(),
+  renderer: z.enum(['svg', 'webgl']),
+})
+const samples = records
+  .filter((sample) => sample.kind === 'drag')
+  .map((sample) => drag.parse(sample))
+if (samples.length !== 5) throw new Error('Expected five measured drags after warmup')
+const environments = samples.map((sample) =>
+  JSON.stringify({
+    width: sample.width,
+    height: sample.height,
+    ratio: sample.ratio,
+    zoom: sample.zoom,
+    mounted: sample.mounted,
+    renderer: sample.renderer,
+  }),
+)
+if (new Set(environments).size !== 1)
+  throw new Error('Benchmark geometry or renderer changed between samples')
+const fps = samples.map((sample) => sample.fps).sort((a, b) => a - b)
+const mean = fps.reduce((sum, value) => sum + value, 0) / fps.length
+const variation =
+  Math.sqrt(fps.reduce((sum, value) => sum + (value - mean) ** 2, 0) / fps.length) / mean
+const summary = {
+  measurement: 'CEF synthetic 2D root-drag render throughput; not physical presentation FPS',
+  warmupRuns: 1,
+  measuredRuns: 5,
+  fps,
+  medianFps: fps[2],
+  meanFps: mean,
+  coefficientOfVariation: variation,
+  stable: variation <= 0.1,
+  environment: samples[0],
+  graphics,
+  raw,
 }
+await writeFile(
+  resolve('test-results/native/planar-benchmark-summary.json'),
+  JSON.stringify(summary, null, 2),
+)
+console.info('CEF 2D benchmark', summary)
+if (!summary.stable) throw new Error('Drag FPS variation exceeded 10%; inspect the saved samples')

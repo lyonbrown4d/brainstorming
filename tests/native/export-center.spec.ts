@@ -1,3 +1,4 @@
+import { switchNativeWindow } from '@tests/native/cef-api'
 import { copyFile, readFile, stat } from 'node:fs/promises'
 import { browser, expect } from '@wdio/globals'
 import { Key } from 'webdriverio'
@@ -184,7 +185,7 @@ describe('native export center', () => {
         ''
       return label !== ''
     })
-    await browser.tauri.switchWindow(label)
+    await switchNativeWindow(label)
     try {
       await native('startupReady')
       await create('当前窗口菜单导出')

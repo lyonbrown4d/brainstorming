@@ -15,6 +15,18 @@ import {
   save,
 } from '@tests/native/driver'
 
+// ChromeDriver's element size is the CSS layout box, excluding transforms.
+// Observe the rendered extent in canvas coordinates, including topic scale.
+const renderedWidth = () =>
+  browser.execute(() => {
+    const topic = document.querySelector('[data-testid="topic-root"]')
+    const viewport = document.querySelector('.react-flow__viewport')
+    if (!topic || !viewport) throw new Error('The planar topic is not ready')
+    return (
+      topic.getBoundingClientRect().width / new DOMMatrix(getComputedStyle(viewport).transform).a
+    )
+  })
+
 // Real IPC, command history and SQLite complement the canvas pointer tests.
 describe('native proportional topic scale', () => {
   it('scales a topic once, restores history, and preserves its scale after reopening', async () => {
@@ -25,13 +37,11 @@ describe('native proportional topic scale', () => {
     await ensureProperties()
     const scale = () => browser.$('input[aria-label="主题缩放"]')
     await expect(scale()).toHaveValue('100')
-    const before = await root().getSize('width')
+    const before = await renderedWidth()
     await scale().setValue('175')
     await browser.keys(Key.Enter)
     await expect(scale()).toHaveValue('175')
-    await browser.waitUntil(
-      async () => Math.abs((await root().getSize('width')) / before - 1.75) < 0.02,
-    )
+    await browser.waitUntil(async () => Math.abs((await renderedWidth()) / before - 1.75) < 0.02)
     await dockAction('撤销')
     await expect(scale()).toHaveValue('100')
     await dockAction('重做')
@@ -52,9 +62,7 @@ describe('native proportional topic scale', () => {
     await expect(scale()).toHaveValue('175')
     await named('重置为 100%').click()
     await expect(scale()).toHaveValue('100')
-    await browser.waitUntil(
-      async () => Math.abs((await root().getSize('width')) / before - 1) < 0.02,
-    )
+    await browser.waitUntil(async () => Math.abs((await renderedWidth()) / before - 1) < 0.02)
     await dockAction('撤销')
     await expect(scale()).toHaveValue('175')
   })

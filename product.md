@@ -10,7 +10,7 @@ Brainstorming 是基于 React、TypeScript 与 Tauri 3 alpha / Rust 的本地优
 
 web
 
-此值描述 React / WebView 界面的实现方式。产品通过 Tauri 3 alpha 发布为原生应用，不提供独立浏览器版本。macOS、Windows、Linux 桌面统一使用 CEF / Chromium，移动端保留系统 WebView。当前优先完成桌面体验，保留后续 iOS、Android 方向。
+此值描述 React / WebView 界面的实现方式。产品通过 Tauri 3 alpha 发布为原生应用，不提供独立浏览器版本。macOS、Windows、Linux 桌面统一使用 CEF / Chromium，移动端保留系统 WebView。文件选择与窗口关闭确认仍沿用各操作系统的原生适配。当前优先完成桌面体验，保留后续 iOS、Android 方向。
 
 ## Users
 

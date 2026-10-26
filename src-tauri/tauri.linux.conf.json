@@ -4,10 +4,15 @@
     "targets": ["deb", "rpm", "appimage"],
     "linux": {
       "deb": {
-        "depends": ["libvips42t64 (>= 8.15) | libvips42 (>= 8.15)"]
+        "depends": [
+          "libvips42t64 (>= 8.15) | libvips42 (>= 8.15)",
+          "libgtk-4-1",
+          "xdg-desktop-portal",
+          "zenity"
+        ]
       },
       "rpm": {
-        "depends": ["vips >= 8.15"]
+        "depends": ["vips >= 8.15", "gtk4", "xdg-desktop-portal", "zenity"]
       }
     }
   }

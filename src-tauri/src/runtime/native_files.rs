@@ -1,6 +1,7 @@
 use super::input::Result;
 use std::path::{Path, PathBuf};
 use tauri::AppHandle;
+#[cfg(any(target_os = "macos", mobile, not(feature = "e2e")))]
 use tauri_plugin_dialog::FilePath;
 
 #[cfg(mobile)]
@@ -51,6 +52,7 @@ fn uri(path: FilePath) -> Result<String> {
     FilePath::Url(url) => Ok(url.to_string()),
   }
 }
+#[cfg(any(target_os = "macos", mobile, not(feature = "e2e")))]
 pub async fn stage(app: &AppHandle, path: FilePath) -> Result<PathBuf> {
   #[cfg(desktop)]
   {
