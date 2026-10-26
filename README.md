@@ -1,6 +1,6 @@
 # Brainstorming（头脑风暴）
 
-基于 React、TypeScript 与 Tauri 2 / Rust 的本地优先思维导图应用。使用单个 pnpm package，面向 macOS、Windows、Linux、iOS 和 Android，不提供独立 Web 产品。
+基于 React、TypeScript 与 Tauri 3 alpha / Rust 的本地优先思维导图应用。使用单个 pnpm package，面向 macOS、Windows、Linux、iOS 和 Android，不提供独立 Web 产品。
 
 支持多窗口与多文档标签、多 Sheet、15 种图形结构、14 种内容模板及空白创建、16 种主题表现、同画布自由绘图、Lexical 中文输入、主题与任务标记、图片和附件、大纲、幻灯片编排与播放、XMind 导入导出，以及可调整路径、标签和端点的关联线。统一导出中心支持图片、PDF、PPTX、DOCX、HTML、大纲、XMind、CSV 和 JSON，范围与格式限制见 [开发说明](docs/development.md#文档导出)。原生 `.brainstorming` 使用 SQLite / SQLCipher，支持自动保存、密码保护、资源分块、文件内版本与恢复。未选择路径的导图只在内存保留，关闭后丢失。AI 与 MCP 由用户主动启用，不包含云端协作、评论或分享链接。
 
@@ -12,7 +12,7 @@
 
 ## 开发
 
-需要 Node.js 24 或更新版本、pnpm、Rust 1.99.1 或更新版本和目标平台的 Tauri 系统依赖。工具链优先使用 Homebrew 安装；macOS 开发先运行 `brew install pkgconf vips`，移动端还需要 Xcode 或 Android SDK / NDK。
+需要 Node.js 24 或更新版本、pnpm、Rust 1.99.1 或更新版本和目标平台的 Tauri 系统依赖。工具链优先使用 Homebrew 安装；macOS 开发先运行 `brew install pkgconf vips cmake ninja`，移动端还需要 Xcode 或 Android SDK / NDK。
 
 ```sh
 pnpm install --frozen-lockfile
@@ -20,9 +20,11 @@ pnpm native:vips --macos
 pnpm dev
 ```
 
+桌面 macOS、Windows、Linux 使用 Tauri 3 alpha / CEF，并将 Chromium 随安装包分发；移动端保留 Wry。首次原生构建下载约 1 GB CEF，安装包会明显增大。Linux 需安装 GTK4 开发依赖，详见 [CEF 迁移说明](docs/cef-migration.md)。
+
 开发、检查与构建会先从 Rust 生成 Tauri 类型绑定；`src/generated` 不提交，首次检查也需要原生构建依赖。手写样式使用 SCSS，Tailwind / shadcn 的主题入口保留 CSS。
 
-Vite 构建根目录 `index.html` 和 `splash.html`，React 源码位于 `src/`，Rust 和原生插件位于 `src-tauri/`。开发环境启用 React Scan；`VITE_REACT_SCAN=false` 可关闭。React Compiler 保持启用。macOS 开发及正式构建默认启用 `tauri-plugin-macos-fps`，应用图标与界面 Logo 同时适用于开发模式。
+Vite 构建根目录 `index.html` 和 `splash.html`，React 源码位于 `src/`，Rust 和原生插件位于 `src-tauri/`。开发环境启用 React Scan；`VITE_REACT_SCAN=false` 可关闭。React Compiler 保持启用。桌面三端统一使用 CEF；旧的 macOS WebKit 帧率插件已移除，应用图标与界面 Logo 同时适用于开发模式。
 
 桌面使用独立 splash，待 React 挂载完成后显示主窗，自定义标题栏保留原生窗口操作。移动端使用系统启动页、触摸入口、安全区与系统文件选择器。导图颜色按 Sheet 保存，与浅色、深色、跟随系统的界面外观独立。
 
@@ -69,4 +71,4 @@ pnpm build:e2e
 pnpm test:e2e
 ```
 
-Vitest 保留共享 TS 模型、布局、格式和编辑器测试；Rust 测试运行真实 SQLite / SQLCipher 与资源服务；使用 [Tauri 官方推荐的 WebDriver 方案](https://v2.tauri.app/develop/tests/webdriver/)（WebdriverIO + `@wdio/tauri-service` embedded 驱动）启动真实原生应用，支持 macOS、Windows、Linux。E2E 插件和文件选择器替代入口只进入独立的测试构建。Storybook 继续提供组件预览和 Playwright 组件测试。
+Vitest 保留共享 TS 模型、布局、格式和编辑器测试；Rust 测试运行真实 SQLite / SQLCipher 与资源服务；Storybook 提供组件预览和 Playwright 组件测试。原生 UI 用例保留，但旧 WDIO embedded 驱动依赖 Tauri 2，尚未适配 CEF，当前不能运行 `test:e2e`。本次迁移按要求暂停回归和性能测试，不将旧 WebView 的测试或帧率当作 CEF 验证结果。

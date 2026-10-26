@@ -25,10 +25,5 @@
       "infoPlist": "Info.plist",
       "entitlements": "Entitlements.plist"
     }
-  },
-  "plugins": {
-    "macos-fps": {
-      "enabled": true
-    }
   }
 }

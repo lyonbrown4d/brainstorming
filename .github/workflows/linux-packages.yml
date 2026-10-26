@@ -27,7 +27,7 @@ jobs:
       - name: Install build and media dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential pkg-config libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libvips-dev patchelf gstreamer1.0-tools gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+          sudo apt-get install -y build-essential pkg-config libgtk-4-dev libxdo-dev libssl-dev librsvg2-dev libvips-dev patchelf
       - run: pnpm install --frozen-lockfile
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: '1'

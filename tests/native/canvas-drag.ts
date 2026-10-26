@@ -89,7 +89,7 @@ export const previewNativeCanvasDrag = async (
       const dispatchTimes: number[] = []
       let previous = performance.now()
       const started = previous
-      let previousTransform = node.style.transform
+      let previousRect = node.getBoundingClientRect()
       const viewport = document.querySelector<HTMLElement>('.react-flow__viewport')
       let previousViewport = viewport?.style.transform
       let updatedFrames = 0
@@ -107,9 +107,10 @@ export const previewNativeCanvasDrag = async (
             else resolve(time)
           })
         })
-        if (node.style.transform !== previousTransform) updatedFrames += 1
+        const currentRect = node.getBoundingClientRect()
+        if (currentRect.x !== previousRect.x || currentRect.y !== previousRect.y) updatedFrames += 1
         if (viewport?.style.transform !== previousViewport) viewportUpdatedFrames += 1
-        previousTransform = node.style.transform
+        previousRect = currentRect
         previousViewport = viewport?.style.transform
         frames.push(now - previous)
         previous = now
@@ -147,7 +148,10 @@ export const previewNativeCanvasDrag = async (
         height: innerHeight,
         ratio: devicePixelRatio,
         zoom: viewport ? new DOMMatrix(getComputedStyle(viewport).transform).a : null,
-        changed: initial !== node.style.transform,
+        changed:
+          initial !== node.style.transform ||
+          initialRect.x !== finalRect.x ||
+          initialRect.y !== finalRect.y,
         mounted: document.querySelectorAll('.react-flow__node-topic').length,
         fps: (frames.length * 1000) / frames.reduce((sum, value) => sum + value, 0),
         p95: frames[Math.floor(frames.length * 0.95)],

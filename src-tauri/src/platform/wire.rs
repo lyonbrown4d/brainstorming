@@ -2,8 +2,7 @@
 use crate::compute::wire::JsonValue;
 use tauri::{AppHandle, WebviewWindow};
 
-#[tauri::command]
-#[specta::specta]
+#[tauri3_specta::command]
 pub async fn native_request(
   app: AppHandle,
   window: WebviewWindow,
@@ -16,8 +15,7 @@ pub async fn native_request(
 }
 
 #[cfg(feature = "e2e")]
-#[tauri::command]
-#[specta::specta]
+#[tauri3_specta::command]
 pub async fn e2e_fixture(
   app: AppHandle,
   window: WebviewWindow,

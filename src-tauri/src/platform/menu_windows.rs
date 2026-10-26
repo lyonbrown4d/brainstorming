@@ -8,8 +8,8 @@ pub(super) fn build(
   app: &AppHandle,
   chinese: bool,
   active: bool,
-  new_window: &MenuItem<tauri::Wry>,
-) -> tauri::Result<Submenu<tauri::Wry>> {
+  new_window: &MenuItem<tauri::DynRuntime>,
+) -> tauri::Result<Submenu<tauri::DynRuntime>> {
   let text = |zh: &'static str, en: &'static str| if chinese { zh } else { en };
   let action = |id: MenuAction, title: &str, key: Option<&str>, enabled: bool| {
     let id = serde_json::to_value(id).expect("menu action is serializable");

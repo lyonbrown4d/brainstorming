@@ -1,6 +1,6 @@
 # 架构
 
-Brainstorming 使用共享 React / TypeScript 编辑器和 Tauri 2 原生宿主。桌面目标为 macOS、Windows、Linux，移动目标为 iOS、Android。前端没有 Node 运行时；文件、SQLite、恢复、密钥和网络请求由 Rust 管理。
+Brainstorming 使用共享 React / TypeScript 编辑器和 Tauri 3 alpha 原生宿主，桌面统一使用 CEF，移动端使用 Wry。桌面目标为 macOS、Windows、Linux，移动目标为 iOS、Android。前端没有 Node 运行时；文件、SQLite、恢复、密钥和网络请求由 Rust 管理。
 
 ## 模块
 
@@ -26,7 +26,7 @@ Brainstorming 使用共享 React / TypeScript 编辑器和 Tauri 2 原生宿主�
 | `src-tauri/src/platform`                 | Tauri 生命周期、菜单、窗口和命令入口             |
 | `src-tauri/plugins/brainstorming-native` | Swift / Kotlin 文件授权、密钥、剪贴板和原生截图  |
 
-原生服务由 FluxDI `static_module!` 宏声明依赖，按领域 Module 启动和关闭，再将类型化服务组合为 `AppState`。装配与退出顺序见 [后端模块与依赖注入](development.md#后端模块与依赖注入)。不维护 Node sidecar。计算接口由 `tauri-specta` 从真实命令定义生成，其他平台能力沿用 `native_request` 白名单；Rust 再校验参数、来源窗口、文件授权和资源范围。Storybook 和契约测试可显式注入平台 API，正式应用不能回退到浏览器本地文件或恢复存储。
+原生服务由 FluxDI `static_module!` 宏声明依赖，按领域 Module 启动和关闭，再将类型化服务组合为 `AppState`。装配与退出顺序见 [后端模块与依赖注入](development.md#后端模块与依赖注入)。不维护 Node sidecar。计算接口由 `tauri3-specta` 从真实命令定义生成，其他平台能力沿用 `native_request` 白名单；Rust 再校验参数、来源窗口、文件授权和资源范围。Storybook 和契约测试可显式注入平台 API，正式应用不能回退到浏览器本地文件或恢复存储。
 
 ## 编辑与会话
 

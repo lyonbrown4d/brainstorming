@@ -11,7 +11,7 @@ pub(super) fn build(
   app: &AppHandle,
   language: &str,
   context: MenuContext,
-) -> tauri::Result<Menu<tauri::Wry>> {
+) -> tauri::Result<Menu<tauri::DynRuntime>> {
   let chinese = language == "zh-CN";
   let text = |zh: &'static str, en: &'static str| if chinese { zh } else { en };
   let active = context.has_document && !context.busy;

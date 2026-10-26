@@ -6,8 +6,12 @@ use std::{path::PathBuf, sync::Arc};
 use tauri::{Manager, RunEvent};
 
 pub fn run() {
-  let builder =
-    super::plugins::register(tauri::Builder::default()).on_permission_request(|webview, kind| {
+  #[cfg(desktop)]
+  let runtime = tauri_runtime_cef::Cef::default();
+  #[cfg(mobile)]
+  let runtime = tauri_runtime_wry::Wry::default();
+  let builder = super::plugins::register(tauri::Builder::default().runtime(runtime))
+    .on_permission_request(|webview, kind| {
       use tauri::webview::{PermissionKind, PermissionResponse};
       if (webview.label() != "main" && !webview.label().starts_with("editor-"))
         || !webview

@@ -2,7 +2,7 @@
 
 <!-- impeccable:product-schema 1 -->
 
-Brainstorming 是基于 React、TypeScript 与 Tauri 2 / Rust 的本地优先跨平台思维导图工具。采用暖白与石墨界面，提供大画布、可收放侧栏及同一文件内的多 Sheet；主题通过不同形态呈现，游离想法和手绘与导图共存于同一 Sheet；同一导图可切换 2D 与 3D 视图。
+Brainstorming 是基于 React、TypeScript 与 Tauri 3 alpha / Rust 的本地优先跨平台思维导图工具。采用暖白与石墨界面，提供大画布、可收放侧栏及同一文件内的多 Sheet；主题通过不同形态呈现，游离想法和手绘与导图共存于同一 Sheet；同一导图可切换 2D 与 3D 视图。
 
 实现约定见 [编码规范](docs/development.md#编码规范)。
 
@@ -10,7 +10,7 @@ Brainstorming 是基于 React、TypeScript 与 Tauri 2 / Rust 的本地优先跨
 
 web
 
-此值描述 React / WebView 界面的实现方式。产品通过 Tauri 2 发布为原生应用，不提供独立浏览器版本。当前优先完成 macOS、Windows、Linux 桌面体验，保留后续 iOS、Android 方向。
+此值描述 React / WebView 界面的实现方式。产品通过 Tauri 3 alpha 发布为原生应用，不提供独立浏览器版本。macOS、Windows、Linux 桌面统一使用 CEF / Chromium，移动端保留系统 WebView。当前优先完成桌面体验，保留后续 iOS、Android 方向。
 
 ## Users
 

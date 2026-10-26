@@ -1,16 +1,13 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
+  "$schema": "https://schema.tauri.app/config/3.0.0-alpha.5",
   "bundle": {
     "targets": ["deb", "rpm", "appimage"],
     "linux": {
       "deb": {
-        "depends": ["libvips42t64 (>= 8.15) | libvips42 (>= 8.15)", "gstreamer1.0-plugins-good"]
+        "depends": ["libvips42t64 (>= 8.15) | libvips42 (>= 8.15)"]
       },
       "rpm": {
-        "depends": ["vips >= 8.15", "gstreamer1-plugins-good"]
-      },
-      "appimage": {
-        "bundleMediaFramework": true
+        "depends": ["vips >= 8.15"]
       }
     }
   }

@@ -1,6 +1,3 @@
-if (import.meta.env.VITE_NATIVE_E2E === '1') {
-  await import('@wdio/tauri-plugin')
-}
 // Official standalone DevTools is optional and development-only.
 if (import.meta.env.DEV && import.meta.env.VITE_REACT_DEVTOOLS === 'true') {
   try {

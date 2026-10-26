@@ -52,8 +52,7 @@ fn decode(input: Value) -> Result<Request, String> {
   }
   Ok(request)
 }
-#[tauri::command]
-#[specta::specta]
+#[tauri3_specta::command]
 pub async fn document_export_prepare(
   app: AppHandle,
   window: WebviewWindow,
@@ -68,8 +67,7 @@ pub async fn document_export_prepare(
     .await
     .map(JsonValue)
 }
-#[tauri::command]
-#[specta::specta]
+#[tauri3_specta::command]
 pub async fn document_export_presentation(
   app: AppHandle,
   window: WebviewWindow,
@@ -90,8 +88,7 @@ fn json_pages(workbook: &Value) -> Result<Value, String> {
   serde_json::to_value(crate::document_exports::presentation::pages(workbook)?)
     .map_err(|_| "演示预览生成失败".into())
 }
-#[tauri::command]
-#[specta::specta]
+#[tauri3_specta::command]
 pub async fn document_export_start(
   app: AppHandle,
   window: WebviewWindow,
@@ -112,8 +109,7 @@ pub async fn document_export_start(
   .await
   .map_err(|_| "导出任务失败")?
 }
-#[tauri::command]
-#[specta::specta]
+#[tauri3_specta::command]
 pub async fn document_export_cancel(
   app: AppHandle,
   window: WebviewWindow,
@@ -125,8 +121,7 @@ pub async fn document_export_cancel(
     job_id.parse().map_err(|_| "导出任务无效")?,
   ))
 }
-#[tauri::command]
-#[specta::specta]
+#[tauri3_specta::command]
 pub async fn document_export_reveal(
   app: AppHandle,
   window: WebviewWindow,
@@ -149,8 +144,7 @@ pub async fn document_export_reveal(
   .map_err(|_| "打开文件任务失败")?
 }
 
-#[tauri::command]
-#[specta::specta]
+#[tauri3_specta::command]
 pub async fn document_export_preview(
   app: AppHandle,
   window: WebviewWindow,

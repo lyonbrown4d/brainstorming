@@ -1,6 +1,6 @@
 # 开发
 
-项目使用单个 pnpm package、Vite、Moon 和 Tauri 2。前端为 React / TypeScript，原生服务为 Rust，移动端平台适配为 Swift / Kotlin。Node.js 要求 24 或更新版本；依赖工具支持 Node 24 LTS 或 26 及更新版本，避免使用已停止支持的奇数版本。pnpm 固定为 packageManager 声明的 12.x。
+项目使用单个 pnpm package、Vite、Moon 和 Tauri 3 alpha。前端为 React / TypeScript，原生服务为 Rust，移动端平台适配为 Swift / Kotlin。Node.js 要求 24 或更新版本；依赖工具支持 Node 24 LTS 或 26 及更新版本，避免使用已停止支持的奇数版本。pnpm 固定为 packageManager 声明的 12.x。
 
 ## 本机准备
 
@@ -86,11 +86,11 @@ CameraControls 处理空白处旋转、右键平移、双指平移、捏合与 A
 | `pnpm package --bundles app`                     | 使用现有准备脚本编译并生成 macOS app bundle                         |
 | `pnpm storybook` / `pnpm test:storybook`         | 组件预览 / 浏览器组件测试                                           |
 
-macOS 桌面验证先安装 `brew install pkgconf vips`。`desktop-test`、`desktop-check` 和 `build:e2e` 使用本机开发库；`package` 使用构建脚本准备并打包固定版本的 macOS 图片库，不依赖目标机器上的 Homebrew。直接运行 `pnpm test:e2e` 不会编译应用；通常使用 Moon 的 `e2e` 任务，或先运行 `pnpm build:e2e`。
+macOS 桌面验证先安装 `brew install pkgconf vips cmake ninja`。`desktop-test`、`desktop-check` 和 `build:e2e` 使用本机开发库；`package` 使用构建脚本准备并打包固定版本的 macOS 图片库，不依赖目标机器上的 Homebrew。直接运行 `pnpm test:e2e` 不会编译应用；通常使用 Moon 的 `e2e` 任务，或先运行 `pnpm build:e2e`。
 
 `pnpm build-storybook && pnpm test:canvas` 使用现有 Playwright 在隔离的 Storybook 组件预览中执行真实鼠标操作，覆盖画笔命中层级、连续绘制、Esc 取消、擦除与撤销。Moon 的 `canvas-test` 任务会先构建 Storybook。当前 embedded WDIO 1.5 的 pointer actions 实际派发 `MouseEvent`，不能用它验证依赖 `PointerEvent` 与指针捕获的绘画；这部分使用 Playwright 的真实输入，文件持久化继续由 Rust SQLite 集成测试验收，不伪造驱动事件。
 
-原生 E2E 遵循 [Tauri 官方 WebDriver 指南](https://v2.tauri.app/develop/tests/webdriver/)，使用 WebdriverIO 与 `@wdio/tauri-service` 的 embedded 驱动，覆盖 macOS、Windows 和 Linux。插件只在独立 E2E 构建启用；生产应用不启用测试驱动。macOS 的 WDIO 1.5 内嵌指针端点仅产生 MouseEvent，独立 3D 指针验收因此通过仅在 macOS + e2e 编译的 AppKit 适配器向当前可信测试窗口投递原生鼠标事件；观察器仍必须验证真实 isTrusted、指针捕获、位置、落盘与历史。适配器拒绝跨窗口、失焦、越界、并发和视口变化，异步执行并在超时后请求释放，不修改 DOM 事件、捕获或业务状态。直接使用 `tauri-driver` 的外部驱动仅支持 Windows、Linux，本项目不为 macOS 维护另一套驱动实现。验收使用当前源码生成的完整测试二进制，不将旧二进制与新的开发 renderer 混用；构建超时或失败时记录阻塞，不能用组件测试结果代替原生 E2E 通过。
+桌面 macOS、Windows、Linux 统一使用 Tauri 3 alpha / CEF，移动端使用 Wry。迁移与构建边界见 [CEF 迁移说明](cef-migration.md)。原生 UI 用例仍保留；当前 WDIO 1.5 的 Rust 插件仅支持 Tauri 2，已从应用移除注册，CEF 驱动接入前不能运行原生 E2E 和性能采样。禁止混用旧二进制与新的开发 renderer；此前的 WebKit 测试结果不代表 CEF 已验收。
 
 CI 保留 Node 24 / 26 的前端、Storybook 构建与浏览器检查；Ubuntu 单独运行无 UI 的 Rust 测试，macOS 运行 Clippy、完整桌面 Rust 测试、真实 WDIO E2E 和 app bundle 构建。预览包使用 Tauri 的 [ad-hoc 签名](https://v2.tauri.app/distribute/sign/macos/#ad-hoc-signing)，经 `codesign` 校验后用 `ditto` 打包，保留 app 的执行权限；此步骤不代表完成公证或正式发布。本轮 CI 不构建、不测试 iOS / Android。
 
@@ -136,9 +136,9 @@ Tab 和 Sheet 标识只定位当前应用中已打开的会话；URL 不包含�
 
 ## macOS 高刷新率
 
-macOS 默认注册 [tauri-plugin-macos-fps](https://github.com/userFRM/tauri-plugin-macos-fps)，开发和正式构建均启用，自动应用于主窗口和启动窗口。配置位于 `src-tauri/tauri.macos.conf.json` 的 `plugins.macos-fps.enabled`；不向前端增加命令权限。其他平台不编译或注册此插件。
+桌面统一使用 CEF / Chromium，由其管理渲染调度与 GPU 合成；旧的 macOS WebKit 帧率插件已移除。CEF 实际呈现性能需在各平台重新采样。
 
-上游说明主要针对 macOS 13–15 的 WKWebView 帧率限制；macOS 26 及更新版本通常无需额外解锁。当前采用站外分发方向，暂不面向 Mac App Store。实际帧率应在对应系统和显示器上测量，不把插件注册视为已经达到 120 FPS。React Scan 仍只在开发模式启用。
+当前采用站外分发方向，暂不面向 Mac App Store。实际帧率应在对应系统和显示器上测量；React Scan 仍只在开发模式启用。
 
 ## 原生边界
 
@@ -249,7 +249,7 @@ Lexical 内容输入通过 `fillContentEditable` 使用 WebDriver 全选后插�
 
 ## 二维密集连线与 GPU 拖动
 
-GPU 连线实验默认关闭；构建时设置 `VITE_DENSE_EDGE_GPU=1` 才启用。Linux 当前采样比 SVG 慢，默认仅采用几何复用优化。启用后，至少 250 条结构连线且均符合现有不透明普通曲线/直线样式契约时，拖动期间使用按需加载的 PixiJS 8 WebGL RenderGroup。节点文字、命中与编辑仍由 React Flow / Lexical 管理；关联线沿用原有交互。平移、缩放与空闲显示使用 SVG，视口稳定 200ms 后通过 ahooks 预热下一次拖动的 GPU 缓冲，不启动持续绘制的 ticker。路由、折点、手绘及不满足批处理契约的样式继续使用 SVG。
+GPU 连线实验默认关闭；构建时设置 `VITE_DENSE_EDGE_GPU=1` 才启用。此前 Linux 系统 WebView 的采样比 SVG 慢，当前仍默认仅采用几何复用优化；CEF 性能尚未重新采样。启用后，至少 250 条结构连线且均符合现有不透明普通曲线/直线样式契约时，拖动期间使用按需加载的 PixiJS 8 WebGL RenderGroup。节点文字、命中与编辑仍由 React Flow / Lexical 管理；关联线沿用原有交互。平移、缩放与空闲显示使用 SVG，视口稳定 200ms 后通过 ahooks 预热下一次拖动的 GPU 缓冲，不启动持续绘制的 ticker。路由、折点、手绘及不满足批处理契约的样式继续使用 SVG。
 
 整体刚性平移时复用端点和路径，将位移交给场景变换；节点集合、尺寸、端口或内容变化时重新计算几何。GPU 只持有当前场景可见曲线，模型不变的路径保留几何缓冲；画布卸载时释放曲线和 WebGL 上下文。GPU 首帧提交后才切换可见层，初始化失败或上下文丢失时保留 SVG。使用 `pixi.js/unsafe-eval` 的官方静态 shader/uniform 同步实现兼容严格 CSP，不添加 CSP 的 `unsafe-eval` 授权。
 
@@ -263,12 +263,12 @@ Ubuntu 24.04 / Debian 13 构建机需先安装系统依赖（需要 sudo）：
 
 ```sh
 sudo apt-get update
-sudo apt-get install -y build-essential pkg-config libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libvips-dev patchelf gstreamer1.0-tools gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+sudo apt-get install -y build-essential pkg-config libgtk-4-dev libxdo-dev libssl-dev librsvg2-dev libvips-dev patchelf
 pnpm install --frozen-lockfile
 pnpm package:linux
 ```
 
-libvips 要求至少 8.15；deb 声明 `libvips42t64 | libvips42`，rpm 声明 `vips` 运行依赖，媒体播放依赖 GStreamer good 插件。AppImage 开启 Tauri 的媒体框架打包，推荐在 Ubuntu 构建；AppImage 及其 libvips/媒体编解码器仍需在目标发行版验证。deb/rpm 同时包含只读缩略图 helper、MIME 与 thumbnailer 描述；AppImage 不安装宿主缩略图提供程序。
+桌面运行库由 CEF 随包分发，不再依赖 WebKitGTK；Tauri 自动收集 GTK4 / CEF 的平台依赖。libvips 要求至少 8.15；deb 声明 `libvips42t64 | libvips42`，rpm 声明 `vips` 运行依赖。CEF 自带浏览器媒体运行库，移除旧 WebKitGTK 的 GStreamer 打包开关；实际音视频格式支持、AppImage 及 libvips 编解码器仍需在目标发行版验证。deb/rpm 同时包含只读缩略图 helper、MIME 与 thumbnailer 描述；AppImage 不安装宿主缩略图提供程序。
 
 默认输出为 `src-tauri/target/release/bundle/deb/*.deb`、`rpm/*.rpm`、`appimage/*.AppImage`，debug 使用 `target/debug/bundle/`；设置 `CARGO_TARGET_DIR` 或目标架构时路径相应变化。可用 `dpkg-deb --info`、`dpkg-deb --contents` 检查 deb 的运行依赖和桌面集成文件，安装需由用户在目标系统使用 apt/dnf 执行。
 
@@ -280,11 +280,9 @@ React Scan 默认在开发模式启用，显示重渲染和 FPS；可设置 `VIT
 
 DevTools CLI 自身使用 Electron，仅作为开发依赖，产品运行时仍为 Tauri。只有开发 CSP 允许该本机 WebSocket，生产 CSP 与发布入口不加载诊断代码。默认不启用远程诊断；不要把本机调试端口转发到外部网络。React DevTools 上游仅发布 Flow API，`src/dev/react-devtools-core.d.ts` 声明项目实际使用的最小接口。
 
-依赖升级以最新稳定且上游兼容的组合为准。本轮 WDIO 仍使用 9.x：最新 Tauri service 1.5.0 仍调用 `executeAsync`，WDIO 10 已移除此 API；SQLite 底层库受 SQLx 0.9 的 `<0.38` 约束，保持 0.37.0。Tauri Specta 使用最新的 `2.0.0-rc.26`，按其精确约束配套 Specta `2.0.0-rc.26` 和 TypeScript 导出器 `0.0.13`，不能混用更新的 Specta `rc.27` / 导出器 `0.0.14`。`svg2pdf 0.13` 与 PDF 合并代码共用 `pdf-writer 0.12.1` 的类型，不能替换为不兼容的 `0.15`。其余直接依赖以升级时的最新稳定版本为准，具体版本由 pnpm 和 Cargo 锁文件固定。
+Tauri 核心、CLI、官方插件和 CEF runtime 固定到已发布的兼容 alpha 版本。原 `tauri-specta 2` 不支持 Tauri 3，绑定改用已发布的 `tauri3-specta 0.1.0-alpha.3`，配套 Specta `2.0.0-rc.27` 与 TypeScript 导出器 `0.0.14`；保持位置参数与 Rust Result 的拒绝语义。该适配器为 MIT 许可的独立社区 alpha 包，版本由 Cargo.lock 固定。SQLite 底层库仍受 SQLx 0.9 的 `<0.38` 约束，保持 0.37.0；`svg2pdf 0.13` 与 PDF 合并代码共用 `pdf-writer 0.12.1` 的类型。
 
-Linux 构建的 `tauri-plugin-deep-link 2.6.2` 依赖 `rust-ini 0.21.1`，由 Linux 可选直接依赖及 Cargo.lock 固定；`0.21.3` 为 `ParseOption` 新增字段，与该插件的结构体初始化不兼容。升级时须同步验证 Linux 原生编译。
-
-Linux E2E 构建提供受限 GTK 指针和滚轮输入，复用原生指针会话的有界调度与释放流程；仅独立 E2E 应用的本地授权窗口可调用。GTK 坐标与 CSS 像素分别换算，拖动期间窗口尺寸变化会拒绝继续输入。`tests/native/planar-zoom.spec.ts` 持续按住 Ctrl，验证平滑与离散滚轮、UI 缩放及原生截图中的文字位置。GNOME Wayland 可能拒绝后台窗口激活；可设置 `GDK_BACKEND=x11` 做 XWayland 对照，但不能用其结果替代 Wayland 验收，也不能跳过前台和焦点校验。
+原生截图统一通过 CEF 进程内 CDP 完成，不开放远程调试 TCP 端口。E2E feature 中的指针与滚轮适配也改用 CEF 输入接口，继续验证独立应用标识、页面、窗口、前台与视口；驱动接入和真实输入回归尚未验证。性能采样脚本仅在开始时请求一次焦点，拖动期间只观察焦点变化；CEF 驱动就绪后再恢复采样。
 
 ## React Flow 交互参考
 

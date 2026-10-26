@@ -2,7 +2,7 @@
 
 ## 产品方向
 
-Brainstorming 是基于 React、TypeScript 与 Tauri 2 / Rust 的本地优先跨平台思维导图工具。
+Brainstorming 是基于 React、TypeScript 与 Tauri 3 alpha / Rust 的本地优先跨平台思维导图工具；macOS、Windows、Linux 统一使用 CEF，移动端使用 Wry。
 本仓库已从 Vetra 虚拟化 Block Editor 转向思维导图；旧代码由 Git 历史保留。
 对外名称使用 Brainstorming（头脑风暴），仓库标识、文件名和本地目录统一使用 brainstorming，不保留旧品牌名称或路径。项目采用单 package，禁止重新引入 monorepo/workspace。
 
@@ -31,7 +31,7 @@ Brainstorming 是基于 React、TypeScript 与 Tauri 2 / Rust 的本地优先跨
 
 保留 Vite / Tauri CLI、Moon 单项目任务图与 pnpm。package scripts 直接调用成熟 CLI，不维护通用 tasks.ts 包装；多任务依赖与缓存交给 Moon。前端、配置和脚本使用 TypeScript，原生后端使用 Rust。开发模式保留 React Scan，React DevTools 使用官方 standalone 接入并通过本机开关启用，均不进入发布产物。React renderer 与 Storybook 启用正式 React Compiler，沿用 React 19 官方接入方式；不将其用于 core 或 Rust 后端。
 
-新计算命令使用 `tauri-specta` 生成绑定。`src/generated` 只作为开发与构建产物，不进入 Git；通过 `pnpm generate:bindings` 重新生成，禁止手改。
+新计算命令使用适配 Tauri 3 的 `tauri3-specta` 生成绑定。`src/generated` 只作为开发与构建产物，不进入 Git；通过 `pnpm generate:bindings` 重新生成，禁止手改。
 
 ## 实现与质量
 
@@ -64,7 +64,7 @@ Brainstorming 是基于 React、TypeScript 与 Tauri 2 / Rust 的本地优先跨
 - 已有路径的导图按 Tab 自动保存，使用不修改编辑器的草稿快照；手动保存、另存为、密码变更、版本读取和释放共用按路径队列。保存结果只能更新原 Tab、原工作簿和原路径的保存基线，期间的新修改保持未保存状态。无路径导图只留内存，不写自动保存或恢复快照，关闭后丢失；继续保留未保存关闭确认。
 - 原生文件通过 SQLite 事务写入，不能先截断原文件；处理取消、损坏 SQLite/第三方 ZIP/JSON/XML、保存失败和恢复失败。
 - 测试覆盖主题树合法性、命令边界、撤销重做、序列化和恢复。
-- UI 遵循 [Tauri 官方 WebDriver 指南](https://v2.tauri.app/develop/tests/webdriver/)，使用 WebdriverIO + `@wdio/tauri-service` 的 embedded 驱动启动真实原生应用，覆盖 macOS、Windows、Linux；原生验收必须使用当前源码构建的完整 E2E 二进制，不混用旧二进制与新的开发 renderer；WDIO 插件与文件选择器测试入口仅在 e2e feature、独立应用标识下启用。Storybook 保留 Playwright 浏览器组件测试；画笔拖动必须使用真实浏览器输入验证命中层级，不以 dispatchEvent 或直接点击笔迹替代。
+- UI 遵循 [Tauri 官方 WebDriver 指南](https://v3.tauri.app/develop/tests/webdriver/)，保留 WebdriverIO 原生用例，CEF 迁移后须先接入兼容 Tauri 3 的驱动；旧 `@wdio/tauri-service` embedded 插件仅支持 Tauri 2，适配前不得宣称原生用例可运行或已通过；原生验收覆盖 macOS、Windows、Linux；原生验收必须使用当前源码构建的完整 E2E 二进制，不混用旧二进制与新的开发 renderer；WDIO 插件与文件选择器测试入口仅在 e2e feature、独立应用标识下启用。Storybook 保留 Playwright 浏览器组件测试；画笔拖动必须使用真实浏览器输入验证命中层级，不以 dispatchEvent 或直接点击笔迹替代。
 - Storybook 提供主题和编辑器交互预览；性能使用固定 fixtures、多次采样。
 - CI 至少执行 format:check、lint、typecheck、test、build、Storybook、E2E。
 

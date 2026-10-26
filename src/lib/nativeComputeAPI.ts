@@ -60,14 +60,7 @@ export const createComputeAPI = (): ComputeAPI => ({
         geometry: (geometry as Parameters<typeof commands.computeRender>[0]['geometry']) ?? null,
       })
       const { width, height } = scene
-      if (
-        width === null ||
-        height === null ||
-        !Number.isFinite(width) ||
-        !Number.isFinite(height) ||
-        width < 1 ||
-        height < 1
-      )
+      if (!Number.isFinite(width) || !Number.isFinite(height) || width < 1 || height < 1)
         throw new Error('原生导出尺寸无效')
       return { ...scene, width, height }
     }),

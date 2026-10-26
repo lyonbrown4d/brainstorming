@@ -4,7 +4,7 @@ use crate::runtime;
 use std::path::PathBuf;
 use tauri::Manager;
 
-pub fn register(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<tauri::Wry> {
+pub fn register(builder: tauri::Builder<tauri::DynRuntime>) -> tauri::Builder<tauri::DynRuntime> {
   let builder = builder
     .manage(super::initialization::Initialization::default())
     .manage(WindowStateRestore::default());
@@ -49,12 +49,6 @@ pub fn register(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<tauri::Wr
       .with_filter(|label| label == "main")
       .build(),
   );
-  #[cfg(target_os = "macos")]
-  let builder = builder.plugin(tauri_plugin_macos_fps::init());
-  #[cfg(feature = "e2e")]
-  let builder = builder
-    .plugin(tauri_plugin_wdio::init())
-    .plugin(tauri_plugin_wdio_webdriver::init());
   builder
 }
 

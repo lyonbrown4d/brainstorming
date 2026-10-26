@@ -6,7 +6,7 @@ fn application_target(target: &str) -> bool {
   target == "brainstorming_native" || target.starts_with("brainstorming_native::")
 }
 
-pub fn plugin() -> tauri::plugin::TauriPlugin<tauri::Wry> {
+pub fn plugin() -> tauri::plugin::TauriPlugin<tauri::DynRuntime> {
   let targets = vec![Target::new(TargetKind::Stderr)];
   // Native acceptance must not create logs in the developer's app directories.
   #[cfg(not(feature = "e2e"))]

@@ -1,5 +1,7 @@
 # Tauri 测试迁移记录
 
+2026-10-26：桌面迁移至 Tauri 3 alpha / CEF。下文的原生通过记录来自此前 Tauri 2 / 系统 WebView，不能视为 CEF 已验收。用户要求暂不运行测试；旧 WDIO embedded 插件仅支持 Tauri 2，驱动适配前原生 UI 和性能测试不可运行。用例保留，详见 [CEF 迁移说明](cef-migration.md)。
+
 本页供迁移评审使用，记录提交 `854e261` 中的 Electron / Node 后端测试如何迁移到当前未提交的 Tauri 工作区。删除旧运行时后，旧测试不能继续导入 `@main`、Electron 或 better-sqlite3；替代测试直接运行真实 Rust SQLite / SQLCipher、HTTP 服务或原生应用。下表区分已覆盖行为、平台机制变化和仍待验证的场景，不能据此声称所有平台已验收。
 
 ## 文档、加密与资源

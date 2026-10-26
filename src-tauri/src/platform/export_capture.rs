@@ -37,8 +37,7 @@ impl Bounds {
     Ok(())
   }
 }
-#[tauri::command]
-#[specta::specta]
+#[tauri3_specta::command]
 pub async fn document_export_capture(
   app: AppHandle,
   window: WebviewWindow,

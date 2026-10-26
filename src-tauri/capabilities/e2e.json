@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "e2e",
-  "description": "Only the separately built native E2E app grants its embedded WebDriver access.",
+  "description": "Only the separately built CEF E2E app grants its test fixtures access.",
   "windows": ["main", "editor-*"],
-  "permissions": ["wdio:default"]
+  "permissions": []
 }

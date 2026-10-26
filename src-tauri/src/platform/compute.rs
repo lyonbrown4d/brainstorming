@@ -70,8 +70,7 @@ async fn access(
   let lease = super::initialization::acquire(app).await?;
   Ok((state, lease))
 }
-#[tauri::command]
-#[specta::specta]
+#[tauri3_specta::command]
 pub async fn editor_open(
   app: AppHandle,
   window: WebviewWindow,
@@ -86,8 +85,7 @@ pub async fn editor_open(
     .await?;
   Ok(state.editor.open(session_id, workbook.0).await?.into())
 }
-#[tauri::command]
-#[specta::specta]
+#[tauri3_specta::command]
 pub async fn editor_execute(
   app: AppHandle,
   window: WebviewWindow,
@@ -109,8 +107,7 @@ pub async fn editor_execute(
       .into(),
   )
 }
-#[tauri::command]
-#[specta::specta]
+#[tauri3_specta::command]
 pub async fn editor_close(
   app: AppHandle,
   window: WebviewWindow,
@@ -127,8 +124,7 @@ pub async fn editor_close(
     Err("此窗口无权关闭该导图".into())
   }
 }
-#[tauri::command]
-#[specta::specta]
+#[tauri3_specta::command]
 pub async fn compute_layout(
   app: AppHandle,
   window: WebviewWindow,
@@ -141,8 +137,7 @@ pub async fn compute_layout(
     .await
     .map(|layout| (*layout).clone())
 }
-#[tauri::command]
-#[specta::specta]
+#[tauri3_specta::command]
 pub async fn compute_spatial_layout(
   app: AppHandle,
   window: WebviewWindow,
@@ -155,8 +150,7 @@ pub async fn compute_spatial_layout(
     .await
     .map(|layout| (*layout).clone())
 }
-#[tauri::command]
-#[specta::specta]
+#[tauri3_specta::command]
 pub async fn compute_find(
   app: AppHandle,
   window: WebviewWindow,
@@ -165,8 +159,7 @@ pub async fn compute_find(
   let (state, _lease) = access(&app, &window).await?;
   state.search.find(input).await
 }
-#[tauri::command]
-#[specta::specta]
+#[tauri3_specta::command]
 pub async fn compute_render(
   app: AppHandle,
   window: WebviewWindow,
@@ -176,8 +169,7 @@ pub async fn compute_render(
   let workbook = crate::runtime::compute::hydrate_for(&app, &state, input.workbook, false).await?;
   crate::runtime::compute::render(&state, SceneInput { workbook, ..input }).await
 }
-#[tauri::command]
-#[specta::specta]
+#[tauri3_specta::command]
 pub async fn compute_export(
   app: AppHandle,
   window: WebviewWindow,
@@ -186,8 +178,7 @@ pub async fn compute_export(
   let (state, _lease) = access(&app, &window).await?;
   crate::runtime::compute::export(&app, &state, input).await
 }
-#[tauri::command]
-#[specta::specta]
+#[tauri3_specta::command]
 pub async fn compute_import_text(
   app: AppHandle,
   window: WebviewWindow,
@@ -198,8 +189,7 @@ pub async fn compute_import_text(
   state.compute.import_text(format, text).await.map(JsonValue)
 }
 
-#[tauri::command]
-#[specta::specta]
+#[tauri3_specta::command]
 pub async fn compute_previews(
   app: AppHandle,
   window: WebviewWindow,

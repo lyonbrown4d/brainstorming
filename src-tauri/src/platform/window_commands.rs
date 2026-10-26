@@ -1,7 +1,6 @@
 use tauri::{AppHandle, Manager, WebviewWindow};
 
-#[tauri::command]
-#[specta::specta]
+#[tauri3_specta::command]
 pub async fn focus_editor_window(
   app: AppHandle,
   window: WebviewWindow,

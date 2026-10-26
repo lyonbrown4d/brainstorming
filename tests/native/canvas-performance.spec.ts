@@ -132,8 +132,12 @@ it('navigates and moves a thousand-topic map with one undo and live structural e
       samples.push({ kind, run, ...sample })
     }
   }
+  const repeats = Number(process.env.BRAINSTORMING_BENCHMARK_RUNS ?? '3')
+  if (!Number.isInteger(repeats) || repeats < 3 || repeats > 7)
+    throw new Error('Native drag sampling requires 3 to 7 repetitions')
+  const warmup = process.env.BRAINSTORMING_BENCHMARK_RUNS ? 1 : 0
   let dragZoom = 0
-  for (let run = 0; run < 3; run++) {
+  for (let run = -warmup; run < repeats; run++) {
     // Navigation sampling dispatches a frame-dependent number of wheel events.
     // Reset through the visible controls so every drag cohort starts at the same zoom.
     await browser.$('button[aria-label="适应画布"]').click()
@@ -152,7 +156,7 @@ it('navigates and moves a thousand-topic map with one undo and live structural e
       console.info('Native 2D drag sample', { run, ...dragSample })
       expect(dragSample.changed).toBe(true)
       expect(dragSample.viewportUpdatedFrames).toBe(0)
-      if (run === 0) dragZoom = dragSample.zoom ?? 0
+      if (run === -warmup) dragZoom = dragSample.zoom ?? 0
       expect(dragZoom).toBeGreaterThan(0)
       expect(dragSample.zoom).toBeCloseTo(dragZoom, 6)
       expect({
@@ -167,7 +171,7 @@ it('navigates and moves a thousand-topic map with one undo and live structural e
         if (run === 0)
           await browser.saveScreenshot(await nativeArtifact('brainstorming-2d-gpu-drag.png'))
       }
-      samples.push({ kind: 'drag', run, ...dragSample })
+      samples.push({ kind: run < 0 ? 'drag-warmup' : 'drag', run, ...dragSample })
       await browser.waitUntil(
         async () => (await nativeStructuralEdgePath('edge-topic-1')) !== previousPath,
       )

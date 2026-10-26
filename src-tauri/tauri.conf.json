@@ -1,5 +1,5 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
+  "$schema": "https://schema.tauri.app/config/3.0.0-alpha.5",
   "productName": "Brainstorming",
   "version": "0.2.0",
   "identifier": "app.brainstorming.desktop",
@@ -52,6 +52,7 @@
   },
   "bundle": {
     "active": true,
+    "cef": { "embed": true },
     "targets": "all",
     "category": "Productivity",
     "shortDescription": "Local-first mind mapping",

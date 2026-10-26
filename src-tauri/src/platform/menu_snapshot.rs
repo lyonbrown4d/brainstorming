@@ -9,7 +9,7 @@ pub(super) fn snapshot(app: &AppHandle) -> tauri::Result<Value> {
   items(menu.items()?)
 }
 
-fn items(entries: Vec<MenuItemKind<tauri::Wry>>) -> tauri::Result<Value> {
+fn items(entries: Vec<MenuItemKind<tauri::DynRuntime>>) -> tauri::Result<Value> {
   entries
     .into_iter()
     .map(|entry| {
