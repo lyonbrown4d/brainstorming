@@ -12,7 +12,7 @@
 
 ## 开发
 
-需要 Node.js 24 或更新版本、pnpm、Rust 1.99.1 或更新版本和目标平台的 Tauri 系统依赖。工具链优先使用 Homebrew 安装；macOS 开发先运行 `brew install pkgconf vips cmake ninja`，移动端还需要 Xcode 或 Android SDK / NDK。
+需要 Node.js 24 或更新版本、pnpm、Rust 1.99.1 或更新版本和目标平台的 Tauri 系统依赖。本机可继续使用 Node 25，无需切换版本；部分依赖未在 engines 中声明 Node 25，安装时保留兼容性警告，不阻断安装。`.nvmrc` 和 `.node-version` 继续推荐 Node 24，CI 覆盖 Node 24 / 25 / 26 验证。工具链优先使用 Homebrew 安装；macOS 开发先运行 `brew install pkgconf vips cmake ninja`，移动端还需要 Xcode 或 Android SDK / NDK。
 
 ```sh
 pnpm install --frozen-lockfile

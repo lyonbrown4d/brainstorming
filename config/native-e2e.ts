@@ -18,7 +18,9 @@ const environment = z
 export const nativeE2E = {
   binary: resolve(
     environment.BRAINSTORMING_E2E_BINARY ??
-      `src-tauri/target/debug/brainstorming${process.platform === 'win32' ? '.exe' : ''}`,
+      (process.platform === 'darwin'
+        ? 'src-tauri/target/debug/bundle/macos/Brainstorming E2E.app/Contents/MacOS/brainstorming'
+        : `src-tauri/target/debug/brainstorming${process.platform === 'win32' ? '.exe' : ''}`),
   ),
   worker: environment.WDIO_WORKER_ID ?? 'launcher',
   hyprland: process.platform === 'linux' && !!environment.HYPRLAND_INSTANCE_SIGNATURE,

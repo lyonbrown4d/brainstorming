@@ -43,7 +43,7 @@
     "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml --no-default-features",
     "check:rust": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
     "native:vips": "tsx scripts/prepare-native-vips.ts",
-    "build:e2e": "cross-env VITE_NATIVE_E2E=1 tauri build --debug --no-bundle --features e2e --config src-tauri/tauri.e2e.conf.json",
+    "build:e2e": "cross-env VITE_NATIVE_E2E=1 tsx scripts/build-native-e2e.ts",
     "devtools": "cross-env HOST=127.0.0.1 react-devtools",
     "test:canvas": "playwright test --config playwright.canvas.config.ts",
     "generate:bindings": "cross-env TAURI_CONFIG={} cargo run --quiet --manifest-path src-tauri/Cargo.toml --bin generate-bindings",
