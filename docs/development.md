@@ -17,6 +17,8 @@ pnpm dev
 
 `pnpm generate:bindings` 从真实 Rust 命令生成 `src/generated/native.ts`。该目录已被 Git、ESLint 和 Prettier 忽略，不能手工编辑或提交。开发、类型检查、测试、Storybook 和构建入口会先生成绑定，Moon 也将其列为前置任务。生成器使用基础 `TAURI_CONFIG={}`，避免继承外层 E2E 构建的测试权限配置。首次运行前端检查需要 Rust 和对应平台的 Tauri / libvips 开发依赖；CI 的前端任务同样安装这些依赖。
 
+macOS 打包设置 `VIPS_LIB_DIR` 后，绑定生成器需要在应用包外运行。构建脚本只为 `generate-bindings` 添加该图片库目录的运行时搜索路径；安装应用仍通过包内 `Contents/Frameworks` 加载图片库，不依赖构建机缓存路径。
+
 新增计算命令时，在 `src-tauri/src/platform/compute.rs` 声明 Tauri / Specta 命令，加入 `bindings.rs` 的唯一命令清单，再通过 `src/lib/nativeComputeAPI.ts` 转为业务视图类型。修订号用十进制字符串传输，避免 Rust u64 在 JavaScript 中丢失精度。动态工作簿使用具名 JSON 类型并在原生边界校验，不开启全局大整数强转。计算接口处理会话与派生结果，不改变版本化 JSON 或 SQLite 文件表结构，无需新增 SQL 迁移。
 
 导出格式、范围、内容和阶段分别由 Rust 的 `ExportFormat`、`ExportScope`、`ExportContent`、`ExportStage` 枚举定义，前端 `src/shared/documentExports.ts` 引用生成类型并提供具名常量；窗口和原生菜单同样通过生成契约传递。新增枚举值先更新 Rust，再重新生成绑定，不能手工维护第二套字符串联合类型。
