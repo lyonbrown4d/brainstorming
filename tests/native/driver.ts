@@ -44,12 +44,15 @@ export const chooseFile = async (
   const choice = await fixture<{ path: string }>('dialog', { kind, name, cancel })
   return choice.path
 }
-/** Embedded clicks do not activate an inactive native app before keyboard input. */
+/** Switching WebDriver targets does not always focus the native CEF contents. */
 export const focusNativeWindow = async (): Promise<void> => {
   const focused = async (): Promise<boolean> =>
     (await native<{ focused: boolean }>('getWindowState')).focused &&
     (await browser.execute(() => document.visibilityState === 'visible' && document.hasFocus()))
-  if (!(await focused())) await native('startupReady')
+  if (!(await focused())) {
+    await native('startupReady')
+    await browser.sendCommandAndGetResult('Page.bringToFront', {})
+  }
   await browser.waitUntil(focused, {
     timeoutMsg: 'The native main window must be visible and focused before UI input',
   })
@@ -152,7 +155,11 @@ export const fileAction = async (action: string): Promise<void> => {
 }
 export const dockAction = async (action: string): Promise<void> => {
   await named('展开浮动工具栏').click()
-  await named(action).click()
+  await browser
+    .$(
+      `//*[@data-slot="canvas-dock"]//button[@aria-label="${action}" or normalize-space(.)="${action}"]`,
+    )
+    .click()
 }
 export const renameRoot = async (title: string): Promise<void> => {
   await focusNativeWindow()
@@ -211,7 +218,7 @@ export const closeSaved = async (): Promise<void> => {
 }
 export const openSaved = async (name: string): Promise<void> => {
   await chooseFile('open', name)
-  await named('打开本地文件').click()
+  await browser.$('button[aria-label="打开本地文件"]').click()
 }
 export const ensureProperties = async (): Promise<void> => {
   await editorReady()

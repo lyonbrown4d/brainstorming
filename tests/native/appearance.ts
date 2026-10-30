@@ -20,7 +20,9 @@ const openAppearanceOptions = async (): Promise<void> => {
 
 export const chooseAppearance = async (label: string): Promise<void> => {
   await openAppearanceOptions()
-  const choice = browser.$('[role="listbox"]').$(`aria/${label}`)
+  const choice = browser.$(
+    `//*[@role="listbox"]//*[@role="option" and normalize-space(.)="${label}"]`,
+  )
   await expect(choice).toBeDisplayed()
   await choice.click()
   await expect(browser.$('[role="listbox"]')).not.toBeDisplayed()

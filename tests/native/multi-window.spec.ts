@@ -54,9 +54,11 @@ describe('native desktop windows', () => {
     await named('文件菜单').click()
     await browser.keys(Key.ArrowDown)
     await fileMenuItemReady(main.title)
-    await expect(named(`${current.title}（当前窗口）`)).toHaveAttribute('aria-disabled', 'true')
+    await expect(
+      browser.$(`[role="menuitem"][aria-label="${current.title}（当前窗口）"]`),
+    ).toHaveAttribute('aria-disabled', 'true')
     await browser.saveScreenshot(await nativeArtifact('multi-window-file-menu.png'))
-    await named(main.title).click()
+    await browser.$(`[role="menuitem"][aria-label="${main.title}"]`).click()
     await expect(browser.$('[role="menu"]')).not.toBeDisplayed()
     await switchNativeWindow('main')
     await browser.waitUntil(

@@ -27,7 +27,9 @@ const search = async (query: string): Promise<void> => {
   await palette().$('[cmdk-input]').setValue(query)
 }
 const contentOption = (title: string) =>
-  palette().$(`.//*[@cmdk-item and starts-with(@data-value, "content:")][contains(., "${title}")]`)
+  palette().$(
+    `.//*[@cmdk-item and starts-with(@data-value, "content:")][span/span[1][normalize-space(.)="${title}"]]`,
+  )
 const matches = (query: string) =>
   native<ContentSearchResult[]>('searchContent', { input: { query } })
 

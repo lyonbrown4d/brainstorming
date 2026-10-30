@@ -55,6 +55,7 @@ pnpm package --debug --bundles deb
 ## 文档与验证
 
 - [开发命令与目录](docs/development.md)
+- [依赖版本、catalogs 与升级限制](docs/dependency-upgrade.md)
 - [架构与平台边界](docs/architecture.md)
 - [单文件协议](docs/file-format.md)
 - [原生图片库与平台能力](docs/native-libraries.md)

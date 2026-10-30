@@ -26,7 +26,7 @@ describe('warm white and graphite native UI', () => {
     })
     await native('releaseDocument', { path })
     await chooseFile('open', name)
-    await named('打开本地文件').click()
+    await browser.$('button[aria-label="打开本地文件"]').click()
     await expect(root()).toBeDisplayed()
     await browser.$('[data-testid="topic-design"]').click()
     await ensureProperties()

@@ -1,17 +1,61 @@
-# Package-manager settings only; this repository contains one root package.
+# Settings and dependency catalogs for the single root package.
+catalogs:
+  lexical:
+    lexical: &lexical 0.53.0
+    '@lexical/extension': *lexical
+    '@lexical/history': *lexical
+    '@lexical/link': *lexical
+    '@lexical/list': *lexical
+    '@lexical/markdown': *lexical
+    '@lexical/plain-text': *lexical
+    '@lexical/react': *lexical
+    '@lexical/rich-text': *lexical
+    '@lexical/utils': *lexical
+  storybook:
+    storybook: &storybook 10.6.5
+    '@storybook/addon-a11y': *storybook
+    '@storybook/addon-vitest': *storybook
+    '@storybook/react-vite': *storybook
+  webdriverio:
+    webdriverio: &webdriverio 10.1.0
+    '@wdio/cli': *webdriverio
+    '@wdio/globals': *webdriverio
+    '@wdio/local-runner': *webdriverio
+    '@wdio/mocha-framework': *webdriverio
+    '@wdio/spec-reporter': *webdriverio
+    '@wdio/types': *webdriverio
+  react:
+    react: &react 19.3.1
+    react-dom: *react
+    '@types/react': &reactTypes 19.3.0
+    '@types/react-dom': *reactTypes
+  tailwind:
+    tailwindcss: &tailwind 4.3.3
+    '@tailwindcss/vite': *tailwind
+  vitest:
+    vitest: &vitest 5.0.5
+    '@vitest/browser-playwright': *vitest
+  devtools:
+    react-devtools: &devtools 8.0.0
+    react-devtools-core: *devtools
+
 # Dependency engine ranges may omit Node 25; validate compatibility with the suite.
 # The root package's Node/pnpm engine requirements remain enforced by pnpm.
 engineStrict: false
 strictPeerDependencies: false
+# The latest standalone DevTools still declares vulnerable legacy runtime dependencies.
+overrides:
+  'react-devtools>electron': 45.1.0
+  'react-devtools>cross-spawn': 7.0.6
 allowBuilds:
   '@parcel/watcher@2.6.0': true
   esbuild: true
   '@moonrepo/cli': true
-  'electron@23.3.13': true
+  'electron@45.1.0': true
   # Funding notices and generic browser-driver downloads are unnecessary for embedded Tauri.
-  'core-js@3.50.0': false
-  'edgedriver@6.3.1': false
-  'geckodriver@6.1.1': false
+  'core-js@3.51.0': false
+  'edgedriver@8.0.0': false
+  'geckodriver@8.0.0': false
 # Validation must use the explicit, reproducible installation step.
 verifyDepsBeforeRun: error
 minimumReleaseAgeExclude:

@@ -12,14 +12,15 @@ declare global {
 }
 
 export const invokeNative = async <T>(command: string, args: Record<string, unknown>): Promise<T> =>
-  browser.execute(
+  // Tauri commands return JSON, so WDIO's DOM-element return conversion does not apply.
+  (await browser.execute(
     async (name, request) => {
       if (!window.__TAURI__) throw new Error('The selected page has no native Tauri API')
       return window.__TAURI__.core.invoke<T>(name, request)
     },
     command,
     args,
-  )
+  )) as T
 
 export const nativeWindows = async (): Promise<string[]> => {
   const labels: string[] = []

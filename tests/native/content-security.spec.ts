@@ -88,7 +88,9 @@ describe('native content and password protection', () => {
     await rootHasText('媒体笔记')
     await ensureProperties()
     await textContains('[aria-label="主题备注"]', '中文备注\n第二行')
-    await expect(browser.$(`img[alt="${imageName}"]`)).toBeDisplayed()
+    await expect(
+      browser.$(`.react-flow__node[data-id="root"] img[alt="${imageName}"]`),
+    ).toBeDisplayed()
     await textContains('.topic-attachment-name', attachmentName)
   })
 

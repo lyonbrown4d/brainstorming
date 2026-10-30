@@ -2,6 +2,8 @@
 
 项目使用单个 pnpm package、Vite、Moon 和 Tauri 3 alpha。前端为 React / TypeScript，原生服务为 Rust，移动端平台适配为 Swift / Kotlin。Node.js 要求 24 或更新版本，本机可继续使用 Node 25；pnpm 固定为 packageManager 声明的 12.x。部分依赖的 engines 范围未声明 Node 25，`engineStrict: false` 将依赖版本检查保留为警告；根 package 的 Node / pnpm 要求仍由 pnpm 强制校验，`verifyDepsBeforeRun: error` 继续检查已安装依赖与锁文件的一致性。项目命令沿用终端的 Node，不自动下载或替换运行时。`.nvmrc` 和 `.node-version` 继续推荐 Node 24，CI 覆盖 Node 24 / 25 / 26 验证；Node 25 的实际兼容性以本机测试结果为准。
 
+Lexical、Storybook、WebdriverIO、React、Tailwind、Vitest 与 React DevTools 的同步依赖组集中在 `pnpm-workspace.yaml` 的 named catalogs，`package.json` 使用 `catalog:组名`。组内相同版本通过 YAML 锚点只声明一次；React 类型包与 React runtime 分别维护版本。修改版本后运行 `pnpm install --no-frozen-lockfile` 同步锁文件，CI 继续使用 `pnpm install --frozen-lockfile`。该文件只管理单个根 package 的依赖与包管理器设置，没有子包或 workspace glob。最近一次升级及兼容限制见 [依赖升级记录](dependency-upgrade.md)。
+
 ## 本机准备
 
 安装 pnpm、Rust 1.99.1 或更新版本和目标平台的 Tauri 官方系统依赖。macOS / iOS 需要 Xcode；Android 需要 JDK 21、Android SDK / NDK，并配置 `JAVA_HOME`、`ANDROID_HOME` 和 `NDK_HOME`。移动设备构建还需要相应签名。原生图片处理需要目标平台的 libvips，不能用宿主机库交叉链接。
@@ -100,7 +102,7 @@ CI 覆盖 Node 24 / 25 / 26 的前端、Storybook 构建与浏览器检查；Ubu
 
 移动工程使用 Tauri 官方生成结构 `src-tauri/gen/apple` 和 `src-tauri/gen/android`。原生依赖、签名和模拟器必须独立验证，前端构建成功不代表手机端可以发布。
 
-Android 工程当前使用 SDK / Build Tools 37.0.0 和 NDK 28.2.13676358。Linux 主机可按以下方式构建 x86_64 模拟器的完整调试 APK；`JAVA_HOME` 指向本机 JDK 21，`ANDROID_HOME` 指向已有 SDK：
+Android 工程当前使用 SDK / Build Tools 37.0.0 和 NDK 28.2.13676358。Gradle wrapper 从华为云国内镜像下载，并通过 `distributionSha256Sum` 校验官方分发包摘要。Linux 主机可按以下方式构建 x86_64 模拟器的完整调试 APK；`JAVA_HOME` 指向本机 JDK 21，`ANDROID_HOME` 指向已有 SDK：
 
 ```sh
 export NDK_HOME="$ANDROID_HOME/ndk/28.2.13676358"

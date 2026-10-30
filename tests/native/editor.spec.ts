@@ -131,7 +131,7 @@ describe('native editor and document workflow', () => {
     await browser.$('[role="tablist"][aria-label="打开的导图"] [aria-label="设计原稿"]').click()
     await browser.keys(Key.Space)
     await rootHasText('发布排期')
-    await browser.$('.sheet-tab').click()
+    await browser.$(`.sheet-tab[title="${firstSheet}"]`).click()
     await browser.keys(Key.Enter)
     await rootHasText('设计原稿')
     await named('展开导图标签栏').click()

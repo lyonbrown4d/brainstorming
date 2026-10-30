@@ -47,10 +47,10 @@ describe('mind-first native workflow', () => {
 
     await browser.$('button[aria-label="演示编排"]').click()
     await expect(browser.$('[data-presentation-composer]')).toBeDisplayed()
-    await named('标题').click()
-    await named('字号比例').click()
+    await browser.$('[data-presentation-composer] [role="tab"][id$="-trigger-title"]').click()
+    await browser.$('button[role="combobox"][aria-label="字号比例"]').click()
     await chooseOption('125%')
-    await named('对齐').click()
+    await browser.$('button[role="combobox"][aria-label="对齐"]').click()
     await chooseOption('居中')
     await expect(browser.$('[data-presentation-composer] main h2')).toHaveAttribute(
       'style',
@@ -58,7 +58,7 @@ describe('mind-first native workflow', () => {
     )
     await browser.saveScreenshot(await nativeArtifact('presentation-composer.png'))
     await fillContentEditable(browser.$('#presentation-notes'), '按时间说明这次出行安排')
-    await named('从头播放').click()
+    await browser.$('button[aria-label="从头播放"]').click()
     await expect(browser.$('[aria-label="观众画面"]')).toBeDisplayed()
     await expect(browser.$('[aria-label="观众画面"] h2')).toHaveAttribute(
       'style',
@@ -81,14 +81,14 @@ describe('mind-first native workflow', () => {
       }),
     )
     await browser.saveScreenshot(await nativeArtifact('presentation-audience.png'))
-    await named('跳转到页面').click()
+    await browser.$('button[aria-label="跳转到页面"]').click()
     const search = () => browser.$('input[aria-label="跳转到页面"]')
     await expect(search()).toBeFocused()
     await search().setValue('海边')
     await browser.keys(Key.Escape)
     await expect(search()).not.toExist()
     await expect(browser.$('[aria-label="观众画面"]')).toBeDisplayed()
-    await named('跳转到页面').click()
+    await browser.$('button[aria-label="跳转到页面"]').click()
     await search().setValue('海边')
     for await (const option of browser.$$('[cmdk-item]')) {
       if ((await option.getText()).includes('海边散步')) {
@@ -100,7 +100,7 @@ describe('mind-first native workflow', () => {
     await browser.keys(Key.Space)
     await browser.keys(Key.Escape)
     await expect(browser.$('[data-presentation-composer]')).toBeDisplayed()
-    await named('返回画布').click()
+    await browser.$('button[aria-label="返回画布"]').click()
     await rootHasText('旅行头脑风暴')
     await browser.saveScreenshot(await nativeArtifact('mind-first-editor.png'))
 
@@ -119,7 +119,7 @@ describe('mind-first native workflow', () => {
       'style',
       expect.stringContaining('text-align: center'),
     )
-    await named('返回画布').click()
+    await browser.$('button[aria-label="返回画布"]').click()
   })
 
   it('opens route-based settings and returns to the same canvas without discarding content', async () => {
@@ -130,10 +130,12 @@ describe('mind-first native workflow', () => {
     await expect(browser.$('[role="dialog"]')).toBeDisplayed()
     expect(await browser.getUrl()).toContain('#/settings')
     await browser.$('[role="dialog"] [role="tab"][id$="-trigger-canvas"]').click()
-    await expect(named('画布缩略图')).toBeDisplayed()
+    const minimap = browser.$('[role="dialog"] [role="checkbox"]')
+    await expect(minimap).toBeDisplayed()
+    await expect(minimap).toHaveComputedLabel('画布缩略图')
     await browser.saveScreenshot(await nativeArtifact('mind-first-settings.png'))
     await browser.$('[role="dialog"] [role="tab"][id$="-trigger-shortcuts"]').click()
-    const record = browser.$('button[aria-label^="录制快捷键:"]')
+    const record = browser.$('button[aria-label="录制快捷键: 撤销"]')
     await record.click()
     await expect(record).toBeFocused()
     await expect(record).toHaveAttribute('aria-pressed', 'true')
