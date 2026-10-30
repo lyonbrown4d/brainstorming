@@ -295,7 +295,9 @@ pnpm install --frozen-lockfile
 pnpm package:linux
 ```
 
-桌面运行库由 CEF 随包分发，不再依赖 WebKitGTK；Tauri 自动收集 GTK4 / CEF 的平台依赖。libvips 要求至少 8.15；deb / rpm 声明 GTK4、XDG Desktop Portal、Zenity 和对应 libvips 运行依赖；Portal 后端由宿主桌面提供，Linux 消息确认复用上游 Zenity 后端。AppImage 也需要宿主提供 Portal / Zenity。CEF 自带浏览器媒体运行库，移除旧 WebKitGTK 的 GStreamer 打包开关；实际音视频格式支持、AppImage 及 libvips 编解码器仍需在目标发行版验证。deb/rpm 同时包含只读缩略图 helper、MIME 与 thumbnailer 描述；AppImage 不安装宿主缩略图提供程序。
+桌面运行库由 CEF 随包分发，不再依赖 WebKitGTK。deb / rpm 显式声明 GTK4、NSS / NSPR、GBM、ALSA、CUPS、XDG Desktop Portal、Zenity 和至少 8.15 的 libvips；当前官方 CLI 还会追加 GTK3 运行库依赖。Portal 后端由宿主桌面提供，Linux 消息确认复用上游 Zenity 后端。AppImage 也需要宿主提供 Portal / Zenity。CEF 自带浏览器媒体运行库，移除旧 WebKitGTK 的 GStreamer 打包开关；实际音视频格式支持、AppImage 及 libvips 编解码器仍需在目标发行版验证。deb/rpm 同时包含只读缩略图 helper、MIME 与 thumbnailer 描述；AppImage 不安装宿主缩略图提供程序。
+
+当前 CLI alpha.5 的 deb 入口与 CEF 154 文件清单存在不匹配，本轮本机包使用已批准的一次性临时打包器；项目声明的官方工具未被替换。问题归属、补丁、移除条件和反馈草稿见 [上游问题记录](upstream/tauri-cef154-deb.md)。
 
 默认输出为 `src-tauri/target/release/bundle/deb/*.deb`、`rpm/*.rpm`、`appimage/*.AppImage`，debug 使用 `target/debug/bundle/`；设置 `CARGO_TARGET_DIR` 或目标架构时路径相应变化。可用 `dpkg-deb --info`、`dpkg-deb --contents` 检查 deb 的运行依赖和桌面集成文件，安装需由用户在目标系统使用 apt/dnf 执行。
 

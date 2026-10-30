@@ -1,0 +1,13 @@
+--- a/crates/tauri-bundler/src/bundle/linux/debian.rs
++++ b/crates/tauri-bundler/src/bundle/linux/debian.rs
+@@ -139,4 +139,9 @@
+     for f in cef_files {
++      let source = cef_path.join(f);
++      // CEF 154 no longer distributes standalone ANGLE libraries on Linux.
++      if matches!(f, "libEGL.so" | "libGLESv2.so") && !source.try_exists()? {
++        continue;
++      }
+       let file_dest = share_dir.join(f);
+-      fs::copy(cef_path.join(f), &file_dest)?;
++      fs::copy(source, &file_dest)?;
+       if f.ends_with(".so") {

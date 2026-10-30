@@ -50,6 +50,8 @@ pnpm package --debug --bundles deb
 
 产物位于 `src-tauri/target/release/bundle/{deb,rpm,appimage}/`，调试包位于 `target/debug/bundle/`。Debian/Ubuntu 使用 `sudo apt install ./文件名.deb`，Fedora 使用 `sudo dnf install ./文件名.rpm`；AppImage 添加执行权限后直接运行。打包不会安装软件或修改本机桌面注册。
 
+当前 Tauri CLI alpha.5 的 deb 文件清单与 CEF 154 不匹配；本轮本机包使用一次性临时打包器，详见 [问题与处理记录](docs/upstream/tauri-cef154-deb.md)。
+
 构建依赖、发行版兼容边界和 CI 下载方式见 [Linux 打包说明](docs/development.md#linux-打包)。
 
 ## 文档与验证
