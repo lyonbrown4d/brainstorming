@@ -21,6 +21,7 @@ required-features = ["native-ui"]
 name = "brainstorming-thumbnailer"
 path = "src/bin/thumbnailer.rs"
 
+
 [lib]
 name = "brainstorming_native"
 crate-type = ["staticlib", "cdylib", "rlib"]
@@ -36,6 +37,7 @@ pkg-config = "0.3.34"
 tauri-build = { version = "=3.0.0-alpha.4", features = [] }
 
 [dependencies]
+brainstorming-engine = { path = "../crates/brainstorming-engine" }
 tauri = { version = "=3.0.0-alpha.5", optional = true, features = [] }
 tauri-plugin-opener = { version = "=3.0.0-alpha.3", optional = true }
 tauri-plugin-clipboard-manager = { version = "=3.0.0-alpha.3", optional = true }
@@ -132,13 +134,3 @@ optional = true
 [dev-dependencies]
 lopdf = "0.46"
 proptest = "1.12.0"
-
-# Reduce development archive I/O while retaining file/line backtraces.
-[profile.dev]
-debug = "line-tables-only"
-
-[profile.release]
-codegen-units = 1
-lto = true
-opt-level = "s"
-strip = true

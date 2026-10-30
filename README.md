@@ -79,3 +79,12 @@ pnpm benchmark:2d:isolated
 ```
 
 Vitest 保留共享 TS 模型、布局、格式和编辑器测试；Rust 测试运行真实 SQLite / SQLCipher 与资源服务；Storybook 提供组件预览和 Playwright 组件测试。桌面 WDIO 通过官方 ChromeDriver 连接真实 CEF 应用，每个测试文件使用独立进程与临时缓存；不启动独立 Chrome UI。驱动按测试二进制内的 CEF SDK 版本匹配。调试端口仅在独立标识的 e2e 构建中启用，生产构建保持关闭。平台验证范围见 [CEF 迁移记录](docs/cef-migration.md)。
+
+## 命令行导出
+
+无图形环境也可导出原生 `.brainstorming` 文件；桌面与 CLI 共用 Rust 几何、布局和编码服务。用法见 [CLI 说明](docs/cli.md)。
+
+```sh
+pnpm cli export example.brainstorming -o example.png
+pnpm build:cli
+```

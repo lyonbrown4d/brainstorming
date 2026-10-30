@@ -1,6 +1,6 @@
 # 开发
 
-项目使用单个 pnpm package、Vite、Moon 和 Tauri 3 alpha。前端为 React / TypeScript，原生服务为 Rust，移动端平台适配为 Swift / Kotlin。Node.js 要求 24 或更新版本，本机可继续使用 Node 25；pnpm 固定为 packageManager 声明的 12.x。部分依赖的 engines 范围未声明 Node 25，`engineStrict: false` 将依赖版本检查保留为警告；根 package 的 Node / pnpm 要求仍由 pnpm 强制校验，`verifyDepsBeforeRun: error` 继续检查已安装依赖与锁文件的一致性。项目命令沿用终端的 Node，不自动下载或替换运行时。`.nvmrc` 和 `.node-version` 继续推荐 Node 24，CI 覆盖 Node 24 / 25 / 26 验证；Node 25 的实际兼容性以本机测试结果为准。
+项目使用单个 pnpm package、Vite、Moon 和 Tauri 3 alpha；Rust 使用根 Cargo workspace，拆分共享引擎、几何、CLI 和 Tauri 应用壳，详见 [CLI 与 Rust 边界](cli.md)。前端为 React / TypeScript，原生服务为 Rust，移动端平台适配为 Swift / Kotlin。Node.js 要求 24 或更新版本，本机可继续使用 Node 25；pnpm 固定为 packageManager 声明的 12.x。部分依赖的 engines 范围未声明 Node 25，`engineStrict: false` 将依赖版本检查保留为警告；根 package 的 Node / pnpm 要求仍由 pnpm 强制校验，`verifyDepsBeforeRun: error` 继续检查已安装依赖与锁文件的一致性。项目命令沿用终端的 Node，不自动下载或替换运行时。`.nvmrc` 和 `.node-version` 继续推荐 Node 24，CI 覆盖 Node 24 / 25 / 26 验证；Node 25 的实际兼容性以本机测试结果为准。
 
 Lexical、Storybook、WebdriverIO、React、Tailwind、Vitest 与 React DevTools 的同步依赖组集中在 `pnpm-workspace.yaml` 的 named catalogs，`package.json` 使用 `catalog:组名`。组内相同版本通过 YAML 锚点只声明一次；React 类型包与 React runtime 分别维护版本。修改版本后运行 `pnpm install --no-frozen-lockfile` 同步锁文件，CI 继续使用 `pnpm install --frozen-lockfile`。该文件只管理单个根 package 的依赖与包管理器设置，没有子包或 workspace glob。最近一次升级及兼容限制见 [依赖升级记录](dependency-upgrade.md)。
 
@@ -197,7 +197,7 @@ Tauri 命令使用服务访问租约。退出先撤销媒体访问、取消 AI/M
 
 ## 文档导出
 
-统一导出入口使用 `src/shared/documentExports.ts`，原生命令位于 `platform/export_commands.rs`，范围选择、文档编码和任务管理位于 `document_exports`。前端先等待原生编辑队列完成，再准备所选内容和几何；Rust 重新校验工作簿、范围及格式组合。完整导图由原生场景服务生成 2D SVG，不受当前视口裁剪。
+统一导出入口使用 `src/shared/documentExports.ts`，原生命令位于 `platform/export_commands.rs`，范围选择、文档编码和任务管理位于 `document_exports`。前端先等待原生编辑队列完成，再准备所选内容；几何由共享 Rust 服务计算；Rust 重新校验工作簿、范围及格式组合。完整导图由原生场景服务生成 2D SVG，不受当前视口裁剪。
 
 - 格式：PNG、JPEG、无损 WebP、SVG、PDF、PPTX、DOCX、HTML、Markdown、OPML、TXT、XMind、CSV、JSON。
 - 范围：`current`、`all`、`sheets`、`topics`、`branch`。选区限一张 Sheet，可包含主题与笔迹；`branch` 包含主题后代。输出副本移除未选资源和失效引用，不改原工作簿。
@@ -219,7 +219,7 @@ PDF 使用 `svg2pdf` / `pdf-writer` 从 SVG 生成矢量内容，原生字体库
 
 ## 系统文件预览的平台状态
 
-文件内 PNG 的协议、摘要与权限边界见 [单文件协议](file-format.md#文件内系统预览)。`src/lib/documentPreviews.ts` 在成功保存后排队，从预览 SVG 场景生成有界 PNG；图片过大时最多尝试 1600、1024、640 和按每张图片预算计算的较小尺寸。预览仍使用前端 PNG 编码，与导出对话框的原生编码分开。
+文件内 PNG 的协议、摘要与权限边界见 [单文件协议](file-format.md#文件内系统预览)。`src/lib/documentPreviews.ts` 在成功保存后排队，从预览 SVG 场景生成有界 PNG；图片过大时最多尝试 1600、1024、640 和按每张图片预算计算的较小尺寸。预览由共享 Rust 场景和原生图片编码器完成；前端只提交成功保存的文档快照。
 
 | 平台 / 分发方式 | 当前实现                                                                 | 验证边界                                                                      |
 | --------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
@@ -234,13 +234,13 @@ Linux 构建脚本将 helper、MIME 和缩略图描述安装项加入 deb / rpm 
 
 ## 内容模板与关联线
 
-内容模板位于 `src-tauri/templates`：版本化 `manifest.json` 和 14 份静态 JSON 通过 `src-tauri/src/templates.rs` 编译进后端。`listTemplates` 返回目录及每份模板的语义图标名称，前端映射为内置 Lucide 图标，并按需通过 `getTemplate` 请求正文，并使用 TanStack Query 缓存；请求只接受固定模板 ID，不解释为路径。后端校验目录与正文一致性，前端再次校验结构，创建时生成新的主题 ID。新建文档、新增 Sheet 和替换模板复用同一目录；「不使用预设」直接创建中心主题，不请求模板正文。
+内容模板位于 `crates/brainstorming-engine/templates`：版本化 `manifest.json` 和 14 份静态 JSON 通过 `crates/brainstorming-engine/src/templates.rs` 编译进后端。`listTemplates` 返回目录及每份模板的语义图标名称，前端映射为内置 Lucide 图标，并按需通过 `getTemplate` 请求正文，并使用 TanStack Query 缓存；请求只接受固定模板 ID，不解释为路径。后端校验目录与正文一致性，前端再次校验结构，创建时生成新的主题 ID。新建文档、新增 Sheet 和替换模板复用同一目录；「不使用预设」直接创建中心主题，不请求模板正文。
 
 关联线复用 `src/shared/relation-geometry.ts` 计算直线、曲线与直角折线，画布和 SVG 导出共享路径及标签位置。选中后可拖动曲线控制点、折线路径点与标签，也可将端点重新连接到其他主题；拖动只更新临时预览，完成后一次命令提交，取消不写历史。序列化字段与原生校验见 [单文件协议](file-format.md#主题表现笔迹与演示页面)。
 
 ## 原生缓存
 
-计算服务通过 serde_json 流式序列化、标准库 32 KiB BufWriter 和 RustCrypto `digest-io` 计算 SHA-256 缓存键，不再先分配整份 JSON 字节。字节上限仍为 64 MiB，按实际 JSON 编码长度计数，超限立即停止；摘要与原实现保持一致。计算仍运行于有界工作任务中，未改变取消规则和缓存键所含字段；边界与摘要回归位于 `src-tauri/src/compute/cache_key_tests.rs`。
+计算服务通过 serde_json 流式序列化、标准库 32 KiB BufWriter 和 RustCrypto `digest-io` 计算 SHA-256 缓存键，不再先分配整份 JSON 字节。字节上限仍为 64 MiB，按实际 JSON 编码长度计数，超限立即停止；摘要与原实现保持一致。计算仍运行于有界工作任务中，未改变取消规则和缓存键所含字段；边界与摘要回归位于 `crates/brainstorming-engine/src/compute/cache_key_tests.rs`。
 
 图片导入使用 Moka `future` 缓存已完成的派生元数据，每个 Importer 最多 256 项，TTL 为 30 分钟。缓存键由原图 SHA-256、管线版本与固定处理参数组成。命中会跳过 libvips 重复生成，仍读取原文件并校验内容、取消和文件变化，重新生成资源身份与授权。缓存不保存原始字节、临时文件、密码或失败结果；修改 libvips 参数时同步更新参数签名或管线版本。
 
@@ -254,7 +254,7 @@ macOS `build:desktop --debug`（未指定证书）或显式 `APPLE_SIGNING_IDENT
 
 数据访问使用 SQLx / SQLCipher；`libsqlite3-sys` 使用 SQLx 稳定版支持的兼容版本并启用 SQLCipher，Rust 应用后端不能另外链接普通 SQLite；独立 Quick Look 扩展使用系统 SQLite3，只读未加密文件的预览表。根目录 `.cargo/config.toml` 在编译 SQLCipher 时固定 `SQLITE_MAX_LENGTH=134217728`，使初次连接读取不可信 schema 前就有长度上限；连接认证仍设置同样的运行时限制。每条连接在读取数据库前完成 key pragma，关闭 SQL 日志，验证 SQLCipher 和数据库可读性。
 
-文档迁移放在 `src-tauri/src/document/migrations`，本机设置迁移放在 `src-tauri/src/storage/migrations`。两组使用独立 Migrator；执行入口是应用内配置好的 Migrator，不对用户文件执行默认 CLI 迁移。履历表均为 `_brainstorming_migrations`，由 SQLx 维护版本与校验和。不要手写履历 INSERT，也不要运行用户文件内的 SQL。
+文档迁移放在 `crates/brainstorming-engine/src/document/migrations`，本机设置迁移放在 `crates/brainstorming-engine/src/storage/migrations`。两组使用独立 Migrator；执行入口是应用内配置好的 Migrator，不对用户文件执行默认 CLI 迁移。履历表均为 `_brainstorming_migrations`，由 SQLx 维护版本与校验和。不要手写履历 INSERT，也不要运行用户文件内的 SQL。
 
 新变更追加有序编号 SQL，例如 `002_add_topic_index.sql`；不修改已发布的迁移。迁移编号独立于文件协议的 `application_id` / `user_version`。Cargo build.rs 追踪两个迁移目录，新增文件会重新嵌入。迁移或校验失败必须保留原文件，相关测试使用真实 SQLCipher 和有界资源。
 
@@ -348,9 +348,9 @@ Rust 的 `search` 模块通过 FluxDI 装配到 AppState。索引复用 SQLx 和
 
 ## 内置贴图与插画
 
-素材 IPC 仅提供 `listBuiltinArt` 与固定 ID 的 `getBuiltinArt`，不接受路径或远程 URL。目录内嵌于 `src-tauri/src/builtin_art/catalog.json`；4 张原创 PNG 及生成记录位于 `src-tauri/builtin-art/originals/`，原图逐字节保留，128px 预览由 Rust image 管线生成。54 个精选 Fluent Emoji Flat SVG 来自 Iconify 1.2.6 / Microsoft，MIT 全文编译入目录，并保留在素材目录。
+素材 IPC 仅提供 `listBuiltinArt` 与固定 ID 的 `getBuiltinArt`，不接受路径或远程 URL。目录内嵌于 `crates/brainstorming-engine/src/builtin_art/catalog.json`；4 张原创 PNG 及生成记录位于 `crates/brainstorming-engine/builtin-art/originals/`，原图逐字节保留，128px 预览由 Rust image 管线生成。54 个精选 Fluent Emoji Flat SVG 来自 Iconify 1.2.6 / Microsoft，MIT 全文编译入目录，并保留在素材目录。
 
-原生 SVG 渲染使用现有 resvg，在 `spawn_blocking` 内分配图片，以 `Semaphore(2)` 限制并发，Moka 按 ID 合并并缓存成功结果（最多 58 项，空闲 1 小时过期）。插入复用 `setTopicImage` 和现有资源保存协议；异步完成前切换文档、Sheet 或删除目标主题会丢弃结果。相关验证为 `tests/renderer/builtin-art.test.ts`、`src-tauri/tests/document_builtin_art.rs` 及 `stories/BuiltinArt.stories.tsx`。
+原生 SVG 渲染使用现有 resvg，在 `spawn_blocking` 内分配图片，以 `Semaphore(2)` 限制并发，Moka 按 ID 合并并缓存成功结果（最多 58 项，空闲 1 小时过期）。插入复用 `setTopicImage` 和现有资源保存协议；异步完成前切换文档、Sheet 或删除目标主题会丢弃结果。相关验证为 `tests/renderer/builtin-art.test.ts`、`crates/brainstorming-engine/tests/document_builtin_art.rs` 及 `stories/BuiltinArt.stories.tsx`。
 
 画布右键菜单复用官方 shadcn Context Menu（`shadcn@4.22.0` CLI 下载），操作通过业务组合接入既有命令和历史；下载源码不维护业务补丁。
 

@@ -89,7 +89,7 @@ impl Catalog {
     None
   }
   async fn resolve(&self, id: &str) -> Result<(Entry, Option<Zeroizing<String>>), String> {
-    crate::document::resources::assert_object_id(id).map_err(|e| e.to_string())?;
+    crate::document::assert_object_id(id).map_err(|e| e.to_string())?;
     if let Some(found) = self.current(id).await {
       return Ok(found);
     }

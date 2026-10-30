@@ -1,16 +1,7 @@
-pub mod builtin_art;
-pub mod compute;
-pub mod document;
-pub mod document_exports;
-pub mod editor_engine;
-pub mod export_image;
-pub mod interchange;
-pub mod layout_engine;
-pub mod scene;
-pub mod search;
-pub mod storage;
-pub mod templates;
-pub mod transport;
+pub use brainstorming_engine::{
+  builtin_art, compute, document, document_exports, editor_engine, export_image, interchange,
+  layout_engine, scene, search, storage, templates, transport,
+};
 
 #[cfg(feature = "native-ui")]
 mod application;
@@ -30,5 +21,5 @@ pub fn run() {
 }
 
 #[cfg(all(test, feature = "native-ui"))]
-#[path = "../tests/document_fixture.rs"]
+#[path = "../../crates/brainstorming-engine/tests/document_fixture.rs"]
 mod document_fixture;

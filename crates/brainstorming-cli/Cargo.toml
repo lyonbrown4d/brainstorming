@@ -1,0 +1,20 @@
+[package]
+name = "brainstorming-cli"
+version = "0.2.0"
+edition = "2024"
+rust-version = "1.99.1"
+license = "UNLICENSED"
+description = "Headless exporter for native Brainstorming documents"
+
+[dependencies]
+brainstorming-engine = { path = "../brainstorming-engine" }
+clap = { version = "4.6.7", features = ["derive"] }
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros", "signal"] }
+serde_json = "1.0.154"
+zeroize = "1.9.1"
+uuid = { version = "1.29.0", features = ["v4"] }
+
+[dev-dependencies]
+tempfile = "3.27.0"
+image = { version = "0.25.10", default-features = false, features = ["png", "jpeg", "webp"] }
+zip = { version = "9.1.3", default-features = false, features = ["deflate-flate2-zlib-rs"] }

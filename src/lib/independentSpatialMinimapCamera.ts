@@ -13,7 +13,7 @@ export const bindIndependentSpatialMinimapCamera = (
   }
   const zoom = (deltaY: number) => {
     if (canNavigate() && Number.isFinite(deltaY) && deltaY !== 0)
-      wheel({ kind: 'dolly', y: deltaY })
+      wheel({ kind: 'dolly', x: 0, y: 0, deltaY })
   }
   runtime.panCameraBy = pan
   runtime.zoomCameraBy = zoom

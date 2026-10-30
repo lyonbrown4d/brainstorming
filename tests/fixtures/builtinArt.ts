@@ -1,4 +1,4 @@
-import manifest from '@project/src-tauri/src/builtin_art/catalog.json'
+import manifest from '@project/crates/brainstorming-engine/src/builtin_art/catalog.json'
 import { base64 } from '@scure/base'
 import { builtinArtCatalogSchema, type BuiltinArtAPI } from '@shared/builtinArt'
 

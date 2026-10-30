@@ -122,7 +122,7 @@ describe('bounded resource interchange exports', () => {
   })
 })
 
-it('leaves stored images on the native side and shares canvas/export geometry across color edits', async () => {
+it('delegates stored images and geometry to native services across color edits', async () => {
   const fetch = vi.fn(() =>
     Promise.reject(new Error('Renderer must not fetch native export assets')),
   )
@@ -169,7 +169,13 @@ it('leaves stored images on the native side and shares canvas/export geometry ac
     applyCommand(document, { type: 'setTopicStyle', topicId: 'root', style: { fill: '#112233' } }),
   )
   expect(await prepareSheetImage(recolored, sheetId)).toBe(scene)
-  expect(layout).toHaveBeenCalledOnce()
+  expect(layout).not.toHaveBeenCalled()
+  expect(renderSheet.mock.calls[1]?.[0].sheets[0]?.document.topics.root?.style?.fill).toBe(
+    '#112233',
+  )
+  const cancelled = new AbortController()
+  cancelled.abort()
+  await expect(prepareSheetImage(workbook, sheetId, false, cancelled.signal)).rejects.toThrow()
   expect(renderSheet).toHaveBeenCalledTimes(2)
   expect(fetch).not.toHaveBeenCalled()
 })

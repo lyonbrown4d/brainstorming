@@ -4,27 +4,27 @@ Brainstorming 使用共享 React / TypeScript 编辑器和 Tauri 3 alpha 原生�
 
 ## 模块
 
-| 目录                                     | 职责                                             |
-| ---------------------------------------- | ------------------------------------------------ |
-| `src/core`                               | TypeScript 文档契约、前端草稿适配及命令参考实现  |
-| `src/layout`                             | 主题测量、几何类型及布局差分测试参考             |
-| `src/formats`                            | 交换格式类型及组件预览、差分测试参考             |
-| `src/assets`                             | 有界内联资源校验与前端导出适配                   |
-| `src`                                    | React Flow、Lexical、shadcn 组件组合             |
-| `src/shared`                             | 类型明确的平台能力契约                           |
-| `src-tauri/src/application`              | FluxDI 宏依赖图、领域 Module 和异步生命周期      |
-| `src-tauri/src/editor_engine`            | 文档命令、修订、跨 Sheet 操作及内存撤销历史      |
-| `src-tauri/src/layout_engine`            | 复用 d3-hierarchy 的 15 种布局及混合结构         |
-| `src-tauri/src/interchange`              | XMind、Markdown、OPML、TXT 导入导出              |
-| `src-tauri/src/scene`                    | SVG 场景组装，复用前端传入的精确手绘与图标路径   |
-| `src-tauri/src/compute`                  | 有界计算任务与 Moka 布局、场景缓存               |
-| `src-tauri/src/document`                 | 原生文件、SQLCipher、资源块、版本、显式 SQL 迁移 |
-| `src-tauri/src/storage`                  | 本机索引、加密临时资源及 SQLx 连接管理           |
-| `src-tauri/src/runtime`                  | 文档会话、系统文件、恢复、剪贴板、AI 和 MCP      |
-| `src-tauri/src/media`                    | 资源导入、libvips 预览 / 瓦片和网页截图队列      |
-| `src-tauri/src/transport`                | 受令牌和来源约束的资源流式读取服务               |
-| `src-tauri/src/platform`                 | Tauri 生命周期、菜单、窗口和命令入口             |
-| `src-tauri/plugins/brainstorming-native` | Swift / Kotlin 文件授权、密钥、剪贴板和原生截图  |
+| 目录                                            | 职责                                                  |
+| ----------------------------------------------- | ----------------------------------------------------- |
+| `src/core`                                      | TypeScript 文档契约、前端草稿适配及命令参考实现       |
+| `src/layout`                                    | 主题测量、几何类型及布局差分测试参考                  |
+| `src/formats`                                   | 交换格式类型及组件预览、差分测试参考                  |
+| `src/assets`                                    | 有界内联资源校验与前端导出适配                        |
+| `src`                                           | React Flow、Lexical、shadcn 组件组合                  |
+| `src/shared`                                    | 类型明确的平台能力契约                                |
+| `src-tauri/src/application`                     | FluxDI 宏依赖图、领域 Module 和异步生命周期           |
+| `crates/brainstorming-engine/src/editor_engine` | 文档命令、修订、跨 Sheet 操作及内存撤销历史           |
+| `crates/brainstorming-engine/src/layout_engine` | 复用 d3-hierarchy 的 15 种布局及混合结构              |
+| `crates/brainstorming-engine/src/interchange`   | XMind、Markdown、OPML、TXT 导入导出                   |
+| `crates/brainstorming-engine/src/scene`         | SVG 场景组装，复用 Rust 几何 crate 的笔迹、素描与图标 |
+| `crates/brainstorming-engine/src/compute`       | 有界计算任务与 Moka 布局、场景缓存                    |
+| `crates/brainstorming-engine/src/document`      | 原生文件、SQLCipher、资源块、版本、显式 SQL 迁移      |
+| `crates/brainstorming-engine/src/storage`       | 本机索引、加密临时资源及 SQLx 连接管理                |
+| `src-tauri/src/runtime`                         | 文档会话、系统文件、恢复、剪贴板、AI 和 MCP           |
+| `src-tauri/src/media`                           | 资源导入、libvips 预览 / 瓦片和网页截图队列           |
+| `crates/brainstorming-engine/src/transport`     | 受令牌和来源约束的资源流式读取服务                    |
+| `src-tauri/src/platform`                        | Tauri 生命周期、菜单、窗口和命令入口                  |
+| `src-tauri/plugins/brainstorming-native`        | Swift / Kotlin 文件授权、密钥、剪贴板和原生截图       |
 
 原生服务由 FluxDI `static_module!` 宏声明依赖，按领域 Module 启动和关闭，再将类型化服务组合为 `AppState`。装配与退出顺序见 [后端模块与依赖注入](development.md#后端模块与依赖注入)。不维护 Node sidecar。计算接口由 `tauri3-specta` 从真实命令定义生成，其他平台能力沿用 `native_request` 白名单；Rust 再校验参数、来源窗口、文件授权和资源范围。Storybook 和契约测试可显式注入平台 API，正式应用不能回退到浏览器本地文件或恢复存储。
 
@@ -40,7 +40,7 @@ React Flow 的节点与边是文档投影。主题形态、游离想法与手绘
 
 正式应用的文档命令、撤销和重做由 Rust `EditorEngine` 执行。前端按工作簿排队发送操作，携带后端返回的十进制字符串修订号；成功后更新视图镜像并复用未变化主题引用，失败保留已确认的内容并停止该批依赖操作。下一次明确编辑会重新读取权威修订。选择、拖动中间坐标、Lexical 组合输入与编辑内撤销仍即时在前端处理，拖动结束才提交一次文档命令。无路径工作簿和撤销历史只留内存；重载和关闭释放会话。
 
-布局使用 Rust `d3-hierarchy` 及产品结构适配，覆盖 15 种结构、混合布局、游离主题、折叠和概要。前端缓存主题尺寸、完成的布局和投影；非活动且已完成的布局最多保留 12 份、按估算 24 MiB 限制，活动查询与执行中的查询保留；当前画布等待新布局时保留上一份完整投影，不沿用其他画布的结果。Rough.js、perfect-freehand 与浏览器字体测量继续负责渲染几何，后端接收其路径组装 SVG，避免改变手绘外观。XMind、Markdown、OPML、TXT 的正式导入导出与文件预览生成由 Rust 完成；PDF 当前仍使用前端 jsPDF 封装，打印使用后端生成的 SVG。
+布局使用 Rust `d3-hierarchy` 及产品结构适配，覆盖 15 种结构、混合布局、游离主题、折叠和概要。前端缓存主题尺寸、完成的布局和投影；非活动且已完成的布局最多保留 12 份、按估算 24 MiB 限制，活动查询与执行中的查询保留；当前画布等待新布局时保留上一份完整投影，不沿用其他画布的结果。前端保留即时交互与参考预览需要的 Rough.js、perfect-freehand 和字体量测；正式导出、导出预览和保存缩略图由共享 Rust 几何服务组装 SVG，桌面与 CLI 使用同一入口。XMind、Markdown、OPML、TXT 的正式导入导出与文件预览生成由 Rust 完成；PDF 由原生 svg2pdf 编码，打印使用后端生成的 SVG。
 
 布局和场景缓存分别以 32 MiB 为容量目标，闲置 5 分钟过期。缓存摘要、布局校验和布局 / 场景计算在 `spawn_blocking` 中执行，计算服务最多同时运行 2 项、接收 8 项；失败不缓存，退出停止接收并取消待处理工作。场景缓存命中前仍重新验证资源权限。编辑历史最多 100 步，旧历史按 32 MiB 预算裁剪，至少保留立即撤销或重做所需的一步。自动保存等待命令完成，防抖后才创建内容快照，不因选区或逐字符输入反复序列化整份工作簿。
 

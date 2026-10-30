@@ -1,0 +1,71 @@
+[package]
+name = "brainstorming-engine"
+version = "0.2.0"
+edition = "2024"
+rust-version = "1.99.1"
+license = "UNLICENSED"
+description = "Shared native document, layout and export services for Brainstorming"
+
+[dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+thiserror = "2.0.21"
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "sync", "time", "net", "fs", "io-util", "macros"] }
+tokio-util = { version = "0.7.20", features = ["io", "rt"] }
+futures-util = "0.3.34"
+d3-hierarchy = "0.1.1"
+# Tauri 3 bindings use the published alpha adapter; keep its Specta versions aligned.
+specta = { version = "=2.0.0-rc.27", features = ["derive", "serde_json"] }
+zip = { version = "9.1.3", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+quick-xml = "0.42.0"
+pulldown-cmark = "0.13.5"
+sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros"] }
+# SQLx 0.9 requires libsqlite3-sys <0.38; use its latest compatible stable release.
+libsqlite3-sys = { version = "0.37.0", features = ["bundled-sqlcipher-vendored-openssl"] }
+bytes = "1.12.1"
+sha2 = "0.11.1"
+digest-io = "0.1.0"
+hex = "0.4.3"
+uuid = { version = "1.29.0", features = ["v4", "serde"] }
+zeroize = { version = "1.9.1", features = ["derive"] }
+url = "2.5.8"
+reqwest = { version = "0.13.5", default-features = false, features = ["json", "rustls", "stream"] }
+axum = "0.8.9"
+subtle = "2.6.1"
+tempfile = "3.27.0"
+chrono = { version = "0.4.45", features = ["serde"] }
+# Keep Rust tracing events on the official log backend without a second subscriber.
+tracing = { version = "0.1.44", features = ["log"] }
+infer = "0.22.0"
+imagesize = "0.15.0"
+png = "0.18.1"
+# Mature pure-Rust SVG renderer and bounded image codecs for native exports.
+resvg = "0.49.0"
+image = { version = "0.25.10", default-features = false, features = ["png", "jpeg", "webp"] }
+mime_guess = "2.0.5"
+http-range = "0.1.6"
+lol_html = "3.0.3"
+scraper = "0.29.0"
+regex = "1.13.1"
+unicode-segmentation = "1.13.3"
+icu_segmenter = { version = "2.4.0", features = ["compiled_data", "auto"] }
+base64 = "0.23.1"
+rmcp = { version = "3.8.0", default-features = false, features = ["server", "transport-streamable-http-server"] }
+tower = { version = "0.5.3", features = ["util"] }
+moka = { version = "0.12.16", default-features = false, features = ["future"] }
+svg2pdf = "0.13.0"
+# svg2pdf 0.13 exposes pdf-writer 0.12 Chunk/Ref types used by our PDF composition.
+pdf-writer = "0.12.1"
+docx-rs = { version = "0.4.22", default-features = false }
+# Cargo.lock keeps pdfrs at 0.1.10: 0.1.11–0.1.13 omit Android/iOS font paths.
+# ppt-rs currently requires pdf-native even for writer-only use; keep it enabled.
+ppt-rs = { version = "0.2.37", default-features = false, features = ["pdf-native"] }
+csv = "1.4.0"
+same-file = "1.0.6"
+
+brainstorming-geometry = { path = "../brainstorming-geometry" }
+fluxdi = { version = "=2.0.0", default-features = false, features = ["thread-safe", "async-factory", "lifecycle", "macros"] }
+
+[dev-dependencies]
+lopdf = "0.46"
+proptest = "1.12.0"

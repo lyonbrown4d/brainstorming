@@ -18,7 +18,6 @@ src/hooks/use-ref-with-init.ts
 src-tauri/target/
 src-tauri/gen/
 src-tauri/**/*.rs
-src-tauri/Cargo.lock
 dist/
 
 # Local design-skill runtime cache.
@@ -26,3 +25,8 @@ dist/
 
 # tauri-specta output is regenerated from Rust.
 src/generated/
+
+# Rust and generated offline icon registries use their native formatters.
+Cargo.lock
+crates/**/*.rs
+crates/brainstorming-geometry/assets/*.json

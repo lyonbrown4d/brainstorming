@@ -46,7 +46,7 @@ impl MediaState {
     workbook: serde_json::Value,
     original: bool,
   ) -> Result<serde_json::Value> {
-    compute_resources::hydrate(&self.importer.catalog, workbook, original).await
+    compute_resources::hydrate(self.importer.catalog.as_ref(), workbook, original).await
   }
   pub async fn new(app: AppHandle, state: Arc<AppState>) -> Result<Self> {
     let catalog = Arc::new(catalog::Catalog::new(state.clone()));

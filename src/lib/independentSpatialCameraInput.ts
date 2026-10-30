@@ -72,7 +72,11 @@ export const bindIndependentSpatialCameraInput = (input: IndependentCameraInput)
   }
   const wheel = (event: WheelEvent): void => {
     if (!input.canNavigate()) return
-    const action = spatialCameraWheel(event, input.size())
+    const rect = canvas.getBoundingClientRect()
+    const action = spatialCameraWheel(event, input.size(), {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    })
     if (!action) return
     event.preventDefault()
     event.stopImmediatePropagation()

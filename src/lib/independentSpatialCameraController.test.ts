@@ -85,7 +85,14 @@ it('restores its own distance, rolls back cancelled motion and never projects sc
   const twoDimensional = getSpatialViewport(previous.workbook.id, previous.activeSheetId, '2d')
   const wheel = (): void => {
     const event = new Event('wheel', { cancelable: true })
-    Object.assign(event, { deltaX: 0, deltaY: -80, deltaMode: 0, ctrlKey: true })
+    Object.assign(event, {
+      clientX: 600,
+      clientY: 400,
+      deltaX: 0,
+      deltaY: -80,
+      deltaMode: 0,
+      ctrlKey: true,
+    })
     canvas.dispatchEvent(event)
     for (let frame = 0; frame < 180; frame++) first.update(1 / 60)
   }

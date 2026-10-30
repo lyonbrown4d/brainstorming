@@ -53,6 +53,7 @@ test('two-finger wheel pans and Ctrl-wheel pinches without zooming the page', as
     .toBeGreaterThan(15)
   await expect.poll(() => spatialDistance(page)).toBe(distance)
   const panned = await spatialRect(page, 'branch-a')
+  const targetBeforeZoom = (await spatialEvidence(page)).view.target
   await page.keyboard.down('Control')
   try {
     await page.mouse.wheel(0, -40)
@@ -60,9 +61,9 @@ test('two-finger wheel pans and Ctrl-wheel pinches without zooming the page', as
     await page.keyboard.up('Control')
   }
   await expect.poll(() => spatialDistance(page)).toBeLessThan(distance)
-  await expect
-    .poll(async () => (await spatialRect(page, 'branch-a')).width)
-    .toBeGreaterThan(panned.width)
+  const zoomed = await spatialRect(page, 'branch-a')
+  expect(zoomed.width).toBeGreaterThan(panned.width)
+  expect((await spatialEvidence(page)).view.target).not.toEqual(targetBeforeZoom)
   expect(await page.evaluate(() => window.devicePixelRatio)).toBe(pageScale)
   expect(await page.evaluate(() => document.documentElement.scrollTop)).toBe(0)
 })

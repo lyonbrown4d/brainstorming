@@ -23,7 +23,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.99.1
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: src-tauri -> target
+          workspaces: . -> src-tauri/target
       - name: Install build and media dependencies
         run: |
           sudo apt-get update

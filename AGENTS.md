@@ -4,14 +4,14 @@
 
 Brainstorming 是基于 React、TypeScript 与 Tauri 3 alpha / Rust 的本地优先跨平台思维导图工具；macOS、Windows、Linux 统一使用 CEF，移动端使用 Wry。
 本仓库已从 Vetra 虚拟化 Block Editor 转向思维导图；旧代码由 Git 历史保留。
-对外名称使用 Brainstorming（头脑风暴），仓库标识、文件名和本地目录统一使用 brainstorming，不保留旧品牌名称或路径。项目采用单 package，禁止重新引入 monorepo/workspace。
+对外名称使用 Brainstorming（头脑风暴），仓库标识、文件名和本地目录统一使用 brainstorming，不保留旧品牌名称或路径。前端保持单 pnpm package，不引入前端 monorepo；Rust 使用根 Cargo workspace，按共享引擎、几何、CLI 与 Tauri 壳拆分 crate。
 
 ## 架构
 
 - `src/core`：TypeScript 文档契约、草稿与必要视图适配、参考命令和版本化 JSON；正式文档命令与历史由 Rust `editor_engine` 执行。
 - `src/formats`：交换格式类型与预览、差分测试参考；正式导入导出使用 Rust `interchange`，原生 SQLite 由 Rust 读写，不将第三方文件字段写入 core。
 - `src/layout`：主题测量、几何类型与布局参考；正式布局由 Rust `layout_engine` 复用 d3-hierarchy 计算。
-- `src-tauri/src`：Rust 原生服务；`src-tauri/plugins/brainstorming-native`：Swift / Kotlin 平台适配；`src`：共享 React 前端。
+- `crates/brainstorming-engine`：共享文档、布局、存储和导出服务；`crates/brainstorming-geometry`：形状、素描、笔迹和离线图标几何；`crates/brainstorming-cli`：无界面导出入口；`src-tauri/src`：平台与原生应用装配；`src-tauri/plugins/brainstorming-native`：Swift / Kotlin 平台适配；`src`：共享 React 前端。
 - `src/shared`：前端平台 API 的白名单契约；Rust 在命令边界重新验证。
 - Core 不依赖 React、DOM、Tauri、React Flow 或其 Node/Edge 类型。
 - React Flow 节点/边是文档模型的视图投影，不是持久化协议。

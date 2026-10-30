@@ -29,8 +29,18 @@ const wheel = {
 
 it('maps trackpad scroll, pinch and Alt-scroll to distinct camera actions', () => {
   expect(spatialCameraWheel(wheel, size)).toEqual({ kind: 'truck', x: 12, y: -20 })
-  expect(spatialCameraWheel({ ...wheel, ctrlKey: true }, size)).toEqual({ kind: 'dolly', y: -20 })
-  expect(spatialCameraWheel({ ...wheel, metaKey: true }, size)).toEqual({ kind: 'dolly', y: -20 })
+  expect(spatialCameraWheel({ ...wheel, ctrlKey: true }, size)).toEqual({
+    kind: 'dolly',
+    x: 0,
+    y: 0,
+    deltaY: -20,
+  })
+  expect(spatialCameraWheel({ ...wheel, metaKey: true }, size, { x: 0, y: 0 })).toEqual({
+    kind: 'dolly',
+    x: -1,
+    y: 1,
+    deltaY: -20,
+  })
   expect(spatialCameraWheel({ ...wheel, altKey: true }, size)).toEqual({
     kind: 'rotate',
     x: 12,
@@ -46,6 +56,13 @@ it('maps trackpad scroll, pinch and Alt-scroll to distinct camera actions', () =
     x: 192,
     y: -240,
   })
+  expect(spatialCameraWheel({ ...wheel, ctrlKey: true, deltaMode: 2 }, size)).toEqual({
+    kind: 'dolly',
+    x: 0,
+    y: 0,
+    deltaY: -240,
+  })
+  expect(spatialCameraWheel({ ...wheel, ctrlKey: true }, size, { x: Number.NaN, y: 0 })).toBeNull()
   expect(spatialCameraWheel({ ...wheel, deltaY: Number.NaN }, size)).toBeNull()
 })
 
@@ -67,12 +84,61 @@ it('accumulates rapid pinch zoom against the native goal before damping catches 
     const view: SpatialView = { mode: '3d', yaw: 0.7, pitch: 0.5, spacing: 100 }
     void controls.setLookAt(...cameraPositionFor(view, distance), false)
     controls.update(1 / 60)
-    applySpatialCameraWheel(controls, { kind: 'dolly', y: -100 }, distance, 800)
-    applySpatialCameraWheel(controls, { kind: 'dolly', y: -100 }, distance, 800)
+    applySpatialCameraWheel(controls, { kind: 'dolly', x: 0, y: 0, deltaY: -100 }, distance, 800)
+    applySpatialCameraWheel(controls, { kind: 'dolly', x: 0, y: 0, deltaY: -100 }, distance, 800)
     const goal = controls
       .getPosition(new Vector3(), true)
       .distanceTo(controls.getTarget(new Vector3(), true))
     expect(goal).toBeCloseTo(distance * Math.exp(-1.6), 5)
+  } finally {
+    controls.dispose()
+    vi.unstubAllGlobals()
+  }
+})
+
+it('anchors dolly at the wheel cursor and keeps wheel panning screen-relative at any distance', () => {
+  vi.stubGlobal(
+    'DOMRect',
+    class {
+      constructor(
+        public x = 0,
+        public y = 0,
+        public width = 0,
+        public height = 0,
+      ) {}
+    },
+  )
+  const view: SpatialView = { mode: '3d', yaw: 0.4, pitch: 0.3, spacing: 100 }
+  const controls = new CameraControlsImpl(new PerspectiveCamera(42, 1.5, 0.1, 10_000_000))
+  const distance = 1_000
+  try {
+    void controls.setLookAt(...cameraPositionFor(view, distance), false)
+    controls.update(1 / 60)
+    const originalTarget = controls.getTarget(new Vector3(), true).clone()
+    applySpatialCameraWheel(
+      controls,
+      { kind: 'dolly', x: 0.7, y: -0.35, deltaY: -80 },
+      distance,
+      800,
+    )
+    const nextPosition = controls.getPosition(new Vector3(), true)
+    const nextTarget = controls.getTarget(new Vector3(), true)
+    expect(nextPosition.distanceTo(nextTarget)).toBeCloseTo(distance * Math.exp(-0.64), 5)
+    expect(nextTarget.distanceTo(originalTarget)).toBeGreaterThan(0)
+
+    const panDistance = (atDistance: number): number => {
+      const panControls = new CameraControlsImpl(new PerspectiveCamera(42, 1.5, 0.1, 10_000_000))
+      try {
+        void panControls.setLookAt(...cameraPositionFor(view, atDistance), false)
+        panControls.update(1 / 60)
+        const before = panControls.getTarget(new Vector3(), true).clone()
+        applySpatialCameraWheel(panControls, { kind: 'truck', x: 30, y: 20 }, atDistance, 800)
+        return panControls.getTarget(new Vector3(), true).distanceTo(before) / atDistance
+      } finally {
+        panControls.dispose()
+      }
+    }
+    expect(panDistance(2_000)).toBeCloseTo(panDistance(1_000), 8)
   } finally {
     controls.dispose()
     vi.unstubAllGlobals()

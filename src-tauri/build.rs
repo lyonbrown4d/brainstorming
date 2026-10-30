@@ -23,8 +23,8 @@ fn user_cache() -> PathBuf {
   }
 }
 fn main() {
-  println!("cargo:rerun-if-changed=src/document/migrations");
-  println!("cargo:rerun-if-changed=src/storage/migrations");
+  println!("cargo:rerun-if-changed=../crates/brainstorming-engine/src/document/migrations");
+  println!("cargo:rerun-if-changed=../crates/brainstorming-engine/src/storage/migrations");
   for key in [
     "VIPS_LIB_DIR",
     "VIPS_FRAMEWORK_DIR",

@@ -172,7 +172,7 @@ it('keeps a successful save clean when its background preview fails', async () =
   }
 })
 
-it('submits one native preview request with scene geometry and no PNG byte arrays', async () => {
+it('submits the saved revision for native geometry and preview rendering', async () => {
   const refreshPreviews = vi.fn<ComputeAPI['refreshPreviews']>(() => Promise.resolve())
   openDocumentTab(createDocument('Original', 'named'), '/named.brainstorming')
   stop = startDocumentAutosave()
@@ -190,6 +190,6 @@ it('submits one native preview request with scene geometry and no PNG byte array
   if (!request) throw new Error('Missing preview request')
   expect(request.documentId).toBe('named')
   expect(request.contents).toContain('Native preview')
-  expect(Object.keys(request.geometry)).toHaveLength(1)
+  expect(request.geometry).toEqual({})
   expect(JSON.stringify(request)).not.toContain('"png"')
 })

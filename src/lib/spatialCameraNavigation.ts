@@ -27,17 +27,27 @@ export interface CameraWheel {
 
 export type CameraWheelAction =
   | { readonly kind: 'truck'; readonly x: number; readonly y: number }
-  | { readonly kind: 'dolly'; readonly y: number }
+  | { readonly kind: 'dolly'; readonly x: number; readonly y: number; readonly deltaY: number }
   | { readonly kind: 'rotate'; readonly x: number; readonly y: number }
+
+export interface CameraWheelCursor {
+  readonly x: number
+  readonly y: number
+}
 
 /** Browser wheel deltas are pixels, lines, or pages depending on the device. */
 export const spatialCameraWheel = (
   event: CameraWheel,
   size: CameraSize,
+  cursor: CameraWheelCursor = { x: size.width / 2, y: size.height / 2 },
 ): CameraWheelAction | null => {
   if (
     !Number.isFinite(event.deltaX) ||
     !Number.isFinite(event.deltaY) ||
+    !Number.isFinite(cursor.x) ||
+    !Number.isFinite(cursor.y) ||
+    !Number.isFinite(size.width) ||
+    !Number.isFinite(size.height) ||
     size.width <= 0 ||
     size.height <= 0 ||
     ![0, 1, 2].includes(event.deltaMode)
@@ -53,7 +63,13 @@ export const spatialCameraWheel = (
     y = 0
   }
   if (x === 0 && y === 0) return null
-  if (event.ctrlKey || event.metaKey) return { kind: 'dolly', y }
+  if (event.ctrlKey || event.metaKey)
+    return {
+      kind: 'dolly',
+      x: Math.max(-1, Math.min(1, (cursor.x / size.width) * 2 - 1)),
+      y: Math.max(-1, Math.min(1, 1 - (cursor.y / size.height) * 2)),
+      deltaY: y,
+    }
   if (event.altKey) return { kind: 'rotate', x, y }
   return { kind: 'truck', x, y }
 }

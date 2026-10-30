@@ -2,7 +2,7 @@ use super::{AppState, compute, document_previews, input};
 use crate::{
   document::{MAX_PREVIEW_BYTES, MAX_PREVIEW_DIMENSION, MAX_TOTAL_PREVIEW_BYTES, SheetPreview},
   export_image::{Format, Request, Stage},
-  scene::{self, VisualGeometry},
+  scene,
 };
 use serde_json::Value;
 use std::sync::Arc;
@@ -23,42 +23,28 @@ pub async fn refresh(app: &AppHandle, state: &AppState, input_value: Value) -> R
     return Err("预览画布数量无效".into());
   }
   let cover_requested = input::text(&input_value, "coverSheetId", 4096)?;
-  let geometry = input_value
-    .get("geometry")
-    .and_then(Value::as_object)
-    .ok_or("预览几何数据缺失")?;
-  if geometry.len() != count
-    || serde_json::to_vec(geometry)
-      .map_err(|_| "预览几何数据无效")?
-      .len()
-      > 64 * 1024 * 1024
-  {
-    return Err("预览几何数据超过限制或画布不匹配".into());
-  }
-  let mut parsed = Vec::with_capacity(count);
-  for sheet in sheets {
-    let sheet_id = sheet["id"].as_str().ok_or("画布标识无效")?.to_owned();
-    let visual = geometry.get(&sheet_id).ok_or("预览画布几何数据缺失")?;
-    let visual: VisualGeometry =
-      serde_json::from_value(visual.clone()).map_err(|_| "预览几何数据无效")?;
-    parsed.push((sheet_id, visual));
-  }
-  let cover = if parsed
+  let parsed = sheets
     .iter()
-    .any(|(sheet_id, _)| sheet_id == cover_requested)
-  {
+    .map(|sheet| {
+      sheet["id"]
+        .as_str()
+        .map(str::to_owned)
+        .ok_or("画布标识无效")
+    })
+    .collect::<Result<Vec<_>, _>>()?;
+  let cover = if parsed.iter().any(|sheet_id| sheet_id == cover_requested) {
     cover_requested.to_owned()
   } else {
-    parsed[0].0.clone()
+    parsed[0].clone()
   };
   let workbook = compute::hydrate_for(app, state, workbook, false).await?;
   let budget = MAX_PREVIEW_BYTES.min(MAX_TOTAL_PREVIEW_BYTES / count);
   let mut total = 0usize;
   let mut previews = Vec::with_capacity(count);
-  for (sheet_id, visual) in parsed {
+  for sheet_id in parsed {
     let scene = state
       .compute
-      .render(workbook.clone(), sheet_id.clone(), false, Some(visual))
+      .render(workbook.clone(), sheet_id.clone(), false, None)
       .await?;
     let png = fit_preview(state, &scene, budget).await?;
     total = total.checked_add(png.len()).ok_or("文档预览超过限制")?;

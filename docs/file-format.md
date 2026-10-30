@@ -24,7 +24,7 @@
 | `document_preview_state` | 成功保存快照的摘要与封面 Sheet                 |
 | `document_previews`      | 各 Sheet 的有界 PNG 系统预览                   |
 
-表结构由 SQLx Migrator 管理，显式 SQL 位于 `src-tauri/src/document/migrations`，通过 `migrate!` 编译进应用。履历表固定为 `_brainstorming_migrations`，保存版本、校验和与执行状态；初始迁移编号为 1，与 `user_version=2` 的文件协议标识分开。只执行应用内迁移，不执行文件携带的脚本；已发布迁移不修改，新变更追加文件。应用标识、协议、必需功能、迁移履历或校验和无效时拒绝打开。
+表结构由 SQLx Migrator 管理，显式 SQL 位于 `crates/brainstorming-engine/src/document/migrations`，通过 `migrate!` 编译进应用。履历表固定为 `_brainstorming_migrations`，保存版本、校验和与执行状态；初始迁移编号为 1，与 `user_version=2` 的文件协议标识分开。只执行应用内迁移，不执行文件携带的脚本；已发布迁移不修改，新变更追加文件。应用标识、协议、必需功能、迁移履历或校验和无效时拒绝打开。
 
 此前由当前 Tauri 协议生成、尚无迁移履历的文件，必须通过初始表结构和工作簿数据校验，才能在事务内由 SQLx 登记为基线；不重建或丢弃正文。此登记不适用于旧 Electron/Kysely 格式。
 

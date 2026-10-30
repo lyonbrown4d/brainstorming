@@ -1,3 +1,7 @@
 # Apply before SQLx executes any connection PRAGMA or reads an untrusted schema.
 [env]
 LIBSQLITE3_FLAGS = { value = "-DSQLITE_MAX_LENGTH=134217728 -DSQLITE_MAX_SQL_LENGTH=134217728", force = true }
+
+# Keep desktop tooling paths stable while sharing one Rust workspace cache.
+[build]
+target-dir = "src-tauri/target"

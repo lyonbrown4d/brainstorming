@@ -15,7 +15,9 @@ fileGroups:
     - src-tauri/*.plist
     - src-tauri/*.toml
     - src-tauri/*.json
-    - src-tauri/Cargo.lock
+    - Cargo.lock
+    - Cargo.toml
+    - crates/**/*
     - tests/**/*
     - stories/**/*
     - .storybook/**/*
@@ -32,7 +34,8 @@ fileGroups:
 tasks:
   bindings:
     command: pnpm generate:bindings
-    inputs: ['src-tauri/src/**/*', 'src-tauri/Cargo.toml', 'src-tauri/Cargo.lock']
+    inputs:
+      ['src-tauri/src/**/*', 'src-tauri/Cargo.toml', 'Cargo.lock', 'Cargo.toml', 'crates/**/*']
     outputs: ['src/generated/native.ts']
   format:
     command: pnpm format:check

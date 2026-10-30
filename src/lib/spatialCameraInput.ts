@@ -119,7 +119,11 @@ export const bindSpatialCameraInput = (input: SpatialCameraInput): (() => void) 
   }
   const wheel = (event: WheelEvent): void => {
     if (!input.canWheel() || overControl(event.target)) return
-    const action = spatialCameraWheel(event, input.size?.() ?? cameraElementSize(root))
+    const rect = root.getBoundingClientRect()
+    const action = spatialCameraWheel(event, input.size?.() ?? cameraElementSize(root), {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    })
     if (!action) return
     event.preventDefault()
     event.stopImmediatePropagation()

@@ -13,7 +13,7 @@ import { useCanvas2DViewportRestore } from '@renderer/hooks/useCanvas2DViewportR
 import { getSpatialViewport, setSpatialViewport } from '@renderer/state/spatialViewports'
 import { CanvasLoading } from '@renderer/components/workbench/CanvasLoading'
 import { motion, useReducedMotion } from 'motion/react'
-import { ConnectionMode, ReactFlow, useReactFlow } from '@xyflow/react'
+import { ConnectionMode, PanOnScrollMode, ReactFlow, useReactFlow } from '@xyflow/react'
 import {
   createFloatingAt,
   createRelationFloatingAt,
@@ -202,10 +202,12 @@ export const Canvas2D = () => {
           nodeDragThreshold={4}
           autoPanOnNodeDrag
           selectionOnDrag={false}
-          panOnDrag={inkMode === 'select' ? [0, 1] : false}
+          panOnDrag={inkMode === 'select' ? [1] : false}
+          panActivationKeyCode="Space"
           selectionKeyCode="Shift"
           multiSelectionKeyCode={['Meta', 'Control']}
           panOnScroll
+          panOnScrollMode={PanOnScrollMode.Free}
           zoomOnScroll
           zoomOnPinch
           zoomActivationKeyCode={['Meta', 'Control']}

@@ -14,6 +14,7 @@ const pointer = (kind: string, values: Record<string, number | boolean> = {}): E
 }
 const harness = () => {
   const canvas = new EventTarget() as HTMLCanvasElement
+  Object.assign(canvas, { getBoundingClientRect: () => ({ left: 0, top: 0 }) })
   const nativeWindow = new EventTarget()
   vi.stubGlobal('window', nativeWindow)
   const controls = { enabled: false } as CameraControlsImpl
@@ -98,9 +99,16 @@ it('trucks with the right button, suppresses dragged clicks and accepts pinch ov
   expect(menu.defaultPrevented).toBe(true)
   h.pick.mockReturnValue({ id: 'topic' })
   const wheel = new Event('wheel', { cancelable: true })
-  Object.assign(wheel, { deltaX: 0, deltaY: -25, deltaMode: 0, ctrlKey: true })
+  Object.assign(wheel, {
+    clientX: 600,
+    clientY: 400,
+    deltaX: 0,
+    deltaY: -25,
+    deltaMode: 0,
+    ctrlKey: true,
+  })
   h.canvas.dispatchEvent(wheel)
-  expect(h.wheel).toHaveBeenCalledWith({ kind: 'dolly', y: -25 })
+  expect(h.wheel).toHaveBeenCalledWith({ kind: 'dolly', x: 0, y: 0, deltaY: -25 })
   expect(wheel.defaultPrevented).toBe(true)
   h.stop()
 })

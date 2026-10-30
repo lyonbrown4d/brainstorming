@@ -1,6 +1,6 @@
 use crate::{
   document_exports::{
-    ExportContent, ExportFormat, ExportStage, Page, Progress, Request, encode, scope, service::Job,
+    ExportFormat, ExportStage, Page, Progress, Request, encode, scope, service::Job,
   },
   runtime::AppState,
 };
@@ -34,12 +34,7 @@ pub(super) async fn export_job(
     .await?;
   }
   job.check()?;
-  let mut pages = prepare_pages(&state, &request, &job, app).await?;
-  if request.transparent && request.content != ExportContent::Presentation {
-    for page in &mut pages {
-      remove_background(page)?;
-    }
-  }
+  let pages = prepare_pages(&state, &request, &job, app).await?;
   let format = encode::extension(&request, pages.len()).to_string();
   let name = crate::runtime::input::safe_name(
     request.workbook["title"]
@@ -62,17 +57,8 @@ pub(super) async fn export_job(
     0,
     pages.len().max(1),
   );
-  let (job, bytes) = tokio::task::spawn_blocking(move || {
-    job.check()?;
-    let bytes = encode::pages_cancellable(&request, &pages, &|| job.check())?;
-    if bytes.len() > 128 * 1024 * 1024 {
-      return Err("导出文件超过 128 MiB 限制".into());
-    }
-    job.check()?;
-    Ok::<_, String>((job, bytes))
-  })
-  .await
-  .map_err(|_| "导出编码任务失败")??;
+  let (job, bytes) =
+    crate::document_exports::pipeline::encode(request, pages, job, state.compute.clone()).await?;
   report(app, &state.window_id, job.id, ExportStage::Writing, 0, 1);
   job.check()?;
   #[cfg(not(target_os = "ios"))]
@@ -122,87 +108,14 @@ pub(super) async fn prepare_pages(
   job: &Job,
   app: &AppHandle,
 ) -> Result<Vec<Page>, String> {
-  if let Some(view) = &request.view {
-    crate::export_image::validate_svg_scene(&view.svg)?;
-    return Ok(vec![view.clone()]);
-  }
-  if !request.format.needs_pages() {
-    return Ok(Vec::new());
-  }
-  if request.content == ExportContent::Presentation {
-    let workbook = request.workbook.clone();
-    return state
-      .compute
-      .run(move || crate::document_exports::presentation::pages(&workbook))
-      .await;
-  }
-  let mut pages = Vec::new();
-  let mut total = 0;
-  for (index, id) in request.sheet_ids.iter().enumerate() {
-    job.check()?;
-    report(
-      app,
-      &state.window_id,
-      job.id,
-      ExportStage::Rendering,
-      index,
-      request.sheet_ids.len(),
-    );
-    if request.topic_ids.is_empty() && !request.drawing_ids.is_empty() {
-      let document = request.workbook["sheets"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .find(|sheet| sheet["id"] == *id)
-        .map(|sheet| &sheet["document"])
-        .ok_or("画布不存在")?;
-      pages.push(crate::document_exports::ink::render(
-        document,
-        request.geometry.get(id).ok_or("缺少笔迹几何")?,
-      )?);
-      continue;
-    }
-    let scene = state
-      .compute
-      .render(
-        request.workbook.clone(),
-        id.clone(),
-        request.include_collapsed,
-        request.geometry.get(id).cloned(),
-      )
-      .await?;
-    total += scene.svg.len();
-    if total > 64 * 1024 * 1024 {
-      return Err("导出图形超过 64 MiB 限制".into());
-    }
-    let title = request.workbook["sheets"]
-      .as_array()
-      .into_iter()
-      .flatten()
-      .find(|sheet| sheet["id"] == *id)
-      .and_then(|sheet| sheet["name"].as_str())
-      .unwrap_or("Sheet")
-      .to_string();
-    pages.push(Page {
-      title,
-      svg: scene.svg.clone(),
-      width: scene.width,
-      height: scene.height,
+  let app = app.clone();
+  let owner = state.window_id.clone();
+  let id = job.id;
+  let progress: crate::document_exports::pipeline::Reporter =
+    Arc::new(move |stage, done, total| {
+      report(&app, &owner, id, stage, done, total);
     });
-  }
-  Ok(pages)
-}
-pub(super) fn remove_background(page: &mut Page) -> Result<(), String> {
-  let document = resvg::usvg::roxmltree::Document::parse(&page.svg).map_err(|_| "导出 SVG 无效")?;
-  if let Some(rect) = document
-    .root_element()
-    .children()
-    .find(|node| node.has_tag_name("rect"))
-  {
-    let range = rect.range();
-    page.svg.replace_range(range, "");
-  }
-  Ok(())
+  crate::document_exports::pipeline::prepare_pages(&state.compute, request, job, &progress).await
 }
 pub(super) fn report(
   app: &AppHandle,

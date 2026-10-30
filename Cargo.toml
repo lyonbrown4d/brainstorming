@@ -1,0 +1,13 @@
+[workspace]
+resolver = "3"
+members = ["crates/brainstorming-engine", "crates/brainstorming-geometry", "crates/brainstorming-cli", "src-tauri"]
+default-members = ["crates/brainstorming-engine", "crates/brainstorming-geometry", "crates/brainstorming-cli"]
+
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

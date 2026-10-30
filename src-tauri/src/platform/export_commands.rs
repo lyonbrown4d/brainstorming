@@ -1,7 +1,7 @@
 use super::export_pipeline::{export_job, report};
 use crate::{
   compute::wire::JsonValue,
-  document_exports::{ExportContent, ExportFormat, ExportStage, Request, scope},
+  document_exports::{ExportStage, Request, scope},
   runtime::AppState,
 };
 use serde_json::Value;
@@ -20,36 +20,7 @@ async fn access(app: &AppHandle, window: &WebviewWindow) -> Result<Arc<AppState>
 }
 fn decode(input: Value) -> Result<Request, String> {
   let request: Request = serde_json::from_value(input).map_err(|_| "导出选项无效")?;
-  if request.content == ExportContent::Presentation && !request.format.supports_presentation() {
-    return Err("此格式不支持演示页面".into());
-  }
-  if request.view.is_some() && !request.format.supports_view() {
-    return Err("当前视角仅支持图片和 PDF".into());
-  }
-  if (request.content == ExportContent::View) != request.view.is_some() {
-    return Err("请重新截取当前视角后导出".into());
-  }
-  if request.format == ExportFormat::Pptx && request.content != ExportContent::Presentation {
-    return Err("PowerPoint 导出需要选择演示页面".into());
-  }
-  if serde_json::to_vec(&request)
-    .map_err(|_| "导出内容无效")?
-    .len()
-    > 64 * 1024 * 1024
-  {
-    return Err("导出内容超过 64 MiB 限制，请分批导出".into());
-  }
-  if request.geometry.len() > 128
-    || request.width.is_some_and(|v| v == 0 || v > 16384)
-    || request.height.is_some_and(|v| v == 0 || v > 16384)
-    || request
-      .scale
-      .is_some_and(|v| !v.is_finite() || v <= 0.0 || v > 8.0)
-    || request.jpeg_quality.is_some_and(|v| v == 0 || v > 100)
-    || (request.jpeg_quality.is_some() && request.format != ExportFormat::Jpg)
-  {
-    return Err("导出尺寸或质量无效".into());
-  }
+  request.validate()?;
   Ok(request)
 }
 #[tauri3_specta::command]
@@ -171,10 +142,7 @@ pub async fn document_export_preview(
   request.workbook =
     crate::runtime::compute::hydrate_for(&app, &state, request.workbook, false).await?;
   let pages = super::export_pipeline::prepare_pages(&state, &request, &job, &app).await?;
-  let mut page = pages.into_iter().next().ok_or("导出预览为空")?;
-  if request.transparent && request.content == ExportContent::Map {
-    super::export_pipeline::remove_background(&mut page)?;
-  }
+  let page = pages.into_iter().next().ok_or("导出预览为空")?;
   serde_json::to_value(page)
     .map(JsonValue)
     .map_err(|_| "导出预览无效".into())

@@ -148,10 +148,40 @@ export const applySpatialCameraWheel = (
   const unit = (distance * 2 * Math.tan((Math.PI * 21) / 180)) / height
   if (action.kind === 'truck') void controls.truck(action.x * unit, action.y * unit, true)
   else if (action.kind === 'dolly') {
-    const goal = controls
-      .getPosition(new Vector3(), true)
-      .distanceTo(controls.getTarget(new Vector3(), true))
-    void controls.dollyTo(goal * Math.exp(action.y * 0.008), true)
+    const position = controls.getPosition(new Vector3(), true)
+    const target = controls.getTarget(new Vector3(), true)
+    const currentDistance = position.distanceTo(target)
+    const nextDistance = Math.min(
+      controls.maxDistance,
+      Math.max(controls.minDistance, currentDistance * Math.exp(action.deltaY * 0.008)),
+    )
+    if (currentDistance <= 0 || nextDistance === currentDistance) return
+    const camera = controls.camera
+    if (!(camera instanceof PerspectiveCamera)) {
+      void controls.dollyTo(nextDistance, true)
+      return
+    }
+    const ratio = nextDistance / currentDistance
+    const direction = target.clone().sub(position).normalize()
+    const right = direction.clone().cross(camera.up).normalize()
+    if (right.lengthSq() === 0) right.set(1, 0, 0)
+    const up = right.clone().cross(direction).normalize()
+    const halfHeight = currentDistance * Math.tan((camera.getEffectiveFOV() * Math.PI) / 360)
+    const cursor = target
+      .clone()
+      .addScaledVector(right, action.x * halfHeight * camera.aspect)
+      .addScaledVector(up, action.y * halfHeight)
+    const nextTarget = target.clone().lerp(cursor, 1 - ratio)
+    const nextPosition = position.sub(target).multiplyScalar(ratio).add(nextTarget)
+    void controls.setLookAt(
+      nextPosition.x,
+      nextPosition.y,
+      nextPosition.z,
+      nextTarget.x,
+      nextTarget.y,
+      nextTarget.z,
+      true,
+    )
   } else {
     const radiansPerPixel = (Math.PI * 2) / height
     void controls.rotate(action.x * radiansPerPixel, action.y * radiansPerPixel, true)

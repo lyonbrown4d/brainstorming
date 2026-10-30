@@ -5,7 +5,7 @@ import { expect, within } from 'storybook/test'
 import { applyCommand, createDocument, type MindMapDocument, type PresentationStep } from '@core'
 import { PresentationSlide } from '@renderer/components/presentation/PresentationSlide'
 import { buildPresentationSlide } from '@renderer/components/presentation/slideModel'
-import beach from '@project/src-tauri/builtin-art/originals/beach-rest.png?inline'
+import beach from '@project/crates/brainstorming-engine/builtin-art/originals/beach-rest.png?inline'
 
 const fixture = applyCommand(createDocument('产品探索与交付计划'), {
   type: 'batch',
