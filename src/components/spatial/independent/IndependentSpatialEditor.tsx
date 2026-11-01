@@ -7,7 +7,7 @@ import { useEditor } from '@renderer/state/editor'
 import { TopicNodeBody } from '@renderer/components/TopicNodeBody'
 import { TopicShapeVisual } from '@renderer/components/TopicShapeVisual'
 import { topicAppearance } from '@shared/appearance'
-import { topicShapeInsets } from '@shared/topic-shapes'
+import { DEFAULT_TOPIC_SHAPE, topicOutlineColor, topicShapeInsets } from '@shared/topic-shapes'
 
 /** Mount the same Lexical editor only for the actively edited Three topic. */
 export const IndependentSpatialEditor = ({
@@ -78,11 +78,17 @@ export const IndependentSpatialEditor = ({
         }}
       >
         <TopicShapeVisual
-          shape={topic.style?.shape ?? 'rectangle'}
+          shape={topic.style?.shape ?? DEFAULT_TOPIC_SHAPE}
           fill={appearance.fill}
-          stroke={appearance.stroke}
+          stroke={topicOutlineColor({
+            ...appearance,
+            root,
+            visualStyle: document.settings?.visualStyle,
+          })}
           visualStyle={document.settings?.visualStyle}
-          sketchFill={root || branch || Boolean(topic.style?.fill)}
+          sketchFill={
+            root || branch || Boolean(topic.style?.fill) || topic.style?.shape === 'sticky'
+          }
           seedKey={id}
           width={layout.width / scale}
           height={layout.height / scale}

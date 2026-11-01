@@ -15,10 +15,12 @@ attribute vec3 center;
 attribute vec2 size;
 attribute vec4 atlasRect;
 attribute float selected;
+attribute float selectionStarted;
 varying vec2 vUv;
 varying vec2 vLocal;
 varying vec2 vSize;
 varying float vSelected;
+varying float vSelectionStarted;
 void main() {
   vec4 point = modelViewMatrix * vec4(center, 1.0);
   point.xy += position.xy * size;
@@ -27,18 +29,24 @@ void main() {
   vSize = size;
   vUv = atlasRect.xy + uv * atlasRect.zw;
   vSelected = selected;
+  vSelectionStarted = selectionStarted;
 }`
 const fragmentShader = `
 uniform sampler2D atlas;
+uniform float selectionClock;
+uniform float selectionMotion;
 varying vec2 vUv;
 varying vec2 vLocal;
 varying vec2 vSize;
 varying float vSelected;
+varying float vSelectionStarted;
 void main() {
   vec4 ink = texture2D(atlas, vUv);
   vec2 edge = min(vLocal, 1.0 - vLocal) * vSize;
   float border = step(1.0, min(edge.x, edge.y)) * (1.0 - step(3.0, min(edge.x, edge.y)));
-  if (vSelected > 0.5 && border > 0.5) ink = vec4(vSelected > 1.5 ? vec3(0.20, 0.64, 0.48) : vec3(0.22, 0.40, 0.63), 1.0);
+  if (vSelected > 1.5 && border > 0.5) ink = vec4(vec3(0.20, 0.64, 0.48), 1.0);
+  if (selectionMotion > 0.5 && vSelected > 0.5 && vSelected < 1.5 && vSelectionStarted >= 0.0)
+    ink.a *= mix(0.72, 1.0, smoothstep(0.0, 0.15, selectionClock - vSelectionStarted));
   if (ink.a < 0.01) discard;
   gl_FragColor = ink;
   #include <tonemapping_fragment>
@@ -53,6 +61,8 @@ export const createThreeTopicBatches = (
   let excluded: ReadonlySet<string> = new Set()
   let selection: ReadonlySet<string> = new Set()
   let dropTarget: string | null = null
+  let selectionInitialized = false
+  let selectionUntil = 0
   let layout = runtime.model.layout.nodes
   let nodes = new Map(layout.map((node) => [node.id, node]))
   const batches = atlas.textures.map((texture, page) => {
@@ -67,14 +77,19 @@ export const createThreeTopicBatches = (
     geometry.instanceCount = tiles.length
     const centers = new InstancedBufferAttribute(new Float32Array(tiles.length * 3), 3)
     const selected = new InstancedBufferAttribute(new Float32Array(tiles.length), 1)
+    const selectionStarted = new InstancedBufferAttribute(
+      new Float32Array(tiles.length).fill(-1),
+      1,
+    )
     geometry.setAttribute('center', centers)
     geometry.setAttribute('selected', selected)
+    geometry.setAttribute('selectionStarted', selectionStarted)
     const sizes = new InstancedBufferAttribute(
       new Float32Array(tiles.flatMap((tile) => [tile.width + 8, tile.height + 8])),
       2,
     )
     geometry.setAttribute('size', sizes)
-    for (const attribute of [centers, selected, sizes]) {
+    for (const attribute of [centers, selected, sizes, selectionStarted]) {
       attribute.setUsage(DynamicDrawUsage)
       attribute.onUpload(() => {
         attribute.clearUpdateRanges()
@@ -94,10 +109,12 @@ export const createThreeTopicBatches = (
         4,
       ),
     )
+    const selectionClock = { value: 0 }
+    const selectionMotion = { value: 0 }
     const material = new ShaderMaterial({
       vertexShader,
       fragmentShader,
-      uniforms: { atlas: { value: texture } },
+      uniforms: { atlas: { value: texture }, selectionClock, selectionMotion },
       transparent: true,
       depthWrite: true,
       toneMapped: false,
@@ -105,7 +122,14 @@ export const createThreeTopicBatches = (
     const mesh = new Mesh(geometry, material)
     mesh.frustumCulled = false
     mesh.renderOrder = 2
-    return { tiles, centers, sizes, selected, mesh }
+    mesh.onBeforeRender = () => {
+      selectionClock.value = performance.now() / 1000
+      selectionMotion.value = runtime.selectionMotion ? 1 : 0
+    }
+    mesh.onAfterRender = () => {
+      if (runtime.selectionMotion && performance.now() / 1000 < selectionUntil) runtime.invalidate()
+    }
+    return { tiles, centers, sizes, selected, selectionStarted, mesh }
   })
   const entries = new Map(
     batches.flatMap((batch) =>
@@ -148,6 +172,13 @@ export const createThreeTopicBatches = (
       const { batch, index } = entry
       const value = runtime.dropTarget === id ? 2 : selectedIds.has(id) ? 1 : 0
       if (batch.selected.getX(index) === value) return
+      if (value === 1 && selectionInitialized && runtime.selectionMotion) {
+        const now = performance.now() / 1000
+        batch.selectionStarted.setX(index, now)
+        batch.selectionStarted.addUpdateRange(index, 1)
+        batch.selectionStarted.needsUpdate = true
+        selectionUntil = now + 0.15
+      }
       batch.selected.setX(index, value)
       batch.selected.addUpdateRange(index, 1)
       batch.selected.needsUpdate = true
@@ -158,6 +189,7 @@ export const createThreeTopicBatches = (
     if (runtime.dropTarget) updateId(runtime.dropTarget)
     selection = new Set(selectedIds)
     dropTarget = runtime.dropTarget
+    selectionInitialized = true
   }
   return {
     meshes: batches.map((batch) => batch.mesh),

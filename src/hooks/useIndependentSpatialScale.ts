@@ -44,6 +44,11 @@ export const useIndependentSpatialScale = (runtime: IndependentSpatialRuntime) =
       x: rect.x + (sx < 0 ? rect.width : 0),
       y: rect.y + (sy < 0 ? rect.height : 0),
     }
+    // The visible arrow sits outside the corner; preserve the actual grab offset.
+    const grab = {
+      x: event.clientX - (opposite.x + sx * rect.width),
+      y: event.clientY - (opposite.y + sy * rect.height),
+    }
     const original = topic.style?.scale ?? 1
     let ratio = 1,
       pending = false,
@@ -90,8 +95,8 @@ export const useIndependentSpatialScale = (runtime: IndependentSpatialRuntime) =
         0.5 / original,
         Math.min(
           3 / original,
-          ((pointer.clientX - opposite.x) * diagonal.x +
-            (pointer.clientY - opposite.y) * diagonal.y) /
+          ((pointer.clientX - grab.x - opposite.x) * diagonal.x +
+            (pointer.clientY - grab.y - opposite.y) * diagonal.y) /
             (rect.width ** 2 + rect.height ** 2),
         ),
       )

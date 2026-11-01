@@ -1,4 +1,21 @@
-import type { TopicShape } from '@core/types'
+import type { SheetVisualStyle, TopicShape } from '@core'
+
+export const DEFAULT_TOPIC_SHAPE: TopicShape = 'rounded'
+
+/** Shape strokes follow the same resolved colors in DOM previews and GPU rasters. */
+export const topicOutlineColor = ({
+  root,
+  fill,
+  stroke,
+  color,
+  visualStyle,
+}: {
+  root: boolean
+  fill: string
+  stroke: string
+  color: string
+  visualStyle: SheetVisualStyle | undefined
+}): string => (root ? (visualStyle === 'sketch' ? color : fill) : stroke)
 
 /** Insets keep all existing topic content inside the decorative silhouette. */
 export const topicShapeInsets = (shape: TopicShape = 'rounded') => {

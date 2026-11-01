@@ -16,6 +16,30 @@ const corners = [
   { name: 'bottom-left', index: 2, dx: -65, dy: 35 },
   { name: 'bottom-right', index: 3, dx: 65, dy: 35 },
 ] as const
+test('3D outside-corner arrow preserves the grab offset instead of jumping on a tiny move', async ({
+  page,
+}) => {
+  await openSpatial(page)
+  await clickSpatial(page, 'branch-a')
+  const before = await settledSpatialRect(page, 'branch-a')
+  const original = await spatialEvidence(page)
+  const grip = await locatorBounds(page.locator('[data-spatial-scale] button').first())
+  const point = { x: grip.x + grip.width / 2, y: grip.y + grip.height / 2 }
+  await page.mouse.move(point.x, point.y)
+  await page.mouse.down()
+  await page.mouse.move(point.x - 1, point.y - 1, { steps: 2 })
+  await expect
+    .poll(async () => (await spatialRect(page, 'branch-a')).width - before.width)
+    .toBeGreaterThan(0.1)
+  expect((await spatialRect(page, 'branch-a')).width - before.width).toBeLessThan(3)
+  await page.keyboard.press('Escape')
+  await page.mouse.up()
+  await expect.poll(async () => (await spatialEvidence(page)).document).toEqual(original.document)
+  await expect
+    .poll(async () => (await spatialRect(page, 'branch-a')).width)
+    .toBeCloseTo(before.width, 0)
+})
+
 for (const corner of corners) {
   test(`3D ${corner.name} grip scales the topic and one undo restores it`, async ({ page }) => {
     await openSpatial(page)

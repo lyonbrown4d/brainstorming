@@ -3,7 +3,7 @@ import type { TopicWidthPreview } from '@renderer/state/topicWidthPreview'
 import { TopicNodeBody } from '@renderer/components/TopicNodeBody'
 import { TopicShapeVisual } from '@renderer/components/TopicShapeVisual'
 import { topicAppearance } from '@shared/appearance'
-import { topicShapeInsets } from '@shared/topic-shapes'
+import { DEFAULT_TOPIC_SHAPE, topicOutlineColor, topicShapeInsets } from '@shared/topic-shapes'
 
 /** Only the actively resized topic gets a reflowing DOM preview, never a second canvas. */
 export const SpatialTopicWidthPreview = ({
@@ -39,11 +39,15 @@ export const SpatialTopicWidthPreview = ({
       }}
     >
       <TopicShapeVisual
-        shape={topic.style?.shape ?? 'rectangle'}
+        shape={topic.style?.shape ?? DEFAULT_TOPIC_SHAPE}
         fill={appearance.fill}
-        stroke={appearance.stroke}
+        stroke={topicOutlineColor({
+          ...appearance,
+          root,
+          visualStyle: document.settings?.visualStyle,
+        })}
         visualStyle={document.settings?.visualStyle}
-        sketchFill={root || branch || Boolean(topic.style?.fill)}
+        sketchFill={root || branch || Boolean(topic.style?.fill) || topic.style?.shape === 'sticky'}
         seedKey={topic.id}
         width={width / scale}
         height={height / scale}

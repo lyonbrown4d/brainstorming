@@ -71,6 +71,7 @@ export const prepareThreeTopicAtlas = async (
       if (!topic || !target) continue
       const appearance = topicAppearance(model.document, tile.id, model.surface)
       const key = JSON.stringify([
+        'shared-shapes-v2',
         topic,
         topic.id === model.document.rootId,
         model.document.topics[model.document.rootId]?.children.includes(topic.id),

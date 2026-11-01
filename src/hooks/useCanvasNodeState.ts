@@ -1,4 +1,5 @@
-import { useLayoutEffect, useRef, type SetStateAction } from 'react'
+import { useLayoutEffect, useMemo, useRef, type SetStateAction } from 'react'
+import { useReducedMotion } from 'motion/react'
 import { applyNodeChanges, useStoreApi, type NodeChange } from '@xyflow/react'
 import { useMemoizedFn } from 'ahooks'
 import type { CanvasFlowNode } from '@renderer/lib/canvasNodes'
@@ -7,6 +8,7 @@ import { synchronizeCanvasNodes } from '@renderer/lib/canvasDragNodes'
 import { useEditor } from '@renderer/state/editor'
 import { useSelection } from '@renderer/state/selection'
 import { usePresentation } from '@renderer/state/presentation'
+import { createCanvasNodeMotion } from '@renderer/lib/canvasNodeMotion'
 
 /** React Flow owns live 2D nodes; native geometry and pointer previews share one reconciler. */
 export const useCanvasNodeState = (
@@ -15,6 +17,33 @@ export const useCanvasNodeState = (
   dragging: ReadonlySet<string> | undefined,
 ) => {
   const store = useStoreApi<CanvasFlowNode>()
+  const reduced = useReducedMotion()
+  const motion = useMemo(
+    () =>
+      createCanvasNodeMotion(
+        () => store.getState().nodes,
+        (nodes) => {
+          store.getState().setNodes(nodes)
+        },
+      ),
+    [store],
+  )
+  useLayoutEffect(() => {
+    const finish = () => {
+      motion.finish()
+    }
+    // A new direct interaction always takes precedence over a settling operation.
+    for (const name of ['pointerdown', 'keydown', 'wheel'] as const)
+      window.addEventListener(name, finish, true)
+    return () => {
+      for (const name of ['pointerdown', 'keydown', 'wheel'] as const)
+        window.removeEventListener(name, finish, true)
+      finish()
+    }
+  }, [motion])
+  useLayoutEffect(() => {
+    if (reduced) motion.finish()
+  }, [reduced, motion])
   const readSource = () => {
     const editor = useEditor.getState()
     const selection = useSelection.getState()
@@ -25,12 +54,14 @@ export const useCanvasNodeState = (
       drawings: selection.drawings[editor.activeSheetId],
       primary: editor.selectedId,
       playing: usePresentation.getState().playing,
+      editing: editor.editingId,
     }
   }
   const previousSource = useRef<ReturnType<typeof readSource> | null>(null)
   const reconcile = useMemoizedFn(() => {
     const source = readSource()
     const before = previousSource.current
+    if (source.playing && !before?.playing) motion.finish()
     // RF's temporary marquee selection must survive until onSelectionEnd commits it.
     if (
       before?.projected === source.projected &&
@@ -54,7 +85,22 @@ export const useCanvasNodeState = (
       },
     )
     previousSource.current = source
-    if (next !== state.nodes) state.setNodes(next)
+    if (next !== state.nodes) {
+      if (before?.projected !== source.projected || before.scope !== scope) {
+        const editingExisting =
+          source.editing && before?.projected.some((node) => node.id === source.editing)
+        motion.publish(
+          next,
+          before?.scope === scope &&
+            before.projected.length > 0 &&
+            source.projected.length > 0 &&
+            !reduced &&
+            !dragging?.size &&
+            !source.playing &&
+            !editingExisting,
+        )
+      } else state.setNodes(next)
+    }
   })
   useLayoutEffect(
     () => () => {

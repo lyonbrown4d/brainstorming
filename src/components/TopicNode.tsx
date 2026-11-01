@@ -1,4 +1,4 @@
-import { topicShapeInsets } from '@shared/topic-shapes'
+import { DEFAULT_TOPIC_SHAPE, topicOutlineColor, topicShapeInsets } from '@shared/topic-shapes'
 import { TopicShapeVisual } from '@renderer/components/TopicShapeVisual'
 import { TopicNodeBody } from '@renderer/components/TopicNodeBody'
 import { TopicScaleHandle } from '@renderer/components/TopicScaleHandle'
@@ -95,7 +95,7 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
     : data.worldHeight === undefined
       ? (height ?? 100) / scale
       : data.worldHeight / (style?.scale ?? 1)
-  const shape = style?.shape ?? 'rounded'
+  const shape = style?.shape ?? DEFAULT_TOPIC_SHAPE
   const insets = topicShapeInsets(shape)
   const fill =
     data.fill ?? style?.fill ?? (root ? 'var(--color-primary)' : 'var(--color-background)')
@@ -110,6 +110,7 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
               ? 'topic-branch'
               : 'topic-leaf',
           selected && 'is-selected',
+          selected && primary && 'motion-safe:animate-[topic-select_150ms_ease-out]',
           editingHere && 'is-editing',
           dropTarget && 'drop-target',
           `side-${side}`,
@@ -149,7 +150,13 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
           seedKey={id}
           width={baseWidth}
           height={baseHeight}
-          stroke={root ? (data.visualStyle === 'sketch' ? (data.textColor ?? color) : fill) : color}
+          stroke={topicOutlineColor({
+            root,
+            fill,
+            stroke: color,
+            color: data.textColor ?? color,
+            visualStyle: data.visualStyle,
+          })}
           className="pointer-events-none absolute inset-0 h-full w-full"
         />
         <span
@@ -165,7 +172,7 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
             key={`source-${position}`}
             id={`source-${position}`}
             type="source"
-            className="topic-connect-handle !size-3 !border-2 !border-primary !bg-background hover:!border-background hover:!bg-primary"
+            className="topic-connect-handle !pointer-events-none !size-3 !border-2 !border-primary !bg-background hover:!border-background hover:!bg-primary"
             position={position}
           />
         ))}

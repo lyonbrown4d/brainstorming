@@ -7,6 +7,7 @@ import { useEditor } from '@renderer/state/editor'
 import { useCanvasInk } from '@renderer/state/canvasInk'
 import { useMessages } from '@renderer/i18n/useMessages'
 import { Button } from '@renderer/components/ui/button'
+import { TopicScaleArrow } from '@renderer/components/TopicScaleArrow'
 
 export const IndependentSpatialScale = ({
   runtime,
@@ -60,15 +61,17 @@ export const IndependentSpatialScale = ({
     <div ref={target} className="pointer-events-none absolute top-0 left-0 z-20" data-spatial-scale>
       {(['top-left', 'top-right', 'bottom-left', 'bottom-right'] as const).map((corner) => (
         <Button
-          key={corner}
-          variant="outline"
+          key={`${id}:${corner}`}
+          variant="ghost"
           size="icon"
           aria-label={labels[corner]}
-          className={`pointer-events-auto absolute size-4 rounded-[5px] border-2 border-background bg-ring shadow-sm transition-none ${corner.startsWith('top') ? '-top-2' : '-bottom-2'} ${corner.endsWith('left') ? '-left-2 cursor-nwse-resize' : '-right-2 cursor-nesw-resize'}`}
+          className={`pointer-events-auto absolute size-6 rounded-none border-0 !bg-transparent p-0 text-muted-foreground shadow-none transition-colors hover:text-foreground ${corner.startsWith('top') ? '-top-6' : '-bottom-6'} ${corner.endsWith('left') ? '-left-6' : '-right-6'} ${corner === 'top-left' || corner === 'bottom-right' ? 'cursor-nwse-resize' : 'cursor-nesw-resize'}`}
           onPointerDown={(event) => {
             begin(event, id, corner)
           }}
-        />
+        >
+          <TopicScaleArrow corner={corner} />
+        </Button>
       ))}
     </div>
   )

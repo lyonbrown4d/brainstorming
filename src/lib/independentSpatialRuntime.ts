@@ -81,6 +81,11 @@ export const createIndependentSpatialRuntime = (model: SpatialSceneModel) => {
     panCameraBy: noop as (x: number, y: number) => void,
     zoomCameraBy: noop as (deltaY: number) => void,
     navigating: false,
+    selectionMotion: false,
+    setSelectionMotion: (enabled: boolean) => {
+      runtime.selectionMotion = enabled
+      runtime.invalidate()
+    },
     interacting: false,
     offsets: new Map<string, SpatialSceneOffset>(),
     inkPreviews: new Map<string, InkBounds>(),

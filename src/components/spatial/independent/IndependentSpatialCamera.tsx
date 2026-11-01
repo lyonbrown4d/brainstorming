@@ -32,6 +32,7 @@ export const IndependentSpatialCamera = ({
     readyRef.current = onReady
   }, [onReady])
   useLayoutEffect(() => {
+    runtime.setSelectionMotion(!reducedMotion)
     if (!(camera instanceof PerspectiveCamera)) return
     const detach = attachIndependentSpatialCamera(runtime, camera, canvas, invalidate)
     reported.current = false
@@ -45,6 +46,7 @@ export const IndependentSpatialCamera = ({
     controller.current = next
     invalidate()
     return () => {
+      runtime.setSelectionMotion(false)
       next?.dispose()
       if (controller.current === next) controller.current = null
       detach()

@@ -6,6 +6,7 @@ import { useEditor } from '@renderer/state/editor'
 import { usePresentation } from '@renderer/state/presentation'
 import { useAnnotationInteraction } from '@renderer/state/annotationInteraction'
 import { useMessages } from '@renderer/i18n/useMessages'
+import { TopicScaleArrow } from '@renderer/components/TopicScaleArrow'
 
 export const TopicScaleHandle = ({
   id,
@@ -53,9 +54,14 @@ export const TopicScaleHandle = ({
           }}
           position={corner}
           keepAspectRatio
-          className={`topic-scale-control topic-scale-${corner} nodrag nopan !z-20 !size-4 !rounded-[5px] !border-2 !border-background !bg-ring shadow-sm hover:!bg-primary motion-reduce:transition-none`}
-          style={{ pointerEvents: 'all' }}
+          className={`topic-scale-control topic-scale-${corner} nodrag nopan !z-20 !flex !size-6 items-center justify-center !rounded-none !border-0 !bg-transparent !p-0 !text-muted-foreground !shadow-none hover:!text-foreground motion-reduce:transition-none`}
+          style={{
+            pointerEvents: 'all',
+            marginLeft: corner.endsWith('left') ? -12 : 12,
+            marginTop: corner.startsWith('top') ? -12 : 12,
+          }}
         >
+          <TopicScaleArrow corner={corner} />
           <span className="sr-only" title={labels[corner]}>
             {labels[corner]}
           </span>

@@ -100,7 +100,7 @@
     "lexical": "catalog:lexical",
     "lodash-es": "4.18.1",
     "lru-cache": "^11.5.3",
-    "lucide-react": "1.65.0",
+    "lucide-react": "1.66.0",
     "magic-bytes.js": "1.13.1",
     "mdast-util-from-markdown": "2.1.0",
     "motion": "14.9.0",

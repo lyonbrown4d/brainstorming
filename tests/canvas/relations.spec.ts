@@ -69,7 +69,7 @@ for (const route of ['curve', 'orthogonal'])
     await expect(path(page)).toHaveAttribute('d', before)
   })
 
-test('creates from node handles, reconnects endpoints, and leaves tree edges intact', async ({
+test('creates from the canvas dock, reconnects endpoints, and leaves tree edges intact', async ({
   page,
 }) => {
   await open(page)
@@ -77,23 +77,20 @@ test('creates from node handles, reconnects endpoints, and leaves tree edges int
   const structuralCount = await page
     .locator('.react-flow__edge:not(.react-flow__edge-relation)')
     .count()
-  const source = page.locator(
-    '.react-flow__node[data-id="a"] .source[data-handleid="source-bottom"]',
-  )
   const target = page.locator('.react-flow__node[data-id="c"] .source[data-handleid="source-left"]')
-  await page.locator('[data-testid="topic-a"]').hover()
-  const start = await center(source),
-    end = await center(target)
-  await page.mouse.move(start.x, start.y)
-  await page.mouse.down()
-  await page.mouse.move(end.x, end.y, { steps: 20 })
-  await page.mouse.up()
+  await page.getByTestId('topic-a').click()
+  await page.getByRole('button', { name: '展开浮动工具栏', exact: true }).click()
+  await page.getByRole('button', { name: '关联线', exact: true }).click()
+  await page.getByTestId('topic-c').click()
   await expect(relations).toHaveCount(2)
+  await page.keyboard.press('Escape')
+  await page.locator('.react-flow__pane').click({ position: { x: 24, y: 160 } })
   await undo(page)
   await expect(relations).toHaveCount(1)
   await page.getByRole('button', { name: '关联线：拖动标签', exact: true }).click()
   const updater = page.locator('.react-flow__edgeupdater-target')
   const from = await center(updater)
+  const end = await center(target)
   const before = await pathValue(page)
   await page.mouse.move(from.x, from.y)
   await page.mouse.down()

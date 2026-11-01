@@ -2,8 +2,13 @@ import { CanvasTextMetrics, TextStyle } from 'pixi.js'
 import type { Topic } from '@core'
 import type { SpatialSceneModel } from '@renderer/lib/independentSpatialRuntime'
 import { topicAppearance } from '@shared/appearance'
-import { topicShapeInsets, showsTopicNotes, topicNotesPreview } from '@shared/topic-shapes'
-import { topicOutlinePath, visualPath } from '@shared/sketch'
+import {
+  DEFAULT_TOPIC_SHAPE,
+  topicShapeInsets,
+  showsTopicNotes,
+  topicNotesPreview,
+} from '@shared/topic-shapes'
+import { paintThreeTopicShape } from '@renderer/lib/threeTopicShape'
 import { measureTopicImage, measureTopicMarkers } from '@layout'
 import { getAssetUrl } from '@renderer/lib/resource'
 import { threeTopicTitleRuns, paintThreeTopicTitleLine } from '@renderer/lib/threeTopicRichText'
@@ -33,7 +38,7 @@ export const paintThreeTopic = async (
 ): Promise<void> => {
   const cancelled = () => signal.aborted
   const appearance = topicAppearance(model.document, topic.id, model.surface)
-  const shape = topic.style?.shape ?? 'rectangle'
+  const shape = topic.style?.shape ?? DEFAULT_TOPIC_SHAPE
   const scale = topic.style?.scale ?? 1
   const root = topic.id === model.document.rootId
   const branch = model.document.topics[model.document.rootId]?.children.includes(topic.id) ?? false
@@ -42,22 +47,7 @@ export const paintThreeTopic = async (
   const left = width * insets.x + 16 * scale
   const top = height * insets.y + 10 * scale
   const contentWidth = Math.max(1, width - left * 2)
-  if (shape !== 'text') {
-    context.fillStyle = appearance.fill
-    context.strokeStyle = appearance.stroke
-    context.lineWidth = 1.5 * scale
-    const outline = topicOutlinePath(shape, width, height)
-    context.fill(new Path2D(outline))
-    context.stroke(
-      new Path2D(visualPath(outline, model.document.settings?.visualStyle, `topic:${topic.id}`)),
-    )
-    if (shape === 'card') {
-      context.beginPath()
-      context.moveTo(width * 0.08, height * 0.12)
-      context.lineTo(width * 0.92, height * 0.12)
-      context.stroke()
-    }
-  }
+  paintThreeTopicShape(context, model, topic, width, height)
   const image = topic.image && model.document.assets?.[topic.image.assetId]
   const raster = image ? await loadSceneImage(getAssetUrl(image), signal) : null
   if (cancelled()) return

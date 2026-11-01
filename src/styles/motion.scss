@@ -20,6 +20,24 @@
     translate: 0 0;
   }
 }
+@keyframes topic-select {
+  from {
+    opacity: 0.72;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes topic-controls-enter {
+  from {
+    opacity: 0;
+    scale: 0.8;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

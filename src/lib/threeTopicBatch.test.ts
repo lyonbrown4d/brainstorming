@@ -28,6 +28,28 @@ const createBatch = (count: number) => {
 }
 
 describe('independent topic GPU batches', () => {
+  it('starts bounded selection feedback only for newly selected instances and respects reduced motion', () => {
+    const { runtime, batch, textures } = createBatch(3)
+    runtime.selectionMotion = true
+    batch.updateSelection(new Set(['topic-0']))
+    const stamps = batch.meshes[0]?.geometry.getAttribute('selectionStarted')
+    if (!stamps) throw new Error('Missing selection timing')
+    expect(stamps.getX(0)).toBe(-1)
+    batch.updateSelection(new Set(['topic-1']))
+    const started = stamps.getX(1)
+    expect(started).toBeGreaterThanOrEqual(0)
+    expect(stamps.getX(0)).toBe(-1)
+    batch.updateSelection(new Set(['topic-1']))
+    expect(stamps.getX(1)).toBe(started)
+    runtime.selectionMotion = false
+    batch.updateSelection(new Set(['topic-2']))
+    expect(stamps.getX(2)).toBe(-1)
+    batch.dispose()
+    textures.forEach((texture) => {
+      texture.dispose()
+    })
+  })
+
   it('renders one thousand billboards in at most four shared mesh batches', () => {
     const { batch, textures } = createBatch(1000)
     expect(batch.meshes.length).toBeLessThanOrEqual(4)
