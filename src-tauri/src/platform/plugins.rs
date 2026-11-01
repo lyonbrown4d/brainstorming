@@ -8,6 +8,8 @@ pub fn register(builder: tauri::Builder<tauri::DynRuntime>) -> tauri::Builder<ta
   let builder = builder
     .manage(super::initialization::Initialization::default())
     .manage(WindowStateRestore::default());
+  #[cfg(target_os = "macos")]
+  let builder = builder.manage(runtime::macos_chrome_restore::MacChromeRestore::default());
   // Tauri requires this plugin first so secondary launches exit before setup.
   #[cfg(desktop)]
   let builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, _| {

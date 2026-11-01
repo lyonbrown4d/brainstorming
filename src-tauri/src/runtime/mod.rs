@@ -15,6 +15,8 @@ mod image_exports;
 pub mod input;
 #[cfg(target_os = "ios")]
 mod ios_save;
+#[cfg(target_os = "macos")]
+pub(crate) mod macos_chrome_restore;
 pub(crate) mod mcp;
 mod mcp_tools;
 mod mcp_transport;

@@ -18,12 +18,18 @@ export const DocumentTabs = () => {
   const tabs = useDocumentTabs((state) => state.tabs)
   const activeId = useDocumentTabs((state) => state.activeId)
   const busy = useEditor((state) => state.busy)
+  const title = useEditor((state) => state.workbook.title)
+  const dirty = useEditor(editorIsDirty)
   if (!tabs.length) return null
   return (
     <DockToolbar
       edge="top"
       label={translate('expandMapTabs')}
-      caption={translate('openMaps')}
+      caption={translate('currentMapDockCaption', {
+        title,
+        dirty: dirty ? ' •' : '',
+        count: tabs.length,
+      })}
       id="open-map-tabs"
       pinInteraction={false}
     >

@@ -4,7 +4,11 @@ import { useEditor } from '@renderer/state/editor'
 import { flushNativeEditor, hasPendingNativeEditor } from '@renderer/state/nativeEditorQueue'
 
 /** Reveal a folded parent and create its child as a single undoable operation. */
-export const addTopic = (kind: 'child' | 'sibling', before = false): void => {
+export const addTopic = (
+  kind: 'child' | 'sibling',
+  before = false,
+  surface: 'canvas' | 'outline' = 'canvas',
+): void => {
   useEditor.getState().commitDraft()
   if (useEditor.getState().editingId) return
   const source = useEditor.getState()
@@ -16,7 +20,7 @@ export const addTopic = (kind: 'child' | 'sibling', before = false): void => {
           current.workbook.id === source.workbook.id &&
           current.activeSheetId === source.activeSheetId
         )
-          addTopic(kind, before)
+          addTopic(kind, before, surface)
       })
       .catch((error: unknown) => {
         if (useEditor.getState().workbook.id === source.workbook.id)
@@ -47,5 +51,5 @@ export const addTopic = (kind: 'child' | 'sibling', before = false): void => {
   const command: Command = parent.collapsed
     ? { type: 'batch', commands: [{ type: 'toggleCollapse', topicId: parentId }, add] }
     : add
-  if (useEditor.getState().command(command)) useEditor.getState().startEdit(id)
+  if (useEditor.getState().command(command)) useEditor.getState().startEdit(id, undefined, surface)
 }

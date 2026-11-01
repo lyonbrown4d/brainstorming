@@ -8,6 +8,8 @@ import { setNavigationLayout } from '@renderer/state/keyboard'
 import { useEditor } from '@renderer/state/editor'
 import { createCanvasProjectionController } from '@renderer/lib/canvasProjectionController'
 import { useCanvasCameraProjection } from '@renderer/hooks/useCanvasCameraProjection'
+import { useCanvasTopicFilter } from '@renderer/hooks/useCanvasTopicFilter'
+import { filterCanvasLayout } from '@renderer/lib/canvasTopicFilter'
 import {
   completeCanvasFrame,
   type CanvasProjectionFrame,
@@ -23,10 +25,11 @@ export const useCanvasProjection = (
   const scopeId = JSON.stringify([workbookId, sheetId, document.id])
   const controller = useMemo(() => createCanvasProjectionController(scopeId), [scopeId])
   const [completed, setCompleted] = useState<CanvasProjectionFrame | null>(null)
-  const measurements = useMemo(() => nativeMeasurements(document), [document])
+  const filter = useCanvasTopicFilter(document)
+  const measurements = useMemo(() => nativeMeasurements(filter.source), [filter.source])
   const options = useMemo(
-    () => nativeLayoutQuery(document, sheetId, measurements),
-    [document, sheetId, measurements],
+    () => nativeLayoutQuery(filter.source, sheetId, measurements),
+    [filter.source, sheetId, measurements],
   )
   const [project] = useState(createCanvasProjector)
   const query = useQuery(
@@ -40,7 +43,10 @@ export const useCanvasProjection = (
     },
     queryClient,
   )
-  const layout = query.data
+  const layout = useMemo(
+    () => (query.data ? filterCanvasLayout(query.data, filter.visible) : undefined),
+    [query.data, filter.visible],
+  )
   const frame = useMemo(
     () =>
       completeCanvasFrame(

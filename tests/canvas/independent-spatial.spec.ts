@@ -185,3 +185,35 @@ test('actual topic picking, dragging, four grips, Chinese title commit and 2D re
   )
   await expect(page.locator('.react-flow__node-topic')).toHaveCount(4)
 })
+
+test('a stationary camera restores nearby creation after releasing an initially unselected topic', async ({
+  page,
+}) => {
+  await open(page)
+  const target = await rectangle(page)
+  await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2)
+  await page.mouse.down()
+  try {
+    await expect.poll(async () => (await evidence(page)).selected).toEqual(['branch-a'])
+    // Let the newly selected overlay mount while the genuine pointer is still held.
+    await expect(page.locator('[data-spatial-topic-controls]')).toHaveAttribute('hidden', '')
+  } finally {
+    await page.mouse.up()
+  }
+  const child = page.getByRole('button', { name: '在此主题下添加子主题', exact: true })
+  await expect(child).toBeVisible()
+  await child.click()
+  const editor = page.getByRole('textbox', { name: '编辑主题标题', exact: true })
+  await expect(editor).toBeFocused()
+  await page.keyboard.insertText('静止镜头下的新想法')
+  await page.keyboard.press('Enter')
+  await expect(editor).toHaveCount(0)
+  await expect.poll(async () => (await evidence(page)).count).toBe(5)
+  const id = (await evidence(page)).selected[0]
+  expect(id).toBeTruthy()
+  await page.getByRole('radio', { name: '二维视图', exact: true }).click()
+  await expect(page.locator('[data-canvas-loading]')).toHaveCount(0)
+  await expect(page.locator(`.react-flow__node[data-id="${id}"] .topic-title`)).toHaveText(
+    '静止镜头下的新想法',
+  )
+})

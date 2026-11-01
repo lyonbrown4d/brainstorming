@@ -1,3 +1,4 @@
+import { TopicStyleMenu } from '@renderer/components/workbench/TopicStyleMenu'
 import type { ReactNode } from 'react'
 import {
   CirclePlus,
@@ -129,6 +130,7 @@ export const CanvasContextMenuSurface = ({
               void pasteSelectedTopics()
             })}
             {item(translate('duplicateTopic'), CopyPlus, duplicateSelectedTopics)}
+            <TopicStyleMenu run={run} />
             <ContextMenuSeparator />
             {item(translate('relationship'), Link2, toggleRelationMode)}
             {item(

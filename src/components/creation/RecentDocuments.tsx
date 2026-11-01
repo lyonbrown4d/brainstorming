@@ -1,7 +1,8 @@
 import { LoadingState } from '@renderer/components/feedback/LoadingState'
 import { useMessages } from '@renderer/i18n/useMessages'
 
-import { BookOpen, File, RefreshCw } from 'lucide-react'
+import { BookOpen, File, FilePlus2, RefreshCw } from 'lucide-react'
+import { createBlankMap } from '@renderer/state/creation'
 import { useRecentFiles } from '@renderer/hooks/useRecentFiles'
 import { openDocument } from '@renderer/state/files'
 import { Button } from '@renderer/components/ui/button'
@@ -16,6 +17,16 @@ export const RecentDocuments = ({ busy, onExample }: { busy: boolean; onExample:
       className="flex min-w-0 flex-col items-start border-t border-border pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-5"
       aria-label={translate('recentFiles')}
     >
+      <Button
+        type="button"
+        className="mb-1 w-full justify-start"
+        disabled={busy}
+        onClick={() => void createBlankMap()}
+      >
+        <FilePlus2 aria-hidden="true" data-icon="inline-start" />
+        {translate('quickBlankMap')}
+      </Button>
+      <p className="mb-6 text-xs text-muted-foreground">{translate('quickBlankMapHint')}</p>
       <h2 className="mb-3 text-sm font-semibold">{translate('recentlyOpened')}</h2>
       {recent.isPending && <LoadingState label={translate('loadingRecentFiles')} />}
       {recent.isError && (

@@ -24,8 +24,12 @@ const isInteractionPinned = (): boolean => {
   )
 }
 
-export const useDockToolbar = ({ pinInteraction = true }: { pinInteraction?: boolean } = {}) => {
-  const [open, setOpen] = useState(false)
+export const useDockToolbar = ({
+  pinInteraction = true,
+  keepOpen = false,
+}: { pinInteraction?: boolean; keepOpen?: boolean } = {}) => {
+  const [expanded, setOpen] = useState(false)
+  const open = expanded || keepOpen
   const root = useRef<HTMLDivElement>(null)
   const handle = useRef<HTMLButtonElement>(null)
   const inside = useRef(false)
@@ -40,6 +44,7 @@ export const useDockToolbar = ({ pinInteraction = true }: { pinInteraction?: boo
     (): void => {
       if (
         window.matchMedia('(hover: none)').matches ||
+        keepOpen ||
         inside.current ||
         (pinInteraction && isInteractionPinned()) ||
         hasOpenPanel() ||
@@ -72,6 +77,7 @@ export const useDockToolbar = ({ pinInteraction = true }: { pinInteraction?: boo
     (event) => {
       if (event.key === 'Tab') keyboard.current = true
       if (
+        keepOpen ||
         event.key !== 'Escape' ||
         event.defaultPrevented ||
         isCompositionKey(event) ||
@@ -105,7 +111,8 @@ export const useDockToolbar = ({ pinInteraction = true }: { pinInteraction?: boo
     open,
     expand,
     toggle: () => {
-      if (open && !(pinInteraction && isInteractionPinned()) && !hasOpenPanel()) setOpen(false)
+      if (!keepOpen && open && !(pinInteraction && isInteractionPinned()) && !hasOpenPanel())
+        setOpen(false)
       else expand()
     },
     enter: () => {

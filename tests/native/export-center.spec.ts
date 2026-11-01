@@ -71,13 +71,13 @@ describe('native export center', () => {
     await expect(preview).toHaveAttribute('aria-busy', 'false')
     await expect(preview.$('img')).toBeDisplayed()
     await browser.saveScreenshot(await nativeArtifact('export-center-map.png'))
-    const size = await browser.getWindowSize()
+    const size = await nativeWindowSize()
     try {
-      await browser.setWindowSize(800, 600)
+      await resizeNativeWindow(800, 600)
       await expect(exportDialog().$('button=导出 PDF')).toBeDisplayed()
       await browser.saveScreenshot(await nativeArtifact('export-center-small.png'))
     } finally {
-      await browser.setWindowSize(size.width, size.height)
+      await resizeNativeWindow(size.width, size.height)
     }
     await observeExportStates()
     const pdf = await searchablePdf(await writeExport('pdf'))
@@ -214,3 +214,4 @@ describe('native export center', () => {
     await rootHasText('主窗口不可导出')
   })
 })
+import { nativeWindowSize, resizeNativeWindow } from '@tests/native/windowGeometry'

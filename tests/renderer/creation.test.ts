@@ -1,4 +1,5 @@
 import { fixtureCatalog } from '@tests/fixtures/templates'
+import { activateInitialTopicEdit, useInitialTopicEdit } from '@renderer/state/initialTopicEdit'
 import { desktop } from '@tests/fixtures/desktop'
 const templateOptions = fixtureCatalog.templates
 import { useDocumentTabs, switchDocumentTab } from '@renderer/state/documentTabs'
@@ -9,6 +10,7 @@ import {
   beginCreation,
   cancelCreation,
   createFromRequest,
+  createBlankMap,
   exploreExample,
   showWorkspaceHome,
 } from '@renderer/state/creation'
@@ -39,6 +41,30 @@ const dirty = () => {
 }
 
 describe('full-page document and sheet creation', () => {
+  it('starts a blank map from Home once and selects the center title for editing', async () => {
+    showWorkspaceHome()
+    const first = createBlankMap()
+    await expect(createBlankMap()).resolves.toBe(false)
+    await expect(first).resolves.toBe(true)
+    expect(useInitialTopicEdit.getState().request?.topicId).toBe('root')
+    expect(useEditor.getState().editingId).toBeNull()
+    activateInitialTopicEdit()
+    const state = useEditor.getState()
+    expect(Object.keys(state.history.document.topics)).toEqual(['root'])
+    expect(state.history.past).toHaveLength(0)
+    expect(state.editingId).toBe(state.history.document.rootId)
+    expect(state.editingSurface).toBe('canvas')
+    expect(state.editSelection).toBe('all')
+    expect(state.path).toBeNull()
+    expect(useWorkspace.getState().screen).toBe('editor')
+    state.cancelEdit()
+    showWorkspaceHome()
+    useEditor.setState({ busy: true })
+    await expect(createBlankMap()).resolves.toBe(false)
+    expect(useEditor.getState().workbook).toBe(state.workbook)
+    expect(useWorkspace.getState().screen).toBe('home')
+  })
+
   it('closes search on guide, Home and document replacement without losing the query', () => {
     useSearch.setState({ open: true, query: '已有' })
     expect(beginCreation('document')).toBe(true)

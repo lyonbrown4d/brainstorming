@@ -3,6 +3,7 @@ import { hasTaskDetails } from '@shared/taskPriority'
 import type { MindMapDocument, Topic, TaskPriority } from '@core'
 
 export interface TopicFilters {
+  canvasMode?: 'results' | 'branches'
   label: string
   marker: string
   task: 'all' | 'open' | 'done' | 'overdue'
@@ -10,12 +11,17 @@ export interface TopicFilters {
   assignee: string
 }
 export const defaultTopicFilters: TopicFilters = {
+  canvasMode: 'results',
   label: '',
   marker: '',
   task: 'all',
   priority: 'all',
   assignee: '',
 }
+export const hasTopicFilters = (filters: TopicFilters): boolean =>
+  Boolean(filters.label || filters.marker || filters.assignee.trim()) ||
+  filters.task !== 'all' ||
+  filters.priority !== 'all'
 export const useTopicFilters = create<TopicFilters>(() => ({ ...defaultTopicFilters }))
 const localDate = (): string => {
   const date = new Date()

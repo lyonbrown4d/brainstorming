@@ -46,36 +46,37 @@ pub fn run() {
         .decorations(false)
         .visible(true)
         .build()?;
-      #[cfg(desktop)]
-      {
-        let handle = app.handle().clone();
-        let paths: Vec<PathBuf> = std::env::args_os()
-          .skip(1)
-          .map(PathBuf::from)
-          .filter(|p| p.is_absolute())
-          .take(32)
-          .collect();
-        tauri::async_runtime::spawn(async move {
-          if super::initialization::ready(&handle).await.is_ok() {
-            for path in paths {
-              runtime::enqueue_open(&handle, path).await;
-            }
-          }
-        });
-      }
       Ok(())
     })
     .on_page_load(|webview, payload| {
-      // CEF initially reports about:blank during setup. Initialize after a real
-      // main document commits; the renderer's first native request may start sooner.
+      // CEF finishes its internal data: initial-load page before the app document.
+      // Only the trusted main document may trigger startup; renderer requests can
+      // still initialize services earlier after their normal authorization check.
       if webview.label() == "main"
         && matches!(payload.event(), tauri::webview::PageLoadEvent::Finished)
+        && super::request::trusted_url(payload.url(), webview.app_handle())
       {
         let handle = webview.app_handle().clone();
         tauri::async_runtime::spawn(async move {
           if super::initialization::ready(&handle).await.is_err() {
             tracing::error!("Native initialization failed");
             super::initialization::set_phase(&handle, "failed");
+            return;
+          }
+          #[cfg(desktop)]
+          if handle
+            .state::<super::initialization::Initialization>()
+            .claim_startup_paths()
+          {
+            let paths: Vec<PathBuf> = std::env::args_os()
+              .skip(1)
+              .map(PathBuf::from)
+              .filter(|path| path.is_absolute())
+              .take(32)
+              .collect();
+            for path in paths {
+              runtime::enqueue_open(&handle, path).await;
+            }
           }
         });
       }

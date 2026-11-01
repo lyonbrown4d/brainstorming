@@ -80,6 +80,28 @@ pub async fn e2e_fixture(
     };
     return Ok(snapshot);
   }
+  #[cfg(desktop)]
+  if action == "windowSize" {
+    if args.get("width").is_some() || args.get("height").is_some() {
+      let dimension = |key: &str| {
+        args[key]
+          .as_u64()
+          .filter(|value| (320..=4096).contains(value))
+          .map(|value| value as u32)
+          .ok_or_else(|| "测试窗口尺寸无效".to_string())
+      };
+      window
+        .set_size(tauri::LogicalSize::new(
+          dimension("width")?,
+          dimension("height")?,
+        ))
+        .map_err(|error| error.to_string())?;
+    }
+    let size = window.inner_size().map_err(|error| error.to_string())?;
+    let scale = window.scale_factor().map_err(|error| error.to_string())?;
+    let size = size.to_logical::<f64>(scale);
+    return Ok(json!({"width":size.width,"height":size.height}));
+  }
   if action == "dialogState" || action == "resetDialogs" {
     let mut choices = state.test_dialogs.lock().await;
     let kinds = choices

@@ -1,3 +1,4 @@
+import { useInitialTopicEdit } from '@renderer/state/initialTopicEdit'
 import { watchCreationTarget } from '@renderer/state/creationTarget'
 import { translate } from '@renderer/i18n'
 import { applyCommand, createDocument, validateDocument, type MindMapDocument } from '@core'
@@ -123,6 +124,10 @@ export const createFromRequest = async (request: CreationRequest): Promise<boole
       )
         throw new Error(translate('sheetOperationFailed'))
     } else {
+      if (hasPendingNativeEditor(sourceWorkbookId)) {
+        await flushNativeEditor(sourceWorkbookId)
+        if (!target.valid() || !commitReady()) return false
+      }
       if (!openDocumentTab(document, null, true)) return false
     }
     updateCreationDraft(sheet ? 'sheet' : 'document', emptyCreationDraft())
@@ -155,5 +160,23 @@ export const exploreExample = (): boolean => {
   if (!commitReady()) return false
   if (!openDocumentTab(exampleWorkbook())) return false
   enterWorkspaceEditor()
+  return true
+}
+
+/** Use the same guarded creation path as the guide, then edit the new center topic. */
+export const createBlankMap = async (): Promise<boolean> => {
+  if (creating || useWorkspace.getState().screen !== 'home' || !beginCreation('document'))
+    return false
+  const created = await createFromRequest({ title: '', layout: 'map', template: 'blank' })
+  if (!created) return false
+  const editor = useEditor.getState()
+  const rootId = editor.history.document.rootId
+  useInitialTopicEdit.setState({
+    request: {
+      workbookId: editor.workbook.id,
+      sheetId: editor.activeSheetId,
+      topicId: rootId,
+    },
+  })
   return true
 }

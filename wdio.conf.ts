@@ -45,6 +45,8 @@ export const config: WebdriverIO.Config = {
     await switchNativeWindow('main')
     if ((await invokeNative<string>('plugin:app|identifier', {})) !== 'app.brainstorming.e2e')
       throw new SevereServiceError('The driver did not connect to the isolated native E2E app')
+    // A CEF target can attach before the async native service graph is published.
+    await invokeNative('native_request', { method: 'getWindowState', args: {} })
     if (!session) throw new SevereServiceError('Missing native application process')
     await prepareCefWindow(session.processId)
     await recordCefGraphics()

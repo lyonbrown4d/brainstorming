@@ -1,3 +1,4 @@
+import { TopicStyleActions } from '@renderer/components/metadata/TopicStyleActions'
 import { SheetStyleControl } from '@renderer/components/documents/SheetStyleControl'
 import { useMessages } from '@renderer/i18n/useMessages'
 
@@ -6,11 +7,9 @@ import { ScrollArea } from '@renderer/components/ui/scroll-area'
 import { useId, useState } from 'react'
 import { Palette, Plus } from 'lucide-react'
 import type { DocumentPalette } from '@core/extensions'
-import type { DocumentSettings, TopicStyle } from '@core'
+import type { DocumentSettings } from '@core'
 import { findPalette, type PaletteId } from '@shared/palettes'
 import { useEditor } from '@renderer/state/editor'
-import { updateSelectedStyle } from '@renderer/state/selection'
-import { defaultTopicStyle } from '@renderer/lib/topicAppearance'
 import { runAnnotationCommand } from '@renderer/components/annotations/commands'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
@@ -24,9 +23,7 @@ export const DocumentSettingsPanel = ({ inline = false }: { inline?: boolean }) 
   const { translate } = useMessages()
 
   const document = useEditor((state) => state.history.document)
-  const selectedId = useEditor((state) => state.selectedId)
   const busy = useEditor((state) => state.busy)
-  const [copiedStyle, setCopiedStyle] = useState<TopicStyle | null>(null)
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState('presets')
   const backgroundId = useId()
@@ -144,28 +141,7 @@ export const DocumentSettingsPanel = ({ inline = false }: { inline?: boolean }) 
               update({ lineWidth: Number(value) })
             }}
           />
-          <div className="flex flex-wrap gap-2 border-t border-border pt-3">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setCopiedStyle({
-                  ...defaultTopicStyle(document, selectedId),
-                  ...document.topics[selectedId]?.style,
-                })
-              }}
-            >
-              {translate('copyTopicStyle')}
-            </Button>
-            <Button
-              variant="outline"
-              disabled={!copiedStyle}
-              onClick={() => {
-                if (copiedStyle) updateSelectedStyle(copiedStyle)
-              }}
-            >
-              {translate('pasteOntoSelectedTopics')}
-            </Button>
-          </div>
+          <TopicStyleActions />
         </div>
       ) : (
         <CustomPaletteEditor

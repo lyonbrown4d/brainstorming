@@ -10,6 +10,8 @@ import {
   hasPendingNativeEditor,
 } from '@renderer/state/nativeEditorQueue'
 import { requestTopicFocus } from '@renderer/state/viewport'
+import { useTopicFilters } from '@renderer/components/documents/filterTopics'
+import { canvasTopicFilter } from '@renderer/lib/canvasTopicFilter'
 export { useSearch } from '@renderer/state/searchState'
 export const searchOptions = (): SearchOptions => {
   const state = useSearch.getState()
@@ -42,6 +44,9 @@ export const revealSearchMatch = (match: SearchMatch): boolean => {
     const current = useEditor.getState()
     if (current.activeSheetId !== match.sheetId || !current.history.document.topics[match.topicId])
       return
+    const filtered = canvasTopicFilter(current.history.document, useTopicFilters.getState())
+    if (filtered.visible && !filtered.visible.has(match.topicId))
+      useTopicFilters.setState({ canvasMode: 'results' })
     const finish = (): void => {
       const latest = useEditor.getState()
       if (

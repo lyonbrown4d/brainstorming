@@ -3,6 +3,7 @@ import { chooseAppearance } from '@tests/native/appearance'
 import { nativeArtifact } from '@tests/native/artifacts'
 import { home, named } from '@tests/native/driver'
 import { creationReady } from '@tests/native/readiness'
+import { resizeNativeWindow } from '@tests/native/windowGeometry'
 
 const expectUsableLayout = async (): Promise<void> => {
   await browser
@@ -72,10 +73,10 @@ describe('native creation layout', () => {
     await chooseAppearance('浅色')
     await named('下一步').click()
     await creationReady('configuration')
-    await browser.setWindowSize(1280, 800)
+    await resizeNativeWindow(1280, 800)
     await expectUsableLayout()
     await browser.saveScreenshot(await nativeArtifact('brainstorming-native-creation-wide.png'))
-    await browser.setWindowSize(900, 600)
+    await resizeNativeWindow(900, 600)
     await expectUsableLayout()
     await named('选择个人目标规划模板').scrollIntoView()
     await named('选择个人目标规划模板').click()
@@ -94,6 +95,6 @@ describe('native creation layout', () => {
     await expect(named('搜索内容模板')).not.toExist()
     await expect(named('创建文档')).toBeDisplayed()
     await chooseAppearance('跟随系统')
-    await browser.setWindowSize(1280, 800)
+    await resizeNativeWindow(1280, 800)
   })
 })

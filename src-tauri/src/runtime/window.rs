@@ -26,6 +26,14 @@ pub fn startup_ready(app: &AppHandle, label: &str) -> Result<()> {
     main.set_focus().map_err(|_| "无法聚焦窗口")?;
     // A key native window can leave its webview without keyboard focus after reload.
     main.as_ref().set_focus().map_err(|_| "无法聚焦工作区")?;
+    #[cfg(target_os = "macos")]
+    {
+      let window = main.as_ref().window();
+      super::macos_chrome_restore::restore(&window)?;
+      main
+        .state::<super::macos_chrome_restore::MacChromeRestore>()
+        .start(&window);
+    }
   }
   Ok(())
 }
@@ -90,10 +98,20 @@ pub fn handle_window_event(window: &Window, event: &WindowEvent) {
     return;
   }
   match event {
+    #[cfg(target_os = "macos")]
+    WindowEvent::Destroyed => window
+      .state::<super::macos_chrome_restore::MacChromeRestore>()
+      .remove(window),
     WindowEvent::ThemeChanged(_) => {
       let _ = window.emit("native:system-theme", ());
     }
     WindowEvent::Focused(_) | WindowEvent::Resized(_) => {
+      #[cfg(target_os = "macos")]
+      if let WindowEvent::Resized(size) = event {
+        window
+          .state::<super::macos_chrome_restore::MacChromeRestore>()
+          .schedule(window, *size);
+      }
       if matches!(event, WindowEvent::Focused(true)) {
         let _ = crate::platform::install_menu(window.app_handle());
       }

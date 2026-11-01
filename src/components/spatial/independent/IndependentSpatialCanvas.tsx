@@ -34,6 +34,7 @@ import { IndependentSpatialInk } from '@renderer/components/spatial/independent/
 import { IndependentSpatialInkResize } from '@renderer/components/spatial/independent/IndependentSpatialInkResize'
 import { IndependentSpatialScale } from '@renderer/components/spatial/independent/IndependentSpatialScale'
 import { IndependentSpatialSelection } from '@renderer/components/spatial/independent/IndependentSpatialSelection'
+import { IndependentSpatialTopicControls } from '@renderer/components/spatial/independent/IndependentSpatialTopicControls'
 
 const Scene = ({
   model,
@@ -158,6 +159,7 @@ const Scene = ({
         <IndependentSpatialSelection {...gestures} />
         <IndependentSpatialInk runtime={runtime} ready={interactionReady && !playing} />
         <IndependentSpatialScale runtime={runtime} ready={interactionReady && !playing} />
+        <IndependentSpatialTopicControls runtime={runtime} ready={interactionReady && !playing} />
         <IndependentSpatialInkResize runtime={runtime} ready={interactionReady && !playing} />
         <IndependentSpatialControls runtime={runtime} disabled={!navigationReady || playing} />
         <IndependentSpatialMinimap

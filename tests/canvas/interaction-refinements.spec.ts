@@ -8,7 +8,7 @@ const bounds = async (element: Locator) => {
 }
 const open = async (page: Page, story = 'standard') => {
   await page.goto(`/iframe.html?id=brainstorming-交互调整--${story}&viewMode=story`)
-  await expect(node(page, 'detail')).toBeVisible()
+  await expect(node(page, 'detail')).toBeVisible({ timeout: 15_000 })
 }
 const drag = async (page: Page, grip: Locator, dx: number, dy: number, cancel = false) => {
   const box = await bounds(grip)

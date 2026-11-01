@@ -36,6 +36,17 @@ export const TopicFilterContent = () => {
       <p className="text-sm font-medium">{translate('filterTopics')}</p>
       <p className="text-xs text-muted-foreground">{translate('findTopicsOnThisSheetByLabel')}</p>
       <FieldSelect
+        label={translate('canvasFilterMode')}
+        value={filters.canvasMode ?? 'results'}
+        options={[
+          { value: 'results', label: translate('filterResultsOnly') },
+          { value: 'branches', label: translate('filterMatchingBranches') },
+        ]}
+        onChange={(canvasMode) => {
+          useTopicFilters.setState({ canvasMode })
+        }}
+      />
+      <FieldSelect
         label={translate('filterLabels')}
         value={filters.label || ALL}
         options={[

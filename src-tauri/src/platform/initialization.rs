@@ -18,7 +18,17 @@ pub struct Initialization {
   stopping: AtomicBool,
   exit_scheduled: AtomicBool,
   exit_ready: AtomicBool,
+  #[cfg(desktop)]
+  startup_paths_claimed: AtomicBool,
   phase: RwLock<Option<&'static str>>,
+}
+
+#[cfg(desktop)]
+impl Initialization {
+  /// Claim command-line paths only after startup succeeds, once across reloads.
+  pub fn claim_startup_paths(&self) -> bool {
+    !self.startup_paths_claimed.swap(true, Ordering::AcqRel)
+  }
 }
 
 pub async fn ready(app: &AppHandle) -> Result<Arc<AppState>, String> {
@@ -155,4 +165,17 @@ pub fn set_phase(app: &AppHandle, phase: &'static str) {
     *value = Some(phase);
   }
   let _ = app.emit_to("splash", "native:startup-phase", phase);
+}
+
+#[cfg(all(test, desktop))]
+mod tests {
+  use super::Initialization;
+
+  #[test]
+  fn command_line_paths_are_claimed_once_across_ready_callbacks() {
+    let initialization = Initialization::default();
+    assert!(initialization.claim_startup_paths());
+    assert!(!initialization.claim_startup_paths());
+    assert!(!initialization.claim_startup_paths());
+  }
 }

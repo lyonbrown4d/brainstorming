@@ -1,4 +1,8 @@
 import { spatialMessages } from '@renderer/i18n/spatialMessages'
+import { canvasFilterMessages } from '@renderer/i18n/canvasFilterMessages'
+import { directTopicMessages } from '@renderer/i18n/directTopicMessages'
+import { outlineWorkspaceMessages } from '@renderer/i18n/outlineWorkspaceMessages'
+import { workflowPolishMessages } from '@renderer/i18n/workflowPolishMessages'
 import { topicWidthMessages } from '@renderer/i18n/topicWidthMessages'
 import { shortcutCustomizationMessages } from '@renderer/i18n/shortcutCustomizationMessages'
 import { summaryMessages } from '@renderer/i18n/summaryMessages'
@@ -33,6 +37,10 @@ import { messages7 } from '@renderer/i18n/messages7'
 import { messages8 } from '@renderer/i18n/messages8'
 
 const messages = {
+  ...canvasFilterMessages,
+  ...directTopicMessages,
+  ...outlineWorkspaceMessages,
+  ...workflowPolishMessages,
   ...spatialMessages,
   ...topicWidthMessages,
   ...shortcutCustomizationMessages,

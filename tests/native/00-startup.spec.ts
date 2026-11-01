@@ -4,6 +4,7 @@ import { browser, expect } from '@wdio/globals'
 import { Key } from 'webdriverio'
 import { checkMacChrome } from '@tests/native/chrome'
 import { checkBrandAppearance } from '@tests/native/appearance'
+import { nativeWindowSize, resizeNativeWindow } from '@tests/native/windowGeometry'
 import { create, fixture, home, named, native, rootHasText, shortcut } from '@tests/native/driver'
 
 interface NativeWindowState {
@@ -43,6 +44,16 @@ describe('native startup, window chrome and menu shortcuts', () => {
     await checkMacChrome()
     await home()
     await checkBrandAppearance()
+    if (process.platform === 'darwin') {
+      const original = await nativeWindowSize()
+      try {
+        await resizeNativeWindow(1280, 800)
+        await checkMacChrome()
+      } finally {
+        await resizeNativeWindow(original.width, original.height)
+      }
+      await checkMacChrome()
+    }
     await shortcut('n')
     await expect(named('下一步')).toBeDisplayed()
     await create('快捷键窗口检查')
@@ -56,6 +67,21 @@ describe('native startup, window chrome and menu shortcuts', () => {
     await expect(named('保存导图')).toBeDisplayed()
     await browser.keys(Key.Escape)
     await expect(named('保存导图')).not.toBeDisplayed()
+    if (process.platform === 'darwin') {
+      try {
+        await native('toggleFullScreen')
+        await browser.waitUntil(
+          async () => (await native<NativeWindowState>('getWindowState')).fullScreen,
+        )
+      } finally {
+        if ((await native<NativeWindowState>('getWindowState')).fullScreen)
+          await native('toggleFullScreen')
+      }
+      await browser.waitUntil(
+        async () => !(await native<NativeWindowState>('getWindowState')).fullScreen,
+      )
+      await checkMacChrome()
+    }
     if (process.platform !== 'darwin') {
       const previous = (await fixture<NativeWindowState>('windowState', {})).maximized
       await named('最大化或还原窗口').click()

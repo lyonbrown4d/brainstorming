@@ -2,7 +2,8 @@ import { useMessages } from '@renderer/i18n/useMessages'
 
 import type { ReactNode } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import { PanelBottom, PanelTop } from 'lucide-react'
+import { PanelBottom, PanelTop, Pin, PinOff } from 'lucide-react'
+import { useCanvasPreferences } from '@renderer/state/canvasPreferences'
 import { useDockToolbar } from '@renderer/hooks/useDockToolbar'
 import { Button } from '@renderer/components/ui/button'
 import { ScrollArea, ScrollBar } from '@renderer/components/ui/scroll-area'
@@ -27,8 +28,21 @@ export const DockToolbar = ({
 }) => {
   const { translate } = useMessages()
 
+  const pinned = useCanvasPreferences((state) =>
+    edge === 'top' ? state.topDockPinned : state.bottomDockPinned,
+  )
+  const pinLabel = translate(
+    edge === 'top'
+      ? pinned
+        ? 'unpinDocumentDock'
+        : 'pinDocumentDock'
+      : pinned
+        ? 'unpinCanvasDock'
+        : 'pinCanvasDock',
+  )
   const { root, handle, open, enter, leave, focus, blur, toggle, expand } = useDockToolbar({
     pinInteraction,
+    keepOpen: pinned,
   })
   const reduced = useReducedMotion()
   return (
@@ -72,7 +86,7 @@ export const DockToolbar = ({
         }}
       >
         {edge === 'top' ? <PanelTop className="size-3.5" /> : <PanelBottom className="size-3.5" />}
-        <span>{caption ?? translate('tools')}</span>
+        <span className="max-w-64 truncate">{caption ?? translate('tools')}</span>
       </Button>
       <motion.div
         initial={false}
@@ -88,10 +102,28 @@ export const DockToolbar = ({
         inert={!open}
         className={`absolute ${edge === 'top' ? 'top-[calc(100%+0.5rem)]' : 'bottom-[calc(100%+0.5rem)]'} w-full rounded-xl border border-border/80 bg-background p-1 shadow-floating ${open ? 'pointer-events-auto' : 'pointer-events-none'}`}
       >
-        <ScrollArea type="auto" className={edge === 'top' ? 'h-10 w-full' : 'h-[3.25rem] w-full'}>
-          <div className="w-max pb-1">{children}</div>
-          <ScrollBar orientation="horizontal" className="h-1.5" />
-        </ScrollArea>
+        <div className="flex items-center gap-1">
+          <ScrollArea
+            type="auto"
+            className={edge === 'top' ? 'h-10 min-w-0 flex-1' : 'h-[3.25rem] min-w-0 flex-1'}
+          >
+            <div className="w-max pb-1">{children}</div>
+            <ScrollBar orientation="horizontal" className="h-1.5" />
+          </ScrollArea>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8 shrink-0 rounded-lg"
+            aria-label={pinLabel}
+            title={pinLabel}
+            aria-pressed={pinned}
+            onClick={() => {
+              useCanvasPreferences.getState().setDockPinned(edge, !pinned)
+            }}
+          >
+            {pinned ? <PinOff className="size-3.5" /> : <Pin className="size-3.5" />}
+          </Button>
+        </div>
       </motion.div>
     </div>
   )

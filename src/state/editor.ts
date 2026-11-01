@@ -24,6 +24,10 @@ import {
 import { useDocumentTabs } from '@renderer/state/documentTabs'
 import { addDocumentSheet, editSheets } from '@renderer/state/sheetEditing'
 import { switchSheet } from '@renderer/state/sheetNavigation'
+import {
+  outlineSessionKey,
+  useOutlineWorkspaceState,
+} from '@renderer/components/documents/OutlineWorkspaceState'
 
 export { addDocumentSheet } from '@renderer/state/sheetEditing'
 export { editorIsDirty, isDirty } from '@renderer/state/editorDirty'
@@ -65,10 +69,19 @@ export const useEditor = create<EditorState>((set, get) => ({
     if (hasNativeEditor() && hasPendingNativeEditor(get().workbook.id)) {
       const workbookId = get().workbook.id
       const sheetId = get().activeSheetId
+      const selectedId = get().selectedId
+      const outlineKey = outlineSessionKey(workbookId, sheetId)
       void flushNativeEditor(workbookId)
         .then(() => {
           const current = useEditor.getState()
-          if (current.workbook.id === workbookId && current.activeSheetId === sheetId)
+          if (
+            current.workbook.id === workbookId &&
+            current.activeSheetId === sheetId &&
+            (surface !== 'outline' ||
+              (current.selectedId === selectedId &&
+                current.editingId === null &&
+                useOutlineWorkspaceState.getState().sessions[outlineKey]?.open))
+          )
             current.startEdit(id, value, surface, selection)
         })
         .catch((error: unknown) => {

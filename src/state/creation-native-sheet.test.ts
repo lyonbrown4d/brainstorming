@@ -1,5 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest'
-import { applyWorkbookCommand, createDocument, type MindMapWorkbook } from '@core'
+import { activateInitialTopicEdit } from '@renderer/state/initialTopicEdit'
+import { applyCommand, applyWorkbookCommand, createDocument, type MindMapWorkbook } from '@core'
 import type { ComputeAPI, EditorOperation, NativeEditorSnapshot } from '@shared/compute'
 
 const platform = vi.hoisted(() => ({ compute: null as ComputeAPI | null }))
@@ -9,6 +10,7 @@ import {
   beginCreation,
   cancelCreation,
   createFromRequest,
+  createBlankMap,
   showWorkspaceHome,
 } from '@renderer/state/creation'
 import { captureDocumentSession } from '@renderer/state/documentSession'
@@ -121,4 +123,39 @@ it('keeps the Sheet settings and permits retry after a native failure', async ()
   acknowledge()
   await expect(retry).resolves.toBe(true)
   expect(useEditor.getState().history.document.title).toBe('New Sheet')
+})
+
+it('waits for source document commands before quick creation focuses the new center', async () => {
+  setup()
+  cancelCreation()
+  useEditor.getState().command({ type: 'renameTopic', topicId: 'root', title: 'Pending title' })
+  expect(showWorkspaceHome()).toBe(true)
+  const creating = createBlankMap()
+  await vi.waitFor(() => {
+    expect(submitted?.kind).toBe('topic')
+  })
+  expect(useEditor.getState().workbook.id).toBe(sourceId)
+  expect(useEditor.getState().editingId).toBeNull()
+  if (submitted?.kind !== 'topic' || !accept) throw new Error('Missing source command')
+  const operation = submitted
+  accept({
+    sessionId: sourceId,
+    revision: '1',
+    canUndo: true,
+    canRedo: false,
+    workbook: {
+      ...original,
+      sheets: original.sheets.map((sheet) =>
+        sheet.id === operation.sheetId
+          ? { ...sheet, document: applyCommand(sheet.document, operation.command) }
+          : sheet,
+      ),
+    },
+  })
+  await expect(creating).resolves.toBe(true)
+  expect(useEditor.getState().workbook.id).not.toBe(sourceId)
+  expect(useEditor.getState().editingId).toBeNull()
+  activateInitialTopicEdit()
+  expect(useEditor.getState().editingId).toBe('root')
+  useEditor.getState().cancelEdit()
 })

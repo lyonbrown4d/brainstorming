@@ -33,7 +33,7 @@ describe('native proportional topic scale', () => {
     await home()
     await create('整体缩放验收')
     await root().click()
-    await expect(browser.$$('.react-flow__resize-control')).toBeElementsArrayOfSize(4)
+    await expect(browser.$$('.topic-scale-control')).toBeElementsArrayOfSize(4)
     await ensureProperties()
     const scale = () => browser.$('input[aria-label="主题缩放"]')
     await expect(scale()).toHaveValue('100')

@@ -2,6 +2,8 @@ import { topicShapeInsets } from '@shared/topic-shapes'
 import { TopicShapeVisual } from '@renderer/components/TopicShapeVisual'
 import { TopicNodeBody } from '@renderer/components/TopicNodeBody'
 import { TopicScaleHandle } from '@renderer/components/TopicScaleHandle'
+import { TopicWidthHandle } from '@renderer/components/TopicWidthHandle'
+import { useTopicWidthPreview } from '@renderer/state/topicWidthPreview'
 import { useTopicScalePreview } from '@renderer/state/topicScalePreview'
 import { useMessages } from '@renderer/i18n/useMessages'
 
@@ -58,7 +60,11 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
     (state) => state.editingId === id && state.editingSurface === 'canvas',
   )
   const simplified = lowZoom && !selected && !primary && !editing
-  const { topic, root, branch = false, color } = data
+  const widthPreview = useTopicWidthPreview((state) =>
+    state.preview?.topic.id === id ? state.preview : null,
+  )
+  const topic = widthPreview?.topic ?? data.topic
+  const { root, branch = false, color } = data
   const direction = data.direction ?? topic.side
   const side = direction === 'left' || direction === 'right' ? direction : topic.side
   const FoldIcon = { left: ChevronLeft, right: ChevronRight, up: ChevronUp, down: ChevronDown }[
@@ -79,10 +85,14 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
   const previewScale = useTopicScalePreview((state) => (state.topicId === id ? state.scale : null))
   const scale = previewScale ?? style?.scale ?? 1
   // Perspective and resize previews transform a stable content box, preserving cached SVG/text.
-  const baseWidth =
-    data.worldWidth === undefined ? (width ?? 100) / scale : data.worldWidth / (style?.scale ?? 1)
-  const baseHeight =
-    data.worldHeight === undefined
+  const baseWidth = widthPreview
+    ? widthPreview.width / scale
+    : data.worldWidth === undefined
+      ? (width ?? 100) / scale
+      : data.worldWidth / (style?.scale ?? 1)
+  const baseHeight = widthPreview
+    ? widthPreview.height / scale
+    : data.worldHeight === undefined
       ? (height ?? 100) / scale
       : data.worldHeight / (style?.scale ?? 1)
   const shape = style?.shape ?? 'rounded'
@@ -218,6 +228,9 @@ const TopicNodeSurface = (props: NodeProps<TopicFlowNode>) =>
   props.data.sprite ? null : (
     <>
       {props.selected && <TopicScaleHandle id={props.id} topic={props.data.topic} selected />}
+      {props.selected && (
+        <TopicWidthHandle id={props.id} scale={props.data.topic.style?.scale ?? 1} />
+      )}
       <div
         className="topic-projection"
         style={{

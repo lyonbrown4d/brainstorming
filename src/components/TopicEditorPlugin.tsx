@@ -1,4 +1,7 @@
-import { indentOutlineTopic } from '@renderer/state/structuralEditing'
+import {
+  addOutlineTopic,
+  indentOutlineSelection,
+} from '@renderer/components/documents/OutlineWorkspaceActions'
 import { useEffect, useRef } from 'react'
 import {
   $createParagraphNode,
@@ -46,7 +49,7 @@ export const TopicEditorPlugin = ({
   useEffect(() => {
     const preserveNativeSelection = nativeActivation.current
     nativeActivation.current = false
-    if (surface !== 'canvas') return
+    if (surface !== 'canvas' && surface !== 'outline') return
     if (editor.isComposing()) return
     if (active && preserveNativeSelection) return
     if (active) {
@@ -228,8 +231,7 @@ export const TopicEditorPlugin = ({
             event.preventDefault()
             commit()
             if (!useEditor.getState().editingId) {
-              indentOutlineTopic(event.shiftKey ? -1 : 1)
-              state.startEdit(id, undefined, 'outline')
+              indentOutlineSelection(event.shiftKey ? -1 : 1, true)
             }
             return true
           }
@@ -251,7 +253,10 @@ export const TopicEditorPlugin = ({
               editor.getRootElement()?.blur()
               return true
             }
-            if (event.key === 'Enter') return true
+            if (event.key === 'Enter') {
+              if (surface === 'outline') addOutlineTopic('sibling')
+              return true
+            }
             state.add('child')
             if (surface === 'outline') {
               const next = useEditor.getState().editingId

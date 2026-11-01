@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useReactFlow } from '@xyflow/react'
 import { getSpatialViewport } from '@renderer/state/spatialViewports'
 import { canvasFitPadding } from '@renderer/hooks/useWorkbenchInsets'
+import { useInitialTopicEdit } from '@renderer/state/initialTopicEdit'
 
 /** Reveal a 2D sheet after its own saved viewport or initial fit has rendered. */
 export const useCanvas2DViewportRestore = (
@@ -13,6 +14,15 @@ export const useCanvas2DViewportRestore = (
   const flow = useReactFlow()
   const scope = JSON.stringify([workbookId, sheetId, documentId])
   const [applied, setApplied] = useState('')
+  const readyScope = applied === scope ? JSON.stringify([workbookId, sheetId]) : null
+  useEffect(() => {
+    if (!readyScope) return
+    useInitialTopicEdit.setState({ readyScope })
+    return () => {
+      if (useInitialTopicEdit.getState().readyScope === readyScope)
+        useInitialTopicEdit.setState({ readyScope: null })
+    }
+  }, [readyScope])
   useEffect(() => {
     if (!ready || applied === scope) return
     let cancelled = false

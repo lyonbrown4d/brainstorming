@@ -20,7 +20,7 @@ interface MacChrome {
 
 export const checkMacChrome = async (): Promise<void> => {
   if (process.platform !== 'darwin') return
-  const native = await fixture<MacChrome>('macChrome', {})
+  let native = await fixture<MacChrome>('macChrome', {})
   const header = await browser.execute(() => {
     const element = document.querySelector('header.toolbar')
     if (!element?.firstElementChild) throw new Error('The native titlebar content is missing')
@@ -31,10 +31,22 @@ export const checkMacChrome = async (): Promise<void> => {
       height: bounds.height,
     }
   })
-  await writeFile(
-    await nativeArtifact('brainstorming-native-chrome-metrics.json'),
-    JSON.stringify({ native, header }, null, 2),
-  )
+  try {
+    await browser.waitUntil(
+      async () => {
+        native = await fixture<MacChrome>('macChrome', {})
+        return Object.values(native.buttons).every(
+          (button) => Math.abs(button.centerY - header.centerY) <= 2,
+        )
+      },
+      { timeoutMsg: 'Native window buttons did not settle at the configured titlebar position' },
+    )
+  } finally {
+    await writeFile(
+      await nativeArtifact('brainstorming-native-chrome-metrics.json'),
+      JSON.stringify({ native, header }, null, 2),
+    )
+  }
   expect(native.coordinateSystem).toBe('content-top-left-points')
   expect(native.window).toEqual(
     expect.objectContaining({ titled: true, fullSizeContentView: true, titleHidden: true }),

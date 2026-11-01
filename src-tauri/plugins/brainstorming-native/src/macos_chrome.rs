@@ -24,7 +24,24 @@ pub async fn metrics<R: Runtime>(app: &AppHandle<R>) -> Result<Value> {
         // SAFETY: Tauri owns the live NSWindow, and this closure holds its
         // WebviewWindow on AppKit's main thread without yielding or mutating it.
         let native = unsafe { &*pointer.cast::<NSWindow>() };
-        read(native)
+        let mut metrics = read(native)?;
+        metrics["configuredWindows"] = json!(
+          app_on_main
+            .config()
+            .app
+            .windows
+            .iter()
+            .map(|config| {
+              json!({
+                "label": config.label,
+                "decorations": config.decorations,
+                "titleBarStyle": config.title_bar_style,
+                "trafficLightPosition": config.traffic_light_position,
+              })
+            })
+            .collect::<Vec<_>>()
+        );
+        Ok(metrics)
       })();
       let _ = send.send(result);
     })

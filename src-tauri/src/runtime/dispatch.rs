@@ -134,7 +134,11 @@ pub async fn dispatch(
             if let Some(window) = app.get_webview_window(&state.window_id) {
                 let title = args["documentTitle"].as_str().unwrap_or("").chars().take(200).collect::<String>();
                 let title = if title.is_empty() { "Brainstorming".into() } else { format!("{title} — Brainstorming") };
-                let _ = window.set_title(&format!("{}{title}", if dirty { "● " } else { "" }));
+                let title = format!("{}{title}", if dirty { "● " } else { "" });
+                if window.title().ok().as_deref() != Some(&title) && window.set_title(&title).is_ok() {
+                    #[cfg(target_os = "macos")]
+                    window.state::<super::macos_chrome_restore::MacChromeRestore>().title_changed(&window.as_ref().window());
+                }
             }
             Ok(Value::Null)
         }

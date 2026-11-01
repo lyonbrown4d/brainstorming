@@ -2,6 +2,8 @@ import { create } from 'zustand'
 import { getParentId, normalizeTopicSelection, type TopicStyle } from '@core'
 import type { EditorData } from '@renderer/state/editorTypes'
 import { useEditor } from '@renderer/state/editor'
+import { canvasTopicFilter } from '@renderer/lib/canvasTopicFilter'
+import { useTopicFilters } from '@renderer/components/documents/filterTopics'
 
 const empty: readonly string[] = []
 export const useSelection = create<{
@@ -64,6 +66,9 @@ export const useSelectedDrawingIds = (): readonly string[] => {
 
 export const selectTopic = (id: string, additive = false): void => {
   const state = useEditor.getState()
+  const filtered = canvasTopicFilter(state.history.document, useTopicFilters.getState())
+  if (filtered.visible && !filtered.visible.has(id))
+    useTopicFilters.setState({ canvasMode: 'results' })
   const current = selectedTopicIds(state)
   if (!additive && current.length === 1 && current[0] === id && !selectedDrawingIds(state).length)
     return

@@ -65,12 +65,11 @@ export const useIndependentSpatialGestures = (
       runtime.interacting = false
       if (active.token) clearCanvasDrag(active.token)
       if (revert) active.move?.cancel()
-      const dropChanged = runtime.dropTarget !== null
       runtime.dropTarget = null
       if (useEditor.getState().dropTargetId !== null) useEditor.setState({ dropTargetId: null })
       setOverlay(emptyOverlay)
       if (canvas.hasPointerCapture(active.pointer)) canvas.releasePointerCapture(active.pointer)
-      if (dropChanged) runtime.changed()
+      runtime.changed()
     }
     const valid = (active: IndependentSpatialPointerSession) => {
       const editor = useEditor.getState()
@@ -153,6 +152,7 @@ export const useIndependentSpatialGestures = (
       }
       runtime.interacting = true
       canvas.setPointerCapture(event.pointerId)
+      runtime.changed()
     }
     const move = (event: PointerEvent) => {
       const active = session

@@ -11,11 +11,15 @@ import { SheetTabs } from '@renderer/components/SheetTabs'
 import { WorkbenchPanel } from '@renderer/components/WorkbenchPanel'
 import { LoadingState } from '@renderer/components/feedback/LoadingState'
 import { CanvasOverlay } from '@renderer/components/workbench/CanvasOverlay'
+import { CanvasFilterStatus } from '@renderer/components/documents/CanvasFilterStatus'
+import { OutlineWorkspace } from '@renderer/components/documents/OutlineWorkspace'
+import { useOutlineWorkspaceOpen } from '@renderer/components/documents/useOutlineWorkspaceOpen'
 import { useActiveSpatialSetting } from '@renderer/hooks/useActiveSpatialView'
 import { useMessages } from '@renderer/i18n/useMessages'
 import { useDocumentTabs } from '@renderer/state/documentTabs'
 import { useEditor } from '@renderer/state/editor'
 import { usePresentation } from '@renderer/state/presentation'
+import { useInitialTopicEdit } from '@renderer/hooks/useInitialTopicEdit'
 
 const PresentationWorkspace = lazy(
   () => import('@renderer/components/presentation/PresentationWorkspace'),
@@ -26,6 +30,7 @@ const EditorSurface = ({ mode }: { mode: '2d' | '3d' }) => {
   const playing = usePresentation((state) => state.playing)
   const presentationMode = usePresentation((state) => state.workspaceMode)
   const outline = useEditor((state) => state.outlineOpen)
+  const outlineWorkspace = useOutlineWorkspaceOpen()
   const inspector = useEditor((state) => state.inspectorOpen)
   const activeSheetId = useEditor((state) => state.activeSheetId)
   const activeTabId = useDocumentTabs((state) => state.activeId)
@@ -43,6 +48,7 @@ const EditorSurface = ({ mode }: { mode: '2d' | '3d' }) => {
             <DocumentTabs />
           </CanvasOverlay>
         )}
+        {!presentationMode && <CanvasFilterStatus />}
         <AnimatePresence initial={false}>
           {outline && !playing && (
             <WorkbenchPanel key="outline">
@@ -50,7 +56,16 @@ const EditorSurface = ({ mode }: { mode: '2d' | '3d' }) => {
             </WorkbenchPanel>
           )}
         </AnimatePresence>
-        <Canvas key={`${activeTabId}:${activeSheetId}`} mode={mode} />
+        <div
+          className={`relative flex min-h-0 min-w-0 flex-1 ${outlineWorkspace ? 'invisible pointer-events-none' : ''}`}
+          inert={outlineWorkspace}
+          aria-hidden={outlineWorkspace || undefined}
+        >
+          <Canvas key={`${activeTabId}:${activeSheetId}`} mode={mode} />
+        </div>
+        {outlineWorkspace && !playing && (
+          <OutlineWorkspace key={`${activeTabId}:${activeSheetId}`} />
+        )}
         <AnimatePresence initial={false}>
           {inspector && !playing && (
             <WorkbenchPanel key="inspector" side="right">
@@ -88,7 +103,7 @@ const EditorSurface = ({ mode }: { mode: '2d' | '3d' }) => {
           <span className="topic-count hidden shrink-0 text-xs whitespace-nowrap lg:inline">
             {translate('topicCount', { count })}
           </span>
-          {!presentationMode && <ZoomControls mode={mode} />}
+          {!presentationMode && !outlineWorkspace && <ZoomControls mode={mode} />}
           <KeyboardHelp />
         </footer>
       )}
@@ -98,6 +113,7 @@ const EditorSurface = ({ mode }: { mode: '2d' | '3d' }) => {
 
 /** Only the planar editor and its controls share a React Flow viewport. */
 export const EditorWorkspace = () => {
+  useInitialTopicEdit()
   const { value: mode } = useActiveSpatialSetting((view) => view.mode)
   return mode === '3d' ? (
     <EditorSurface mode={mode} />

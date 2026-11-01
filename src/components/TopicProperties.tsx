@@ -1,3 +1,4 @@
+import { TopicStyleActions } from '@renderer/components/metadata/TopicStyleActions'
 import { useTopicPropertyFocus } from '@renderer/state/topicShortcutActions'
 import { PropertySection } from '@renderer/components/workbench/PropertySection'
 import { useMessages } from '@renderer/i18n/useMessages'
@@ -80,6 +81,7 @@ export const TopicProperties = () => {
         </section>
       )}
       <TopicFormatting />
+      <TopicStyleActions />
       {multiple ? (
         <SelectionMarkers ids={selectedIds} />
       ) : (
