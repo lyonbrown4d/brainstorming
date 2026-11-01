@@ -49,7 +49,10 @@ async fn failed_decode_cannot_authorize_partial_staged_objects() {
   let mut broken = png();
   broken[45] ^= 0xff;
   let id = hex::encode(Sha256::digest(&broken));
+  let path = directory.path().join("broken.png");
+  tokio::fs::write(&path, &broken).await.unwrap();
   assert!(importer.bytes(broken, "broken.png", "image").await.is_err());
+  assert!(importer.file(&path, "image").await.is_err());
   assert!(catalog.info(&id).await.is_err());
   let output = state.directory.join("image-work");
   if output.exists() {

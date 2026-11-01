@@ -80,3 +80,6 @@ fn precancel_and_failed_decode_leave_no_partial_derivatives() {
   assert!(vips::prepare_bytes(&bytes, &output).is_err());
   assert_eq!(std::fs::read_dir(output).unwrap().count(), 0);
 }
+#[cfg(feature = "native-ui")]
+#[path = "../src/media/png_integrity.rs"]
+mod png_integrity;

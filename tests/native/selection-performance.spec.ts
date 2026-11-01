@@ -11,19 +11,21 @@ import { waitNativeCanvasQuiet } from '@tests/native/canvas-performance-geometry
 import { sampleKeyboardSelection } from '@tests/native/selection-keyboard'
 import { sampleHighFrequencySelection } from '@tests/native/high-frequency-selection'
 
-it('measures thousand-topic selection with closed and open properties in both independent canvases', async () => {
-  await openIndependentFixture(1000)
-  const reports: unknown[] = []
-  const persist = async () =>
-    writeFile(
-      await nativeArtifact('brainstorming-selection-performance.json'),
-      JSON.stringify(reports, null, 2),
-    )
-  for (const mode of ['2d', '3d'] as const) {
-    await browser.$(`button[aria-label="${mode === '2d' ? '二维视图' : '三维视图'}"]`).click()
-    await expect(browser.$('[data-canvas-loading]')).not.toExist({ wait: 20_000 })
-    if (mode === '3d') await waitIndependentSpatial()
-    for (const properties of [false, true]) {
+for (const mode of ['2d', '3d'] as const) {
+  for (const properties of [false, true]) {
+    it(`measures thousand-topic ${mode} selection with properties ${properties ? 'open' : 'closed'}`, async () => {
+      await openIndependentFixture(1000)
+      const reports: unknown[] = []
+      const persist = async () =>
+        writeFile(
+          await nativeArtifact(
+            `brainstorming-selection-${mode}-${properties ? 'open' : 'closed'}.json`,
+          ),
+          JSON.stringify(reports, null, 2),
+        )
+      await browser.$(`button[aria-label="${mode === '2d' ? '二维视图' : '三维视图'}"]`).click()
+      await expect(browser.$('[data-canvas-loading]')).not.toExist({ wait: 20_000 })
+      if (mode === '3d') await waitIndependentSpatial()
       if (properties) await ensureProperties()
       else if (await browser.$('button[aria-label="关闭属性面板"]').isExisting())
         await browser.$('button[aria-label="关闭属性面板"]').click()
@@ -52,6 +54,6 @@ it('measures thousand-topic selection with closed and open properties in both in
         await persist()
         expect(click.matched).toBe(click.events)
       }
-    }
+    })
   }
-})
+}

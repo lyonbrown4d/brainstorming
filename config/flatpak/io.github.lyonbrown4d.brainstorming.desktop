@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Brainstorming
+Comment=Local-first mind mapping
+Exec=run.sh %F
+Icon=io.github.lyonbrown4d.brainstorming
+Terminal=false
+StartupNotify=true
+StartupWMClass=app.brainstorming.desktop
+Categories=Office;
+MimeType=application/vnd.brainstorming;

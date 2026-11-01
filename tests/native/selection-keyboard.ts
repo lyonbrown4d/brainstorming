@@ -50,8 +50,27 @@ export const sampleKeyboardSelection = async (mode: '2d' | '3d') =>
             resolve()
           }),
         )
-        if (performance.now() - dispatchStarted > 3000)
-          throw new Error('Selection did not reach its requested render')
+        if (performance.now() - dispatchStarted > 3000) {
+          const active = document.activeElement
+          const activeElement = active
+            ? `${active.tagName.toLowerCase()}${active.id ? `#${active.id}` : ''}${
+                active instanceof HTMLElement && active.className
+                  ? `.${active.className.trim().replaceAll(/\s+/g, '.')}`
+                  : ''
+              }`
+            : null
+          throw new Error(
+            `Selection did not reach its requested render within 3000ms: ${JSON.stringify({
+              mode: view,
+              index,
+              requested,
+              selected: selected() ?? null,
+              focused: document.hasFocus(),
+              visibility: document.visibilityState,
+              activeElement,
+            })}`,
+          )
+        }
       } while (
         selected() !== requested ||
         (view === '3d' && canvas?.spatialFrameDiagnostics.renderFrame === previousFrame)

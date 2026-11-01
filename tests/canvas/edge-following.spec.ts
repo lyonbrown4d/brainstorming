@@ -40,7 +40,8 @@ for (const variant of ['orthogonal', 'waypoints', 'sketch']) {
     await page.goto(
       `/iframe.html?id=${encodeURIComponent(`brainstorming-实时结构连线--${variant}`)}&viewMode=story`,
     )
-    await expect(topic(page)).toBeVisible()
+    await expect(page.locator('[data-canvas-loading]')).toHaveCount(0, { timeout: 15_000 })
+    await expect(topic(page)).toBeVisible({ timeout: 15_000 })
     await topic(page).click()
     const box = await bounds(topic(page))
     const before = await edge(page).getAttribute('d')

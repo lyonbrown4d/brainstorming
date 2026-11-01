@@ -25,11 +25,8 @@ pub async fn prepare_pages(
       .await?
   } else {
     report(ExportStage::Rendering, 0, request.sheet_ids.len());
-    let mut workers = stream::iter(request.sheet_ids.iter())
-      .map(|id| async move {
-        job.check()?;
-        render_page(compute, request, id).await
-      })
+    let mut workers = stream::iter(request.sheet_ids.clone())
+      .map(|id| render_admitted_page(compute, request, job, id))
       .buffered(PARALLEL_PAGES);
     let mut pages = Vec::new();
     let mut total = 0;
@@ -66,6 +63,16 @@ pub async fn prepare_pages(
     }
   }
   Ok(pages)
+}
+
+async fn render_admitted_page(
+  compute: &ComputeService,
+  request: &Request,
+  job: &Job,
+  id: String,
+) -> Result<Page> {
+  job.check()?;
+  render_page(compute, request, &id).await
 }
 
 async fn render_page(compute: &ComputeService, request: &Request, id: &str) -> Result<Page> {
@@ -171,11 +178,11 @@ pub async fn encode(
     let mut failure = None;
     while let Some(result) = workers.next().await {
       let result = result.and_then(|(index, page, bytes)| output.push(index, &page, bytes));
-      if let Err(error) = result {
-        if failure.is_none() {
-          failure = Some(error);
-          job.token.cancel();
-        }
+      if let Err(error) = result
+        && failure.is_none()
+      {
+        failure = Some(error);
+        job.token.cancel();
       }
     }
     drop(workers);

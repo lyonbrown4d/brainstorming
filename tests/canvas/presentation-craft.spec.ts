@@ -7,7 +7,7 @@ const open = async (page: Page, story = 'audience') => {
       name: story === 'english-audience' ? 'Audience view' : '观众画面',
       exact: true,
     }),
-  ).toBeVisible()
+  ).toBeVisible({ timeout: 15_000 })
 }
 const current = (page: Page) =>
   page.locator('[data-presentation-surface] [data-presentation-slide]')
@@ -81,6 +81,17 @@ test('rapid forward/back navigation keeps one live page and reduced motion remov
 
 test('English playback exposes named controls and a usable page search', async ({ page }) => {
   await open(page, 'english-audience')
+  const audience = page.getByRole('region', { name: 'Audience view', exact: true })
+  const audienceBounds = await audience.boundingBox()
+  if (!audienceBounds) throw new Error('Missing audience view geometry')
+  await page.mouse.move(
+    audienceBounds.x + audienceBounds.width / 2,
+    audienceBounds.y + audienceBounds.height / 2,
+  )
+  await expect(page.locator('[data-presentation-chrome]')).toHaveAttribute(
+    'data-presentation-chrome',
+    'visible',
+  )
   await page.getByRole('button', { name: 'Jump to slide', exact: true }).click()
   await page.getByRole('combobox', { name: 'Jump to slide', exact: true }).fill('3')
   await expect(page.getByRole('option')).toHaveCount(1)

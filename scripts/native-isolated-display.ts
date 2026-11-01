@@ -11,6 +11,13 @@ export const withIsolatedDisplay = async (
 ): Promise<void> => {
   await mkdir(nativeE2E.artifacts, { recursive: true })
   let startup = ''
+  // Portal helpers are activated while the compositor starts. Give only this
+  // private bus its future Wayland socket, so they do not inherit an empty or
+  // unrelated desktop display and block Shell startup waiting for GTK.
+  await $({
+    quiet: true,
+    timeout: '10s',
+  })`dbus-update-activation-environment WAYLAND_DISPLAY=brainstorming-e2e GDK_BACKEND=wayland XDG_RUNTIME_DIR`
   const server = $({
     quiet: true,
     nothrow: true,
@@ -28,9 +35,12 @@ export const withIsolatedDisplay = async (
   const hasExited = (): boolean => state.exited
   try {
     const started = Date.now()
+    // Cold private desktop services can consume a D-Bus activation timeout.
+    // This is infrastructure startup only; application/test deadlines stay intact.
+    const startupTimeout = 60_000
     let display: string | undefined
     let authority: string | undefined
-    while (Date.now() - started < 20_000 && !state.exited) {
+    while (Date.now() - started < startupTimeout && !state.exited) {
       display = /Using public X11 display (:\d+)/.exec(startup)?.[1]
       authority = (await readdir(directory)).find((name) =>
         name.startsWith('.mutter-Xwaylandauth.'),
@@ -39,7 +49,7 @@ export const withIsolatedDisplay = async (
       await sleep(100)
     }
     if (!display || !authority || state.exited || !startup.includes('GNOME Shell started'))
-      throw new Error('The isolated GNOME/XWayland display did not start within 20 seconds')
+      throw new Error('The isolated GNOME/XWayland display did not start within 60 seconds')
     const environment = {
       ...process.env,
       DISPLAY: display,

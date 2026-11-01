@@ -12,6 +12,7 @@ mod import_derivatives;
 #[cfg(test)]
 mod import_tests;
 mod network;
+mod png_integrity;
 mod preview;
 mod preview_state;
 mod snapshot;

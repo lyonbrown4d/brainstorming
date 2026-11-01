@@ -3,7 +3,7 @@ use brainstorming_geometry::{marker_markup, shape_path, sketch_path, stroke_path
 fn pressure_and_single_point_ink_match_live_perfect_freehand() {
   let fixtures: serde_json::Value =
     serde_json::from_str(include_str!("fixtures/ink.json")).unwrap();
-  for fixture in fixtures.as_array().unwrap() {
+  for (case, fixture) in fixtures.as_array().unwrap().iter().enumerate() {
     let points = fixture["points"]
       .as_array()
       .unwrap()
@@ -28,7 +28,7 @@ fn pressure_and_single_point_ink_match_live_perfect_freehand() {
       })
       .collect::<Vec<_>>();
     let expected = fixture["outline"].as_array().unwrap();
-    assert_eq!(actual.len(), expected.len());
+    assert_eq!(actual.len(), expected.len(), "fixture {case}");
     for (actual, expected) in actual.iter().zip(expected) {
       assert!((actual[0] - (expected[0].as_f64().unwrap() * 2.0 + 15.0)).abs() < 1e-9);
       assert!((actual[1] - (expected[1].as_f64().unwrap() * 1.5 + 20.0)).abs() < 1e-9);

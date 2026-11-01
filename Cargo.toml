@@ -1,5 +1,6 @@
 [workspace]
 resolver = "3"
+exclude = ["vendor/perfect-freehand"]
 members = ["crates/brainstorming-engine", "crates/brainstorming-geometry", "crates/brainstorming-cli", "src-tauri"]
 default-members = ["crates/brainstorming-engine", "crates/brainstorming-geometry", "crates/brainstorming-cli"]
 
@@ -11,3 +12,7 @@ codegen-units = 1
 lto = true
 opt-level = "s"
 strip = true
+
+# Approved temporary end-cap parity fix; remove after upstream passes our fixtures.
+[patch.crates-io]
+perfect_freehand = { path = "vendor/perfect-freehand" }

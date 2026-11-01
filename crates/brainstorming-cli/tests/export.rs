@@ -125,7 +125,7 @@ async fn batch_order_encryption_and_destination_failures_are_safe() {
   ));
   let mut zip = zip::ZipArchive::new(std::fs::File::open(&output).unwrap()).unwrap();
   assert_eq!(zip.len(), 2);
-  assert_eq!(zip.by_index(0).unwrap().name(), "001-First.svg");
+  assert_eq!(zip.by_index(0).unwrap().name().unwrap(), "001-First.svg");
   let mut second = String::new();
   zip
     .by_index(1)

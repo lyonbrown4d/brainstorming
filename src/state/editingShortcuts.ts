@@ -102,6 +102,8 @@ export const handleTopicShortcut = (event: KeyboardEvent): boolean => {
   if (!isPrimaryModifier(event)) return false
   const key = event.code === 'Slash' ? '/' : event.key.toLowerCase()
   const mac = ['macos', 'ios'].includes(requireDesktopAPI().platform)
+  // A displaced root shortcut must not reload CEF and discard an in-memory draft.
+  if (key === 'r' && !event.shiftKey && !event.altKey) event.preventDefault()
   // These actions are customizable. An old default must not fire after reassignment.
   if (
     key === '/' ||

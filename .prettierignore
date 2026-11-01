@@ -30,3 +30,6 @@ src/generated/
 Cargo.lock
 crates/**/*.rs
 crates/brainstorming-geometry/assets/*.json
+
+# Preserve vendored dependency sources and metadata.
+vendor/

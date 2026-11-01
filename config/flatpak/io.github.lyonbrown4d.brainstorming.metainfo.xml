@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.lyonbrown4d.brainstorming</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>LicenseRef-proprietary</project_license>
+  <developer id="io.github.lyonbrown4d">
+    <name>Brainstorming contributors</name>
+  </developer>
+  <name>Brainstorming</name>
+  <summary>Local-first mind mapping</summary>
+  <description>
+    <p>
+      Brainstorming is a local-first mind mapping tool for organizing ideas, notes, resources, and
+      sketches on a shared canvas.
+    </p>
+  </description>
+  <url type="homepage">https://github.com/lyonbrown4d/brainstorming</url>
+  <launchable type="desktop-id">io.github.lyonbrown4d.brainstorming.desktop</launchable>
+  <provides>
+    <mediatype>application/vnd.brainstorming</mediatype>
+  </provides>
+  <categories>
+    <category>Office</category>
+    <category>Utility</category>
+  </categories>
+</component>

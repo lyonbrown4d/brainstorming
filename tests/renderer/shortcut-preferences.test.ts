@@ -49,9 +49,11 @@ describe('custom shortcuts', () => {
   it('changes the actual map action and disables the displaced default', () => {
     useEditor.getState().select('vision')
     const custom = key('g', { metaKey: true, shiftKey: true })
-    const old = key('r', { metaKey: true })
+    const preventReload = vi.fn()
+    const old = key('r', { metaKey: true, preventDefault: preventReload })
     expect(useShortcutPreferences.getState().setChord('root', 'Mod+Shift+KeyG')).toBeNull()
     expect(handleTopicShortcut(old)).toBe(false)
+    expect(preventReload).toHaveBeenCalledOnce()
     expect(useEditor.getState().selectedId).toBe('vision')
     expect(handleTopicShortcut(custom)).toBe(true)
     expect(useEditor.getState().selectedId).toBe('root')

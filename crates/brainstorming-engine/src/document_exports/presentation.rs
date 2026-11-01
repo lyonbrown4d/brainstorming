@@ -42,7 +42,7 @@ pub(crate) struct Scene {
   pub blocks: Vec<Block>,
 }
 
-pub(crate) fn pages(workbook: &Value) -> Result<Vec<Page>, String> {
+pub fn pages(workbook: &Value) -> Result<Vec<Page>, String> {
   let mut total = 0usize;
   scenes(workbook)?
     .iter()

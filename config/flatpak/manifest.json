@@ -1,0 +1,99 @@
+{
+  "app-id": "io.github.lyonbrown4d.brainstorming",
+  "runtime": "org.gnome.Platform",
+  "runtime-version": "50",
+  "sdk": "org.gnome.Sdk",
+  "command": "run.sh",
+  "separate-locales": false,
+  "finish-args": [
+    "--share=ipc",
+    "--socket=x11",
+    "--device=dri",
+    "--share=network",
+    "--talk-name=org.freedesktop.secrets",
+    "--talk-name=org.freedesktop.Notifications",
+    "--talk-name=org.freedesktop.Flatpak"
+  ],
+  "modules": [
+    {
+      "name": "zypak",
+      "buildsystem": "autotools",
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/refi64/zypak",
+          "tag": "v2025.09",
+          "commit": "693a71c5ffa80ec9c9ce2ae03b1ccc493c698e53"
+        }
+      ]
+    },
+    {
+      "name": "libvips",
+      "buildsystem": "meson",
+      "builddir": true,
+      "config-opts": [
+        "-Dexamples=false",
+        "-Dman=false",
+        "-Dtests=false",
+        "-Dtools=false",
+        "-Ddocs=false",
+        "-Dcpp-docs=false",
+        "-Dcplusplus=false",
+        "-Dintrospection=disabled",
+        "-Dmodules=enabled",
+        "-Djpeg=enabled",
+        "-Dpng=enabled",
+        "-Dtiff=enabled",
+        "-Dwebp=enabled",
+        "-Dexif=enabled",
+        "-Dlcms=enabled",
+        "-Drsvg=enabled"
+      ],
+      "cleanup": ["/include", "/lib/pkgconfig", "/share/man", "/share/doc"],
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://github.com/libvips/libvips/releases/download/v8.18.7/vips-8.18.7.tar.xz",
+          "sha256": "5baaead3b0bb20ffdb9e9ff09aa9fda08620923df77b63b436654cb5e0b3bf94"
+        }
+      ]
+    },
+    {
+      "name": "brainstorming",
+      "buildsystem": "simple",
+      "build-commands": [
+        "mkdir -p /app/usr",
+        "cp -a usr/. /app/usr/",
+        "install -Dm644 licenses/CREDITS.html /app/share/licenses/brainstorming/CREDITS.html",
+        "install -Dm755 run.sh /app/bin/run.sh",
+        "install -Dm644 io.github.lyonbrown4d.brainstorming.desktop /app/share/applications/io.github.lyonbrown4d.brainstorming.desktop",
+        "install -Dm644 icon.png /app/share/icons/hicolor/512x512/apps/io.github.lyonbrown4d.brainstorming.png",
+        "install -Dm644 io.github.lyonbrown4d.brainstorming.metainfo.xml /app/share/metainfo/io.github.lyonbrown4d.brainstorming.metainfo.xml",
+        "install -Dm644 brainstorming.xml /app/share/mime/packages/io.github.lyonbrown4d.brainstorming.xml"
+      ],
+      "sources": [
+        {
+          "type": "dir",
+          "path": "../../src-tauri/target/release/bundle/flatpak/input"
+        },
+        {
+          "type": "script",
+          "dest-filename": "run.sh",
+          "commands": [
+            "export ZYPAK_CEF_LIBRARY_PATH=\"$(find /app/usr -type f -name libcef.so -print -quit)\"",
+            "test -n \"$ZYPAK_CEF_LIBRARY_PATH\"",
+            "exec zypak-wrapper /app/usr/bin/brainstorming \"$@\""
+          ]
+        },
+        { "type": "file", "path": "io.github.lyonbrown4d.brainstorming.desktop" },
+        { "type": "file", "path": "io.github.lyonbrown4d.brainstorming.metainfo.xml" },
+        { "type": "file", "path": "../../src-tauri/icons/icon.png", "dest-filename": "icon.png" },
+        {
+          "type": "file",
+          "path": "../../src-tauri/shell-preview/linux/brainstorming.xml",
+          "dest-filename": "brainstorming.xml"
+        }
+      ]
+    }
+  ]
+}

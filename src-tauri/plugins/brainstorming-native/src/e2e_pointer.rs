@@ -32,6 +32,13 @@ struct Session {
   status: Mutex<Value>,
 }
 
+struct Gesture {
+  viewport: Viewport,
+  points: Vec<Point>,
+  step_ms: u64,
+  hold_ms: u64,
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct Envelope {
@@ -103,10 +110,12 @@ pub(crate) async fn call(app: &AppHandle, payload: Value) -> Result<Value> {
           window,
           url,
           task_session,
-          viewport,
-          points,
-          step_ms,
-          hold_ms,
+          Gesture {
+            viewport,
+            points,
+            step_ms,
+            hold_ms,
+          },
         )
         .await;
       });
@@ -133,11 +142,14 @@ async fn run(
   window: WebviewWindow,
   url: String,
   session: Arc<Session>,
-  viewport: Viewport,
-  points: Vec<Point>,
-  step_ms: u64,
-  hold_ms: u64,
+  gesture: Gesture,
 ) {
+  let Gesture {
+    viewport,
+    points,
+    step_ms,
+    hold_ms,
+  } = gesture;
   let delivery = Arc::new(std::sync::Mutex::new(native::Delivery {
     number: 0,
     point: points[0],

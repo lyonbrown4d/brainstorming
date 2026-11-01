@@ -144,6 +144,8 @@ test('buttons, shortcuts and pinch change the same Three camera distance', async
   await page.locator('#sheet-panel').focus()
   await page.keyboard.press('ControlOrMeta+-')
   await expect.poll(() => spatialDistance(page)).toBeGreaterThan(button)
+  // The ratio needs a settled baseline, rather than an intermediate shortcut frame.
+  await settledSpatialRect(page, 'branch-a')
   const before = await spatialDistance(page),
     point = await emptySpatialPoint(page)
   await page.mouse.move(point.x, point.y)

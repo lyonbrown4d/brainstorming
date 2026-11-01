@@ -195,6 +195,8 @@ Tauri 命令使用服务访问租约。退出先撤销媒体访问、取消 AI/M
 
 手动保存、另存为、密码变更、版本读取和文档释放共用按路径的写入队列。失败保留未保存状态与错误提示，并在服务仍可用时重试。`path === null` 的新建、导入或恢复副本不进入自动保存，也不进入新的工作区恢复快照；关闭或重载后丢失，需通过手动保存选择路径。媒体暂存仍使用原生加密临时资源库，退出时清理。
 
+Rust 格式检查使用 `pnpm format:rust:check`，格式化使用 `pnpm format:rust`。这些命令使用根 `rustfmt.toml` 覆盖五个自有 workspace 包，保留 `vendor` 中第三方源码的上游格式；不要用 `cargo fmt --all` 重排已固定的第三方副本。
+
 ## 文档导出
 
 统一导出入口使用 `src/shared/documentExports.ts`，原生命令位于 `platform/export_commands.rs`，范围选择、文档编码和任务管理位于 `document_exports`。前端先等待原生编辑队列完成，再准备所选内容；几何由共享 Rust 服务计算；Rust 重新校验工作簿、范围及格式组合。完整导图由原生场景服务生成 2D SVG，不受当前视口裁剪。

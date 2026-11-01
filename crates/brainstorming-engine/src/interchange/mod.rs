@@ -53,7 +53,7 @@ pub fn export(workbook: &Value, format: &str, sheet_id: Option<&str>) -> Result<
   })
 }
 
-pub(crate) fn select_sheets(workbook: &Value, sheet_id: Option<&str>) -> Result<Value, String> {
+pub fn select_sheets(workbook: &Value, sheet_id: Option<&str>) -> Result<Value, String> {
   let Some(sheet_id) = sheet_id else {
     return Ok(workbook.clone());
   };

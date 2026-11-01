@@ -41,7 +41,7 @@
     "build:ios": "tauri ios build",
     "build:android": "tauri android build",
     "test:rust": "cargo test -p brainstorming-engine -p brainstorming-geometry -p brainstorming-cli -p brainstorming-native --no-default-features",
-    "check:rust": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
+    "check:rust": "cargo clippy --no-deps -p brainstorming-engine -p brainstorming-geometry -p brainstorming-cli -p brainstorming-native -p tauri-plugin-brainstorming-native --all-targets --features brainstorming-native/e2e --locked -- -D warnings",
     "native:vips": "tsx scripts/prepare-native-vips.ts",
     "build:e2e": "cross-env VITE_NATIVE_E2E=1 tsx scripts/build-native-e2e.ts",
     "devtools": "cross-env HOST=127.0.0.1 react-devtools",
@@ -52,7 +52,10 @@
     "benchmark:2d:isolated": "tsx scripts/test-native-isolated.ts --benchmark",
     "cli": "cargo run -p brainstorming-cli --",
     "build:cli": "cargo build --release -p brainstorming-cli --locked",
-    "sync:native-markers": "tsx scripts/sync-native-markers.ts"
+    "sync:native-markers": "tsx scripts/sync-native-markers.ts",
+    "format:rust": "cargo fmt -p brainstorming-engine -p brainstorming-geometry -p brainstorming-cli -p brainstorming-native -p tauri-plugin-brainstorming-native",
+    "format:rust:check": "cargo fmt -p brainstorming-engine -p brainstorming-geometry -p brainstorming-cli -p brainstorming-native -p tauri-plugin-brainstorming-native --check",
+    "package:flatpak": "tsx scripts/build-flatpak.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "6.3.1",

@@ -10,22 +10,21 @@ static BRANDS: LazyLock<Value> = LazyLock::new(|| {
 });
 
 pub fn marker_markup(marker: &str, color: &str, size: f64) -> String {
-  if let Some(name) = marker.strip_prefix("simple-icons:") {
-    if let Some(icon) = BRANDS["icons"].get(name) {
-      if let Some(body) = icon["body"].as_str() {
-        let width = icon["width"]
-          .as_u64()
-          .or(BRANDS["width"].as_u64())
-          .unwrap_or(24);
-        let height = icon["height"]
-          .as_u64()
-          .or(BRANDS["height"].as_u64())
-          .unwrap_or(24);
-        return format!(
-          "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {width} {height}\" fill=\"{color}\" color=\"{color}\">{body}</svg>"
-        );
-      }
-    }
+  if let Some(name) = marker.strip_prefix("simple-icons:")
+    && let Some(icon) = BRANDS["icons"].get(name)
+    && let Some(body) = icon["body"].as_str()
+  {
+    let width = icon["width"]
+      .as_u64()
+      .or(BRANDS["width"].as_u64())
+      .unwrap_or(24);
+    let height = icon["height"]
+      .as_u64()
+      .or(BRANDS["height"].as_u64())
+      .unwrap_or(24);
+    return format!(
+      "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {width} {height}\" fill=\"{color}\" color=\"{color}\">{body}</svg>"
+    );
   }
   LUCIDE
     .get(marker)

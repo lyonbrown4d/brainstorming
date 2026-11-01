@@ -83,12 +83,11 @@ pub async fn capture(app: &AppHandle, args: Value) -> Result<Value> {
     .disable_javascript()
     .on_navigation(|url| matches!(url.scheme(), "data" | "about"))
     .on_page_load(move |_, event| {
-      if event.event() == PageLoadEvent::Finished {
-        if let Ok(mut sender) = loaded.lock() {
-          if let Some(sender) = sender.take() {
-            let _ = sender.send(());
-          }
-        }
+      if event.event() == PageLoadEvent::Finished
+        && let Ok(mut sender) = loaded.lock()
+        && let Some(sender) = sender.take()
+      {
+        let _ = sender.send(());
       }
     })
     .build()
@@ -110,10 +109,10 @@ pub async fn capture(app: &AppHandle, args: Value) -> Result<Value> {
 }
 pub async fn cancel(app: &AppHandle, args: Value) -> Result<Value> {
   let id = args["id"].as_str().ok_or("网页预览标识无效")?;
-  if let Ok(active) = ACTIVE.get_or_init(Default::default).lock() {
-    if let Some(cancelled) = active.get(id) {
-      cancelled.store(true, Ordering::Release);
-    }
+  if let Ok(active) = ACTIVE.get_or_init(Default::default).lock()
+    && let Some(cancelled) = active.get(id)
+  {
+    cancelled.store(true, Ordering::Release);
   }
   if let Some(window) = app.get_webview_window(&format!("preview-{id}")) {
     let _ = window.destroy();

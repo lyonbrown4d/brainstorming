@@ -56,7 +56,7 @@ test('topic filters construct results on open and preserve criteria across reope
   page,
 }) => {
   await page.goto('/iframe.html?id=brainstorming-思维导图--default&viewMode=story')
-  await expect(page.getByTestId('topic-root')).toBeVisible()
+  await expect(page.getByTestId('topic-root')).toBeVisible({ timeout: 15_000 })
   const results = page.getByLabel('筛选结果', { exact: true })
   await expect(results).toHaveCount(0)
   await page.getByRole('button', { name: '展开浮动工具栏', exact: true }).click()

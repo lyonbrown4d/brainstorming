@@ -79,53 +79,64 @@ pub fn prepare_file_cancelled(
   parent: &Path,
   cancel: &tokio_util::sync::CancellationToken,
 ) -> Result<Artifacts> {
-  prepare(parent, Some(cancel), || {
-    let path = name(path)?;
-    // A VipsSource opens the exact granted filename. Unlike the filename
-    // loader, it never interprets bracket characters as loader options.
-    let source = unsafe { vips_source_new_from_file(path.as_ptr()) };
-    if source.is_null() {
-      return Err("图片文件无法打开".into());
-    }
-    let image = unsafe {
-      vips_image_new_from_source(
-        source,
-        c"".as_ptr(),
-        c"access".as_ptr(),
-        1 as c_int,
-        c"fail-on".as_ptr(),
-        3 as c_int,
-        ptr::null::<c_char>(),
-      )
-    };
-    if image.is_null() {
-      unsafe {
-        g_object_unref(source.cast());
+  prepare(
+    parent,
+    Some(cancel),
+    || super::png_integrity::file(path),
+    || {
+      let path = name(path)?;
+      // A VipsSource opens the exact granted filename. Unlike the filename
+      // loader, it never interprets bracket characters as loader options.
+      let source = unsafe { vips_source_new_from_file(path.as_ptr()) };
+      if source.is_null() {
+        return Err("图片文件无法打开".into());
       }
-      return Err("图片无法解码".into());
-    }
-    Ok(Image(image, Some(source)))
-  })
+      let image = unsafe {
+        vips_image_new_from_source(
+          source,
+          c"".as_ptr(),
+          c"access".as_ptr(),
+          1 as c_int,
+          c"fail-on".as_ptr(),
+          3 as c_int,
+          ptr::null::<c_char>(),
+        )
+      };
+      if image.is_null() {
+        unsafe {
+          g_object_unref(source.cast());
+        }
+        return Err("图片无法解码".into());
+      }
+      Ok(Image(image, Some(source)))
+    },
+  )
 }
 pub fn prepare_bytes(bytes: &[u8], parent: &Path) -> Result<Artifacts> {
-  prepare(parent, None, || {
-    Image::checked(unsafe {
-      vips_image_new_from_buffer(
-        bytes.as_ptr().cast(),
-        bytes.len(),
-        c"".as_ptr(),
-        c"access".as_ptr(),
-        1 as c_int,
-        c"fail-on".as_ptr(),
-        3 as c_int,
-        ptr::null::<c_char>(),
-      )
-    })
-  })
+  prepare(
+    parent,
+    None,
+    || super::png_integrity::bytes(bytes),
+    || {
+      Image::checked(unsafe {
+        vips_image_new_from_buffer(
+          bytes.as_ptr().cast(),
+          bytes.len(),
+          c"".as_ptr(),
+          c"access".as_ptr(),
+          1 as c_int,
+          c"fail-on".as_ptr(),
+          3 as c_int,
+          ptr::null::<c_char>(),
+        )
+      })
+    },
+  )
 }
 fn prepare(
   parent: &Path,
   cancel: Option<&tokio_util::sync::CancellationToken>,
+  validate: impl FnOnce() -> Result<()>,
   mut load: impl FnMut() -> Result<Image>,
 ) -> Result<Artifacts> {
   check_cancel(cancel)?;
@@ -143,6 +154,8 @@ fn prepare(
   {
     return Err("图片尺寸无效或超过像素限制".into());
   }
+  validate()?;
+  check_cancel(cancel)?;
   let mut oriented = ptr::null_mut();
   success(unsafe { vips_autorot(source.0, &mut oriented, ptr::null::<c_char>()) })?;
   let oriented = Image::checked(oriented)?;

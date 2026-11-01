@@ -1,0 +1,16 @@
+--- a/src/get_stroke_outline_points.rs
++++ b/src/get_stroke_outline_points.rs
+@@ -364,9 +364,11 @@
+         } else if cap_end {
+             // Draw the round end cap
+             let start = prj(last_point, direction, radius);
+-            for i in 1..29 {
+-                let t = i as f64 / 29.0;
++            let step = 1.0 / 29.0;
++            let mut t = step;
++            while t < 1.0 {
+                 end_cap.push(rot_around(start, last_point, FIXED_PI * 3.0 * t));
++                t += step;
+             }
+         } else {
+             // Draw the flat end cap

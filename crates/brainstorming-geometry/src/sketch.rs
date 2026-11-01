@@ -13,32 +13,34 @@ pub fn sketch_path(path: &str, identity: &str, fill: bool) -> String {
     hash = (hash ^ character as u32).wrapping_mul(16_777_619);
   }
   let branch = identity.starts_with("edge:") || identity.starts_with("decoration:");
-  let mut options = Options::default();
-  options.seed = Some((hash % 2_147_483_646 + 1) as u64);
-  options.preserve_vertices = Some(true);
-  options.fixed_decimal_place_digits = Some(2.0);
-  options.roughness = Some(if fill {
-    0.7
-  } else if branch {
-    0.65
-  } else {
-    0.85
-  });
-  options.bowing = Some(if fill {
-    0.6
-  } else if branch {
-    0.9
-  } else {
-    0.55
-  });
-  options.max_randomness_offset = Some(if fill {
-    1.0
-  } else if branch {
-    1.1
-  } else {
-    1.5
-  });
-  options.disable_multi_stroke = Some(branch);
+  let mut options = Options {
+    seed: Some((hash % 2_147_483_646 + 1) as u64),
+    preserve_vertices: Some(true),
+    fixed_decimal_place_digits: Some(2.0),
+    roughness: Some(if fill {
+      0.7
+    } else if branch {
+      0.65
+    } else {
+      0.85
+    }),
+    bowing: Some(if fill {
+      0.6
+    } else if branch {
+      0.9
+    } else {
+      0.55
+    }),
+    max_randomness_offset: Some(if fill {
+      1.0
+    } else if branch {
+      1.1
+    } else {
+      1.5
+    }),
+    disable_multi_stroke: Some(branch),
+    ..Default::default()
+  };
   if fill {
     options.fill = options.stroke.take();
     options.stroke = None;

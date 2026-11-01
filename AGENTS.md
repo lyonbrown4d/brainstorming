@@ -57,7 +57,7 @@ Brainstorming 是基于 React、TypeScript 与 Tauri 3 alpha / Rust 的本地优
 - `src/components/ui` 中下载的 shadcn 组件保持官方实现，不直接修改其逻辑、结构、默认样式或 API。业务差异通过上层组合组件、公开 props、`className` 和集中主题变量实现；组合组件放在业务目录，不放入 `ui`。
 - 全项目的业务视觉样式（主界面、创建引导、画布、属性栏、设置、演示和启动页）优先使用 Tailwind CSS utilities，通过组合组件的 `className` 表达布局、间距、字体、颜色和交互状态；不新增同类手写 CSS 或通过 `@apply` 建立平行样式库。已有界面被修改时同步迁移涉及的业务样式。需要手写的样式优先使用 SCSS，通过有限嵌套、`@use`、变量和 mixin 复用规则；保持选择器浅层，避免全局副作用。现有手写 CSS 随迭代迁移到 SCSS；Tailwind v4 入口与 shadcn 注册表主题保持 CSS，不交给 Sass 编译。样式文件仅保留集中主题变量、第三方集成及确实需要数据驱动的画布规则；动态主题颜色、尺寸通过类型明确的样式值或 CSS 变量传入。
 - 升级 shadcn 组件通过官方 CLI/注册表重新获取并审查差异，不能在原始组件上维护业务补丁。下载源码属于第三方组件，标明来源；源码行数拆分要求面向手写业务代码，不为行数拆散上游组件。
-- Rust 统一由仓库根目录 `rustfmt.toml` 管理格式，使用两空格缩进，禁止硬 Tab；主程序与本地插件均遵循同一配置。
+- Rust 统一由仓库根目录 `rustfmt.toml` 管理格式，使用两空格缩进，禁止硬 Tab；主程序与本地插件均遵循同一配置。自有 Rust 包使用 `pnpm format:rust` / `pnpm format:rust:check` 格式化和检查；`vendor` 中固定的第三方源码保留上游格式，不用 `cargo fmt --all` 重排。
 - ESLint 管质量，Prettier 管格式；Husky 提交前检查格式和类型。
 - 原生 `.brainstorming` 使用 SQLite 协议 v2，不兼容旧 ZIP/JSON 文档、本机数据库或恢复记录。主题、顺序和资源引用存关系表；二进制按 SHA-256 去重，以 256 KiB 分块存储，不把大文件 base64 放进 renderer 状态。XMind 导入后保存必须使用新的 `.brainstorming` 路径，不能覆盖源文件；XMind 导出走独立副本流程。密码保护使用 SQLCipher，文件内版本与恢复不得降级为明文；密钥不写入文档或日志。
 - 大图片通过 libvips 生成预览和瓦片，renderer 通过受限资源协议按范围读取；网页预览使用禁用脚本的隔离原生 WebView，自动按 URL 去重并串行排队，不能同时打开所有链接。主题图片仅通过显式命令变更。

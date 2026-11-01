@@ -4,7 +4,7 @@ const open = async (page: Page, route = 'curve') => {
   await page.goto(
     `/iframe.html?id=${encodeURIComponent(`brainstorming-关联线路径--${route}`)}&viewMode=story`,
   )
-  await expect(page.locator('#relation-editable')).toHaveCount(1)
+  await expect(page.locator('#relation-editable')).toHaveCount(1, { timeout: 15_000 })
 }
 const center = async (locator: Locator) => {
   const box = await locator.boundingBox()

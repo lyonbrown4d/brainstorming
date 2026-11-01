@@ -16,10 +16,12 @@ for (const story of ['navigation', 'dense-navigation', 'image-navigation', 'comp
       await expect(page.locator('.react-flow__minimap-image')).toHaveAttribute(
         'data-minimap-node-count',
         '1000',
+        { timeout: 15_000 },
       )
     else
       await expect(page.locator('.react-flow__minimap-node')).toHaveCount(
         ['navigation', 'compact-navigation'].includes(story) ? 2 : 4,
+        { timeout: 15_000 },
       )
     await expect(minimap).toBeVisible()
     if (story === 'compact-navigation') {

@@ -81,6 +81,12 @@ describe('mind-first native workflow', () => {
       }),
     )
     await browser.saveScreenshot(await nativeArtifact('presentation-audience.png'))
+    // Screenshots can outlast the idle chrome timer; use the same pointer reveal as a user.
+    await browser.$('[aria-label="观众画面"]').moveTo()
+    await expect(browser.$('[data-presentation-chrome]')).toHaveAttribute(
+      'data-presentation-chrome',
+      'visible',
+    )
     await browser.$('button[aria-label="跳转到页面"]').click()
     const search = () => browser.$('input[aria-label="跳转到页面"]')
     await expect(search()).toBeFocused()

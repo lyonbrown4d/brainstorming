@@ -88,3 +88,5 @@ Vitest 保留共享 TS 模型、布局、格式和编辑器测试；Rust 测试�
 pnpm cli export example.brainstorming -o example.png
 pnpm build:cli
 ```
+
+Linux Flatpak 使用 `pnpm package:flatpak` 构建；本地制品、沙箱权限和构建工具准备见 [Flatpak 说明](docs/flatpak.md)。
