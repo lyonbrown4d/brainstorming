@@ -2,6 +2,96 @@ use super::util::{field, number};
 use crate::layout_engine::NodeSize;
 use serde_json::Value;
 
+/// Title chrome: 10px padding above and below plus the 1.5px border on each edge.
+const TITLE_CHROME: f64 = 23.0;
+
+/// Conservative advance in em for one character, mirroring `src/layout/measure.ts`.
+fn advance_em(ch: char) -> f64 {
+  match ch {
+    ' ' | '\t' => 0.3,
+    _ if (ch as u32) > 0xff => 1.0,
+    'W' | 'M' | 'm' | 'w' | '@' | '%' => 0.95,
+    'A'..='Z' => 0.78,
+    'a'..='z' => 0.62,
+    '0'..='9' => 0.68,
+    'i' | 'j' | 'l' | 't' | 'f' | 'r' | 'I' | '.' | ',' | ':' | ';' | '\'' | '`' | '!' | '|'
+    | '(' | ')' | '[' | ']' | '{' | '}' | '/' | '\\' | '"' => 0.4,
+    _ => 0.72,
+  }
+}
+
+fn text_width(text: &[char], font: f64) -> f64 {
+  text.iter().map(|ch| advance_em(*ch) * font).sum()
+}
+
+/// Greedy wrapping that follows the browser: break at spaces first, split overlong words.
+fn wrap_title(title: &[char], max_text: f64, font: f64) -> (f64, f64) {
+  let mut lines = 1.0_f64;
+  let mut current = 0.0_f64;
+  let mut longest = 0.0_f64;
+  let mut gap = 0.0_f64;
+  let mut line_start = true;
+  let mut index = 0;
+  while index < title.len() {
+    let ch = title[index];
+    if ch == '\n' {
+      longest = longest.max(current);
+      current = 0.0;
+      gap = 0.0;
+      lines += 1.0;
+      line_start = true;
+      index += 1;
+      continue;
+    }
+    if ch.is_whitespace() {
+      let start = index;
+      while index < title.len() && title[index].is_whitespace() && title[index] != '\n' {
+        index += 1;
+      }
+      if !line_start {
+        gap += text_width(&title[start..index], font);
+      }
+      continue;
+    }
+    let start = index;
+    while index < title.len() && !title[index].is_whitespace() {
+      index += 1;
+    }
+    let word: f64 = text_width(&title[start..index], font);
+    if word > max_text {
+      if !line_start {
+        longest = longest.max(current);
+        current = 0.0;
+        lines += 1.0;
+        line_start = true;
+      }
+      gap = 0.0;
+      for ch in &title[start..index] {
+        let width = advance_em(*ch) * font;
+        if !line_start && current + width > max_text {
+          longest = longest.max(current);
+          current = 0.0;
+          lines += 1.0;
+          line_start = true;
+        }
+        current += width;
+        line_start = false;
+      }
+      continue;
+    }
+    if !line_start && current + gap + word > max_text {
+      longest = longest.max(current);
+      current = 0.0;
+      lines += 1.0;
+      line_start = true;
+    }
+    current += if line_start { word } else { gap + word };
+    gap = 0.0;
+    line_start = false;
+  }
+  (longest.max(current), lines)
+}
+
 pub fn insets(shape: &str) -> (f64, f64) {
   match shape {
     "ellipse" | "circle" => (0.15, 0.15),
@@ -79,25 +169,8 @@ fn measured(topic: &Value, root: bool) -> (NodeSize, f64) {
   let max_text = fixed
     .map(|width| (width * (1.0 - inset_x * 2.0) - padding - extra_width).max(font))
     .unwrap_or(maximum - padding);
-  let mut longest: f64 = 0.0;
-  let mut line: f64 = 0.0;
-  let mut lines: f64 = 1.0;
-  for ch in field(topic, "title").chars() {
-    if ch == '\n' {
-      longest = longest.max(line);
-      line = 0.0;
-      lines += 1.0;
-      continue;
-    }
-    let width = if (ch as u32) > 255 { font } else { font * 0.62 };
-    if line + width > max_text && line > 0.0 {
-      longest = longest.max(line);
-      line = 0.0;
-      lines += 1.0;
-    }
-    line += width;
-  }
-  longest = longest.max(line);
+  let title: Vec<char> = field(topic, "title").chars().collect();
+  let (longest, lines) = wrap_title(&title, max_text, font);
   let image = topic
     .get("image")
     .filter(|item| !item.is_null())
@@ -140,7 +213,7 @@ fn measured(topic: &Value, root: bool) -> (NodeSize, f64) {
         + extra_width
     });
   let content_height = ((if root { 64.0_f64 } else { 44.0_f64 })
-    .max(lines * (font * 1.5).ceil() + if root { 28.0 } else { 20.0 })
+    .max(lines * (font * 1.5).ceil() + TITLE_CHROME)
     + image.map(|(_, height)| height + 12.0).unwrap_or(0.0))
   .max(marker_height + 20.0)
     + extra_height
@@ -167,4 +240,28 @@ fn measured(topic: &Value, root: bool) -> (NodeSize, f64) {
     },
     content_height,
   )
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use serde_json::json;
+
+  fn topic_size(title: &str) -> NodeSize {
+    topic(&json!({"id":"t","title":title,"children":[]}), false)
+  }
+
+  /// Captured from src/layout/measure.test.ts so the renderer and native layout stay aligned.
+  #[test]
+  fn title_measurement_matches_the_renderer_reference() {
+    assert_eq!(topic_size("短标题").height, 47.0);
+    assert_eq!(topic_size("W".repeat(10).as_str()).width, 196.0);
+    let word = "WWWWWWWWWW";
+    assert_eq!(
+      topic_size(&format!("{word} {word} {word} {word}")).height,
+      4.0 * 24.0 + 23.0
+    );
+    assert_eq!(topic_size(&"W".repeat(40)).height, 4.0 * 24.0 + 23.0);
+    assert_eq!(topic_size("一\n二\n三").height, 3.0 * 24.0 + 23.0);
+  }
 }

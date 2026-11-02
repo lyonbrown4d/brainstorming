@@ -291,3 +291,61 @@ async fn deleting_cross_linked_topic_cleans_links_and_undo_restores_both() {
     .unwrap();
   assert_eq!(undone.workbook, book);
 }
+
+#[tokio::test]
+async fn center_topic_rename_renames_the_workbook_and_undo_restores_it() {
+  let engine = EditorEngine::default();
+  let mut book = workbook();
+  book["title"] = json!("Root");
+  engine.open("one".into(), book).await.unwrap();
+  let renamed = engine
+    .execute(
+      "one",
+      0,
+      json!({"kind":"topic","sheetId":"sheet-a","command":{
+        "type":"renameTopic","topicId":"root","title":"新名字"
+      }}),
+    )
+    .await
+    .unwrap();
+  assert_eq!(renamed.workbook["title"], json!("新名字"));
+  assert_eq!(
+    renamed.workbook["sheets"][0]["document"]["title"],
+    json!("新名字")
+  );
+  let leaf = engine
+    .execute(
+      "one",
+      1,
+      json!({"kind":"topic","sheetId":"sheet-a","command":{
+        "type":"addTopic","parentId":"root","id":"a","title":"A"
+      }}),
+    )
+    .await
+    .unwrap();
+  let edited = engine
+    .execute(
+      "one",
+      leaf.revision,
+      json!({"kind":"topic","sheetId":"sheet-a","command":{
+        "type":"renameTopic","topicId":"a","title":"B"
+      }}),
+    )
+    .await
+    .unwrap();
+  assert_eq!(edited.workbook["title"], json!("新名字"));
+  let undone = engine
+    .execute("one", edited.revision, json!({"kind":"undo"}))
+    .await
+    .unwrap();
+  assert_eq!(undone.workbook["title"], json!("新名字"));
+  let undone_add = engine
+    .execute("one", undone.revision, json!({"kind":"undo"}))
+    .await
+    .unwrap();
+  let undone_rename = engine
+    .execute("one", undone_add.revision, json!({"kind":"undo"}))
+    .await
+    .unwrap();
+  assert_eq!(undone_rename.workbook["title"], json!("Root"));
+}

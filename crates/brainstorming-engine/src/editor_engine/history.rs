@@ -133,12 +133,22 @@ impl EditorEngine {
             Some("topic") => {
               let sheet_id = super::helpers::id(&operation, "sheetId")?;
               let command = super::helpers::field(&operation, "command")?;
-              let sheets = candidate["sheets"].as_array_mut().ok_or("画布列表无效")?;
-              let sheet = sheets
-                .iter_mut()
-                .find(|sheet| sheet["id"] == sheet_id)
-                .ok_or("画布不存在")?;
-              topic::apply(&mut sheet["document"], command)?;
+              // 中心主题标题就是导图名称：仍与中心主题一致的工作簿标题跟随改名，保存名才不会停在旧名。
+              let tracked = candidate["title"].clone();
+              let renamed = {
+                let sheets = candidate["sheets"].as_array_mut().ok_or("画布列表无效")?;
+                let sheet = sheets
+                  .iter_mut()
+                  .find(|sheet| sheet["id"] == sheet_id)
+                  .ok_or("画布不存在")?;
+                let before = sheet["document"]["title"].clone();
+                topic::apply(&mut sheet["document"], command)?;
+                let after = sheet["document"]["title"].clone();
+                (before == tracked && after != before).then_some(after)
+              };
+              if let Some(title) = renamed {
+                candidate["title"] = title;
+              }
             }
             _ => workbook::apply(
               &mut candidate,

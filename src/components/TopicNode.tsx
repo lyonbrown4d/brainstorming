@@ -5,6 +5,7 @@ import { TopicScaleHandle } from '@renderer/components/TopicScaleHandle'
 import { TopicWidthHandle } from '@renderer/components/TopicWidthHandle'
 import { useTopicWidthPreview } from '@renderer/state/topicWidthPreview'
 import { useTopicScalePreview } from '@renderer/state/topicScalePreview'
+import { measureTopic } from '@layout'
 import { useMessages } from '@renderer/i18n/useMessages'
 
 import { cn } from '@renderer/lib/utils'
@@ -63,6 +64,10 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
   const widthPreview = useTopicWidthPreview((state) =>
     state.preview?.topic.id === id ? state.preview : null,
   )
+  // Only the edited topic subscribes to the draft, so typing never redraws the rest of the map.
+  const draftTitle = useEditor((state) =>
+    state.editingId === id && state.editingSurface === 'canvas' ? state.draft : null,
+  )
   const topic = widthPreview?.topic ?? data.topic
   const { root, branch = false, color } = data
   const direction = data.direction ?? topic.side
@@ -84,14 +89,22 @@ const TopicNodeContent = ({ data, id, width, height }: NodeProps<TopicFlowNode>)
   const style = topic.style
   const previewScale = useTopicScalePreview((state) => (state.topicId === id ? state.scale : null))
   const scale = previewScale ?? style?.scale ?? 1
+  // Draft text grows the title box while typing; the committed layout reflows siblings on submit.
+  // Trailing spaces are dropped like the browser does, while a typed newline keeps its empty line.
+  const draftText = draftTitle?.replace(/[ \t]+$/u, '') ?? ''
+  const draftPreview =
+    draftTitle === null
+      ? null
+      : measureTopic(draftText.length > 0 ? draftText : topic.title, root, style?.fontSize, topic)
+  const preview = widthPreview ?? draftPreview
   // Perspective and resize previews transform a stable content box, preserving cached SVG/text.
-  const baseWidth = widthPreview
-    ? widthPreview.width / scale
+  const baseWidth = preview
+    ? preview.width / scale
     : data.worldWidth === undefined
       ? (width ?? 100) / scale
       : data.worldWidth / (style?.scale ?? 1)
-  const baseHeight = widthPreview
-    ? widthPreview.height / scale
+  const baseHeight = preview
+    ? preview.height / scale
     : data.worldHeight === undefined
       ? (height ?? 100) / scale
       : data.worldHeight / (style?.scale ?? 1)

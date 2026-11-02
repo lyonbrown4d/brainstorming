@@ -60,11 +60,17 @@ export const withHistory = (
   const selectedId = history.document.topics[state.selectedId]
     ? state.selectedId
     : history.document.rootId
+  const active = state.workbook.sheets.find((sheet) => sheet.id === state.activeSheetId)
+  const tracksTitle = active?.document.title === state.workbook.title
   return {
     history,
     selectedId,
     workbook: {
       ...state.workbook,
+      // 中心主题标题就是导图名称；只有仍与中心主题一致的标题才跟随改名（含撤销重做）。
+      ...(tracksTitle && history.document.title.trim().length > 0
+        ? { title: history.document.title }
+        : {}),
       sheets: state.workbook.sheets.map((sheet) =>
         sheet.id === state.activeSheetId ? { ...sheet, document: history.document } : sheet,
       ),

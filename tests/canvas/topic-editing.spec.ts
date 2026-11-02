@@ -62,6 +62,29 @@ test('Space, F2 and double-click enter editing without resizing or reflowing the
   }
 })
 
+test('draft text grows the edited topic locally before the command is committed', async ({
+  page,
+}) => {
+  await open(page)
+  const branch = node(page, 'branch')
+  const title = branch.locator('.topic-title')
+  const before = await bounds(title)
+  const child = node(page, 'descendant')
+  const childBefore = await bounds(child)
+  await title.dblclick()
+  await expect(editingTitle(page)).toBeFocused()
+  await page.keyboard.press('Shift+Enter')
+  await page.keyboard.insertText('第二行')
+  await page.keyboard.press('Shift+Enter')
+  await page.keyboard.insertText('第三行')
+  await expect.poll(async () => (await bounds(title)).height).toBeGreaterThan(before.height + 20)
+  expect(await bounds(title)).toMatchObject({ x: before.x })
+  // Growth stays local: siblings keep their committed positions until the draft is submitted.
+  expect(await bounds(child)).toEqual(childBefore)
+  await page.keyboard.press('Escape')
+  await expect.poll(async () => (await bounds(title)).height).toBeCloseTo(before.height, 1)
+})
+
 test('dragging across an active title selects text without moving the topic', async ({ page }) => {
   await open(page)
   await page.keyboard.press('F2')

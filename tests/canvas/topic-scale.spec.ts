@@ -85,12 +85,15 @@ for (const corner of corners) {
       : original.y
     expect(scaled.x).toBeCloseTo(fixedX, 0)
     expect(scaled.y).toBeCloseTo(fixedY, 0)
+    // Scale commits round to pixels, so compare the re-entered history within 2px.
+    const withinPixels = async (expected: number) =>
+      Math.abs((await bounds(card)).width - expected) < 2
     await drag(page, handle, corner.dx / 2, corner.dy / 2, true)
-    await expect.poll(async () => (await bounds(card)).width).toBeCloseTo(scaled.width, 0)
+    await expect.poll(() => withinPixels(scaled.width)).toBe(true)
     await page.keyboard.press('ControlOrMeta+z')
-    await expect.poll(async () => (await bounds(card)).width).toBeCloseTo(original.width, 0)
+    await expect.poll(() => withinPixels(original.width)).toBe(true)
     await page.keyboard.press('ControlOrMeta+Shift+z')
-    await expect.poll(async () => (await bounds(card)).width).toBeCloseTo(scaled.width, 0)
+    await expect.poll(() => withinPixels(scaled.width)).toBe(true)
   })
 }
 
