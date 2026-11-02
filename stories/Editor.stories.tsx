@@ -35,7 +35,6 @@ export const KeyboardEditing: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.hover(canvas.getByRole('button', { name: '展开浮动工具栏' }))
-    const originalTitle = canvas.getByRole('heading', { level: 1 }).textContent
     await userEvent.dblClick(
       canvas.getByTestId('topic-root').querySelector('.topic-title') ??
         canvas.getByTestId('topic-root'),
@@ -52,7 +51,7 @@ export const KeyboardEditing: Story = {
       '后续想法',
     )
     await expect(canvas.getByTestId('topic-root')).toHaveTextContent('我的新想法')
-    await expect(canvas.getByRole('heading', { level: 1 })).toHaveTextContent(originalTitle)
+    await expect(canvas.getByRole('heading', { level: 1 })).toHaveTextContent('我的新想法')
   },
 }
 export const StylePanel: Story = {
